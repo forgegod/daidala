@@ -12,7 +12,7 @@ start another agent process, or automatically commit and push target changes.
 | Define | Valid pack, exact installed skills, clean baseline | `define.md` and digest | `running/plan` |
 | Plan | Complete definition | `plan.md` and digest | `awaiting_approval` |
 | Approve | Human decision and exact plan digest | Approval record | `approved` |
-| Implement | Approved plan and unchanged baseline | Detached worktree and captured `implementation.diff` | `running/verify` |
+| Implement | Approved plan, unchanged baseline, and assignee profile | Detached worktree, idempotent Kanban card, and captured `implementation.diff` | `running/verify` |
 | Verify | Command, exit code, and exact output | `verification.txt` and structured evidence | `running/review` or `blocked` |
 | Review | Captured implementation scope and passing evidence | `review.md` and digest | `running/deliver` |
 | Deliver | Reviewed immutable implementation snapshot | `delivery.json` | `completed` |
@@ -25,8 +25,8 @@ start another agent process, or automatically commit and push target changes.
 4. `wingstaff_submit_artifact` with `stage: "plan"`
 5. present the complete plan and wait for explicit human approval
 6. `wingstaff_approve` with the current plan digest
-7. `wingstaff_prepare_implementation`
-8. use normal Hermes tools only in the returned `worktree_path`
+7. `wingstaff_prepare_implementation` with an existing Hermes profile as `assignee`
+8. let Hermes Kanban dispatch that profile in the persistent `worktree_path`
 9. `wingstaff_capture_implementation`
 10. run verification through Hermes' `terminal` tool in the worktree
 11. `wingstaff_record_verification` with the exact result

@@ -6,6 +6,7 @@ import json
 from collections.abc import Callable
 from typing import Any
 
+from .kanban import KanbanCoordinator
 from .locations import resolve_data_root
 from .packs import load_pack
 from .service import WorkflowService
@@ -21,6 +22,18 @@ def _default_service() -> WorkflowService:
 
 
 _service_factory: ServiceFactory = _default_service
+
+
+def configure_context(ctx: Any) -> None:
+    """Bind documented host dispatch without importing Hermes internals."""
+    global _service_factory
+    coordinator = KanbanCoordinator(ctx.dispatch_tool)
+
+    def factory() -> WorkflowService:
+        root = resolve_data_root() / "wingstaff"
+        return WorkflowService(WorkflowStore(root), kanban=coordinator)
+
+    _service_factory = factory
 
 
 def pack_info(args: dict[str, Any], **kwargs: Any) -> str:
@@ -138,14 +151,14 @@ def submit_artifact(args: dict[str, Any], **kwargs: Any) -> str:
 
 
 def prepare_implementation(args: dict[str, Any], **kwargs: Any) -> str:
-    """Create a fresh implementation worktree after approval."""
+    """Create the approved worktree and retry-safe implementation card."""
     del kwargs
     return _service_handler(
         args,
-        allowed={"workflow_id"},
-        required={"workflow_id"},
+        allowed={"workflow_id", "assignee"},
+        required={"workflow_id", "assignee"},
         operation=lambda service, values: service.prepare_implementation(
-            str(values["workflow_id"])
+            str(values["workflow_id"]), assignee=str(values["assignee"])
         ),
     )
 

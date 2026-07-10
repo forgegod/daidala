@@ -20,6 +20,7 @@ flowchart TB
         TR["Hermes tool registry"]
         SR["Hermes namespaced skill registry"]
         HOST["Hermes-owned model and runtime facilities"]
+        KB["Hermes Kanban tools + durable board"]
 
         subgraph W["Wingstaff plugin — loaded in-process"]
             REG["register(ctx)"]
@@ -28,6 +29,7 @@ flowchart TB
             SERVICE["lifecycle service"]
             STATE["state + SQLite store"]
             EXEC["artifact + worktree boundary"]
+            KBA["public Kanban dispatch adapter"]
             SKILL["bundled orchestrate SKILL.md"]
             YAML["bundled pack YAML"]
         end
@@ -40,6 +42,8 @@ flowchart TB
         SERVICE --> PACK
         SERVICE --> STATE
         SERVICE --> EXEC
+        SERVICE --> KBA
+        KBA -->|"ctx.dispatch_tool"| KB
         PACK --> YAML
         SR --> SKILL
         HOST -->|"skill inventory and normal tools"| W
@@ -47,16 +51,17 @@ flowchart TB
 
     TARGET["Local Git target + detached worktree"]
     DATA["Hermes profile data root"]
-    EXT["External skill repositories<br>references only in schema v1"]
+    EXT["External skill repositories<br>pinned revision + skill digests"]
     EXEC --> TARGET
     STATE --> DATA
     EXEC --> DATA
     YAML -."source URL and install-target strings".-> EXT
 ```
 
-Wingstaff has no autonomous execution loop, Kanban adapter, scheduler, model
-client, or second service. Hermes drives the registered tools and performs
-model-authored implementation and verification work in the returned worktree.
+Wingstaff has no autonomous execution loop, scheduler, model client, or second
+service. Its Kanban adapter calls the documented host tool dispatcher; it never
+imports or writes Hermes' board database. Hermes owns task assignment, claims,
+heartbeats, completion, dependency readiness, and worker restart.
 
 ## Process boundary
 

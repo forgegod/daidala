@@ -18,6 +18,10 @@ class FakeContext:
     def register_skill(self, name: str, path: Path) -> None:
         self.skills.append((name, path))
 
+    def dispatch_tool(self, name: str, args: dict) -> str:
+        del name, args
+        return json.dumps({"ok": True, "task_id": "t_fake", "status": "ready"})
+
 
 def test_register_exposes_tool_and_namespaced_skill_source() -> None:
     ctx = FakeContext()

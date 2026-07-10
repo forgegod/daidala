@@ -64,6 +64,13 @@ approval, so stale approval cannot authorize changed implementation scope.
 Worktree creation checks approval again and confirms the target is still clean
 and still at the recorded baseline.
 
+After that transition is persisted, Wingstaff creates the implementation card
+through Hermes Kanban with idempotency key
+`wingstaff:<workflow-id>:implement`. Repeating preparation after interruption
+reuses that card and the same persistent worktree. Wingstaff state remains
+authoritative for lifecycle and approval; Hermes Kanban remains authoritative
+for assignment, claim, heartbeat, completion, and worker recovery.
+
 ## Persistence and concurrency
 
 `WorkflowStore` persists JSON state in profile-local SQLite. Updates use the

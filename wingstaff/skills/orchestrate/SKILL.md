@@ -33,8 +33,9 @@ Load this skill explicitly as `wingstaff:orchestrate` when starting or resuming 
    and verification criteria to the human. Do not call an implementation tool
    until the human explicitly approves that exact digest.
 6. After approval, call `wingstaff_approve` with the returned plan digest, then
-   call `wingstaff_prepare_implementation`. Use only the returned detached
-   `worktree_path` for implementation.
+   call `wingstaff_prepare_implementation` with an existing Hermes profile as
+   `assignee`. Hermes Kanban dispatches that profile in the returned persistent
+   `worktree_path`; retries reuse the same implementation card.
 7. Load the `implement` skills and use normal Hermes `read_file`, `search_files`,
    `patch`, `write_file`, and `terminal` tools in the worktree. Do not commit or
    push target changes.

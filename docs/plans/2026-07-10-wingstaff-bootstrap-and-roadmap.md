@@ -90,7 +90,7 @@ committed before work starts on the next phase.
 | 4A — exact external-skill prerequisite check | Done | Preserve exact-name matching and read-only host inventory access. |
 | 5 — thin Addyosmani workflow | Done | Preserve worktree isolation, immutable diff scope, and evidence-backed delivery. Gate: 19 Markdown files, 65 tests, Ruff, pack validation, build, Twine, diff check, and isolated 12-tool load passed. |
 | 6 — external skill installation and revision management | Done | Preserve publisher-pinned targets, bounded Hermes compatibility, complete-directory digests, dry-run-by-default mutation plans, post-apply verification, and refused recursive installation. Gate: 19 Markdown files, 75 tests, Ruff, pack validation, build, Twine, diff check, 20-action standalone dry-run, recursive refusal, and on-disk digest-mismatch blocking passed. |
-| 7 — Hermes Kanban mapping | Todo | Requires durable workflow state. |
+| 7 — Hermes Kanban mapping | Done | Preserve `ctx.dispatch_tool` isolation, post-approval creation, persistent worktree assignment, exact skill pins, idempotency keys, and Wingstaff/Hermes authority separation. Gate: 19 Markdown files, 77 tests, Ruff, pack validation, build, Twine, diff check, interruption recovery, restart deduplication, and isolated real-host one-card/two-call probe passed. |
 | 8 — `hermes wingstaff` operator CLI | Todo | Requires stable service operations. |
 | 9 — AI-DLC adapter | Todo | Requires a passing Addyosmani fixture workflow. |
 | 10 — operational hardening and release | Todo | Requires both pack fixtures. |

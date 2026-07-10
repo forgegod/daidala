@@ -10,6 +10,7 @@ from uuid import uuid4
 
 from .errors import WorkflowError
 from .execution import ExecutionError, ExecutionWorkspace
+from .kanban import KanbanCoordinator
 from .packs import load_pack
 from .skills import (
     HermesSkillInventory,
@@ -48,6 +49,7 @@ class WorkflowService:
         id_factory: Callable[[], str] | None = None,
         skill_inventory: SkillInventory | None = None,
         skill_content_registry: SkillContentRegistry | None = None,
+        kanban: KanbanCoordinator | None = None,
     ) -> None:
         self.store = store
         self._clock = clock or (lambda: datetime.now(UTC))
@@ -57,6 +59,7 @@ class WorkflowService:
             store.data_root.parent / "skills"
         )
         self._workspace = ExecutionWorkspace(store.data_root)
+        self._kanban = kanban
 
     def start(
         self,
@@ -174,8 +177,10 @@ class WorkflowService:
         )
         return self.store.update(updated, expected_updated_at=observed.updated_at)
 
-    def prepare_implementation(self, workflow_id: str) -> WorkflowState:
-        """Create a fresh detached worktree only after exact plan approval."""
+    def prepare_implementation(
+        self, workflow_id: str, *, assignee: str | None = None
+    ) -> WorkflowState:
+        """Create the approved worktree and retry-safe Hermes implementation card."""
         observed = self.store.get_with_token(workflow_id)
         state = observed.state
         if (
@@ -183,6 +188,7 @@ class WorkflowService:
             and state.current_stage is WorkflowStage.IMPLEMENT
             and state.worktree_path
         ):
+            self._ensure_implementation_task(state, assignee)
             return state
         if state.status is not WorkflowStatus.APPROVED:
             raise ServiceError("implementation requires approved workflow state")
@@ -201,7 +207,22 @@ class WorkflowService:
             worktree_path=worktree,
             started_at=self._clock(),
         )
-        return self.store.update(updated, expected_updated_at=observed.updated_at)
+        persisted = self.store.update(updated, expected_updated_at=observed.updated_at)
+        self._ensure_implementation_task(persisted, assignee)
+        return persisted
+
+    def _ensure_implementation_task(
+        self, state: WorkflowState, assignee: str | None
+    ) -> None:
+        if self._kanban is None:
+            return
+        if not assignee or not assignee.strip():
+            raise ServiceError("Kanban implementation requires an assignee profile")
+        self._kanban.ensure_implementation_task(
+            state,
+            load_pack(state.pack_name),
+            assignee=assignee,
+        )
 
     def capture_implementation(self, workflow_id: str) -> WorkflowState:
         """Capture the real worktree diff and advance to verification."""

@@ -94,8 +94,9 @@ Hermes process to confirm that the plugin was enabled without errors, registered
 - Plugin registration, deterministic workflow state, local persistence,
   exact-skill and pinned-content gates, fresh worktrees, artifact capture,
   verification evidence, review, uncommitted delivery, and standalone
-  dry-run/apply/check/update planning are implemented. Registration under
-  `hermes wingstaff`, Kanban integration, and target commit/push remain
+  dry-run/apply/check/update planning, and approval-gated idempotent Kanban
+  implementation dispatch are implemented. Registration under
+  `hermes wingstaff` and target commit/push remain
   unavailable.
 - Compatibility with a newer Hermes release must be re-probed before widening
   the supported range.

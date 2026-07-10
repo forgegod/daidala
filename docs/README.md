@@ -12,7 +12,7 @@ worktrees, and evidence-backed uncommitted delivery for one bundled pack.
 | [Workflow state](02-workflow-state.md) | Implemented and persisted | `wingstaff/state.py`, `wingstaff/workflow.py`, `wingstaff/store.py` |
 | [Pack reference](03-pack-reference.md) | Schema v1 implemented and unit-tested | `wingstaff/packs.py`, `wingstaff/packs/addyosmani.yaml`, pack tests |
 | [Authoring packs](04-authoring-packs.md) | Implemented schema-v1 authoring path | Pack loader, bundled pack, pack tests |
-| [Lifecycle stages](05-lifecycle-stages.md) | Thin executable Addyosmani workflow implemented | `wingstaff/service.py`, `wingstaff/execution.py`, `tests/test_execution.py` |
+| [Lifecycle stages](05-lifecycle-stages.md) | Thin executable Addyosmani workflow with Kanban dispatch implemented | `wingstaff/service.py`, `wingstaff/kanban.py`, execution and Kanban tests |
 | [Security](06-security.md) | Current plugin, approval, artifact, and worktree boundary | Runtime modules and tests |
 | Runbook (`07-runbook.md`) | Future — Phase 8; no file yet | Operator CLI not implemented |
 | [Hermes integration](08-hermes-integration.md) | Verified against Hermes v0.18.2 | Isolated directory and wheel-entry-point probes, `tests/test_installation.py` |
@@ -20,7 +20,8 @@ worktrees, and evidence-backed uncommitted delivery for one bundled pack.
 | Wingstaff plugin tools | Twelve strict JSON tools implemented | `wingstaff/schemas.py`, `wingstaff/tools.py`, plugin and execution tests |
 | `wingstaff:orchestrate` | Bundled executable procedure | `wingstaff/skills/orchestrate/SKILL.md`, plugin and installation tests |
 | `wingstaff packs validate\|install\|check\|update-plan` | Implemented standalone pack and dependency operations | `wingstaff/cli.py`, skill-installation tests |
-| Kanban, cron, target commit/push | Unavailable | Planned in the [roadmap](plans/2026-07-10-wingstaff-bootstrap-and-roadmap.md) |
+| Approval-gated Kanban implementation dispatch | Implemented | `wingstaff/kanban.py`, fake-host tests, isolated Hermes host probe |
+| Cron and target commit/push | Unavailable | Planned in the [roadmap](plans/2026-07-10-wingstaff-bootstrap-and-roadmap.md) |
 
 “Implemented” means present in this repository. Live installation claims are
 limited to the Hermes version and discovery paths recorded in the

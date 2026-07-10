@@ -114,11 +114,17 @@ SUBMIT_ARTIFACT = {
 
 PREPARE_IMPLEMENTATION = {
     "name": "wingstaff_prepare_implementation",
-    "description": "Create a fresh detached worktree after exact plan approval.",
+    "description": "Create the approved worktree and idempotent Hermes Kanban task.",
     "parameters": {
         "type": "object",
-        "properties": {"workflow_id": {"type": "string"}},
-        "required": ["workflow_id"],
+        "properties": {
+            "workflow_id": {"type": "string"},
+            "assignee": {
+                "type": "string",
+                "description": "Existing Hermes profile assigned to implementation.",
+            },
+        },
+        "required": ["workflow_id", "assignee"],
         "additionalProperties": False,
     },
 }

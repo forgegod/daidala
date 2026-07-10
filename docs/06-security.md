@@ -70,7 +70,9 @@ skill directory. Dry-run is the default and displays every intended mutation.
 Apply uses Hermes' installer, then re-reads profile-local directories and fails
 unless names and digests match. Source, version, or content drift blocks
 workflow start. Digest mismatches produce update plans; they are never silently
-replaced during an active workflow.
+replaced during an active workflow. Kanban cards pin the pack's exact
+implementation skill names. Hermes owns loading those names for the assigned
+profile; missing context fails closed rather than being substituted.
 
 Hermes v0.18.2 cannot install a repository recursively, so Wingstaff refuses
 that request instead of expanding an unreviewed glob. Treat pinned external

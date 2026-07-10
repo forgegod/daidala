@@ -10,6 +10,7 @@ from .packs import __version__
 
 def register(ctx) -> None:
     """Register Wingstaff tools and bundled, namespaced skills with Hermes."""
+    tools.configure_context(ctx)
     handlers = {
         "wingstaff_pack_info": tools.pack_info,
         "wingstaff_start": tools.start,
