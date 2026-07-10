@@ -1,7 +1,7 @@
 # 06 — Security and trust boundaries
 
-This document covers the plugin, persisted workflow, and first executable
-worktree boundary. Kanban, cron, external-skill installation, and target
+This document covers the plugin, persisted workflow, executable worktree, and
+pinned external-skill installation boundary. Kanban, cron, and target
 commit/push remain unavailable and are not claimed as current protection.
 
 ## Current trust boundaries
@@ -11,10 +11,10 @@ flowchart LR
     OP["Operator"] -->|"explicitly enables plugin"| H["Existing Hermes process"]
     H -->|"loads Python package in-process"| W["Wingstaff plugin code"]
     W -->|"reads bundled package resource"| Y["Pack YAML"]
-    W -->|"exact-name inventory check"| I["Hermes installed skills"]
+    W -->|"exact-name + content-digest check"| I["Profile-local Hermes skills"]
     W -->|"profile-local state and artifacts"| D["SQLite + workflow workspace"]
     W -->|"detached worktree at approved baseline"| G["Local Git target"]
-    Y -."source and install strings".-> E["External skill repositories"]
+    Y -->|"pinned revision + install targets"| E["External skill repository"]
     H -->|"explicit skill load"| S["Read-only wingstaff:orchestrate resource"]
 ```
 
@@ -24,19 +24,21 @@ require a separate trust opt-in according to the
 [official plugin documentation](https://hermes-agent.nousresearch.com/docs/user-guide/features/plugins).
 Review the repository and package provenance before enabling Wingstaff.
 
-Wingstaff does not fetch pack sources, install external skills, access a model,
-open sockets, start services, commit, or push. Hermes loads skills and produces
-artifacts; normal Hermes tools perform implementation and verification work in
-the Wingstaff-owned detached worktree.
+Wingstaff's standalone CLI resolves pack source `HEAD` and can invoke explicit
+`hermes skills install … --yes` commands after an unblocked plan. It does not
+access a model, open sockets, start services, commit, or push. Hermes loads
+skills and produces artifacts; normal Hermes tools perform implementation and
+verification in the Wingstaff-owned detached worktree.
 
 ## Implemented controls
 
 - Pack lookup accepts only alphanumeric-and-hyphen slugs and resolves resources
   inside the installed `wingstaff` package.
 - YAML is parsed with `yaml.safe_load()`.
-- Pack structure, stage order, duplicate stage IDs, skill-name/install-target
-  agreement, and pre-implementation gate placement are validated before a
-  runtime pack object is returned.
+- Pack structure, stage order, source publisher/repository, full commit,
+  bounded Hermes version, per-skill complete-directory digest,
+  skill-name/install-target agreement, and gate placement are validated before
+  a runtime pack object is returned.
 - Runtime pack dataclasses are frozen.
 - `wingstaff_pack_info` catches `PackError` and returns a JSON string rather than
   raising across the plugin boundary.
@@ -49,8 +51,9 @@ the Wingstaff-owned detached worktree.
   byproducts cannot silently expand reviewed scope.
 - Registration uses documented Hermes plugin APIs rather than Hermes internals.
 
-These controls validate local structure. They do not establish upstream
-identity, integrity, or suitability.
+These controls establish configured source and local-content integrity. They do
+not provide publisher signatures or prove that upstream instructions are safe
+or suitable.
 
 ## Human approval boundary
 
@@ -61,20 +64,18 @@ recorded baseline when implementation starts.
 
 ## External skills and supply chain
 
-The Addy Osmani pack contains an upstream repository URL and fully qualified
-install-target strings. Current validation checks only that each target's final
-segment equals its declared skill name. It does not:
+The Addyosmani pack pins its GitHub repository, full commit, bounded Hermes host
+range, exact install targets, and SHA-256 digest of every complete required
+skill directory. Dry-run is the default and displays every intended mutation.
+Apply uses Hermes' installer, then re-reads profile-local directories and fails
+unless names and digests match. Source, version, or content drift blocks
+workflow start. Digest mismatches produce update plans; they are never silently
+replaced during an active workflow.
 
-- resolve or pin a commit or release;
-- verify signatures or hashes;
-- inspect the upstream skill body;
-- ask Hermes whether the target exists;
-- install or update the dependency.
-
-Treat external skill repositories as untrusted code and instructions until a
-specific revision has been reviewed and mechanically resolved. Silent updates
-must not occur during an active workflow; revision resolution is a Phase 6
-requirement.
+Hermes v0.18.2 cannot install a repository recursively, so Wingstaff refuses
+that request instead of expanding an unreviewed glob. Treat pinned external
+skills as untrusted instructions until reviewed; hashes prove equality, not
+suitability or publisher identity.
 
 ## Secrets and generated state
 
@@ -95,7 +96,7 @@ uncommitted delivery. Remaining phases must prove:
 
 - command execution follows normal Hermes approval and tool-dispatch paths;
 - secrets are not copied into artifacts or logs;
-- external skill names and revisions are mechanically resolved;
+- external publisher-signature support if a future host exposes it;
 - no Wingstaff server, nested Hermes chat process, or private Hermes database
   coupling is introduced.
 

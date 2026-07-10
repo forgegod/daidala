@@ -92,9 +92,11 @@ Hermes process to confirm that the plugin was enabled without errors, registered
 - Hermes v0.18.2 is the only verified host version.
 - Directory, entry-point, and public remote Git installation are verified.
 - Plugin registration, deterministic workflow state, local persistence,
-  exact-skill gates, fresh worktrees, artifact capture, verification evidence,
-  review, and uncommitted delivery are implemented. Kanban integration,
-  external-skill installation, and target commit/push remain unavailable.
+  exact-skill and pinned-content gates, fresh worktrees, artifact capture,
+  verification evidence, review, uncommitted delivery, and standalone
+  dry-run/apply/check/update planning are implemented. Registration under
+  `hermes wingstaff`, Kanban integration, and target commit/push remain
+  unavailable.
 - Compatibility with a newer Hermes release must be re-probed before widening
   the supported range.
 

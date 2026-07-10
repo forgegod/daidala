@@ -13,6 +13,7 @@ from wingstaff.skills import (
     HermesSkillInventory,
     MissingSkillsError,
     SkillInventoryError,
+    content_registry_from_digests,
     inventory_from_names,
     require_pack_skills,
     required_skills,
@@ -108,6 +109,9 @@ def test_missing_skill_blocks_tool_start_without_creating_state(
     service = WorkflowService(
         WorkflowStore(tmp_path / "data"),
         skill_inventory=inventory_from_names(names),
+        skill_content_registry=content_registry_from_digests(
+            {skill.name: skill.content_digest for skill in required_skills(pack)}
+        ),
         id_factory=lambda: "must-not-be-created",
     )
     monkeypatch.setattr(tools, "_service_factory", lambda: service)
@@ -142,6 +146,9 @@ def test_validation_rechecks_inventory_after_draft_creation(tmp_path: Path) -> N
     service = WorkflowService(
         WorkflowStore(tmp_path / "data"),
         skill_inventory=inventory,
+        skill_content_registry=content_registry_from_digests(
+            {skill.name: skill.content_digest for skill in required_skills(pack)}
+        ),
         id_factory=lambda: "workflow-1",
     )
     target = tmp_path / "target"

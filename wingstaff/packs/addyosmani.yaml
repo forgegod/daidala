@@ -1,6 +1,8 @@
 schema_version: 1
 name: addyosmani
 source: https://github.com/addyosmani/agent-skills
+source_revision: 7ce442de03ddc1b72480c3b48d55c62880ea2a90
+hermes_version_constraint: ">=0.18.2,<0.19.0"
 lifecycle:
   human_gate_after: plan
   stages:
@@ -8,53 +10,74 @@ lifecycle:
       skills:
         - name: interview-me
           install: addyosmani/agent-skills/skills/interview-me
+          content_digest: f271a5931d374e3ab970c79e0461a30b741123271519e599b5b9a29b8db2ffaf
         - name: idea-refine
           install: addyosmani/agent-skills/skills/idea-refine
+          content_digest: c999f1db0b62f00962cd1028b66554614f27a33134ee84506df466b17dd27372
         - name: spec-driven-development
           install: addyosmani/agent-skills/skills/spec-driven-development
+          content_digest: 7d440cf6f43157587e98f66120baf698d4e0b7e6c8d97fcf13eb30db2799a0b8
     - id: plan
       skills:
         - name: planning-and-task-breakdown
           install: addyosmani/agent-skills/skills/planning-and-task-breakdown
+          content_digest: 35d6ad92f1b734eb4080d61cc879f8629158c964c8684c615d31058def648f51
     - id: implement
       skills:
         - name: incremental-implementation
           install: addyosmani/agent-skills/skills/incremental-implementation
+          content_digest: a7250b11ae5155c397e5c9919baea166386856c89339c0b79021482aee546775
         - name: test-driven-development
           install: addyosmani/agent-skills/skills/test-driven-development
+          content_digest: 6c8e03bc2f631799c1c3c29f9f525193596781213f7fd24ece5a8ddf6a8d773e
         - name: source-driven-development
           install: addyosmani/agent-skills/skills/source-driven-development
+          content_digest: 4b9caeb329c2fcad7f5fbfff1b16d094d378e6c34d631d6fe488835c111375ac
         - name: doubt-driven-development
           install: addyosmani/agent-skills/skills/doubt-driven-development
+          content_digest: 09368d9d07fa0b8e16bbcc8994fb953e1b1df8f8a5cab719b968d8e566bc0265
     - id: verify
       skills:
         - name: test-driven-development
           install: addyosmani/agent-skills/skills/test-driven-development
+          content_digest: 6c8e03bc2f631799c1c3c29f9f525193596781213f7fd24ece5a8ddf6a8d773e
         - name: debugging-and-error-recovery
           install: addyosmani/agent-skills/skills/debugging-and-error-recovery
+          content_digest: 6629c6617563b5a3e0f44e9c29af7b428e40e21edc3fae1ad13dc6a3574c20c4
         - name: browser-testing-with-devtools
           install: addyosmani/agent-skills/skills/browser-testing-with-devtools
+          content_digest: 73640726c8afa212289ca2fb1dfaa2f73eec968d717b1f78448a4fd74d717272
     - id: review
       skills:
         - name: code-review-and-quality
           install: addyosmani/agent-skills/skills/code-review-and-quality
+          content_digest: 3f95ead8f0280222927dd32f2b5369fc4fb85e781f7e7c156102b5730369a20d
         - name: code-simplification
           install: addyosmani/agent-skills/skills/code-simplification
+          content_digest: a6d4aba8358a46634487e1c4b612cd021a41f3227fbe0b131270e2ebaaea8440
         - name: security-and-hardening
           install: addyosmani/agent-skills/skills/security-and-hardening
+          content_digest: 05bc67d417db252f0a1fa6b3edeb892036dad685c8aa39e4c08c8e5be5b719d0
         - name: performance-optimization
           install: addyosmani/agent-skills/skills/performance-optimization
+          content_digest: 68a3955228f705bcb96344c7d65d4f4e3717720fce64f0c45181393fcd0b4154
     - id: deliver
       skills:
         - name: git-workflow-and-versioning
           install: addyosmani/agent-skills/skills/git-workflow-and-versioning
+          content_digest: 584a72ac5669e474e5b1552a0ec704b95a03c4056965f80d8cf74aa22668af63
         - name: ci-cd-and-automation
           install: addyosmani/agent-skills/skills/ci-cd-and-automation
+          content_digest: 706d42c02e056cfd0509172fa294ecbdec8509aac9dc25862310800892709d9d
         - name: documentation-and-adrs
           install: addyosmani/agent-skills/skills/documentation-and-adrs
+          content_digest: c0075d076299d574ce31d925493130c61c5fe50a45e0facbdd912c8e2e52bf6b
         - name: observability-and-instrumentation
           install: addyosmani/agent-skills/skills/observability-and-instrumentation
+          content_digest: ee68531648f0c6d60f8a51c948ed8515bda084a52502f871f22ca1bd31e4b301
         - name: shipping-and-launch
           install: addyosmani/agent-skills/skills/shipping-and-launch
+          content_digest: a3323267f360a83dbb1bc873adbb12b4a7e7ffceb9666618c16ebd7a993a4781
         - name: deprecation-and-migration
           install: addyosmani/agent-skills/skills/deprecation-and-migration
+          content_digest: e965a8acab9e6004749f0e70374cc9a5f7c1b3953d9e78e6e8aef8bdd3743f73

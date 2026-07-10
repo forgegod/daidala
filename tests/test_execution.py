@@ -11,7 +11,11 @@ import pytest
 from wingstaff.execution import ExecutionError
 from wingstaff.packs import load_pack
 from wingstaff.service import ServiceError, WorkflowService
-from wingstaff.skills import inventory_from_names, required_skills
+from wingstaff.skills import (
+    content_registry_from_digests,
+    inventory_from_names,
+    required_skills,
+)
 from wingstaff.state import WorkflowStage, WorkflowStatus
 from wingstaff.store import WorkflowStore
 
@@ -66,6 +70,9 @@ def service(tmp_path: Path) -> WorkflowService:
         WorkflowStore(tmp_path / "data"),
         clock=TickClock(),
         skill_inventory=inventory,
+        skill_content_registry=content_registry_from_digests(
+            {skill.name: skill.content_digest for skill in required_skills(pack)}
+        ),
     )
 
 

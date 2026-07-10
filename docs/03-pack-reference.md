@@ -1,24 +1,24 @@
 # 03 — Workflow-pack reference
 
-This document describes only schema version 1 as implemented by
-`wingstaff/packs.py`. Planned fields such as source revisions, artifacts,
-transitions, verification commands, and gate policy objects are not accepted or
-preserved by the current runtime model.
+This document describes schema version 1 as implemented by
+`wingstaff/packs.py`. The schema is pack-neutral and includes pinned external
+source and skill-content integrity fields.
 
 ## Location and loading
 
 Bundled packs live at `wingstaff/packs/<name>.yaml` and are loaded with
-`importlib.resources`, so package and source-tree access use the same code path.
-`load_pack(name)` accepts a non-empty conservative slug containing only
-alphanumeric characters and hyphens, appends `.yaml`, and rejects an unknown
-resource.
+`importlib.resources`, so package and source-tree access use the same path.
+`load_pack(name)` accepts a conservative alphanumeric-and-hyphen slug and
+rejects unknown resources.
 
 ## Schema version 1
 
 ```yaml
 schema_version: 1
 name: example
-source: https://github.com/publisher/skills
+source: https://github.com/publisher/repository
+source_revision: 0123456789abcdef0123456789abcdef01234567
+hermes_version_constraint: ">=0.18.2,<0.19.0"
 lifecycle:
   human_gate_after: plan
   stages:
@@ -26,26 +26,32 @@ lifecycle:
       skills:
         - name: requirements-skill
           install: publisher/repository/skills/requirements-skill
+          content_digest: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
     - id: plan
       skills:
         - name: planning-skill
           install: publisher/repository/skills/planning-skill
+          content_digest: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
     - id: implement
       skills:
         - name: implementation-skill
           install: publisher/repository/skills/implementation-skill
+          content_digest: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
     - id: verify
       skills:
         - name: verification-skill
           install: publisher/repository/skills/verification-skill
+          content_digest: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
     - id: review
       skills:
         - name: review-skill
           install: publisher/repository/skills/review-skill
+          content_digest: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
     - id: deliver
       skills:
         - name: delivery-skill
           install: publisher/repository/skills/delivery-skill
+          content_digest: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 ```
 
 ## Field contract
@@ -54,61 +60,64 @@ lifecycle:
 |---|---|---|
 | `schema_version` | integer | Must equal `1`. |
 | `name` | string | Required and non-empty after trimming. |
-| `source` | string | Required and non-empty after trimming. Schema v1 does not validate it as a URL or pin a revision. |
-| `lifecycle` | mapping | Required. |
-| `lifecycle.human_gate_after` | string | Required, must name a declared stage, and must occur before `implement`. |
-| `lifecycle.stages` | non-empty list | Must contain exactly the required lifecycle in order. |
+| `source` | string | HTTPS `github.com/<publisher>/<repository>` URL with no query or fragment. |
+| `source_revision` | string | Required 40-character lowercase hexadecimal Git commit. |
+| `hermes_version_constraint` | string or omitted | When present, exact `>=A.B.C,<X.Y.Z` form. |
+| `lifecycle.human_gate_after` | string | Declared stage occurring before `implement`. |
+| `lifecycle.stages` | non-empty list | Exactly the required lifecycle in order. |
 | `lifecycle.stages[].id` | string | Required, non-empty, and unique. |
-| `lifecycle.stages[].skills` | non-empty list | At least one skill reference per stage. |
-| `lifecycle.stages[].skills[].name` | string | Required and non-empty. |
-| `lifecycle.stages[].skills[].install` | string | Required and non-empty; the final slash-separated segment must equal `name`. |
+| `lifecycle.stages[].skills` | non-empty list | At least one skill per stage. |
+| `lifecycle.stages[].skills[].name` | string | Required lowercase slug and exact installed name. |
+| `lifecycle.stages[].skills[].install` | string | Must begin with the source publisher/repository and end with `name`. |
+| `lifecycle.stages[].skills[].content_digest` | string | SHA-256 of the complete canonical skill directory. |
 
-The exact required stage order is:
+The required lifecycle is:
 
 ```text
 define -> plan -> implement -> verify -> review -> deliver
 ```
 
-Discovery is part of the product lifecycle but not a schema-v1 skill-bearing
-stage. The human gate is metadata between stages, not a stage record.
+The human gate is metadata between `plan` and `implement`, not a separate
+stage.
 
 ## Runtime model
 
 Successful validation produces frozen dataclasses:
 
-- `SkillRef(name, install)`;
+- `SkillRef(name, install, content_digest)`;
 - `Stage(id, skills)`;
-- `WorkflowPack(name, source, stages, human_gate_after)`.
+- `WorkflowPack(name, source, source_revision, hermes_version_constraint,
+  stages, human_gate_after)`.
 
-`WorkflowPack.lifecycle` derives the ordered tuple of stage IDs. Schema v1
-ignores unknown YAML keys because the validator reads only known fields; they
-must not be treated as supported extensions.
+`WorkflowPack.lifecycle` derives the ordered stage tuple. Unknown keys are not
+preserved and must not be treated as supported extensions.
 
-## Failure behavior
+## Installation and readiness
 
-Validation raises `PackError` for malformed structure or invariant violations.
-The plugin handler catches `PackError` and returns a JSON error object. The
-standalone diagnostics command prints a JSON error and exits non-zero. Neither
-path invents a replacement pack.
+`wingstaff packs validate <pack>` proves pack shape only.
 
-Schema v1 does not:
+`wingstaff packs install <pack>` defaults to a mutation-free plan that resolves
+source `HEAD`, checks the bounded Hermes version, scans profile-local installed
+names, verifies complete-directory digests, and prints every intended
+`hermes skills install … --yes` mutation. `--apply` executes only an unblocked
+plan and post-verifies disk state. Revision or digest mismatch blocks workflow
+start and requires `update-plan`; active workflows are never silently updated.
 
-- fetch or install external skills;
-- prove that a named external skill exists;
-- pin or resolve an upstream revision;
-- execute a lifecycle stage;
-- persist artifacts or approval;
-- validate arbitrary extra keys.
+Hermes v0.18.2 has no recursive installation flag. `--recursive` is therefore a
+refused capability, not a local glob expansion.
 
 ## Implemented pack
 
-`addyosmani` maps the six stages to install-target strings under
-[addyosmani/agent-skills](https://github.com/addyosmani/agent-skills). It places
-the human gate after `plan`. The mapping is data, not a special Python branch.
+`addyosmani` maps the six stages to
+[addyosmani/agent-skills](https://github.com/addyosmani/agent-skills), pinned at
+the commit and per-skill digests declared in
+`wingstaff/packs/addyosmani.yaml`. The mapping remains data, not a Python
+special case.
 
 ## Source of truth and tests
 
 - Runtime validator: `wingstaff/packs.py`
+- Installation and revision mechanism: `wingstaff/skills.py`, `wingstaff/cli.py`
 - Bundled adapter: `wingstaff/packs/addyosmani.yaml`
-- Positive and invariant tests: `tests/test_packs.py`
-- Tool-boundary tests: `tests/test_plugin.py`
+- Validation tests: `tests/test_packs.py`
+- Installation tests: `tests/test_skill_installation.py`

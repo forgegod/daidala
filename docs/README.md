@@ -19,8 +19,8 @@ worktrees, and evidence-backed uncommitted delivery for one bundled pack.
 | [Pack adapters](09-pack-adapters.md) | Addyosmani implemented; AI-DLC future | Pack YAML, pack/skill/execution tests |
 | Wingstaff plugin tools | Twelve strict JSON tools implemented | `wingstaff/schemas.py`, `wingstaff/tools.py`, plugin and execution tests |
 | `wingstaff:orchestrate` | Bundled executable procedure | `wingstaff/skills/orchestrate/SKILL.md`, plugin and installation tests |
-| `wingstaff packs validate addyosmani` | Implemented diagnostics command | `wingstaff/cli.py` |
-| Kanban, cron, skill installation, target commit/push | Unavailable | Planned in the [roadmap](plans/2026-07-10-wingstaff-bootstrap-and-roadmap.md) |
+| `wingstaff packs validate\|install\|check\|update-plan` | Implemented standalone pack and dependency operations | `wingstaff/cli.py`, skill-installation tests |
+| Kanban, cron, target commit/push | Unavailable | Planned in the [roadmap](plans/2026-07-10-wingstaff-bootstrap-and-roadmap.md) |
 
 “Implemented” means present in this repository. Live installation claims are
 limited to the Hermes version and discovery paths recorded in the

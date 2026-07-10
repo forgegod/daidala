@@ -6,9 +6,9 @@ in bundled pack YAML.
 
 ## Implemented adapters
 
-| Pack | Upstream source | Schema | Human gate |
+| Pack | Upstream source | Pinned revision | Human gate |
 |---|---|---|---|
-| `addyosmani` | `https://github.com/addyosmani/agent-skills` | 1 | After `plan` |
+| `addyosmani` | `https://github.com/addyosmani/agent-skills` | `7ce442de03ddc1b72480c3b48d55c62880ea2a90` | After `plan` |
 
 ## Addyosmani mapping
 
@@ -28,7 +28,8 @@ first lifecycle position.
 Every install target is fully qualified as
 `addyosmani/agent-skills/skills/<exact-name>`. A similar name does not satisfy
 the requirement. Missing requirements block workflow creation and list their
-install targets, but Wingstaff does not install or update them in Phase 5.
+install targets. Phase 6 dry-runs missing-skill installation by default and
+requires exact complete-directory digests before workflow start.
 
 ## Adapter and engine boundary
 
@@ -46,9 +47,11 @@ pack-neutral validation.
 
 ## Current limitations
 
-- The upstream source is recorded but not revision-pinned.
-- Skill bodies, signatures, and hashes are not inspected.
-- Availability is read-only; installation and update planning belong to Phase 6.
+- Publisher signatures are not available; integrity is commit and content-hash based.
+- Hermes v0.18.2 cannot recursively install a repository, so Wingstaff refuses
+  `--recursive` and installs only the required subset.
+- Updates are plans only when installed content differs; Wingstaff never
+  silently replaces a skill during an active workflow.
 - The AI-DLC adapter belongs to Phase 9 and is not implemented.
 
 ## Source of truth
@@ -58,4 +61,5 @@ pack-neutral validation.
 - Exact skill gate: `wingstaff/skills.py`
 - Pack-neutral execution: `wingstaff/service.py`, `wingstaff/execution.py`
 - Verification: `tests/test_packs.py`, `tests/test_skills.py`,
+  `tests/test_skill_installation.py`,
   `tests/test_execution.py`

@@ -1,11 +1,14 @@
-"""Read-only exact skill inventory checks for workflow packs."""
+"""Exact skill inventory, revision checks, and install planning."""
 
 from __future__ import annotations
 
+import hashlib
 import importlib
 import json
+import re
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Protocol
 
 from .errors import WorkflowError
@@ -22,15 +25,26 @@ class MissingSkillsError(SkillInventoryError):
     def __init__(self, missing: tuple[SkillRef, ...]) -> None:
         self.missing = missing
         details = "; ".join(
-            f"{skill.name} (install: {skill.install})" for skill in missing
+            f"{skill.name} (install: hermes skills install {skill.install} --yes)"
+            for skill in missing
         )
         super().__init__(f"missing required skills: {details}")
+
+
+class SkillRevisionError(SkillInventoryError):
+    """Raised when installed skill content does not match the pinned pack."""
 
 
 class SkillInventory(Protocol):
     """Host boundary for exact installed skill names."""
 
     def installed_names(self) -> frozenset[str]: ...
+
+
+class SkillContentRegistry(Protocol):
+    """Resolve deterministic content digests for installed external skills."""
+
+    def content_digest(self, name: str) -> str | None: ...
 
 
 @dataclass(frozen=True)
@@ -65,20 +79,86 @@ class HermesSkillInventory:
         return frozenset(names)
 
 
+@dataclass(frozen=True)
+class ProfileSkillContentRegistry:
+    """Hash exact skill directories under one Hermes profile."""
+
+    skills_root: Path
+
+    def installed_names(self) -> frozenset[str]:
+        return frozenset(path.parent.name for path in self.skills_root.rglob("SKILL.md"))
+
+    def content_digest(self, name: str) -> str | None:
+        candidates = tuple(self.skills_root.rglob(f"{name}/SKILL.md"))
+        if not candidates:
+            return None
+        if len(candidates) != 1:
+            raise SkillRevisionError(f"multiple installed directories provide {name!r}")
+        return hash_skill_directory(candidates[0].parent)
+
+
+@dataclass(frozen=True)
+class InstallAction:
+    name: str
+    install_target: str
+
+    @property
+    def command(self) -> tuple[str, ...]:
+        return ("hermes", "skills", "install", self.install_target, "--yes")
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "name": self.name,
+            "install_target": self.install_target,
+            "command": list(self.command),
+        }
+
+
+@dataclass(frozen=True)
+class PackInstallPlan:
+    pack: str
+    source: str
+    pinned_revision: str
+    resolved_revision: str
+    hermes_version: str
+    hermes_version_constraint: str | None
+    actions: tuple[InstallAction, ...]
+    revision_mismatches: tuple[str, ...]
+    blockers: tuple[str, ...]
+
+    @property
+    def ready_to_apply(self) -> bool:
+        return not self.blockers and not self.revision_mismatches
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "pack": self.pack,
+            "source": self.source,
+            "pinned_revision": self.pinned_revision,
+            "resolved_revision": self.resolved_revision,
+            "hermes_version": self.hermes_version,
+            "hermes_version_constraint": self.hermes_version_constraint,
+            "actions": [action.to_dict() for action in self.actions],
+            "revision_mismatches": list(self.revision_mismatches),
+            "blockers": list(self.blockers),
+            "ready_to_apply": self.ready_to_apply,
+        }
+
+
 def required_skills(pack: WorkflowPack) -> tuple[SkillRef, ...]:
     """Return exact requirements once, preserving first lifecycle order."""
     ordered: list[SkillRef] = []
-    targets_by_name: dict[str, str] = {}
+    targets_by_name: dict[str, tuple[str, str]] = {}
     for stage in pack.stages:
         for skill in stage.skills:
             previous = targets_by_name.get(skill.name)
+            current = (skill.install, skill.content_digest)
             if previous is None:
-                targets_by_name[skill.name] = skill.install
+                targets_by_name[skill.name] = current
                 ordered.append(skill)
-            elif previous != skill.install:
+            elif previous != current:
                 raise SkillInventoryError(
-                    f"skill {skill.name!r} has conflicting install targets: "
-                    f"{previous!r} and {skill.install!r}"
+                    f"skill {skill.name!r} has conflicting install targets or digests"
                 )
     return tuple(ordered)
 
@@ -96,6 +176,110 @@ def require_pack_skills(
     return requirements
 
 
+def require_pack_skill_revisions(
+    pack: WorkflowPack,
+    registry: SkillContentRegistry,
+) -> tuple[SkillRef, ...]:
+    """Require installed content to match every pinned directory digest."""
+    mismatches: list[str] = []
+    requirements = required_skills(pack)
+    for skill in requirements:
+        observed = registry.content_digest(skill.name)
+        if observed != skill.content_digest:
+            mismatches.append(
+                f"{skill.name} (expected {skill.content_digest}, "
+                f"observed {observed or 'missing'})"
+            )
+    if mismatches:
+        raise SkillRevisionError(
+            "skill revision mismatch: "
+            + "; ".join(mismatches)
+            + f". Plan a controlled update: wingstaff packs update-plan {pack.name}"
+        )
+    return requirements
+
+
+def plan_pack_install(
+    pack: WorkflowPack,
+    inventory: SkillInventory,
+    registry: SkillContentRegistry,
+    *,
+    resolved_revision: str,
+    hermes_version: str,
+    recursive: bool = False,
+) -> PackInstallPlan:
+    """Build a mutation-free installation plan for the pinned pack subset."""
+    installed = inventory.installed_names()
+    actions: list[InstallAction] = []
+    mismatches: list[str] = []
+    blockers: list[str] = []
+    for skill in required_skills(pack):
+        if skill.name not in installed:
+            actions.append(InstallAction(skill.name, skill.install))
+            continue
+        if registry.content_digest(skill.name) != skill.content_digest:
+            mismatches.append(skill.name)
+
+    if resolved_revision != pack.source_revision:
+        blockers.append(
+            f"source revision mismatch: expected {pack.source_revision}, "
+            f"resolved {resolved_revision}"
+        )
+    if pack.hermes_version_constraint and not version_satisfies(
+        hermes_version, pack.hermes_version_constraint
+    ):
+        blockers.append(
+            f"Hermes {hermes_version} does not satisfy "
+            f"{pack.hermes_version_constraint}"
+        )
+    if recursive:
+        blockers.append(
+            "Hermes 0.18.2 has no recursive skill-install capability; "
+            "install the required subset"
+        )
+    if mismatches:
+        blockers.append("installed skill revisions require a controlled update plan")
+    return PackInstallPlan(
+        pack=pack.name,
+        source=pack.source,
+        pinned_revision=pack.source_revision,
+        resolved_revision=resolved_revision,
+        hermes_version=hermes_version,
+        hermes_version_constraint=pack.hermes_version_constraint,
+        actions=tuple(actions),
+        revision_mismatches=tuple(mismatches),
+        blockers=tuple(blockers),
+    )
+
+
+def hash_skill_directory(directory: Path) -> str:
+    """Hash relative paths and bytes for one complete skill directory."""
+    digest = hashlib.sha256()
+    for path in sorted(directory.rglob("*")):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(directory).as_posix()
+        digest.update(relative.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def version_satisfies(version: str, constraint: str) -> bool:
+    """Evaluate the pack's conservative >=lower,<upper host constraint."""
+    match = re.fullmatch(
+        r">=(\d+)\.(\d+)\.(\d+),<(\d+)\.(\d+)\.(\d+)", constraint
+    )
+    version_match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", version)
+    if match is None or version_match is None:
+        return False
+    current = tuple(int(part) for part in version_match.groups())
+    lower = tuple(int(part) for part in match.groups()[:3])
+    upper = tuple(int(part) for part in match.groups()[3:])
+    return lower <= current < upper
+
+
 def inventory_from_names(names: Iterable[str]) -> SkillInventory:
     """Build an immutable inventory for tests and host adapters."""
     installed = frozenset(names)
@@ -106,6 +290,20 @@ def inventory_from_names(names: Iterable[str]) -> SkillInventory:
             return installed
 
     return _Inventory()
+
+
+def content_registry_from_digests(
+    digests: dict[str, str],
+) -> SkillContentRegistry:
+    """Build an immutable content registry for deterministic tests."""
+    installed = dict(digests)
+
+    @dataclass(frozen=True)
+    class _Registry:
+        def content_digest(self, name: str) -> str | None:
+            return installed.get(name)
+
+    return _Registry()
 
 
 def _host_skills_list() -> str:

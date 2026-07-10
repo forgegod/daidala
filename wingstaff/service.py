@@ -10,8 +10,15 @@ from uuid import uuid4
 
 from .errors import WorkflowError
 from .execution import ExecutionError, ExecutionWorkspace
-from .packs import __version__, load_pack
-from .skills import HermesSkillInventory, SkillInventory, require_pack_skills
+from .packs import load_pack
+from .skills import (
+    HermesSkillInventory,
+    ProfileSkillContentRegistry,
+    SkillContentRegistry,
+    SkillInventory,
+    require_pack_skill_revisions,
+    require_pack_skills,
+)
 from .state import WorkflowStage, WorkflowState, WorkflowStatus
 from .store import WorkflowStore
 from .workflow import (
@@ -40,11 +47,15 @@ class WorkflowService:
         clock: Callable[[], datetime] | None = None,
         id_factory: Callable[[], str] | None = None,
         skill_inventory: SkillInventory | None = None,
+        skill_content_registry: SkillContentRegistry | None = None,
     ) -> None:
         self.store = store
         self._clock = clock or (lambda: datetime.now(UTC))
         self._id_factory = id_factory or (lambda: str(uuid4()))
         self._skill_inventory = skill_inventory or HermesSkillInventory()
+        self._skill_content_registry = skill_content_registry or ProfileSkillContentRegistry(
+            store.data_root.parent / "skills"
+        )
         self._workspace = ExecutionWorkspace(store.data_root)
 
     def start(
@@ -58,6 +69,7 @@ class WorkflowService:
         """Create a draft after validating only local deterministic inputs."""
         pack = load_pack(pack_name)
         require_pack_skills(pack, self._skill_inventory)
+        require_pack_skill_revisions(pack, self._skill_content_registry)
         selected_id = workflow_id or self._id_factory()
         self._workspace.validate_workflow_id(selected_id)
         target = _canonical_local_path(target_repository)
@@ -66,7 +78,7 @@ class WorkflowService:
             target_repository=str(target),
             requested_goal=goal,
             pack_name=pack.name,
-            pack_source_revision=f"wingstaff@{__version__}",
+            pack_source_revision=f"{pack.source}@{pack.source_revision}",
             created_at=self._clock(),
         )
         return self.store.create(state)
@@ -81,6 +93,7 @@ class WorkflowService:
         state = observed.state
         pack = load_pack(state.pack_name)
         require_pack_skills(pack, self._skill_inventory)
+        require_pack_skill_revisions(pack, self._skill_content_registry)
         baseline, is_clean = _inspect_repository(Path(state.target_repository))
         updated = validate_target(
             state,

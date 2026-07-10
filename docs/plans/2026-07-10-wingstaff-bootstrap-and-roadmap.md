@@ -89,7 +89,7 @@ committed before work starts on the next phase.
 | 4 — read-only and gate tools | Done | Preserve strict JSON boundaries and monotonic transition timestamps. |
 | 4A — exact external-skill prerequisite check | Done | Preserve exact-name matching and read-only host inventory access. |
 | 5 — thin Addyosmani workflow | Done | Preserve worktree isolation, immutable diff scope, and evidence-backed delivery. Gate: 19 Markdown files, 65 tests, Ruff, pack validation, build, Twine, diff check, and isolated 12-tool load passed. |
-| 6 — external skill installation and revision management | Todo | Next phase; expand the Phase 4A check without weakening it. |
+| 6 — external skill installation and revision management | Done | Preserve publisher-pinned targets, bounded Hermes compatibility, complete-directory digests, dry-run-by-default mutation plans, post-apply verification, and refused recursive installation. Gate: 19 Markdown files, 75 tests, Ruff, pack validation, build, Twine, diff check, 20-action standalone dry-run, recursive refusal, and on-disk digest-mismatch blocking passed. |
 | 7 — Hermes Kanban mapping | Todo | Requires durable workflow state. |
 | 8 — `hermes wingstaff` operator CLI | Todo | Requires stable service operations. |
 | 9 — AI-DLC adapter | Todo | Requires a passing Addyosmani fixture workflow. |
@@ -598,14 +598,19 @@ source revision pinning, version constraints, and controlled update planning.
 
 - extend `wingstaff/skills.py`;
 - extend pack schema with source revision and optional version constraints;
-- add `hermes wingstaff packs install`, `check`, and `update-plan` CLI operations;
+- add standalone `wingstaff packs install`, `check`, and `update-plan`
+  operations over a reusable service boundary; Phase 8 registers the same
+  operations under `hermes wingstaff`;
 - add tests with a fake Hermes command/registry boundary.
 
 ### Rules
 
 - Pin publisher and repository in every install target.
 - Record the resolved revision used by each workflow.
-- Use Hermes' recursive skill installation support only when explicitly requested; default to the pack's required subset.
+- Default to the pack's required subset. Hermes v0.18.2 exposes no recursive
+  install flag, so an explicit recursive request must fail with an actionable
+  unsupported-host result rather than inventing a command. A later supported
+  host may enable recursive installation only after capability detection.
 - Dry-run installation by default and show every external source.
 - Do not silently update a pack during an active workflow.
 

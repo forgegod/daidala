@@ -8,15 +8,20 @@ It uses Hermes' existing plugin, skills, delegation, Kanban, cron, and gateway f
 
 ## Status
 
-Pre-alpha bootstrap. The repository currently provides:
+Pre-alpha. The repository currently provides:
 
 - a native Hermes plugin registration;
 - a bundled `wingstaff:orchestrate` skill;
 - a validated workflow-pack format;
 - an Addy Osmani `agent-skills` lifecycle adapter;
-- a standalone pack-validation command.
+- durable workflow state, approval-gated detached-worktree execution,
+  verification evidence, review, and uncommitted delivery;
+- exact external-skill name and pinned-content gates;
+- standalone pack validation, dry-run installation, dependency checks, and
+  controlled update planning.
 
-Workflow execution, durable state transitions, approval tools, and the AI-DLC adapter are planned but not implemented.
+Hermes Kanban mapping, registration under `hermes wingstaff`, target
+commit/push, and the AI-DLC adapter remain planned.
 
 ## Development
 
@@ -28,6 +33,15 @@ python -m venv .venv
 .venv/bin/wingstaff packs validate addyosmani
 python -m build
 ```
+
+Preview profile-local dependency mutations without applying them:
+
+```bash
+.venv/bin/wingstaff packs install addyosmani
+```
+
+Use `packs check` only after installation; it exits nonzero for missing or
+digest-mismatched skills.
 
 ## Hermes integration
 
@@ -51,7 +65,9 @@ The stable lifecycle is pack-neutral:
 discover -> define -> plan -> HUMAN GATE -> implement -> verify -> review -> deliver
 ```
 
-Workflow packs map external skills onto that lifecycle. External skill repositories remain dependencies; their content is not vendored into Wingstaff.
+Workflow packs map external skills onto that lifecycle. External repositories
+remain dependencies; Wingstaff pins their commit and complete skill-directory
+digests rather than vendoring their content.
 
 Start with [`docs/README.md`](docs/README.md) for the source-grounded documentation set and support status. The [implementation roadmap](docs/plans/2026-07-10-wingstaff-bootstrap-and-roadmap.md) owns future phases.
 

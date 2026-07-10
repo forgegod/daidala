@@ -10,7 +10,11 @@ import pytest
 from wingstaff import schemas, tools
 from wingstaff.packs import load_pack
 from wingstaff.service import WorkflowService
-from wingstaff.skills import inventory_from_names, required_skills
+from wingstaff.skills import (
+    content_registry_from_digests,
+    inventory_from_names,
+    required_skills,
+)
 from wingstaff.state import WorkflowStage, WorkflowStatus
 from wingstaff.store import WorkflowStore
 from wingstaff.workflow import record_artifact
@@ -61,6 +65,9 @@ def service(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> WorkflowService:
         id_factory=lambda: "workflow-generated",
         skill_inventory=inventory_from_names(
             skill.name for skill in required_skills(pack)
+        ),
+        skill_content_registry=content_registry_from_digests(
+            {skill.name: skill.content_digest for skill in required_skills(pack)}
         ),
     )
     monkeypatch.setattr(tools, "_service_factory", lambda: instance)
@@ -115,7 +122,10 @@ def test_start_and_status_return_durable_json_state(
     workflow = started["workflow"]
     assert workflow["workflow_id"] == "workflow-generated"
     assert workflow["status"] == "draft"
-    assert workflow["pack_source_revision"].startswith("wingstaff@")
+    assert workflow["pack_source_revision"] == (
+        "https://github.com/addyosmani/agent-skills@"
+        "7ce442de03ddc1b72480c3b48d55c62880ea2a90"
+    )
 
     status = call(tools.status, {"workflow_id": workflow["workflow_id"]})
     assert status == started

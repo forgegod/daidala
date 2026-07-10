@@ -2,37 +2,45 @@
 
 Schema-v1 packs are bundled adapters: they map external skill names onto
 Wingstaff's fixed lifecycle without changing Python for a particular skill set.
-They do not install skills or execute workflows.
+They provide deterministic installation plans and workflow mappings without
+adding pack-specific engine branches.
 
 ## Before authoring
 
-Confirm that the new adapter can use the implemented six-stage order and one
-pre-implementation gate. If it requires different stage mechanics, artifacts,
-revisions, or transitions, schema v1 cannot represent it. Do not encode those
-requirements in magic names or pack-specific branches.
+Confirm that the adapter can use the implemented six-stage order, one
+pre-implementation gate, one pinned GitHub source revision, and complete skill
+directory digests. Do not encode different mechanics in magic names or
+pack-specific branches.
 
 ## Add a pack
 
 1. Choose a lowercase, filename-safe pack slug.
 2. Create `wingstaff/packs/<slug>.yaml` using the exact schema in the
    [pack reference](03-pack-reference.md).
-3. Set `source` to the authoritative upstream repository.
-4. Map at least one external skill into every required stage.
-5. Use fully qualified install targets. The final segment must exactly match the
-   declared skill `name`.
-6. Keep `human_gate_after: plan` unless a different declared stage still occurs
+3. Set `source` to the authoritative HTTPS GitHub publisher/repository URL and
+   pin `source_revision` to a full 40-character commit.
+4. Declare the bounded supported Hermes range when the pack relies on a
+   version-specific host capability.
+5. Map at least one external skill into every required stage.
+6. Use install targets under the same publisher/repository. The final segment
+   must exactly match `name`.
+7. Hash every complete skill directory into `content_digest`, including linked
+   scripts and references rather than only `SKILL.md`.
+8. Keep `human_gate_after: plan` unless a different declared stage still occurs
    before `implement` and accurately represents the adapter.
-7. Add tests that load the real package resource and assert its lifecycle, gate,
+9. Add tests that load the real package resource and assert its lifecycle, gate,
    and representative skill mappings.
-8. Add a wheel-content assertion when package installation tests exist; the
+10. Add a wheel-content assertion when package installation tests exist; the
    package-data rule already includes `wingstaff/packs/*.yaml`.
-9. Run the verification commands below.
+11. Run the verification commands below.
 
 ## Keep the engine pack-neutral
 
 Put these in YAML:
 
 - upstream source identity;
+- source revision and Hermes compatibility range;
+- per-skill complete-directory digests;
 - stage-to-skill mappings;
 - pack-specific skill names and install targets.
 
@@ -50,17 +58,18 @@ using it.
 
 ## Validation limits
 
-Passing schema-v1 validation proves internal shape only. It does not prove that:
+Passing schema-v1 validation proves internal shape and pin syntax only. It does
+not prove that:
 
 - the upstream repository or skill path exists;
 - the install target is accepted by the live Hermes CLI;
-- the upstream content is trusted or pinned;
+- the resolved upstream `HEAD` still equals the pinned revision;
 - all required skills are installed in a profile;
 - the mapped skills produce compatible artifacts.
 
-Do not present a successful pack validation as dependency installation or
-workflow readiness. Mechanical skill resolution and revision pinning belong to
-Phase 6.
+Do not present validation as installation or readiness. Use `packs install` for
+the dry-run mutation plan and `packs check` for installed-name, source,
+compatibility, and content verification.
 
 ## Fixture requirements
 

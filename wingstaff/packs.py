@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from importlib.resources import files
 from typing import Any
+from urllib.parse import urlparse
 
 import yaml
 
@@ -20,6 +22,7 @@ class PackError(ValueError):
 class SkillRef:
     name: str
     install: str
+    content_digest: str
 
 
 @dataclass(frozen=True)
@@ -32,6 +35,8 @@ class Stage:
 class WorkflowPack:
     name: str
     source: str
+    source_revision: str
+    hermes_version_constraint: str | None
     stages: tuple[Stage, ...]
     human_gate_after: str
 
@@ -62,6 +67,16 @@ def validate_pack(raw: Any) -> WorkflowPack:
 
     name = _required_text(raw, "name")
     source = _required_text(raw, "source")
+    source_owner_repo = _github_owner_repo(source)
+    source_revision = _required_sha256(raw, "source_revision", length=40)
+    hermes_version_constraint = raw.get("hermes_version_constraint")
+    if hermes_version_constraint is not None:
+        if not isinstance(hermes_version_constraint, str) or not re.fullmatch(
+            r">=\d+\.\d+\.\d+,<\d+\.\d+\.\d+", hermes_version_constraint
+        ):
+            raise PackError(
+                "hermes_version_constraint must use >=X.Y.Z,<X.Y.Z format"
+            )
     lifecycle = raw.get("lifecycle")
     if not isinstance(lifecycle, dict):
         raise PackError("lifecycle must be a mapping")
@@ -84,7 +99,9 @@ def validate_pack(raw: Any) -> WorkflowPack:
         skill_rows = row.get("skills")
         if not isinstance(skill_rows, list) or not skill_rows:
             raise PackError(f"stage {stage_id!r} must declare at least one skill")
-        skills = tuple(_validate_skill(stage_id, skill) for skill in skill_rows)
+        skills = tuple(
+            _validate_skill(stage_id, skill, source_owner_repo) for skill in skill_rows
+        )
         stages.append(Stage(id=stage_id, skills=skills))
 
     lifecycle_ids = tuple(stage.id for stage in stages)
@@ -100,21 +117,56 @@ def validate_pack(raw: Any) -> WorkflowPack:
     return WorkflowPack(
         name=name,
         source=source,
+        source_revision=source_revision,
+        hermes_version_constraint=hermes_version_constraint,
         stages=tuple(stages),
         human_gate_after=human_gate_after,
     )
 
 
-def _validate_skill(stage_id: str, raw: Any) -> SkillRef:
+def _validate_skill(stage_id: str, raw: Any, source_owner_repo: str) -> SkillRef:
     if not isinstance(raw, dict):
         raise PackError(f"stage {stage_id!r} contains a non-mapping skill")
     name = _required_text(raw, "name")
+    if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", name):
+        raise PackError(
+            f"stage {stage_id!r} skill name must be a lowercase slug: {name!r}"
+        )
     install = _required_text(raw, "install")
+    content_digest = _required_sha256(raw, "content_digest")
+    if not install.startswith(f"{source_owner_repo}/"):
+        raise PackError(
+            f"stage {stage_id!r} skill {name!r} install target must start with "
+            f"{source_owner_repo!r}"
+        )
     if install.rsplit("/", 1)[-1] != name:
         raise PackError(
             f"stage {stage_id!r} skill {name!r} does not match install target {install!r}"
         )
-    return SkillRef(name=name, install=install)
+    return SkillRef(name=name, install=install, content_digest=content_digest)
+
+
+def _github_owner_repo(source: str) -> str:
+    parsed = urlparse(source)
+    parts = [part for part in parsed.path.removesuffix(".git").split("/") if part]
+    if (
+        parsed.scheme != "https"
+        or parsed.netloc.lower() != "github.com"
+        or len(parts) != 2
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise PackError("source must be an HTTPS GitHub owner/repository URL")
+    return "/".join(parts)
+
+
+def _required_sha256(
+    mapping: dict[str, Any], key: str, *, length: int = 64
+) -> str:
+    value = _required_text(mapping, key)
+    if not re.fullmatch(rf"[0-9a-f]{{{length}}}", value):
+        raise PackError(f"{key} must be a {length}-character lowercase hex digest")
+    return value
 
 
 def _required_text(mapping: dict[str, Any], key: str) -> str:
