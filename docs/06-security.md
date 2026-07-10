@@ -97,13 +97,44 @@ databases, model transcripts, generated workspaces, or credentials. Runtime
 paths use a Hermes-resolved, profile-aware data root and never hard-code
 `~/.hermes`.
 
+The dependency-free release-content check rejects tracked or packaged database,
+environment, cache, Hermes-home, and worktree paths plus high-confidence private
+key and provider-token signatures. CI runs it against both the Git checkout and
+the built wheel. This is a release guard, not a substitute for GitHub secret
+scanning or review of model-produced workflow artifacts.
+
+## Worktree rollback and cleanup
+
+Wingstaff removes its detached implementation worktree after successful
+delivery and when an operator cancels an active workflow. Removal validates
+that the path is an immediate child of Wingstaff's profile-local worktree root;
+it refuses arbitrary paths. Delivery artifacts and the immutable captured diff
+remain durable, while the target checkout and its baseline commit are untouched.
+
+## Cost and token telemetry
+
+Wingstaff makes no model API call and therefore neither meters tokens nor owns a
+cost budget. Hermes profiles, gateway policy, and model providers own those
+controls. Reading private Hermes session databases or wrapping `hermes chat` to
+manufacture plugin-local telemetry would violate the process and trust boundary.
+
+## Dependency and package audit
+
+The runtime dependency set is deliberately limited to PyYAML; Hermes remains
+the separately installed host. Release CI builds both distributions, runs
+Twine metadata checks, inspects wheel contents, installs the wheel into an
+isolated environment, validates both packs, and runs `pip-audit` over that
+resolved runtime environment. Dependency findings block release rather than
+being converted into warnings or undocumented exceptions.
+
 ## Remaining execution requirements
 
-Current execution proves approval, isolation, blocking verification, and
-uncommitted delivery. Remaining phases must prove:
+Current execution proves approval, isolation, blocking verification,
+uncommitted delivery, rollback cleanup, and release-content checks. Controls
+that remain host-owned or unavailable are:
 
 - command execution follows normal Hermes approval and tool-dispatch paths;
-- secrets are not copied into artifacts or logs;
+- model/tool secrets are not copied into artifacts or logs by host-owned calls;
 - external publisher-signature support if a future host exposes it;
 - no Wingstaff server, nested Hermes chat process, or private Hermes database
   coupling is introduced.

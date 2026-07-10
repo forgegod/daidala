@@ -27,7 +27,7 @@ All verified discovery paths register exactly:
 - tools `wingstaff_submit_artifact`, `wingstaff_prepare_implementation`,
   `wingstaff_capture_implementation`, `wingstaff_record_verification`, and
   `wingstaff_deliver`;
-- skill `wingstaff:orchestrate`;
+- skills `wingstaff:orchestrate` and `wingstaff:aidlc-adapter`;
 - operator command family `hermes wingstaff`.
 
 The root directory entry point must import the bundled package relatively.
@@ -79,8 +79,8 @@ python -m twine check dist/*
 pytest tests/test_installation.py
 ```
 
-`tests/test_installation.py` builds a wheel and checks that it contains the
-Addyosmani pack, the orchestration skill, and the module-valued Hermes entry
+`tests/test_installation.py` builds a wheel and checks that it contains both
+packs, both bundled skills, AI-DLC attribution, and the module-valued Hermes entry
 point. Phase 1 additionally installed that wheel into an isolated target
 directory, exposed it to a fresh Hermes process through `PYTHONPATH`, enabled
 it through `hermes plugins enable`, and loaded the tool and skill successfully.
@@ -102,6 +102,11 @@ Hermes process to confirm that the plugin was enabled without errors, registered
 `wingstaff_pack_info`, and loaded `wingstaff:orchestrate`.
 
 ## Compatibility limits
+
+| Hermes host | Directory plugin | Python entry point | Public Git install | Native CLI | Kanban restart/idempotency | Status |
+|---|---|---|---|---|---|---|
+| v0.18.2 (`2026.7.7.2`, `a9f3f087`) | Passed | Passed | Passed | Passed | Passed | Supported |
+| Other versions | Not probed | Not probed | Not probed | Not probed | Not probed | Unsupported until the full matrix passes |
 
 - Hermes v0.18.2 is the only verified host version.
 - Directory, entry-point, and public remote Git installation are verified.

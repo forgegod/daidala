@@ -19,7 +19,9 @@ Pre-alpha. The repository currently provides:
   verification evidence, review, and uncommitted delivery;
 - exact external-skill name and pinned-content gates;
 - standalone pack validation, dry-run installation, dependency checks, and
-  controlled update planning.
+  controlled update planning;
+- worktree cleanup/rollback and a two-version release gate with dependency and
+  package-content auditing.
 
 Hermes Kanban mapping and `hermes wingstaff` registration are implemented.
 Target commit/push remains outside the current delivery contract.
@@ -32,7 +34,9 @@ python -m venv .venv
 .venv/bin/pytest
 .venv/bin/ruff check .
 .venv/bin/wingstaff packs validate addyosmani
+.venv/bin/wingstaff packs validate aidlc
 python -m build
+.venv/bin/python scripts/check_release_contents.py . --wheel dist/*.whl
 ```
 
 Preview profile-local dependency mutations without applying them:

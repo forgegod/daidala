@@ -155,6 +155,7 @@ that capability generically.
 | Tool schema and JSON boundary | `wingstaff/schemas.py`, `wingstaff/tools.py` | `tests/test_plugin.py` |
 | Workflow state and persistence | `wingstaff/state.py`, `wingstaff/store.py` | `tests/test_workflow.py`, `tests/test_store.py` |
 | Lifecycle and execution isolation | `wingstaff/service.py`, `wingstaff/execution.py` | `tests/test_execution.py`, `tests/test_tools.py` |
+| Worktree cleanup and rollback | `wingstaff/service.py`, `wingstaff/execution.py` | Cross-pack delivery and cancellation tests |
 | Pack schema and invariants | `wingstaff/packs.py` | `tests/test_packs.py` |
 | Addy Osmani mapping | `wingstaff/packs/addyosmani.yaml` | Pack load and CLI validation |
 | AI-DLC mapping | `wingstaff/packs/aidlc.yaml`, `wingstaff/skills/aidlc-adapter/` | Pack, fixture-workflow, registration, and wheel tests |

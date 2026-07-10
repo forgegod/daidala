@@ -36,6 +36,8 @@ Implement the Hermes plugin boundary, deterministic workflow mechanism, workflow
 - Native and standalone operator commands share one parser and dispatch layer; setup and external installation remain dry-run by default.
 - Kanban integration uses only `ctx.dispatch_tool`; Wingstaff never imports or writes Hermes' Kanban database.
 - The engine never substitutes guessed data when a model, skill, or verifier fails.
+- Delivery and operator cancellation remove only their Wingstaff-owned detached
+  worktree; captured artifacts remain durable.
 - No server, listening socket, or nested Hermes process is part of this package.
 
 ## Work Guidance

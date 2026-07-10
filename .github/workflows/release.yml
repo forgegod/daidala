@@ -1,0 +1,62 @@
+name: release-gate
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install development dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -e '.[dev]'
+      - name: Verify source and documentation
+        run: |
+          python scripts/check_release_contents.py .
+          python scripts/check_md_links.py .
+          ruff check .
+          pytest
+          wingstaff packs validate addyosmani
+          wingstaff packs validate aidlc
+
+  package:
+    name: Package and dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Build distributions
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine pip-audit
+          python -m build
+          python -m twine check dist/*
+      - name: Inspect release contents
+        run: python scripts/check_release_contents.py . --wheel dist/*.whl
+      - name: Isolated wheel install and runtime audit
+        run: |
+          python -m venv /tmp/wingstaff-release
+          /tmp/wingstaff-release/bin/pip install --upgrade pip
+          /tmp/wingstaff-release/bin/pip install dist/*.whl pip-audit
+          /tmp/wingstaff-release/bin/wingstaff packs validate addyosmani
+          /tmp/wingstaff-release/bin/wingstaff packs validate aidlc
+          /tmp/wingstaff-release/bin/pip-audit --local

@@ -36,8 +36,10 @@ Update the nearest `AGENTS.md` when a change affects ownership, contracts, workf
 pytest
 ruff check .
 wingstaff packs validate addyosmani
+wingstaff packs validate aidlc
 python -m build
 python -m twine check dist/*
+python scripts/check_release_contents.py . --wheel dist/*.whl
 ```
 
 ## Child DOX Index

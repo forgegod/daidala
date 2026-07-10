@@ -13,15 +13,16 @@ worktrees, and evidence-backed uncommitted delivery for two bundled packs.
 | [Pack reference](03-pack-reference.md) | Schema v1 external and bundled skill references implemented | `wingstaff/packs.py`, bundled pack YAML, pack tests |
 | [Authoring packs](04-authoring-packs.md) | Implemented schema-v1 authoring path | Pack loader, bundled pack, pack tests |
 | [Lifecycle stages](05-lifecycle-stages.md) | Thin executable Addyosmani workflow with Kanban dispatch implemented | `wingstaff/service.py`, `wingstaff/kanban.py`, execution and Kanban tests |
-| [Security](06-security.md) | Current plugin, approval, artifact, and worktree boundary | Runtime modules and tests |
+| [Security](06-security.md) | Release-hardened plugin, approval, artifact, worktree, and supply-chain boundary | Runtime modules, release-content checker, dependency audit, and tests |
 | [Runbook](07-runbook.md) | Implemented native operator procedures | Shared CLI tests and isolated Hermes command probe |
-| [Hermes integration](08-hermes-integration.md) | Verified against Hermes v0.18.2 | Isolated directory and wheel-entry-point probes, `tests/test_installation.py` |
+| [Hermes integration](08-hermes-integration.md) | Compatibility matrix verified for Hermes v0.18.2 | Isolated directory, wheel-entry-point, public Git, CLI, and Kanban probes |
 | [Pack adapters](09-pack-adapters.md) | Addyosmani and AI-DLC v1.0.1 implemented | Pack YAML, bundled adapter skill, execution tests |
 | Wingstaff plugin tools | Twelve strict JSON tools implemented | `wingstaff/schemas.py`, `wingstaff/tools.py`, plugin and execution tests |
 | `wingstaff:orchestrate` | Bundled executable procedure | `wingstaff/skills/orchestrate/SKILL.md`, plugin and installation tests |
 | `hermes wingstaff` and standalone `wingstaff` | Shared operator parser and handlers implemented | `wingstaff/cli.py`, plugin and CLI-equivalence tests |
 | Approval-gated Kanban implementation dispatch | Implemented | `wingstaff/kanban.py`, fake-host tests, isolated Hermes host probe |
 | Cron and target commit/push | Unavailable | Planned in the [roadmap](plans/2026-07-10-wingstaff-bootstrap-and-roadmap.md) |
+| Release CI and package audit | Implemented | `.github/workflows/release.yml`, release-content tests, build, Twine, and `pip-audit` |
 
 “Implemented” means present in this repository. Live installation claims are
 limited to the Hermes version and discovery paths recorded in the

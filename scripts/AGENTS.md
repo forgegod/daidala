@@ -7,6 +7,8 @@ Own dependency-free development and repository verification utilities.
 ## Ownership
 
 - `check_md_links.py` validates local Markdown file links and heading anchors.
+- `check_release_contents.py` rejects runtime state and high-confidence secret
+  signatures from tracked source and wheel payloads.
 
 ## Local Contracts
 
@@ -22,6 +24,7 @@ Own dependency-free development and repository verification utilities.
 
 ```bash
 python scripts/check_md_links.py .
+python scripts/check_release_contents.py .
 pytest
 ruff check scripts
 ```

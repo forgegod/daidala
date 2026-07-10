@@ -141,6 +141,10 @@ class WorkflowService:
             reason=reason,
             cancelled_at=self._clock(),
         )
+        if observed.state.worktree_path:
+            self._workspace.remove_worktree(
+                observed.state.target_repository, observed.state.worktree_path
+            )
         return self.store.update(updated, expected_updated_at=observed.updated_at)
 
     def submit_artifact(
@@ -320,6 +324,7 @@ class WorkflowService:
         artifact = self._workspace.write_json_artifact(
             workflow_id, "delivery.json", payload
         )
+        self._workspace.remove_worktree(state.target_repository, state.worktree_path)
         updated = record_artifact(
             state,
             stage=WorkflowStage.DELIVER,

@@ -123,6 +123,16 @@ class ExecutionWorkspace:
         tracked = [path for path in tracked if path]
         return tuple(sorted(set(tracked) | set(self._untracked_paths(worktree))))
 
+    def remove_worktree(self, target_repository: str, worktree_path: str) -> None:
+        """Remove only a worktree owned by this Wingstaff data root."""
+        worktree = Path(worktree_path).resolve()
+        owned_root = (self.data_root / "worktrees").resolve()
+        if worktree.parent != owned_root:
+            raise ExecutionError(f"refusing to remove non-Wingstaff worktree: {worktree}")
+        if not worktree.exists():
+            return
+        _git(Path(target_repository), "worktree", "remove", "--force", str(worktree))
+
     def _untracked_paths(self, worktree: Path) -> tuple[str, ...]:
         raw = _git(worktree, "ls-files", "--others", "--exclude-standard", "-z")
         return tuple(path for path in raw.split("\0") if path)

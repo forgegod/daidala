@@ -96,6 +96,10 @@ hermes wingstaff cancel <workflow-id> "Superseded by a different change"
 ```
 
 Cancellation is terminal. Start a new workflow instead of trying to reopen it.
+If implementation already created a Wingstaff worktree, cancellation removes
+that worktree and discards its uncommitted changes. The target checkout and
+captured durable artifacts are not modified. Successful delivery performs the
+same worktree cleanup after recording the reviewed manifest.
 
 ## Recovery
 

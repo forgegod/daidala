@@ -170,6 +170,12 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
         stage=WorkflowStage.REVIEW,
         content="# Review\n\nThe diff is scoped and pytest passes.\n",
     )
+    worktree_head = subprocess.run(
+        ["git", "-C", str(worktree), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
     completed = service.deliver(workflow_id)
 
     assert completed.status is WorkflowStatus.COMPLETED
@@ -180,6 +186,7 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
     assert payload["verification"][0]["exit_code"] == 0
     assert payload["committed"] is False
     assert payload["pushed"] is False
+    assert not worktree.exists()
 
     assert "return 1" in (target_repository / "calculator.py").read_text(encoding="utf-8")
     target_head = subprocess.run(
@@ -188,13 +195,27 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
         capture_output=True,
         text=True,
     ).stdout.strip()
-    worktree_head = subprocess.run(
-        ["git", "-C", str(worktree), "rev-parse", "HEAD"],
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
     assert target_head == worktree_head == baseline
+
+
+def test_cancel_rolls_back_owned_implementation_worktree(
+    service: FixtureWorkflowService,
+    target_repository: Path,
+) -> None:
+    workflow_id, plan_digest = prepare_planned_workflow(
+        service, target_repository, "workflow-cancelled"
+    )
+    service.approve(workflow_id, plan_digest)
+    implementing = service.prepare_implementation(workflow_id)
+    assert implementing.worktree_path is not None
+    worktree = Path(implementing.worktree_path)
+    (worktree / "calculator.py").write_text("def answer():\n    return 9\n", encoding="utf-8")
+
+    cancelled = service.cancel(workflow_id, "Operator requested rollback")
+
+    assert cancelled.status is WorkflowStatus.CANCELLED
+    assert not worktree.exists()
+    assert "return 1" in (target_repository / "calculator.py").read_text(encoding="utf-8")
 
 
 def test_failed_verification_blocks_delivery(
