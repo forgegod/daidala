@@ -48,7 +48,9 @@ def pack_info(args: dict[str, Any], **kwargs: Any) -> str:
             "lifecycle": list(pack.lifecycle),
             "human_gate_after": pack.human_gate_after,
             "skills": {
-                stage.id: [skill.install for skill in stage.skills]
+                stage.id: [
+                    skill.install or f"bundled:{skill.bundled}" for skill in stage.skills
+                ]
                 for stage in pack.stages
             },
         }

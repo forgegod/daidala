@@ -47,8 +47,8 @@ def test_register_exposes_tool_and_namespaced_skill_source() -> None:
         "wingstaff_deliver",
     ]
     assert all(tool["toolset"] == "wingstaff" for tool in ctx.tools)
-    assert [name for name, _ in ctx.skills] == ["orchestrate"]
-    assert ctx.skills[0][1].name == "SKILL.md"
+    assert [name for name, _ in ctx.skills] == ["aidlc-adapter", "orchestrate"]
+    assert all(path.name == "SKILL.md" for _, path in ctx.skills)
     assert len(ctx.cli_commands) == 1
     assert ctx.cli_commands[0]["name"] == "wingstaff"
 
@@ -59,6 +59,13 @@ def test_pack_info_returns_json_string() -> None:
     assert result["success"] is True
     assert result["human_gate_after"] == "plan"
     assert result["lifecycle"][2] == "implement"
+
+
+def test_pack_info_reports_bundled_skill_provider() -> None:
+    result = json.loads(pack_info({"pack": "aidlc"}))
+
+    assert result["success"] is True
+    assert result["skills"]["implement"] == ["bundled:aidlc-adapter"]
 
 
 def test_pack_info_reports_unknown_pack_without_raising() -> None:

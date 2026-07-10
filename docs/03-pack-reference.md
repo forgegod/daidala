@@ -68,8 +68,9 @@ lifecycle:
 | `lifecycle.stages[].id` | string | Required, non-empty, and unique. |
 | `lifecycle.stages[].skills` | non-empty list | At least one skill per stage. |
 | `lifecycle.stages[].skills[].name` | string | Required lowercase slug and exact installed name. |
-| `lifecycle.stages[].skills[].install` | string | Must begin with the source publisher/repository and end with `name`. |
-| `lifecycle.stages[].skills[].content_digest` | string | SHA-256 of the complete canonical skill directory. |
+| `lifecycle.stages[].skills[].install` | string or omitted | External provider; must begin with the source publisher/repository and end with `name`. Mutually exclusive with `bundled`. |
+| `lifecycle.stages[].skills[].content_digest` | string or omitted | Required with `install`: SHA-256 of the complete canonical skill directory. Forbidden with `bundled`. |
+| `lifecycle.stages[].skills[].bundled` | string or omitted | Plugin-bundled provider; must exactly equal `name`. Mutually exclusive with `install`. |
 
 The required lifecycle is:
 
@@ -84,7 +85,7 @@ stage.
 
 Successful validation produces frozen dataclasses:
 
-- `SkillRef(name, install, content_digest)`;
+- `SkillRef(name, install, content_digest, bundled)`;
 - `Stage(id, skills)`;
 - `WorkflowPack(name, source, source_revision, hermes_version_constraint,
   stages, human_gate_after)`.
@@ -112,12 +113,15 @@ refused capability, not a local glob expansion.
 [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills), pinned at
 the commit and per-skill digests declared in
 `wingstaff/packs/addyosmani.yaml`. The mapping remains data, not a Python
-special case.
+special case. `aidlc` maps the same stages to the packaged
+`wingstaff:aidlc-adapter` skill because stable AI-DLC v1.0.1 publishes editor
+rules rather than externally installable Hermes skills. Both provider forms
+use the same `SkillRef` and stage machinery.
 
 ## Source of truth and tests
 
 - Runtime validator: `wingstaff/packs.py`
 - Installation and revision mechanism: `wingstaff/skills.py`, `wingstaff/cli.py`
-- Bundled adapter: `wingstaff/packs/addyosmani.yaml`
+- Bundled adapters: `wingstaff/packs/addyosmani.yaml`, `wingstaff/packs/aidlc.yaml`
 - Validation tests: `tests/test_packs.py`
 - Installation tests: `tests/test_skill_installation.py`

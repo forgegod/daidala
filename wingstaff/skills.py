@@ -146,11 +146,15 @@ class PackInstallPlan:
 
 
 def required_skills(pack: WorkflowPack) -> tuple[SkillRef, ...]:
-    """Return exact requirements once, preserving first lifecycle order."""
+    """Return exact external requirements once, preserving lifecycle order."""
     ordered: list[SkillRef] = []
     targets_by_name: dict[str, tuple[str, str]] = {}
     for stage in pack.stages:
         for skill in stage.skills:
+            if not skill.is_external:
+                continue
+            assert skill.install is not None
+            assert skill.content_digest is not None
             previous = targets_by_name.get(skill.name)
             current = (skill.install, skill.content_digest)
             if previous is None:

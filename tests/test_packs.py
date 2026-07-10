@@ -50,6 +50,50 @@ def test_addyosmani_pack_has_stable_lifecycle_and_preimplementation_gate() -> No
     assert all(stage.skills for stage in pack.stages)
 
 
+def test_aidlc_pack_uses_one_pack_owned_skill_without_external_install() -> None:
+    pack = load_pack("aidlc")
+
+    assert pack.lifecycle == ("define", "plan", "implement", "verify", "review", "deliver")
+    assert pack.human_gate_after == "plan"
+    assert {skill.name for stage in pack.stages for skill in stage.skills} == {
+        "aidlc-adapter"
+    }
+    assert all(
+        skill.bundled == "aidlc-adapter" and not skill.is_external
+        for stage in pack.stages
+        for skill in stage.skills
+    )
+
+
+def test_skill_reference_requires_exactly_one_provider() -> None:
+    raw = {
+        "schema_version": 1,
+        "name": "broken",
+        "source": "https://github.com/owner/repo",
+        "source_revision": "a" * 40,
+        "lifecycle": {
+            "human_gate_after": "plan",
+            "stages": [
+                {
+                    "id": stage,
+                    "skills": [
+                        {
+                            "name": "skill",
+                            "install": "owner/repo/skill",
+                            "bundled": "skill",
+                            "content_digest": "b" * 64,
+                        }
+                    ],
+                }
+                for stage in ("define", "plan", "implement", "verify", "review", "deliver")
+            ],
+        },
+    }
+
+    with pytest.raises(PackError, match="exactly one of install or bundled"):
+        validate_pack(raw)
+
+
 def test_skill_install_target_must_match_name() -> None:
     raw = {
         "schema_version": 1,

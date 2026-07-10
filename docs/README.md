@@ -2,7 +2,7 @@
 
 Wingstaff is a Hermes plugin with deterministic workflow state, exact-skill
 gates, digest-bound approval, profile-local persistence, detached Git
-worktrees, and evidence-backed uncommitted delivery for one bundled pack.
+worktrees, and evidence-backed uncommitted delivery for two bundled packs.
 
 ## Support status
 
@@ -10,13 +10,13 @@ worktrees, and evidence-backed uncommitted delivery for one bundled pack.
 |---|---|---|
 | [Architecture](01-architecture.md) | Implemented plugin and execution boundary | Runtime modules, plugin tests, Hermes plugin docs |
 | [Workflow state](02-workflow-state.md) | Implemented and persisted | `wingstaff/state.py`, `wingstaff/workflow.py`, `wingstaff/store.py` |
-| [Pack reference](03-pack-reference.md) | Schema v1 implemented and unit-tested | `wingstaff/packs.py`, `wingstaff/packs/addyosmani.yaml`, pack tests |
+| [Pack reference](03-pack-reference.md) | Schema v1 external and bundled skill references implemented | `wingstaff/packs.py`, bundled pack YAML, pack tests |
 | [Authoring packs](04-authoring-packs.md) | Implemented schema-v1 authoring path | Pack loader, bundled pack, pack tests |
 | [Lifecycle stages](05-lifecycle-stages.md) | Thin executable Addyosmani workflow with Kanban dispatch implemented | `wingstaff/service.py`, `wingstaff/kanban.py`, execution and Kanban tests |
 | [Security](06-security.md) | Current plugin, approval, artifact, and worktree boundary | Runtime modules and tests |
 | [Runbook](07-runbook.md) | Implemented native operator procedures | Shared CLI tests and isolated Hermes command probe |
 | [Hermes integration](08-hermes-integration.md) | Verified against Hermes v0.18.2 | Isolated directory and wheel-entry-point probes, `tests/test_installation.py` |
-| [Pack adapters](09-pack-adapters.md) | Addyosmani implemented; AI-DLC future | Pack YAML, pack/skill/execution tests |
+| [Pack adapters](09-pack-adapters.md) | Addyosmani and AI-DLC v1.0.1 implemented | Pack YAML, bundled adapter skill, execution tests |
 | Wingstaff plugin tools | Twelve strict JSON tools implemented | `wingstaff/schemas.py`, `wingstaff/tools.py`, plugin and execution tests |
 | `wingstaff:orchestrate` | Bundled executable procedure | `wingstaff/skills/orchestrate/SKILL.md`, plugin and installation tests |
 | `hermes wingstaff` and standalone `wingstaff` | Shared operator parser and handlers implemented | `wingstaff/cli.py`, plugin and CLI-equivalence tests |

@@ -138,7 +138,9 @@ name is `wingstaff`.
 The Python validator knows lifecycle mechanics, not Addy Osmani-specific skill
 semantics. Pack-specific data lives in `wingstaff/packs/*.yaml`. Schema v1 is
 intentionally strict: every pack uses the same six ordered stages, and each
-stage supplies its own external skill references.
+stage supplies external or plugin-bundled skill references. External skills
+remain the default; bundled references exist for licensed adapters whose
+upstream source does not ship Hermes Agent Skills.
 
 Adding a pack-specific conditional to `wingstaff/packs.py` would violate this
 boundary. Extend the schema only for a capability shared by packs, then validate
@@ -155,5 +157,6 @@ that capability generically.
 | Lifecycle and execution isolation | `wingstaff/service.py`, `wingstaff/execution.py` | `tests/test_execution.py`, `tests/test_tools.py` |
 | Pack schema and invariants | `wingstaff/packs.py` | `tests/test_packs.py` |
 | Addy Osmani mapping | `wingstaff/packs/addyosmani.yaml` | Pack load and CLI validation |
-| Bundled procedure | `wingstaff/skills/orchestrate/SKILL.md` | Registration test and live explicit load |
+| AI-DLC mapping | `wingstaff/packs/aidlc.yaml`, `wingstaff/skills/aidlc-adapter/` | Pack, fixture-workflow, registration, and wheel tests |
+| Bundled procedures | `wingstaff/skills/*/SKILL.md` | Registration and packaging tests |
 | Hermes extension behavior | [official plugin guide](https://hermes-agent.nousresearch.com/docs/developer-guide/plugins) | Upstream documentation plus the v0.18.2 compatibility probe |

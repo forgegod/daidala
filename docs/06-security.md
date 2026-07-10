@@ -74,6 +74,12 @@ replaced during an active workflow. Kanban cards pin the pack's exact
 implementation skill names. Hermes owns loading those names for the assigned
 profile; missing context fails closed rather than being substituted.
 
+AI-DLC v1.0.1 is pinned to its upstream commit but ships editor rule files,
+not Hermes skills. Wingstaff therefore packages a small MIT-0-attributed
+adapter skill and its upstream license. It does not install the rules into a
+target repository, import the v2 preview runtime, or delegate lifecycle state
+and approval to an upstream state machine.
+
 Hermes v0.18.2 cannot install a repository recursively, so Wingstaff refuses
 that request instead of expanding an unreviewed glob. Treat pinned external
 skills as untrusted instructions until reviewed; hashes prove equality, not
@@ -114,6 +120,6 @@ of these surfaces exists.
 - Worktree and artifact isolation: `wingstaff/execution.py`
 - Lifecycle coordination: `wingstaff/service.py`
 - Tool error boundary: `wingstaff/tools.py`
-- Bundled procedure: `wingstaff/skills/orchestrate/SKILL.md`
+- Bundled procedures: `wingstaff/skills/*/SKILL.md`
 - Tests: `tests/test_packs.py`, `tests/test_plugin.py`, `tests/test_execution.py`
 - Host plugin trust model: [official Hermes plugin documentation](https://hermes-agent.nousresearch.com/docs/user-guide/features/plugins)

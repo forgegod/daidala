@@ -31,6 +31,10 @@ class TickClock:
         return NOW + timedelta(minutes=self.tick)
 
 
+class FixtureWorkflowService(WorkflowService):
+    fixture_pack_name: str
+
+
 @pytest.fixture
 def target_repository(tmp_path: Path) -> Path:
     target = tmp_path / "target"
@@ -62,11 +66,11 @@ def target_repository(tmp_path: Path) -> Path:
     return target.resolve()
 
 
-@pytest.fixture
-def service(tmp_path: Path) -> WorkflowService:
-    pack = load_pack("addyosmani")
+@pytest.fixture(params=("addyosmani", "aidlc"))
+def service(tmp_path: Path, request: pytest.FixtureRequest) -> FixtureWorkflowService:
+    pack = load_pack(request.param)
     inventory = inventory_from_names(skill.name for skill in required_skills(pack))
-    return WorkflowService(
+    result = FixtureWorkflowService(
         WorkflowStore(tmp_path / "data"),
         clock=TickClock(),
         skill_inventory=inventory,
@@ -74,16 +78,19 @@ def service(tmp_path: Path) -> WorkflowService:
             {skill.name: skill.content_digest for skill in required_skills(pack)}
         ),
     )
+    result.fixture_pack_name = pack.name
+    return result
 
 
 def prepare_planned_workflow(
-    service: WorkflowService,
+    service: FixtureWorkflowService,
     target: Path,
     workflow_id: str,
 ) -> tuple[str, str]:
     state = service.start(
         target_repository=str(target),
         goal="Make the deliberately failing test pass",
+        pack_name=service.fixture_pack_name,
         workflow_id=workflow_id,
     )
     state = service.validate(state.workflow_id)
@@ -114,7 +121,7 @@ def run_fixture_tests(worktree: Path) -> subprocess.CompletedProcess[str]:
 
 
 def test_thin_workflow_delivers_verified_uncommitted_diff(
-    service: WorkflowService,
+    service: FixtureWorkflowService,
     target_repository: Path,
 ) -> None:
     baseline = subprocess.run(
@@ -191,7 +198,7 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
 
 
 def test_failed_verification_blocks_delivery(
-    service: WorkflowService,
+    service: FixtureWorkflowService,
     target_repository: Path,
 ) -> None:
     workflow_id, plan_digest = prepare_planned_workflow(
@@ -221,13 +228,14 @@ def test_failed_verification_blocks_delivery(
 
 
 def test_capture_requires_real_diff_and_safe_workflow_id(
-    service: WorkflowService,
+    service: FixtureWorkflowService,
     target_repository: Path,
 ) -> None:
     with pytest.raises(ExecutionError, match="workflow_id"):
         service.start(
             target_repository=str(target_repository),
             goal="unsafe id",
+            pack_name=service.fixture_pack_name,
             workflow_id="../escape",
         )
 

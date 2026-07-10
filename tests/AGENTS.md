@@ -16,6 +16,7 @@ completeness without touching a real Hermes profile.
 - Fake host-dispatch tests for approval-gated, restart-safe, idempotent Kanban mapping.
 - Shared-parser tests proving native Hermes and standalone CLI service calls, JSON, and exit codes remain equivalent.
 - Temporary Git worktree tests for the approved end-to-end executable slice.
+- Cross-pack fixture tests proving Addyosmani and AI-DLC use the same engine path.
 - Subprocess tests for dependency-free repository verification scripts.
 - Build/install smoke tests for directory entry points, wheel resources, and Hermes entry-point metadata.
 

@@ -54,6 +54,7 @@ spec.loader.exec_module(module)
 assert module.register.__module__ == f"{module_name}.wingstaff"
 packs = importlib.import_module(f"{module_name}.wingstaff.packs")
 assert packs.load_pack("addyosmani").name == "addyosmani"
+assert packs.load_pack("aidlc").name == "aidlc"
 """
     result = subprocess.run(
         [sys.executable, "-I", "-c", script, str(REPOSITORY)],
@@ -93,6 +94,9 @@ def test_wheel_contains_plugin_resources_and_module_entrypoint(tmp_path: Path) -
     with ZipFile(wheel) as archive:
         names = set(archive.namelist())
         assert "wingstaff/packs/addyosmani.yaml" in names
+        assert "wingstaff/packs/aidlc.yaml" in names
+        assert "wingstaff/skills/aidlc-adapter/SKILL.md" in names
+        assert "wingstaff/skills/aidlc-adapter/references/LICENSE-AIDLC.txt" in names
         assert "wingstaff/skills/orchestrate/SKILL.md" in names
         entry_points_name = next(
             name for name in names if name.endswith(".dist-info/entry_points.txt")

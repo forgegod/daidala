@@ -14,14 +14,15 @@ Pre-alpha. The repository currently provides:
 - a bundled `wingstaff:orchestrate` skill;
 - a validated workflow-pack format;
 - an Addy Osmani `agent-skills` lifecycle adapter;
+- a pinned AI-DLC v1.0.1 adapter packaged as a licensed Wingstaff skill;
 - durable workflow state, approval-gated detached-worktree execution,
   verification evidence, review, and uncommitted delivery;
 - exact external-skill name and pinned-content gates;
 - standalone pack validation, dry-run installation, dependency checks, and
   controlled update planning.
 
-Hermes Kanban mapping, registration under `hermes wingstaff`, target
-commit/push, and the AI-DLC adapter remain planned.
+Hermes Kanban mapping and `hermes wingstaff` registration are implemented.
+Target commit/push remains outside the current delivery contract.
 
 ## Development
 
@@ -65,9 +66,10 @@ The stable lifecycle is pack-neutral:
 discover -> define -> plan -> HUMAN GATE -> implement -> verify -> review -> deliver
 ```
 
-Workflow packs map external skills onto that lifecycle. External repositories
-remain dependencies; Wingstaff pins their commit and complete skill-directory
-digests rather than vendoring their content.
+Workflow packs map external or plugin-bundled skills onto that lifecycle.
+External Hermes skills remain dependencies pinned by commit and complete
+directory digest. Upstream rule sets that are not Hermes skills require a
+licensed, reviewable bundled adapter rather than a fabricated install target.
 
 Start with [`docs/README.md`](docs/README.md) for the source-grounded documentation set and support status. The [implementation roadmap](docs/plans/2026-07-10-wingstaff-bootstrap-and-roadmap.md) owns future phases.
 

@@ -115,7 +115,7 @@ def test_packs_list_uses_shared_command_tree(capsys) -> None:
     assert host_code == standalone_code == 0
     assert host == standalone == {
         "operation": "list",
-        "packs": ["addyosmani"],
+        "packs": ["addyosmani", "aidlc"],
         "success": True,
     }
 

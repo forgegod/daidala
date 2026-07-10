@@ -32,7 +32,7 @@ wingstaff = "wingstaff"
 include = ["wingstaff*"]
 
 [tool.setuptools.package-data]
-wingstaff = ["packs/*.yaml", "skills/*/SKILL.md"]
+wingstaff = ["packs/*.yaml", "skills/*/SKILL.md", "skills/*/references/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -21,8 +21,13 @@ class PackError(ValueError):
 @dataclass(frozen=True)
 class SkillRef:
     name: str
-    install: str
-    content_digest: str
+    install: str | None = None
+    content_digest: str | None = None
+    bundled: str | None = None
+
+    @property
+    def is_external(self) -> bool:
+        return self.install is not None
 
 
 @dataclass(frozen=True)
@@ -132,6 +137,27 @@ def _validate_skill(stage_id: str, raw: Any, source_owner_repo: str) -> SkillRef
         raise PackError(
             f"stage {stage_id!r} skill name must be a lowercase slug: {name!r}"
         )
+    install = raw.get("install")
+    bundled = raw.get("bundled")
+    if (install is None) == (bundled is None):
+        raise PackError(
+            f"stage {stage_id!r} skill {name!r} must declare exactly one of "
+            "install or bundled"
+        )
+    if bundled is not None:
+        bundled = _required_text(raw, "bundled")
+        if bundled != name:
+            raise PackError(
+                f"stage {stage_id!r} skill {name!r} does not match bundled skill "
+                f"{bundled!r}"
+            )
+        if "content_digest" in raw:
+            raise PackError(
+                f"stage {stage_id!r} bundled skill {name!r} must not declare "
+                "content_digest"
+            )
+        return SkillRef(name=name, bundled=bundled)
+
     install = _required_text(raw, "install")
     content_digest = _required_sha256(raw, "content_digest")
     if not install.startswith(f"{source_owner_repo}/"):

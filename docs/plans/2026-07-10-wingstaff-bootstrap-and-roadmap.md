@@ -92,8 +92,8 @@ committed before work starts on the next phase.
 | 6 — external skill installation and revision management | Done | Preserve publisher-pinned targets, bounded Hermes compatibility, complete-directory digests, dry-run-by-default mutation plans, post-apply verification, and refused recursive installation. Gate: 19 Markdown files, 75 tests, Ruff, pack validation, build, Twine, diff check, 20-action standalone dry-run, recursive refusal, and on-disk digest-mismatch blocking passed. |
 | 7 — Hermes Kanban mapping | Done | Preserve `ctx.dispatch_tool` isolation, post-approval creation, persistent worktree assignment, exact skill pins, idempotency keys, and Wingstaff/Hermes authority separation. Gate: 19 Markdown files, 77 tests, Ruff, pack validation, build, Twine, diff check, interruption recovery, restart deduplication, and isolated real-host one-card/two-call probe passed. |
 | 8 — `hermes wingstaff` operator CLI | Done | Preserve the shared parser/service dispatcher, profile-local dry-run initialization, read-only doctor, required cancellation reasons, isolated-module resource loading, and v0.18.2 process exit-code shim. Gate: 20 Markdown files, 86 tests, Ruff, pack validation, build, Twine, diff check, isolated native Hermes command/doctor probes, and clean-wheel standalone init/list probe passed. |
-| 9 — AI-DLC adapter | Todo | Requires a passing Addyosmani fixture workflow. |
-| 10 — operational hardening and release | Todo | Requires both pack fixtures. |
+| 9 — AI-DLC adapter | Done | Preserve the pinned MIT-0 adapter, mutually exclusive external/bundled skill providers, and pack-neutral engine path. Gate: 21 Markdown files, 92 tests, Ruff, both pack validations, build, Twine, diff check, isolated two-skill directory load, and no-`aidlc`-runtime-literal scan passed. |
+| 10 — operational hardening and release | Todo | Start only after the Phase 9 commit and public installation checkpoint. |
 
 ## Phase 0A — rescue the Wingstaff brand under the new narrative
 
@@ -679,9 +679,9 @@ Integrate `awslabs/aidlc-workflows` without changing core workflow code.
 ### Steps
 
 1. Audit the current upstream release, license, stages, artifacts, approval points, and installation format.
-2. Write a design note mapping AI-DLC concepts to Wingstaff lifecycle stages.
-3. Add `wingstaff/packs/aidlc.yaml` plus any pack-owned templates.
-4. Extend the pack schema only when the concept is genuinely reusable across future packs.
+2. Write a design note mapping AI-DLC concepts to Wingstaff lifecycle stages. Record that stable v1.0.1 ships rules rather than Agent Skills, while the v2 preview requires a complete harness overlay and owns an incompatible nested state machine.
+3. Add `wingstaff/packs/aidlc.yaml` plus a licensed, pinned pack-owned adapter skill derived from the stable rules release.
+4. Extend the pack schema generically for bundled plugin skill references; external install targets remain the default and no pack-name branch is allowed.
 5. Run the same fixture workflow used for Addyosmani.
 
 ### Stop condition

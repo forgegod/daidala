@@ -29,7 +29,8 @@ Implement the Hermes plugin boundary, deterministic workflow mechanism, workflow
 
 - `register(ctx)` imports no Hermes internals; it uses only the documented plugin context API.
 - Tool handlers never raise across the plugin boundary and always return JSON strings.
-- Packs reference external skills by fully qualified installation target.
+- Pack skills declare exactly one provider: a fully qualified external install
+  target or a plugin-bundled skill with the same exact name.
 - External packs pin a Git source revision, bounded Hermes version, and complete-directory digest per required skill.
 - Standalone CLI inventory comes from the profile skill directory; it never imports Hermes runtime internals.
 - Native and standalone operator commands share one parser and dispatch layer; setup and external installation remain dry-run by default.
@@ -41,6 +42,7 @@ Implement the Hermes plugin boundary, deterministic workflow mechanism, workflow
 
 - Add mechanism to Python and subject-matter mappings to `packs/*.yaml`.
 - Register bundled skills with `ctx.register_skill`; do not copy them into the user's mutable skill store.
+- Keep third-party attribution and license text beside derived bundled adapters.
 - Use `importlib.resources` so wheel and Git installations behave consistently.
 
 ## Verification

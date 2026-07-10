@@ -21,11 +21,14 @@ pack-specific branches.
    pin `source_revision` to a full 40-character commit.
 4. Declare the bounded supported Hermes range when the pack relies on a
    version-specific host capability.
-5. Map at least one external skill into every required stage.
-6. Use install targets under the same publisher/repository. The final segment
-   must exactly match `name`.
-7. Hash every complete skill directory into `content_digest`, including linked
-   scripts and references rather than only `SKILL.md`.
+5. Map at least one skill into every required stage and declare exactly one
+   provider: `install` for an external Hermes skill or `bundled` for a
+   plugin-packaged adapter.
+6. For external skills, use install targets under the same
+   publisher/repository. The final segment must exactly match `name`.
+7. Hash every complete external skill directory into `content_digest`, including
+   linked scripts and references rather than only `SKILL.md`. Bundled skills
+   must omit the digest and carry any required attribution beside the skill.
 8. Keep `human_gate_after: plan` unless a different declared stage still occurs
    before `implement` and accurately represents the adapter.
 9. Add tests that load the real package resource and assert its lifecycle, gate,
@@ -41,6 +44,7 @@ Put these in YAML:
 - upstream source identity;
 - source revision and Hermes compatibility range;
 - per-skill complete-directory digests;
+- external-versus-bundled skill provider selection;
 - stage-to-skill mappings;
 - pack-specific skill names and install targets.
 
@@ -107,5 +111,5 @@ python scripts/check_md_links.py .
 
 - Schema and validator: `wingstaff/packs.py`
 - Package-data inclusion: `pyproject.toml`
-- Existing adapter example: `wingstaff/packs/addyosmani.yaml`
+- Adapter examples: `wingstaff/packs/addyosmani.yaml`, `wingstaff/packs/aidlc.yaml`
 - Existing tests: `tests/test_packs.py`
