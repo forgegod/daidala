@@ -15,15 +15,16 @@ workflow pack. It does not execute workflows yet.
 | Lifecycle stages (`05-lifecycle-stages.md`) | Future — Phase 5; no file yet | Workflow execution not implemented |
 | [Security](06-security.md) | Current package and plugin boundary | Manifest, registration, pack loader, tool handler, Hermes plugin docs |
 | Runbook (`07-runbook.md`) | Future — Phase 8; no file yet | Operator CLI not implemented |
-| Hermes integration (`08-hermes-integration.md`) | Future — Phase 1; no file yet | Live installation not verified |
+| [Hermes integration](08-hermes-integration.md) | Verified against Hermes v0.18.2 | Isolated directory and wheel-entry-point probes, `tests/test_installation.py` |
 | Pack adapters (`09-pack-adapters.md`) | Future — Phase 5; no file yet | Adapter execution not implemented |
-| `wingstaff_pack_info` | Implemented and unit-tested through a fake plugin context | `wingstaff/schemas.py`, `wingstaff/tools.py`, `tests/test_plugin.py` |
-| `wingstaff:orchestrate` | Bundled and registration-tested; procedure is not an execution engine | `wingstaff/skills/orchestrate/SKILL.md`, `tests/test_plugin.py` |
+| `wingstaff_pack_info` | Implemented, unit-tested, and live registration-tested | `wingstaff/schemas.py`, `wingstaff/tools.py`, plugin and installation tests |
+| `wingstaff:orchestrate` | Bundled and live loading-tested; procedure is not an execution engine | `wingstaff/skills/orchestrate/SKILL.md`, plugin and installation tests |
 | `wingstaff packs validate addyosmani` | Implemented diagnostics command | `wingstaff/cli.py` |
 | Workflow execution, persistence, approval tools, Kanban, cron, delivery | Unavailable | Planned in the [roadmap](plans/2026-07-10-wingstaff-bootstrap-and-roadmap.md) |
 
-“Implemented” means present in this repository. “Unit-tested” does not mean the
-plugin has passed a live Hermes installation test; Phase 1 owns that proof.
+“Implemented” means present in this repository. Live installation claims are
+limited to the Hermes version and discovery paths recorded in the
+[Hermes integration guide](08-hermes-integration.md).
 
 ## Reading order
 
@@ -31,7 +32,8 @@ plugin has passed a live Hermes installation test; Phase 1 owns that proof.
 2. [Pack reference](03-pack-reference.md) — the exact implemented schema.
 3. [Authoring packs](04-authoring-packs.md) — how to add another schema-v1 pack.
 4. [Security](06-security.md) — current trust boundary and controls not yet present.
-5. [Implementation roadmap](plans/2026-07-10-wingstaff-bootstrap-and-roadmap.md) — future phases.
+5. [Hermes integration](08-hermes-integration.md) — verified discovery, enablement, and packaging boundaries.
+6. [Implementation roadmap](plans/2026-07-10-wingstaff-bootstrap-and-roadmap.md) — future phases.
 
 ## Lifecycle
 
@@ -58,6 +60,7 @@ flowchart LR
 | What does a schema-v1 pack file accept? | [Pack reference](03-pack-reference.md) |
 | How do I add a pack without branching the engine? | [Authoring packs](04-authoring-packs.md) |
 | Does the bootstrap enforce approval or execute skills? | [Security](06-security.md#human-approval-boundary) |
+| Which Hermes version and installation paths are verified? | [Hermes integration](08-hermes-integration.md) |
 | Where are install, run, resume, and recovery commands? | Not published yet; the runbook is a Phase 8 deliverable |
 | Which future phase owns a missing surface? | [Implementation roadmap](plans/2026-07-10-wingstaff-bootstrap-and-roadmap.md) |
 

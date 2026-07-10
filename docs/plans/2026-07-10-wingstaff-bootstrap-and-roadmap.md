@@ -80,8 +80,8 @@ committed before work starts on the next phase.
 | 0A — brand and narrative | Done | Reconcile only when the product boundary changes. |
 | 0B — technical documentation set | Done | Preserve source-grounding and support-status rules. |
 | 0C — Markdown verifier hardening | Done | Preserve the focused edge-case regression tests. |
-| 1 — isolated Hermes installation proof | Todo | Next phase. |
-| 1A — compatibility baseline and release policy | Todo | Execute after Phase 1 establishes live behavior. |
+| 1 — isolated Hermes installation proof | Done | Preserve both directory and entry-point regression coverage. |
+| 1A — compatibility baseline and release policy | Todo | Next phase after the Phase 1 commit. |
 | 2 — workflow state contract | Todo | Requires Phase 1A decisions. |
 | 3 — durable persistence | Todo | Requires Phase 2 state types and transitions. |
 | 4 — read-only and gate tools | Todo | Requires Phase 3 persistence. |
@@ -336,12 +336,16 @@ Install the local repository as a Hermes plugin in an isolated profile and prove
 - `wingstaff/__init__.py`
 - `tests/test_installation.py`
 - `README.md`
+- `docs/README.md`
+- `docs/08-hermes-integration.md`
 
 ### Steps
 
 1. Inspect the live `hermes plugins install --help`, `hermes plugins list`, and profile commands. Do not rely on remembered syntax.
 2. Create a temporary Hermes home/profile fixture.
-3. Install Wingstaff from the local Git checkout or built wheel, whichever the CLI supports for isolated testing.
+3. Verify the local checkout through an isolated user-plugin directory and the
+   built wheel through an isolated entry-point target. The tested Hermes CLI
+   does not accept local paths or wheels in `hermes plugins install`.
 4. Enable it explicitly.
 5. Start a fresh Hermes process and verify `wingstaff_pack_info` appears.
 6. Load `wingstaff:orchestrate` explicitly and verify its content is reachable.
@@ -349,7 +353,8 @@ Install the local repository as a Hermes plugin in an isolated profile and prove
 8. Resolve the root directory-plugin `__init__.py` versus import-package name
    collision that makes targeted pytest collection fail, without breaking either
    plugin discovery path.
-9. Document the exact verified installation command.
+9. Document the exact verified development procedure and do not publish a
+   remote installation command until a real remote is available and exercised.
 
 ### Verification gate
 

@@ -9,7 +9,7 @@ Prove the deterministic pack model, Hermes plugin registration contract, and pac
 - Unit tests for pack loading and validation.
 - Fake-context tests for plugin tool and skill registration.
 - Subprocess tests for dependency-free repository verification scripts.
-- Build/install smoke tests as the package matures.
+- Build/install smoke tests for directory entry points, wheel resources, and Hermes entry-point metadata.
 
 ## Local Contracts
 

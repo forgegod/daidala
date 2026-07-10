@@ -26,7 +26,7 @@ dev = ["build>=1.2", "fonttools>=4.0", "pytest>=8.0", "ruff>=0.5", "twine>=5.0"]
 wingstaff = "wingstaff.cli:main"
 
 [project.entry-points."hermes_agent.plugins"]
-wingstaff = "wingstaff:register"
+wingstaff = "wingstaff"
 
 [tool.setuptools.packages.find]
 include = ["wingstaff*"]

@@ -11,6 +11,7 @@ Own current architecture documentation, the numbered reading set, and executable
 - `03-pack-reference.md` owns the implemented workflow-pack schema.
 - `04-authoring-packs.md` owns pack-neutral adapter authoring.
 - `06-security.md` owns current trust boundaries and unavailable controls.
+- `08-hermes-integration.md` owns verified Hermes versions, discovery paths, and installation limitations.
 - `plans/` contains self-contained plans for future implementation sessions.
 
 ## Local Contracts
