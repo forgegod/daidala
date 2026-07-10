@@ -1,0 +1,60 @@
+schema_version: 1
+name: addyosmani
+source: https://github.com/addyosmani/agent-skills
+lifecycle:
+  human_gate_after: plan
+  stages:
+    - id: define
+      skills:
+        - name: interview-me
+          install: addyosmani/agent-skills/skills/interview-me
+        - name: idea-refine
+          install: addyosmani/agent-skills/skills/idea-refine
+        - name: spec-driven-development
+          install: addyosmani/agent-skills/skills/spec-driven-development
+    - id: plan
+      skills:
+        - name: planning-and-task-breakdown
+          install: addyosmani/agent-skills/skills/planning-and-task-breakdown
+    - id: implement
+      skills:
+        - name: incremental-implementation
+          install: addyosmani/agent-skills/skills/incremental-implementation
+        - name: test-driven-development
+          install: addyosmani/agent-skills/skills/test-driven-development
+        - name: source-driven-development
+          install: addyosmani/agent-skills/skills/source-driven-development
+        - name: doubt-driven-development
+          install: addyosmani/agent-skills/skills/doubt-driven-development
+    - id: verify
+      skills:
+        - name: test-driven-development
+          install: addyosmani/agent-skills/skills/test-driven-development
+        - name: debugging-and-error-recovery
+          install: addyosmani/agent-skills/skills/debugging-and-error-recovery
+        - name: browser-testing-with-devtools
+          install: addyosmani/agent-skills/skills/browser-testing-with-devtools
+    - id: review
+      skills:
+        - name: code-review-and-quality
+          install: addyosmani/agent-skills/skills/code-review-and-quality
+        - name: code-simplification
+          install: addyosmani/agent-skills/skills/code-simplification
+        - name: security-and-hardening
+          install: addyosmani/agent-skills/skills/security-and-hardening
+        - name: performance-optimization
+          install: addyosmani/agent-skills/skills/performance-optimization
+    - id: deliver
+      skills:
+        - name: git-workflow-and-versioning
+          install: addyosmani/agent-skills/skills/git-workflow-and-versioning
+        - name: ci-cd-and-automation
+          install: addyosmani/agent-skills/skills/ci-cd-and-automation
+        - name: documentation-and-adrs
+          install: addyosmani/agent-skills/skills/documentation-and-adrs
+        - name: observability-and-instrumentation
+          install: addyosmani/agent-skills/skills/observability-and-instrumentation
+        - name: shipping-and-launch
+          install: addyosmani/agent-skills/skills/shipping-and-launch
+        - name: deprecation-and-migration
+          install: addyosmani/agent-skills/skills/deprecation-and-migration

@@ -1,0 +1,7 @@
+name: wingstaff
+version: 0.1.0
+description: Serverless Hermes-native orchestration for autonomous software-development workflows.
+provides_tools:
+  - wingstaff_pack_info
+provides_skills:
+  - orchestrate

@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wingstaff"
+version = "0.1.0"
+description = "Hermes-native orchestration for autonomous software-development workflows"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{name = "Raphael Bossek", email = "raphael.bossek@videoclinic.de"}]
+dependencies = ["PyYAML>=6.0"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Build Tools",
+]
+
+[project.optional-dependencies]
+dev = ["build>=1.2", "pytest>=8.0", "ruff>=0.5", "twine>=5.0"]
+
+[project.scripts]
+wingstaff = "wingstaff.cli:main"
+
+[project.entry-points."hermes_agent.plugins"]
+wingstaff = "wingstaff:register"
+
+[tool.setuptools.packages.find]
+include = ["wingstaff*"]
+
+[tool.setuptools.package-data]
+wingstaff = ["packs/*.yaml", "skills/*/SKILL.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
