@@ -89,7 +89,10 @@ must never hard-code `~/.hermes`.
 Before Wingstaff may execute implementation work, the owning phases must prove:
 
 - approval is bound to the exact plan digest and invalidated by plan changes;
-- untrusted target repositories run in isolated worktrees;
+- target repositories are local and clean before workflow progress;
+- implementation runs in a fresh Wingstaff-owned worktree;
+- delivery returns a reviewed diff without automatically committing or pushing
+  target changes;
 - failed validation or verification blocks progress;
 - command execution follows normal Hermes approval and tool-dispatch paths;
 - secrets are not copied into artifacts or logs;

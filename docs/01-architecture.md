@@ -79,14 +79,31 @@ where future model judgment belongs: producing definition and plan artifacts,
 then implementation and review work after approval. Future runtime code must
 keep transitions, digests, validation, and verification evidence deterministic.
 
+## First-release execution policy
+
+The first executable release is constrained to local target repositories. Its
+future state and lifecycle tools must enforce one policy consistently:
+
+- reject a target repository with existing tracked or untracked changes;
+- create a fresh Wingstaff-owned Git worktree for implementation;
+- produce a reviewed working-tree diff, not an automatic target commit or push;
+- require separate authorization before committing or pushing target changes;
+- bind one human approval to the complete plan artifact digest;
+- invalidate approval whenever that plan changes.
+
+These are binding design inputs for the state model, not implemented bootstrap
+features. The support-status table remains authoritative for runtime
+availability.
+
 ## Plugin and package entry points
 
-The repository supports two discovery shapes, neither live-verified yet:
+The repository supports two discovery shapes verified against Hermes v0.18.2:
 
 - the root `plugin.yaml` and root `__init__.py` form the Git-directory plugin
   entry point;
 - the `hermes_agent.plugins` entry point in `pyproject.toml` resolves to
-  `wingstaff:register` for Python-package discovery.
+  the `wingstaff` module for Python-package discovery. Hermes then calls its
+  module-level `register(ctx)` function.
 
 `wingstaff.register(ctx)` uses the documented `register_tool()` and
 `register_skill()` context APIs. Hermes documents plugin skills as read-only,
@@ -109,10 +126,10 @@ that capability generically.
 
 | Contract | Source | Verification |
 |---|---|---|
-| Plugin declarations | `plugin.yaml`, `pyproject.toml` | Package build; live discovery deferred to Phase 1 |
+| Plugin declarations | `plugin.yaml`, `pyproject.toml` | `tests/test_installation.py`; live directory and entry-point probes |
 | Registration | `wingstaff/__init__.py` | `tests/test_plugin.py` fake-context assertions |
 | Tool schema and JSON boundary | `wingstaff/schemas.py`, `wingstaff/tools.py` | `tests/test_plugin.py` |
 | Pack schema and invariants | `wingstaff/packs.py` | `tests/test_packs.py` |
 | Addy Osmani mapping | `wingstaff/packs/addyosmani.yaml` | Pack load and CLI validation |
-| Bundled procedure | `wingstaff/skills/orchestrate/SKILL.md` | Registration test only |
-| Hermes extension behavior | [official plugin guide](https://hermes-agent.nousresearch.com/docs/developer-guide/plugins) | Upstream documentation; live compatibility deferred to Phase 1 |
+| Bundled procedure | `wingstaff/skills/orchestrate/SKILL.md` | Registration test and live explicit load |
+| Hermes extension behavior | [official plugin guide](https://hermes-agent.nousresearch.com/docs/developer-guide/plugins) | Upstream documentation plus the v0.18.2 compatibility probe |

@@ -85,3 +85,24 @@ to the runbook.
   tools, Kanban integration, and delivery remain unavailable.
 - Compatibility with a newer Hermes release must be re-probed before widening
   the supported range.
+
+Wingstaff does not declare Hermes as a Python package dependency. Hermes is the
+plugin host, and its Git installation uses a separate managed environment;
+adding it to `project.dependencies` would install a second host rather than
+express the verified runtime boundary. Compatibility is therefore recorded and
+tested as a host integration contract.
+
+## First-release execution policy
+
+The first executable Wingstaff release will support local target repositories
+only. Later workflow phases must implement these already-fixed rules:
+
+- reject dirty target repositories;
+- implement in a fresh Wingstaff-owned worktree;
+- return a reviewed working-tree diff without automatically committing or
+  pushing target changes;
+- require separate authorization for any target commit or push;
+- bind one approval to the complete plan digest and invalidate that approval
+  after any plan modification.
+
+This policy is established for Phase 2 state design but is not yet executable.

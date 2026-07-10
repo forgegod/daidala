@@ -43,7 +43,9 @@ Do not modify either sibling source repository while implementing Wingstaff.
 1. Repository, distribution, import package, and plugin name: `wingstaff`.
 2. Python: 3.11 or newer.
 3. License: MIT.
-4. Canonical install: `hermes plugins install <owner>/wingstaff --enable`.
+4. Verified integration: Git-directory and Python module-entry-point discovery
+   on Hermes v0.18.2; publish a remote install command only after exercising a
+   real repository remote.
 5. Canonical operator surface: `hermes wingstaff ...`; standalone `wingstaff` remains diagnostics-only.
 6. Stable lifecycle: `discover -> define -> plan -> gate -> implement -> verify -> review -> deliver`.
 7. The first executable pack is Addy Osmani's `agent-skills`.
@@ -81,8 +83,8 @@ committed before work starts on the next phase.
 | 0B — technical documentation set | Done | Preserve source-grounding and support-status rules. |
 | 0C — Markdown verifier hardening | Done | Preserve the focused edge-case regression tests. |
 | 1 — isolated Hermes installation proof | Done | Preserve both directory and entry-point regression coverage. |
-| 1A — compatibility baseline and release policy | Todo | Next phase after the Phase 1 commit. |
-| 2 — workflow state contract | Todo | Requires Phase 1A decisions. |
+| 1A — compatibility baseline and release policy | Done | Preserve the v0.18.2 host boundary and fixed execution policy. |
+| 2 — workflow state contract | Todo | Next phase after the Phase 1A commit. |
 | 3 — durable persistence | Todo | Requires Phase 2 state types and transitions. |
 | 4 — read-only and gate tools | Todo | Requires Phase 3 persistence. |
 | 4A — exact external-skill prerequisite check | Todo | Must pass before Phase 5 execution. |
@@ -417,11 +419,14 @@ Model workflow state and transitions without running agents or touching Kanban.
 Each workflow records:
 
 - immutable workflow ID;
-- target repository and requested goal;
+- canonical local target-repository path, baseline commit, and requested goal;
+- target-cleanliness validation result and timestamp;
+- Wingstaff worktree path once implementation begins;
+- fixed delivery mode `reviewed_diff_only`;
 - selected pack and exact pack/source revision;
 - current stage and status;
 - artifact references per completed stage;
-- human-gate decision and timestamp;
+- human-gate decision, exact approved plan digest, and timestamp;
 - verification evidence;
 - failure/block reason;
 - created/updated timestamps.
@@ -431,8 +436,15 @@ Allowed statuses are explicit: `draft`, `running`, `awaiting_approval`, `approve
 ### Rules
 
 - No transition skips the human gate.
+- Workflow creation accepts local repository paths only.
+- Forward progress from `draft` requires a clean target and recorded baseline
+  commit; tracked or untracked target changes block validation.
+- Implementation requires a fresh Wingstaff-owned worktree distinct from the
+  target checkout.
 - Approval is single-shot and bound to a plan artifact digest.
 - Modifying the plan after approval invalidates approval.
+- Delivery produces a reviewed diff and cannot represent an automatic target
+  commit or push.
 - Failed validation or verification blocks forward progress.
 - Re-running a completed transition is idempotent.
 - No guessed artifact is accepted.
@@ -473,9 +485,10 @@ Provide the minimal safe plugin API before any autonomous execution.
 
 ### Tools
 
-- `wingstaff_start` — create a draft workflow only;
+- `wingstaff_start` — create a draft workflow for a local repository only;
 - `wingstaff_status` — inspect state and artifacts;
-- `wingstaff_validate` — validate pack, target, and prerequisites;
+- `wingstaff_validate` — validate pack and prerequisites, reject dirty targets,
+  and record the baseline commit;
 - `wingstaff_approve` — approve the exact current plan digest;
 - `wingstaff_modify` — record requested plan changes and invalidate approval;
 - `wingstaff_cancel` — terminal cancellation.
@@ -525,16 +538,17 @@ Prove one issue can move from request to delivered verified change using Hermes 
 Only this vertical slice:
 
 1. User starts a workflow against a local Git repository.
-2. Wingstaff validates the Addyosmani pack and uses the Phase 4A prerequisite
+2. Wingstaff rejects a dirty target and records its baseline commit.
+3. Wingstaff validates the Addyosmani pack and uses the Phase 4A prerequisite
    check for every exact required skill.
-3. Hermes produces a definition artifact.
-4. Hermes produces a plan artifact.
-5. Wingstaff pauses at `awaiting_approval` and presents the plan.
-6. Human approves the plan digest.
-7. One implementation task runs in an isolated Git worktree.
-8. Verification runs and captures command, exit code, and output reference.
-9. Review runs against the diff.
-10. Delivery reports changed paths and verification evidence. It does not commit or push unless separately authorized.
+4. Hermes produces a definition artifact.
+5. Hermes produces a plan artifact.
+6. Wingstaff pauses at `awaiting_approval` and presents the plan.
+7. Human approves the plan digest.
+8. One implementation task runs in a fresh Wingstaff-owned Git worktree.
+9. Verification runs and captures command, exit code, and output reference.
+10. Review runs against the diff.
+11. Delivery reports changed paths and verification evidence. It does not commit or push unless separately authorized.
 
 ### Execution boundary
 
@@ -702,22 +716,23 @@ Do not build one. Use Hermes CLI, gateway messages, Kanban, and existing observa
 The conservative defaults are accepted and move into Phase 1A as binding
 first-release policy: no automatic target commit or push, one approval bound to
 the whole plan digest, reapproval after plan changes, rejection of dirty target
-repositories, fresh Wingstaff worktrees, and local repositories only. The
-supported Hermes version boundary remains intentionally unresolved until Phase
-1 produces live evidence.
+repositories, fresh Wingstaff worktrees, and local repositories only. Hermes
+v0.18.2 is the only supported host boundary until another release passes the
+same directory and entry-point probes.
 
-## Suggested commit sequence
+## Remaining commit boundaries
 
-Do not commit until requested. When authorized, keep these independently green:
+Keep every remaining phase independently green and commit it before starting
+the next phase:
 
-1. `chore: bootstrap Wingstaff plugin package`
-2. `feat(brand): establish Wingstaff identity and narrative`
-3. `docs: establish Wingstaff technical documentation set`
-4. `feat: validate pack-neutral workflow definitions`
-5. `feat: persist workflow state and approval decisions`
-6. `feat: expose Wingstaff lifecycle tools`
-7. `feat: execute approved Addyosmani workflow slice`
+1. `docs: lock Hermes compatibility and release policy`
+2. `feat: define deterministic workflow state`
+3. `feat: persist workflow state and approval decisions`
+4. `feat: expose Wingstaff lifecycle tools`
+5. `feat: validate exact external skill prerequisites`
+6. `feat: execute approved Addyosmani workflow slice`
+7. `feat: manage external skill revisions`
 8. `feat: integrate Wingstaff with Hermes Kanban`
 9. `feat: add Hermes-native Wingstaff CLI`
 10. `feat: add AI-DLC workflow adapter`
-11. `docs: reconcile operator, integration, and security guides`
+11. `docs: harden operations and release evidence`
