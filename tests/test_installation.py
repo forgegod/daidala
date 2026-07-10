@@ -35,6 +35,7 @@ def test_directory_plugin_entrypoint_loads_in_fresh_isolated_process(
     tmp_path: Path,
 ) -> None:
     script = """
+import importlib
 import importlib.util
 import pathlib
 import sys
@@ -51,6 +52,8 @@ module = importlib.util.module_from_spec(spec)
 sys.modules[module_name] = module
 spec.loader.exec_module(module)
 assert module.register.__module__ == f"{module_name}.wingstaff"
+packs = importlib.import_module(f"{module_name}.wingstaff.packs")
+assert packs.load_pack("addyosmani").name == "addyosmani"
 """
     result = subprocess.run(
         [sys.executable, "-I", "-c", script, str(REPOSITORY)],

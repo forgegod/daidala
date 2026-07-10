@@ -8,7 +8,9 @@ from pathlib import Path
 import pytest
 
 from wingstaff import schemas, tools
+from wingstaff.packs import load_pack
 from wingstaff.service import WorkflowService
+from wingstaff.skills import inventory_from_names, required_skills
 from wingstaff.state import WorkflowStage, WorkflowStatus
 from wingstaff.store import WorkflowStore
 from wingstaff.workflow import record_artifact
@@ -52,10 +54,14 @@ def target_repository(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def service(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> WorkflowService:
+    pack = load_pack("addyosmani")
     instance = WorkflowService(
         WorkflowStore(tmp_path / "data"),
         clock=TickClock(),
         id_factory=lambda: "workflow-generated",
+        skill_inventory=inventory_from_names(
+            skill.name for skill in required_skills(pack)
+        ),
     )
     monkeypatch.setattr(tools, "_service_factory", lambda: instance)
     return instance

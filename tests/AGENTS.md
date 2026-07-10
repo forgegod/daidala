@@ -11,6 +11,7 @@ completeness without touching a real Hermes profile.
 - Unit tests for pack loading and validation.
 - Fake-context tests for plugin tool and skill registration.
 - Temporary-repository tests for lifecycle services and JSON tool handlers.
+- Fake-inventory tests for exact external-skill prerequisites and host errors.
 - Subprocess tests for dependency-free repository verification scripts.
 - Build/install smoke tests for directory entry points, wheel resources, and Hermes entry-point metadata.
 

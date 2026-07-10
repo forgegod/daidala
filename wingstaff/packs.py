@@ -45,7 +45,7 @@ def load_pack(name: str) -> WorkflowPack:
     if not name or not name.replace("-", "").isalnum():
         raise PackError(f"invalid pack name: {name!r}")
 
-    resource = files("wingstaff").joinpath("packs", f"{name}.yaml")
+    resource = files(__package__).joinpath("packs", f"{name}.yaml")
     if not resource.is_file():
         raise PackError(f"unknown bundled pack: {name!r}")
 

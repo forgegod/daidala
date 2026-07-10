@@ -89,9 +89,10 @@ Hermes process to confirm that the plugin was enabled without errors, registered
 - Hermes v0.18.2 is the only verified host version.
 - Directory, entry-point, and public remote Git installation are verified.
 - Plugin registration, deterministic workflow state, local persistence, and
-  public lifecycle/gate tools are implemented. External-skill prerequisite
-  enforcement, workflow execution, Kanban integration, and delivery remain
-  unavailable.
+  public lifecycle/gate tools are implemented. Exact external-skill
+  prerequisite enforcement is read-only and blocks draft creation when a pack
+  requirement is missing. Workflow execution, Kanban integration, and delivery
+  remain unavailable.
 - Compatibility with a newer Hermes release must be re-probed before widening
   the supported range.
 

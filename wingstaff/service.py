@@ -10,6 +10,7 @@ from uuid import uuid4
 
 from .errors import WorkflowError
 from .packs import __version__, load_pack
+from .skills import HermesSkillInventory, SkillInventory, require_pack_skills
 from .state import WorkflowState
 from .store import WorkflowStore
 from .workflow import (
@@ -34,10 +35,12 @@ class WorkflowService:
         *,
         clock: Callable[[], datetime] | None = None,
         id_factory: Callable[[], str] | None = None,
+        skill_inventory: SkillInventory | None = None,
     ) -> None:
         self.store = store
         self._clock = clock or (lambda: datetime.now(UTC))
         self._id_factory = id_factory or (lambda: str(uuid4()))
+        self._skill_inventory = skill_inventory or HermesSkillInventory()
 
     def start(
         self,
@@ -49,6 +52,7 @@ class WorkflowService:
     ) -> WorkflowState:
         """Create a draft after validating only local deterministic inputs."""
         pack = load_pack(pack_name)
+        require_pack_skills(pack, self._skill_inventory)
         target = _canonical_local_path(target_repository)
         state = new_workflow(
             workflow_id=workflow_id or self._id_factory(),
@@ -68,7 +72,8 @@ class WorkflowService:
         """Validate the selected pack and the target repository's clean baseline."""
         observed = self.store.get_with_token(workflow_id)
         state = observed.state
-        load_pack(state.pack_name)
+        pack = load_pack(state.pack_name)
+        require_pack_skills(pack, self._skill_inventory)
         baseline, is_clean = _inspect_repository(Path(state.target_repository))
         updated = validate_target(
             state,

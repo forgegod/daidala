@@ -87,8 +87,8 @@ committed before work starts on the next phase.
 | 2 — workflow state contract | Done | Preserve the BLOCKED-terminal rule and approval-digest binding. |
 | 3 — durable persistence | Done | Preserve the optimistic-concurrency guard on update. |
 | 4 — read-only and gate tools | Done | Preserve strict JSON boundaries and monotonic transition timestamps. |
-| 4A — exact external-skill prerequisite check | Todo | Next phase; must pass before Phase 5 execution. |
-| 5 — thin Addyosmani workflow | Todo | Requires Phases 1–4A. |
+| 4A — exact external-skill prerequisite check | Done | Preserve exact-name matching and read-only host inventory access. |
+| 5 — thin Addyosmani workflow | Todo | Next phase; requires Phases 1–4A. |
 | 6 — external skill installation and revision management | Todo | Expand the Phase 4A check without weakening it. |
 | 7 — Hermes Kanban mapping | Todo | Requires durable workflow state. |
 | 8 — `hermes wingstaff` operator CLI | Todo | Requires stable service operations. |
