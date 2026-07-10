@@ -48,3 +48,4 @@ python -m twine check dist/*
 | [`wingstaff/AGENTS.md`](wingstaff/AGENTS.md) | Plugin registration, deterministic engine, pack resources, bundled skills. | Runtime Python, tool schemas/handlers, packs, bundled skills. |
 | [`tests/AGENTS.md`](tests/AGENTS.md) | Unit, package, and plugin-contract verification. | Tests or fixtures. |
 | [`docs/AGENTS.md`](docs/AGENTS.md) | Architecture and implementation plans. | Plans, decisions, roadmap, operator documentation. |
+| [`scripts/AGENTS.md`](scripts/AGENTS.md) | Dependency-free development and repository verification utilities. | Verification scripts or durable development automation. |

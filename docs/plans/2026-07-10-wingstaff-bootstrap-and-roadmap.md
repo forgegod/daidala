@@ -69,6 +69,30 @@ The initial repository contains:
 
 This bootstrap intentionally does not claim workflow execution exists.
 
+## Execution status
+
+Status is updated only after a phase passes its verification gate. A phase is
+committed before work starts on the next phase.
+
+| Phase | Status | Next condition |
+|---|---|---|
+| Bootstrap package and guarded pack validation | Done | Preserve as the runtime baseline. |
+| 0A — brand and narrative | Done | Reconcile only when the product boundary changes. |
+| 0B — technical documentation set | Done | Commit the verified documentation batch. |
+| 0C — Markdown verifier hardening | Todo | Add edge-case tests and close parser gaps before Phase 1. |
+| 1 — isolated Hermes installation proof | Todo | Execute after Phase 0C is committed. |
+| 1A — compatibility baseline and release policy | Todo | Execute after Phase 1 establishes live behavior. |
+| 2 — workflow state contract | Todo | Requires Phase 1A decisions. |
+| 3 — durable persistence | Todo | Requires Phase 2 state types and transitions. |
+| 4 — read-only and gate tools | Todo | Requires Phase 3 persistence. |
+| 4A — exact external-skill prerequisite check | Todo | Must pass before Phase 5 execution. |
+| 5 — thin Addyosmani workflow | Todo | Requires Phases 1–4A. |
+| 6 — external skill installation and revision management | Todo | Expand the Phase 4A check without weakening it. |
+| 7 — Hermes Kanban mapping | Todo | Requires durable workflow state. |
+| 8 — `hermes wingstaff` operator CLI | Todo | Requires stable service operations. |
+| 9 — AI-DLC adapter | Todo | Requires a passing Addyosmani fixture workflow. |
+| 10 — operational hardening and release | Todo | Requires both pack fixtures. |
+
 ## Phase 0A — rescue the Wingstaff brand under the new narrative
 
 ### Objective
@@ -267,6 +291,37 @@ Create incremental, source-grounded documentation as specified above—five
 substantive documents in Phase 0B, then state/stages/runbook/integration
 documents alongside the phases that make them true.
 
+## Phase 0C — harden Markdown verification
+
+### Objective
+
+Turn the Phase 0B link checker from a repository-content smoke check into a
+small, tested verifier with explicit Markdown edge-case behavior.
+
+### Files
+
+- extend `scripts/check_md_links.py`;
+- create `tests/test_check_md_links.py`;
+- update `scripts/AGENTS.md` if the supported syntax changes.
+
+### Required behavior
+
+- ignore fenced and four-space-indented code blocks;
+- recognize ATX headings with up to three leading spaces;
+- read UTF-8 files with or without a byte-order mark;
+- handle quoted and parenthesized inline-link titles;
+- report missing files and anchors with consistent repository-relative paths;
+- preserve external URL, duplicate-heading, custom-anchor, image-link, and
+  reference-link behavior;
+- keep the checker dependency-free.
+
+### Verification gate
+
+- focused tests cover every required behavior and both success and failure exit
+  paths;
+- `python scripts/check_md_links.py .` passes;
+- `pytest` and `ruff check .` remain green.
+
 ## Phase 1 — prove installation against Hermes
 
 ### Objective
@@ -302,6 +357,36 @@ Install the local repository as a Hermes plugin in an isolated profile and prove
 - isolated Hermes reports Wingstaff enabled and registered.
 
 Stop if Git-directory and pip-entry-point installations behave differently. Resolve packaging before adding workflow logic.
+
+## Phase 1A — establish compatibility and first-release policy
+
+### Objective
+
+Convert the Phase 1 live results into explicit compatibility and execution
+policy before the workflow state model is frozen.
+
+### Decisions
+
+- declare the tested Hermes version or bounded version range;
+- produce a reviewed working-tree diff only; never commit or push target changes
+  without separate authorization;
+- bind one approval to the whole plan digest and require reapproval after plan
+  changes;
+- reject dirty target repositories and use a fresh Wingstaff worktree;
+- support local target repositories only in the first executable release.
+
+### Files
+
+- update `docs/01-architecture.md`;
+- create or update `docs/08-hermes-integration.md`;
+- update this status table and package compatibility metadata only when the
+  supported Hermes boundary is proven.
+
+### Verification gate
+
+Every Phase 2 state invariant and every public Phase 4 tool can be evaluated
+against one unambiguous execution policy and a declared Hermes compatibility
+boundary.
 
 ## Phase 2 — define the workflow state contract
 
@@ -396,6 +481,29 @@ Provide the minimal safe plugin API before any autonomous execution.
 
 Every handler returns a JSON string, catches boundary exceptions, rejects unknown fields, and is tested without a live model or real profile.
 
+## Phase 4A — make exact skill availability a start prerequisite
+
+### Objective
+
+Resolve the Phase 5/6 ordering gap: Phase 5 requires exact skills to be
+validated, while Phase 6 owns installation and revision management. Implement
+the minimum read-only availability check before executable work begins.
+
+### Scope
+
+- create `wingstaff/skills.py` with a host boundary for exact installed-skill
+  lookup;
+- validate every selected pack skill by exact name before workflow start;
+- return an actionable missing-skill error containing the fully qualified
+  install target;
+- perform no installation, update, or network mutation;
+- test the boundary with fake installed-skill inventories.
+
+### Verification gate
+
+A missing or mismatched skill blocks workflow start before definition or plan
+artifacts are requested. A complete fake inventory passes without mutation.
+
 ## Phase 5 — implement one thin end-to-end workflow
 
 ### Objective
@@ -407,7 +515,8 @@ Prove one issue can move from request to delivered verified change using Hermes 
 Only this vertical slice:
 
 1. User starts a workflow against a local Git repository.
-2. Wingstaff validates the Addyosmani pack and exact required skills.
+2. Wingstaff validates the Addyosmani pack and uses the Phase 4A prerequisite
+   check for every exact required skill.
 3. Hermes produces a definition artifact.
 4. Hermes produces a plan artifact.
 5. Wingstaff pauses at `awaiting_approval` and presents the plan.
@@ -436,11 +545,12 @@ Run the slice against a temporary fixture Git repository containing a deliberate
 
 ### Objective
 
-Make skill resolution mechanical rather than relying on prose.
+Extend the read-only Phase 4A resolution boundary with dry-run installation,
+source revision pinning, version constraints, and controlled update planning.
 
 ### Files
 
-- create `wingstaff/skills.py`
+- extend `wingstaff/skills.py`;
 - extend pack schema with source revision and optional version constraints;
 - add `hermes wingstaff packs install`, `check`, and `update-plan` CLI operations;
 - add tests with a fake Hermes command/registry boundary.
@@ -455,7 +565,9 @@ Make skill resolution mechanical rather than relying on prose.
 
 ### Verification gate
 
-A missing or mismatched skill prevents workflow start with an actionable error naming the exact install command.
+Dry-run output names every external source and intended mutation. Installation
+or revision mismatch remains a workflow-start blocker with an actionable exact
+install command.
 
 ## Phase 7 — map work onto Hermes Kanban
 
@@ -575,15 +687,14 @@ Start with the active profile plus isolated worktrees. Add dedicated profiles on
 
 Do not build one. Use Hermes CLI, gateway messages, Kanban, and existing observability until a demonstrated operator need remains unmet.
 
-## Open decisions before Phase 5
+## Decisions for the first executable slice
 
-These do not block the bootstrap but must be decided before autonomous code execution:
-
-1. Whether Wingstaff may create commits automatically after approval, or only produce a reviewed working-tree diff. Recommended default: no commit or push.
-2. Whether approval is valid for the entire plan or one implementation stage at a time. Recommended default: one approval bound to the whole plan digest, with reapproval after plan changes.
-3. Whether target repositories may be dirty. Recommended default: reject dirty worktrees and create a fresh Wingstaff worktree.
-4. Which Hermes versions are supported. Decide after Phase 1 exercises the live plugin API.
-5. Whether the first release supports only local repositories or also GitHub issue/PR intake. Recommended default: local repositories first; intake adapters later.
+The conservative defaults are accepted and move into Phase 1A as binding
+first-release policy: no automatic target commit or push, one approval bound to
+the whole plan digest, reapproval after plan changes, rejection of dirty target
+repositories, fresh Wingstaff worktrees, and local repositories only. The
+supported Hermes version boundary remains intentionally unresolved until Phase
+1 produces live evidence.
 
 ## Suggested commit sequence
 

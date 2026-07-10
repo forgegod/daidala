@@ -49,7 +49,7 @@ discover -> define -> plan -> HUMAN GATE -> implement -> verify -> review -> del
 
 Workflow packs map external skills onto that lifecycle. External skill repositories remain dependencies; their content is not vendored into Wingstaff.
 
-See `docs/plans/2026-07-10-wingstaff-bootstrap-and-roadmap.md` for the implementation plan.
+Start with [`docs/README.md`](docs/README.md) for the source-grounded documentation set and support status. The [implementation roadmap](docs/plans/2026-07-10-wingstaff-bootstrap-and-roadmap.md) owns future phases.
 
 ## License
 
