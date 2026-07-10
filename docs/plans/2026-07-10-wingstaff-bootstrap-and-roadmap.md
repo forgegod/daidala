@@ -78,9 +78,9 @@ committed before work starts on the next phase.
 |---|---|---|
 | Bootstrap package and guarded pack validation | Done | Preserve as the runtime baseline. |
 | 0A — brand and narrative | Done | Reconcile only when the product boundary changes. |
-| 0B — technical documentation set | Done | Commit the verified documentation batch. |
-| 0C — Markdown verifier hardening | Todo | Add edge-case tests and close parser gaps before Phase 1. |
-| 1 — isolated Hermes installation proof | Todo | Execute after Phase 0C is committed. |
+| 0B — technical documentation set | Done | Preserve source-grounding and support-status rules. |
+| 0C — Markdown verifier hardening | Done | Preserve the focused edge-case regression tests. |
+| 1 — isolated Hermes installation proof | Todo | Next phase. |
 | 1A — compatibility baseline and release policy | Todo | Execute after Phase 1 establishes live behavior. |
 | 2 — workflow state contract | Todo | Requires Phase 1A decisions. |
 | 3 — durable persistence | Todo | Requires Phase 2 state types and transitions. |
@@ -346,7 +346,10 @@ Install the local repository as a Hermes plugin in an isolated profile and prove
 5. Start a fresh Hermes process and verify `wingstaff_pack_info` appears.
 6. Load `wingstaff:orchestrate` explicitly and verify its content is reachable.
 7. Add an automated smoke test around the stable boundary available in the installed Hermes version.
-8. Document the exact verified installation command.
+8. Resolve the root directory-plugin `__init__.py` versus import-package name
+   collision that makes targeted pytest collection fail, without breaking either
+   plugin discovery path.
+9. Document the exact verified installation command.
 
 ### Verification gate
 
@@ -355,6 +358,8 @@ Install the local repository as a Hermes plugin in an isolated profile and prove
 - `python -m build`
 - wheel contains `packs/addyosmani.yaml` and `skills/orchestrate/SKILL.md`;
 - isolated Hermes reports Wingstaff enabled and registered.
+- both `pytest` and `pytest tests/test_installation.py` collect without import
+  ambiguity.
 
 Stop if Git-directory and pip-entry-point installations behave differently. Resolve packaging before adding workflow logic.
 

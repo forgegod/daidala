@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import sys
 from collections import Counter
@@ -24,12 +25,15 @@ IGNORED_DIRS = {
     "site-packages",
     "wingstaff.egg-info",
 }
-HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
+HEADING_RE = re.compile(r"^ {0,3}(#{1,6})\s+(.+?)\s*$")
 CUSTOM_ID_RE = re.compile(r"\s*\{#([A-Za-z][\w-]*)\}\s*$")
-INLINE_LINK_RE = re.compile(r"!?\[([^]]*)\]\(([^)]+)\)")
+INLINE_LINK_RE = re.compile(
+    r'''!?\[([^]]*)\]\(\s*(?:<([^>]+)>|([^\s)]+))'''
+    r'''(?:\s+(?:"[^"]*"|'[^']*'|\([^)]*\)))?\s*\)'''
+)
 REFERENCE_DEF_RE = re.compile(r'^\s*\[([^]]+)\]:\s+(?:<([^>]+)>|(\S+))(?:\s+["\'(].*)?$')
 REFERENCE_USE_RE = re.compile(r"(?<!!)\[([^]]+)\]\[([^]]*)\]")
-AUTOLINK_RE = re.compile(r"<((?:https?://|mailto:)[^>]+)>")
+AUTOLINK_RE = re.compile(r"<((?:data:|ftp://|https?://|mailto:|tel:)[^>]+)>")
 EXTERNAL_SCHEMES = {"data", "ftp", "http", "https", "mailto", "tel"}
 
 
@@ -44,7 +48,7 @@ def markdown_files(root: Path) -> list[Path]:
 
 
 def visible_lines(path: Path) -> list[tuple[int, str]]:
-    lines = path.read_text(encoding="utf-8").splitlines()
+    lines = path.read_text(encoding="utf-8-sig").splitlines()
     visible: list[tuple[int, str]] = []
     fence: str | None = None
     for number, line in enumerate(lines, start=1):
@@ -56,7 +60,7 @@ def visible_lines(path: Path) -> list[tuple[int, str]]:
             elif marker == fence:
                 fence = None
             continue
-        if fence is None:
+        if fence is None and not line.startswith(("    ", "\t")):
             visible.append((number, line))
     return visible
 
@@ -105,11 +109,17 @@ def split_destination(raw: str) -> tuple[str, str | None, str | None]:
     return destination, unquote(parsed.path), unquote(parsed.fragment) or None
 
 
+def display_path(path: Path, root: Path) -> str:
+    """Return a stable path relative to the checked root."""
+    return Path(os.path.relpath(path.resolve(), root)).as_posix()
+
+
 def check_destination(
     source: Path,
     line: int,
     raw: str,
     heading_cache: dict[Path, set[str]],
+    root: Path,
 ) -> list[str]:
     display, relative_path, anchor = split_destination(raw)
     if relative_path is None:
@@ -117,16 +127,20 @@ def check_destination(
 
     target = source if not relative_path else source.parent / relative_path
     target = target.resolve()
+    source_display = display_path(source, root)
     if not target.is_file():
-        return [f"{source}:{line}: missing file: {display}"]
+        return [f"{source_display}:{line}: missing file: {display}"]
 
     if anchor and target.suffix.lower() == ".md":
         if anchor not in heading_ids(target, heading_cache):
-            return [f"{source}:{line}: missing anchor #{anchor} in {target}"]
+            target_display = display_path(target, root)
+            return [
+                f"{source_display}:{line}: missing anchor #{anchor} in {target_display}"
+            ]
     return []
 
 
-def check_file(path: Path, heading_cache: dict[Path, set[str]]) -> list[str]:
+def check_file(path: Path, heading_cache: dict[Path, set[str]], root: Path) -> list[str]:
     errors: list[str] = []
     definitions: dict[str, tuple[int, str]] = {}
     visible = visible_lines(path)
@@ -143,21 +157,23 @@ def check_file(path: Path, heading_cache: dict[Path, set[str]]) -> list[str]:
         definition = REFERENCE_DEF_RE.match(line)
         if definition:
             raw = definition.group(2) or definition.group(3)
-            errors.extend(check_destination(path, line_number, raw, heading_cache))
+            errors.extend(check_destination(path, line_number, raw, heading_cache, root))
             continue
 
         without_autolinks = AUTOLINK_RE.sub("", line)
         for match in INLINE_LINK_RE.finditer(without_autolinks):
+            raw = match.group(2) or match.group(3)
             errors.extend(
-                check_destination(path, line_number, match.group(2), heading_cache)
+                check_destination(path, line_number, raw, heading_cache, root)
             )
 
         without_inline = INLINE_LINK_RE.sub("", without_autolinks)
         for match in REFERENCE_USE_RE.finditer(without_inline):
             reference = (match.group(2) or match.group(1)).casefold()
             if reference not in definitions:
+                path_display = display_path(path, root)
                 errors.append(
-                    f"{path}:{line_number}: undefined reference link: [{reference}]"
+                    f"{path_display}:{line_number}: undefined reference link: [{reference}]"
                 )
 
     return errors
@@ -175,8 +191,11 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(f"path does not exist: {args.path}")
 
     files = markdown_files(root)
+    display_root = root if root.is_dir() else root.parent
     cache: dict[Path, set[str]] = {}
-    errors = [error for path in files for error in check_file(path, cache)]
+    errors = [
+        error for path in files for error in check_file(path, cache, display_root)
+    ]
     if errors:
         print("\n".join(errors), file=sys.stderr)
         print(f"Markdown link check failed: {len(errors)} issue(s)", file=sys.stderr)
