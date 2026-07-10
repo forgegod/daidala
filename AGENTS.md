@@ -44,6 +44,7 @@ python -m twine check dist/*
 
 | Child | Owns | Read when editing… |
 |---|---|---|
+| [`assets/AGENTS.md`](assets/AGENTS.md) | Brand source, generated visual assets, and bundled font licensing. | Logos, social cards, asset generation, or brand narrative. |
 | [`wingstaff/AGENTS.md`](wingstaff/AGENTS.md) | Plugin registration, deterministic engine, pack resources, bundled skills. | Runtime Python, tool schemas/handlers, packs, bundled skills. |
 | [`tests/AGENTS.md`](tests/AGENTS.md) | Unit, package, and plugin-contract verification. | Tests or fixtures. |
 | [`docs/AGENTS.md`](docs/AGENTS.md) | Architecture and implementation plans. | Plans, decisions, roadmap, operator documentation. |

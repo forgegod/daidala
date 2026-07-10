@@ -1,8 +1,10 @@
 # Wingstaff
 
-Wingstaff is a Hermes Agent plugin for autonomous software-development workflows with an explicit human approval gate.
+![Wingstaff](assets/logo.svg)
 
-It is designed to use Hermes' existing plugin, skills, delegation, Kanban, cron, and gateway facilities. It does not run a separate MCP, HTTP, dashboard, or orchestration server.
+Wingstaff is a Hermes-native staff of specialist agents that moves software work through interchangeable workflow packs and one explicit human approval gate—without introducing a second orchestration server.
+
+It uses Hermes' existing plugin, skills, delegation, Kanban, cron, and gateway facilities. It does not run a separate MCP, HTTP, dashboard, or orchestration server.
 
 ## Status
 
