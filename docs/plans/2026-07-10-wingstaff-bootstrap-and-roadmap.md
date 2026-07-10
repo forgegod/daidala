@@ -84,8 +84,8 @@ committed before work starts on the next phase.
 | 0C — Markdown verifier hardening | Done | Preserve the focused edge-case regression tests. |
 | 1 — isolated Hermes installation proof | Done | Preserve both directory and entry-point regression coverage. |
 | 1A — compatibility baseline and release policy | Done | Preserve the v0.18.2 host boundary and fixed execution policy. |
-| 2 — workflow state contract | Todo | Next phase after the Phase 1A commit. |
-| 3 — durable persistence | Todo | Requires Phase 2 state types and transitions. |
+| 2 — workflow state contract | Done | Preserve the BLOCKED-terminal rule and approval-digest binding. |
+| 3 — durable persistence | Todo | Next phase after the Phase 2 commit. |
 | 4 — read-only and gate tools | Todo | Requires Phase 3 persistence. |
 | 4A — exact external-skill prerequisite check | Todo | Must pass before Phase 5 execution. |
 | 5 — thin Addyosmani workflow | Todo | Requires Phases 1–4A. |
