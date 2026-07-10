@@ -1,0 +1,45 @@
+# wingstaff/
+
+## Purpose
+
+Implement the Hermes plugin boundary, deterministic workflow mechanism, workflow-pack adapters, and bundled orchestration skills.
+
+## Ownership
+
+| Path | Owns |
+|---|---|
+| `__init__.py` | Hermes plugin registration. |
+| `schemas.py` | Tool schemas exposed to the model. |
+| `tools.py` | JSON-returning plugin handlers. |
+| `packs.py` | Pack loading and deterministic validation. |
+| `cli.py` | Standalone diagnostics; later backs `hermes wingstaff`. |
+| `packs/` | Skill-set-specific lifecycle mappings. |
+| `skills/` | Namespaced read-only skills bundled with the plugin. |
+
+## Local Contracts
+
+- `register(ctx)` imports no Hermes internals; it uses only the documented plugin context API.
+- Tool handlers never raise across the plugin boundary and always return JSON strings.
+- Packs reference external skills by fully qualified installation target.
+- The engine never substitutes guessed data when a model, skill, or verifier fails.
+- No server, listening socket, or nested Hermes process is part of this package.
+
+## Work Guidance
+
+- Add mechanism to Python and subject-matter mappings to `packs/*.yaml`.
+- Register bundled skills with `ctx.register_skill`; do not copy them into the user's mutable skill store.
+- Use `importlib.resources` so wheel and Git installations behave consistently.
+
+## Verification
+
+```bash
+pytest
+ruff check wingstaff tests
+wingstaff packs validate addyosmani
+```
+
+## Child DOX Index
+
+*(empty — resource directories do not have independent work contracts.)*
+
+See [`/AGENTS.md`](../AGENTS.md).
