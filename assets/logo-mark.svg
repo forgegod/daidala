@@ -1,9 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 336 250"
   role="img" aria-labelledby="title">
   <title id="title">Wingstaff winged-staff mark</title>
+  <rect x="28.00" y="190.00" width="280.00" height="26" fill="#f9a23a"/>
+
   <defs>
     <clipPath id="wingstaff-mark-mark-band" clipPathUnits="userSpaceOnUse">
-      <rect x="0" y="154" width="280" height="30"/>
+      <rect x="0" y="170" width="280" height="26"/>
     </clipPath>
   </defs>
   <g transform="translate(28 20) scale(1.0)">

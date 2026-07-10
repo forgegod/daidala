@@ -21,6 +21,11 @@ PALE = "#f6efdb"
 OUT = Path(__file__).resolve().parent
 FONT_PATH = OUT / "fonts" / "LibreBaskerville-wght.ttf"
 WORDMARK = "WINGSTAFF"
+# Single horizontal band shared by the mark and the wordmark so the amber
+# stripe runs continuously across the lockup with no gap between glyph and
+# font. BAND_Y is in the mark's local coordinate space (before its translate).
+BAND_Y = 170
+BAND_HEIGHT = 26
 TAGLINE = (
     "Hermes-native orchestration.",
     "Specialist agents.",
@@ -100,45 +105,67 @@ def _path_group(
     return group, width
 
 
-def _staff_mark(*, x: int, y: int, scale: float = 1.0, prefix: str) -> str:
+MARK_WIDTH = 280
+MARK_PATH_LEFT = (
+    "M 140 78 C 112 42, 72 34, 30 54 "
+    "C 56 64, 82 70, 106 82 "
+    "C 72 74, 40 82, 18 104 "
+    "C 51 99, 80 100, 110 96 "
+    "C 76 102, 50 118, 34 144 "
+    "C 67 132, 97 120, 122 106 L 140 114 Z"
+)
+MARK_PATH_RIGHT = (
+    "M 140 78 C 168 42, 208 34, 250 54 "
+    "C 224 64, 198 70, 174 82 "
+    "C 208 74, 240 82, 262 104 "
+    "C 229 99, 200 100, 170 96 "
+    "C 204 102, 230 118, 246 144 "
+    "C 213 132, 183 120, 158 106 L 140 114 Z"
+)
+
+
+def _staff_mark(
+    *, x: int, y: int, scale: float = 1.0, prefix: str
+) -> tuple[str, int]:
+    """Return the staff mark SVG fragment and the rendered mark width."""
     transform = f"translate({x} {y}) scale({scale})"
-    left = (
-        "M 140 78 C 112 42, 72 34, 30 54 "
-        "C 56 64, 82 70, 106 82 "
-        "C 72 74, 40 82, 18 104 "
-        "C 51 99, 80 100, 110 96 "
-        "C 76 102, 50 118, 34 144 "
-        "C 67 132, 97 120, 122 106 L 140 114 Z"
-    )
-    right = (
-        "M 140 78 C 168 42, 208 34, 250 54 "
-        "C 224 64, 198 70, 174 82 "
-        "C 208 74, 240 82, 262 104 "
-        "C 229 99, 200 100, 170 96 "
-        "C 204 102, 230 118, 246 144 "
-        "C 213 132, 183 120, 158 106 L 140 114 Z"
-    )
-    return f"""
+    return (
+        f"""
   <defs>
     <clipPath id="{prefix}-mark-band" clipPathUnits="userSpaceOnUse">
-      <rect x="0" y="154" width="280" height="30"/>
+      <rect x="0" y="{BAND_Y}" width="{MARK_WIDTH}" height="{BAND_HEIGHT}"/>
     </clipPath>
   </defs>
   <g transform="{transform}">
-    <path d="{left}" fill="{GOLD}"/>
-    <path d="{right}" fill="{GOLD}"/>
+    <path d="{MARK_PATH_LEFT}" fill="{GOLD}"/>
+    <path d="{MARK_PATH_RIGHT}" fill="{GOLD}"/>
     <circle cx="140" cy="38" r="22" fill="{GOLD}"/>
     <rect x="130" y="38" width="20" height="146" rx="10" fill="{GOLD}"/>
     <path d="M 112 184 L 168 184 L 154 202 L 126 202 Z" fill="{AMBER}"/>
   </g>
   <g transform="{transform}" clip-path="url(#{prefix}-mark-band)">
-    <path d="{left}" fill="{AMBER}"/>
-    <path d="{right}" fill="{AMBER}"/>
+    <path d="{MARK_PATH_LEFT}" fill="{AMBER}"/>
+    <path d="{MARK_PATH_RIGHT}" fill="{AMBER}"/>
     <rect x="130" y="38" width="20" height="146" rx="10" fill="{AMBER}"/>
-  </g>"""
+  </g>""",
+        MARK_WIDTH,
+    )
 
 
-def _wordmark(*, x: float, baseline: float, size: float, prefix: str) -> tuple[str, float]:
+def _wordmark(
+    *,
+    x: float,
+    baseline: float,
+    size: float,
+    prefix: str,
+    band_y: float = BAND_Y,
+) -> tuple[str, float]:
+    """Return the wordmark SVG fragment and its rendered width.
+
+    The amber band is positioned at ``band_y`` in wordmark-local space (the
+    band y on a 168-pt wordmark). Scaling ``band_y`` proportionally keeps the
+    band aligned to the mark band for any wordmark size.
+    """
     gold, width = _path_group(
         WORDMARK,
         x=x,
@@ -147,8 +174,8 @@ def _wordmark(*, x: float, baseline: float, size: float, prefix: str) -> tuple[s
         fill=GOLD,
         letter_spacing=10 * size / 168,
     )
-    band_top = baseline - size * 0.202
-    band_height = 30 * size / 168
+    scaled_band_y = band_y * size / 168
+    band_height = BAND_HEIGHT * size / 168
     amber, _ = _path_group(
         WORDMARK,
         x=x,
@@ -162,7 +189,8 @@ def _wordmark(*, x: float, baseline: float, size: float, prefix: str) -> tuple[s
         f"""
   <defs>
     <clipPath id="{prefix}-word-band" clipPathUnits="userSpaceOnUse">
-      <rect x="{x - 4:.2f}" y="{band_top:.2f}" width="{width + 8:.2f}" height="{band_height:.2f}"/>
+      <rect x="{x - 4:.2f}" y="{scaled_band_y:.2f}" width="{width + 8:.2f}"
+            height="{band_height:.2f}"/>
     </clipPath>
   </defs>
   {gold}
@@ -171,23 +199,43 @@ def _wordmark(*, x: float, baseline: float, size: float, prefix: str) -> tuple[s
     )
 
 
+def _amber_band(
+    *, x: float, y: float, width: float, height: float = BAND_HEIGHT
+) -> str:
+    """One continuous amber rectangle drawn unclipped, so the band bridges
+    the gap between the glyph and the wordmark."""
+    return (
+        f'  <rect x="{x:.2f}" y="{y:.2f}" width="{width:.2f}" '
+        f'height="{height}" fill="{AMBER}"/>\n'
+    )
+
+
 def _logo_svg() -> str:
     word_x = 390
     word, width = _wordmark(x=word_x, baseline=207, size=168, prefix="wingstaff")
-    mark = _staff_mark(x=54, y=3, prefix="wingstaff")
+    mark, mark_width = _staff_mark(x=54, y=3, prefix="wingstaff")
+    mark_y = 3
     total_width = round(word_x + width + 70)
+    band_x = 54
+    band_y = BAND_Y + mark_y
+    band_width = word_x + width - band_x
     return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {total_width} 284"
   role="img" aria-labelledby="title">
-  <title id="title">Wingstaff</title>{mark}{word}
+  <title id="title">Wingstaff</title>
+{_amber_band(x=band_x, y=band_y, width=band_width)}{mark}{word}
 </svg>
 """
 
 
 def _mark_svg() -> str:
-    mark = _staff_mark(x=28, y=20, prefix="wingstaff-mark")
+    mark_y = 20
+    mark, _ = _staff_mark(x=28, y=mark_y, prefix="wingstaff-mark")
+    band_x = 28
+    band_y = BAND_Y + mark_y
     return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 336 250"
   role="img" aria-labelledby="title">
-  <title id="title">Wingstaff winged-staff mark</title>{mark}
+  <title id="title">Wingstaff winged-staff mark</title>
+{_amber_band(x=band_x, y=band_y, width=MARK_WIDTH)}{mark}
 </svg>
 """
 
@@ -198,8 +246,20 @@ def _solid_text(text: str, *, x: float, baseline: float, size: float, fill: str)
 
 
 def _social_card_svg() -> str:
-    mark = _staff_mark(x=54, y=38, scale=0.72, prefix="social")
-    word, _ = _wordmark(x=300, baseline=190, size=112, prefix="social")
+    mark_scale = 0.72
+    mark_x, mark_y = 54, 38
+    word, width = _wordmark(
+        x=300,
+        baseline=190,
+        size=112,
+        prefix="social",
+        band_y=BAND_Y,
+    )
+    mark, _ = _staff_mark(x=mark_x, y=mark_y, scale=mark_scale, prefix="social")
+    band_x = mark_x
+    band_y = BAND_Y * mark_scale + mark_y
+    band_height = BAND_HEIGHT * mark_scale
+    band_width = 300 + width - band_x
     tagline = "".join(
         _solid_text(line, x=78, baseline=310 + index * 48, size=30, fill=PALE)
         for index, line in enumerate(TAGLINE)
@@ -211,7 +271,8 @@ def _social_card_svg() -> str:
   role="img" aria-labelledby="title description">
   <title id="title">Wingstaff — Hermes-native orchestration</title>
   <desc id="description">{description}</desc>
-  <rect width="1200" height="630" fill="{NAVY}"/>{mark}{word}
+  <rect width="1200" height="630" fill="{NAVY}"/>
+{_amber_band(x=band_x, y=band_y, width=band_width, height=band_height)}{mark}{word}
   <rect x="78" y="248" width="1044" height="3" fill="{AMBER}"/>
   {tagline}
   {lifecycle}
