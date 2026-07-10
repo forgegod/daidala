@@ -12,6 +12,8 @@ Implement the Hermes plugin boundary, deterministic workflow mechanism, workflow
 | `errors.py` | Workflow-state and transition error hierarchy. |
 | `state.py` | Immutable workflow state, artifact references, and serialization. |
 | `workflow.py` | Deterministic workflow creation and state transitions. |
+| `locations.py` | Profile-aware data-root resolution; never hard-codes `~/.hermes`. |
+| `store.py` | SQLite-backed workflow persistence with optimistic concurrency. |
 | `schemas.py` | Tool schemas exposed to the model. |
 | `tools.py` | JSON-returning plugin handlers. |
 | `packs.py` | Pack loading and deterministic validation. |

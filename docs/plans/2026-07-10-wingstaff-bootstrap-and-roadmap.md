@@ -85,8 +85,8 @@ committed before work starts on the next phase.
 | 1 — isolated Hermes installation proof | Done | Preserve both directory and entry-point regression coverage. |
 | 1A — compatibility baseline and release policy | Done | Preserve the v0.18.2 host boundary and fixed execution policy. |
 | 2 — workflow state contract | Done | Preserve the BLOCKED-terminal rule and approval-digest binding. |
-| 3 — durable persistence | Todo | Next phase after the Phase 2 commit. |
-| 4 — read-only and gate tools | Todo | Requires Phase 3 persistence. |
+| 3 — durable persistence | Done | Preserve the optimistic-concurrency guard on update. |
+| 4 — read-only and gate tools | Todo | Next phase after the Phase 3 commit. |
 | 4A — exact external-skill prerequisite check | Todo | Must pass before Phase 5 execution. |
 | 5 — thin Addyosmani workflow | Todo | Requires Phases 1–4A. |
 | 6 — external skill installation and revision management | Todo | Expand the Phase 4A check without weakening it. |
