@@ -8,7 +8,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
-from wingstaff.errors import InvalidWorkflowError
+from .errors import InvalidWorkflowError
 
 
 class WorkflowStatus(StrEnum):

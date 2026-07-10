@@ -2,12 +2,15 @@
 
 ## Purpose
 
-Prove the deterministic pack model, Hermes plugin registration contract, and packaged-resource completeness without touching a real Hermes profile.
+Prove the deterministic pack and workflow models, durable persistence, strict
+tool boundaries, Hermes plugin registration contract, and packaged-resource
+completeness without touching a real Hermes profile.
 
 ## Ownership
 
 - Unit tests for pack loading and validation.
 - Fake-context tests for plugin tool and skill registration.
+- Temporary-repository tests for lifecycle services and JSON tool handlers.
 - Subprocess tests for dependency-free repository verification scripts.
 - Build/install smoke tests for directory entry points, wheel resources, and Hermes entry-point metadata.
 

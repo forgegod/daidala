@@ -359,6 +359,44 @@ def test_state_rejects_naive_or_reversed_timestamps() -> None:
             recorded_at=NOW + timedelta(minutes=1),
         )
 
+    awaiting = make_awaiting_approval()
+    with pytest.raises(InvalidTransitionError, match="before updated_at"):
+        approve_plan(
+            awaiting,
+            plan_digest="plan-v1",
+            decided_at=NOW + timedelta(minutes=2),
+        )
+    with pytest.raises(InvalidTransitionError, match="before updated_at"):
+        modify_plan(
+            awaiting,
+            path="artifacts/plan.md",
+            digest="plan-v2",
+            modified_at=NOW + timedelta(minutes=2),
+        )
+
+    approved = approve_plan(
+        awaiting,
+        plan_digest="plan-v1",
+        decided_at=NOW + timedelta(minutes=4),
+    )
+    with pytest.raises(InvalidTransitionError, match="before updated_at"):
+        start_implementation(
+            approved,
+            worktree_path=WORKTREE,
+            started_at=NOW + timedelta(minutes=3),
+        )
+
+    for transition in (
+        lambda: fail_workflow(
+            make_draft(), reason="failed", failed_at=NOW - timedelta(seconds=1)
+        ),
+        lambda: cancel_workflow(
+            make_draft(), reason="cancelled", cancelled_at=NOW - timedelta(seconds=1)
+        ),
+    ):
+        with pytest.raises(InvalidTransitionError, match="before updated_at"):
+            transition()
+
 
 def test_deserialization_rejects_unknown_status() -> None:
     raw = make_draft().to_dict()

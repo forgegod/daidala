@@ -24,7 +24,16 @@ def test_register_exposes_tool_and_namespaced_skill_source() -> None:
 
     wingstaff.register(ctx)
 
-    assert [tool["name"] for tool in ctx.tools] == ["wingstaff_pack_info"]
+    assert [tool["name"] for tool in ctx.tools] == [
+        "wingstaff_pack_info",
+        "wingstaff_start",
+        "wingstaff_status",
+        "wingstaff_validate",
+        "wingstaff_approve",
+        "wingstaff_modify",
+        "wingstaff_cancel",
+    ]
+    assert all(tool["toolset"] == "wingstaff" for tool in ctx.tools)
     assert [name for name, _ in ctx.skills] == ["orchestrate"]
     assert ctx.skills[0][1].name == "SKILL.md"
 
@@ -40,4 +49,8 @@ def test_pack_info_returns_json_string() -> None:
 def test_pack_info_reports_unknown_pack_without_raising() -> None:
     result = json.loads(pack_info({"pack": "missing"}))
 
-    assert result == {"success": False, "error": "unknown bundled pack: 'missing'"}
+    assert result == {
+        "success": False,
+        "error": "PackError",
+        "message": "unknown bundled pack: 'missing'",
+    }

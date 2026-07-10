@@ -19,9 +19,11 @@ release:
 | Python distribution entry point in `hermes_agent.plugins` | `entrypoint` | Explicit enablement, tool registration, and bundled skill loading passed |
 | Public Git repository `forgegod/hermes-wingstaff` | `user` (`git` in `hermes plugins list`) | Clone, enablement, fresh-process tool registration, and bundled skill loading passed |
 
-Both paths register exactly:
+All verified discovery paths register exactly:
 
 - tool `wingstaff_pack_info`;
+- tools `wingstaff_start`, `wingstaff_status`, `wingstaff_validate`,
+  `wingstaff_approve`, `wingstaff_modify`, and `wingstaff_cancel`;
 - skill `wingstaff:orchestrate`.
 
 The root directory entry point must import the bundled package relatively.
@@ -86,9 +88,10 @@ Hermes process to confirm that the plugin was enabled without errors, registered
 
 - Hermes v0.18.2 is the only verified host version.
 - Directory, entry-point, and public remote Git installation are verified.
-- Plugin registration, deterministic workflow state, and local persistence are
-  implemented. Public lifecycle tools, workflow execution, Kanban integration,
-  and delivery remain unavailable.
+- Plugin registration, deterministic workflow state, local persistence, and
+  public lifecycle/gate tools are implemented. External-skill prerequisite
+  enforcement, workflow execution, Kanban integration, and delivery remain
+  unavailable.
 - Compatibility with a newer Hermes release must be re-probed before widening
   the supported range.
 

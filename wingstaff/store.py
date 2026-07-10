@@ -15,8 +15,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from wingstaff.errors import WorkflowError
-from wingstaff.state import WorkflowState
+from .errors import WorkflowError
+from .state import WorkflowState
 
 SCHEMA_VERSION = 1
 _DB_FILE = "workflows.sqlite3"

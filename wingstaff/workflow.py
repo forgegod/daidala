@@ -6,8 +6,8 @@ from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 
-from wingstaff.errors import InvalidTransitionError, InvalidWorkflowError
-from wingstaff.state import (
+from .errors import InvalidTransitionError, InvalidWorkflowError
+from .state import (
     ApprovalRecord,
     ArtifactReference,
     VerificationEvidence,
@@ -143,6 +143,7 @@ def approve_plan(
         return state
     if state.status is not WorkflowStatus.AWAITING_APPROVAL:
         raise InvalidTransitionError("plan approval requires awaiting_approval status")
+    _require_not_before(state, decided_at)
     plan = state.artifact_for(WorkflowStage.PLAN)
     if plan is None or plan.digest != plan_digest:
         raise InvalidTransitionError("approval must match the current plan digest")
@@ -165,6 +166,7 @@ def modify_plan(
     """Replace the plan artifact and invalidate any existing approval."""
     if state.status not in {WorkflowStatus.AWAITING_APPROVAL, WorkflowStatus.APPROVED}:
         raise InvalidTransitionError("plan modification requires a planned workflow")
+    _require_not_before(state, modified_at)
     replacement = ArtifactReference(
         stage=WorkflowStage.PLAN,
         path=path,
@@ -205,6 +207,7 @@ def start_implementation(
         return state
     if state.status is not WorkflowStatus.APPROVED:
         raise InvalidTransitionError("implementation requires approval")
+    _require_not_before(state, started_at)
     if not isinstance(worktree_path, str) or not Path(worktree_path).is_absolute():
         raise InvalidWorkflowError("worktree path must be an absolute local path")
     if Path(worktree_path) == Path(state.target_repository):
@@ -267,6 +270,7 @@ def fail_workflow(
     if state.status is WorkflowStatus.FAILED and state.failure_reason == reason:
         return state
     _require_nonterminal(state)
+    _require_not_before(state, failed_at)
     return replace(
         state,
         status=WorkflowStatus.FAILED,
@@ -285,6 +289,7 @@ def cancel_workflow(
     if state.status is WorkflowStatus.CANCELLED and state.failure_reason == reason:
         return state
     _require_nonterminal(state)
+    _require_not_before(state, cancelled_at)
     return replace(
         state,
         status=WorkflowStatus.CANCELLED,
@@ -319,3 +324,10 @@ def _require_nonterminal(state: WorkflowState) -> None:
         WorkflowStatus.CANCELLED,
     }:
         raise InvalidTransitionError(f"workflow is terminal: {state.status.value}")
+
+
+def _require_not_before(state: WorkflowState, recorded_at: datetime) -> None:
+    if recorded_at < state.updated_at:
+        raise InvalidTransitionError(
+            f"recorded_at cannot be before updated_at {state.updated_at.isoformat()}"
+        )

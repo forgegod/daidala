@@ -10,13 +10,23 @@ from .packs import __version__
 
 def register(ctx) -> None:
     """Register Wingstaff tools and bundled, namespaced skills with Hermes."""
-    ctx.register_tool(
-        name="wingstaff_pack_info",
-        toolset="wingstaff",
-        schema=schemas.PACK_INFO,
-        handler=tools.pack_info,
-        description="Inspect and validate an installed Wingstaff workflow pack.",
-    )
+    handlers = {
+        "wingstaff_pack_info": tools.pack_info,
+        "wingstaff_start": tools.start,
+        "wingstaff_status": tools.status,
+        "wingstaff_validate": tools.validate,
+        "wingstaff_approve": tools.approve,
+        "wingstaff_modify": tools.modify,
+        "wingstaff_cancel": tools.cancel,
+    }
+    for schema in schemas.ALL_TOOLS:
+        ctx.register_tool(
+            name=schema["name"],
+            toolset="wingstaff",
+            schema=schema,
+            handler=handlers[schema["name"]],
+            description=schema["description"],
+        )
 
     skills_dir = Path(__file__).parent / "skills"
     for child in sorted(skills_dir.iterdir()):

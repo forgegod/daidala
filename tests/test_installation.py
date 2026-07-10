@@ -31,6 +31,38 @@ def test_directory_plugin_entrypoint_uses_bundled_package() -> None:
                 sys.modules.pop(loaded_name, None)
 
 
+def test_directory_plugin_entrypoint_loads_in_fresh_isolated_process(
+    tmp_path: Path,
+) -> None:
+    script = """
+import importlib.util
+import pathlib
+import sys
+
+repository = pathlib.Path(sys.argv[1])
+module_name = "wingstaff_isolated_directory_plugin"
+spec = importlib.util.spec_from_file_location(
+    module_name,
+    repository / "__init__.py",
+    submodule_search_locations=[str(repository)],
+)
+assert spec is not None and spec.loader is not None
+module = importlib.util.module_from_spec(spec)
+sys.modules[module_name] = module
+spec.loader.exec_module(module)
+assert module.register.__module__ == f"{module_name}.wingstaff"
+"""
+    result = subprocess.run(
+        [sys.executable, "-I", "-c", script, str(REPOSITORY)],
+        cwd=tmp_path,
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
 def test_pip_entrypoint_loads_plugin_module() -> None:
     project = tomllib.loads((REPOSITORY / "pyproject.toml").read_text(encoding="utf-8"))
 
