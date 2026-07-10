@@ -14,12 +14,12 @@ worktrees, and evidence-backed uncommitted delivery for one bundled pack.
 | [Authoring packs](04-authoring-packs.md) | Implemented schema-v1 authoring path | Pack loader, bundled pack, pack tests |
 | [Lifecycle stages](05-lifecycle-stages.md) | Thin executable Addyosmani workflow with Kanban dispatch implemented | `wingstaff/service.py`, `wingstaff/kanban.py`, execution and Kanban tests |
 | [Security](06-security.md) | Current plugin, approval, artifact, and worktree boundary | Runtime modules and tests |
-| Runbook (`07-runbook.md`) | Future — Phase 8; no file yet | Operator CLI not implemented |
+| [Runbook](07-runbook.md) | Implemented native operator procedures | Shared CLI tests and isolated Hermes command probe |
 | [Hermes integration](08-hermes-integration.md) | Verified against Hermes v0.18.2 | Isolated directory and wheel-entry-point probes, `tests/test_installation.py` |
 | [Pack adapters](09-pack-adapters.md) | Addyosmani implemented; AI-DLC future | Pack YAML, pack/skill/execution tests |
 | Wingstaff plugin tools | Twelve strict JSON tools implemented | `wingstaff/schemas.py`, `wingstaff/tools.py`, plugin and execution tests |
 | `wingstaff:orchestrate` | Bundled executable procedure | `wingstaff/skills/orchestrate/SKILL.md`, plugin and installation tests |
-| `wingstaff packs validate\|install\|check\|update-plan` | Implemented standalone pack and dependency operations | `wingstaff/cli.py`, skill-installation tests |
+| `hermes wingstaff` and standalone `wingstaff` | Shared operator parser and handlers implemented | `wingstaff/cli.py`, plugin and CLI-equivalence tests |
 | Approval-gated Kanban implementation dispatch | Implemented | `wingstaff/kanban.py`, fake-host tests, isolated Hermes host probe |
 | Cron and target commit/push | Unavailable | Planned in the [roadmap](plans/2026-07-10-wingstaff-bootstrap-and-roadmap.md) |
 
@@ -66,7 +66,7 @@ flowchart LR
 | How is approval enforced before implementation? | [Security](06-security.md#human-approval-boundary) |
 | What does each executable stage require? | [Lifecycle stages](05-lifecycle-stages.md) |
 | Which Hermes version and installation paths are verified? | [Hermes integration](08-hermes-integration.md) |
-| Where are install, run, resume, and recovery commands? | Not published yet; the runbook is a Phase 8 deliverable |
+| Where are install, run, resume, and recovery commands? | [Operator runbook](07-runbook.md) |
 | Which future phase owns a missing surface? | [Implementation roadmap](plans/2026-07-10-wingstaff-bootstrap-and-roadmap.md) |
 
 ## Verification

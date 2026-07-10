@@ -11,12 +11,16 @@ class FakeContext:
     def __init__(self) -> None:
         self.tools: list[dict] = []
         self.skills: list[tuple[str, Path]] = []
+        self.cli_commands: list[dict] = []
 
     def register_tool(self, **kwargs) -> None:
         self.tools.append(kwargs)
 
     def register_skill(self, name: str, path: Path) -> None:
         self.skills.append((name, path))
+
+    def register_cli_command(self, **kwargs) -> None:
+        self.cli_commands.append(kwargs)
 
     def dispatch_tool(self, name: str, args: dict) -> str:
         del name, args
@@ -45,6 +49,8 @@ def test_register_exposes_tool_and_namespaced_skill_source() -> None:
     assert all(tool["toolset"] == "wingstaff" for tool in ctx.tools)
     assert [name for name, _ in ctx.skills] == ["orchestrate"]
     assert ctx.skills[0][1].name == "SKILL.md"
+    assert len(ctx.cli_commands) == 1
+    assert ctx.cli_commands[0]["name"] == "wingstaff"
 
 
 def test_pack_info_returns_json_string() -> None:

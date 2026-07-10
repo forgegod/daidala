@@ -4,13 +4,20 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from . import schemas, tools
+from . import cli, schemas, tools
 from .packs import __version__
 
 
 def register(ctx) -> None:
     """Register Wingstaff tools and bundled, namespaced skills with Hermes."""
     tools.configure_context(ctx)
+    ctx.register_cli_command(
+        name="wingstaff",
+        help="Operate Wingstaff workflows and workflow packs",
+        setup_fn=cli.register_cli,
+        handler_fn=cli.dispatch_cli,
+        description="Initialize, diagnose, start, inspect, approve, or cancel workflows.",
+    )
     handlers = {
         "wingstaff_pack_info": tools.pack_info,
         "wingstaff_start": tools.start,

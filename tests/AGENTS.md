@@ -14,6 +14,7 @@ completeness without touching a real Hermes profile.
 - Fake-inventory tests for exact external-skill prerequisites and host errors.
 - Fake command/registry tests for dry-run installation, pinned revisions, content digests, post-apply verification, and refused recursive installation.
 - Fake host-dispatch tests for approval-gated, restart-safe, idempotent Kanban mapping.
+- Shared-parser tests proving native Hermes and standalone CLI service calls, JSON, and exit codes remain equivalent.
 - Temporary Git worktree tests for the approved end-to-end executable slice.
 - Subprocess tests for dependency-free repository verification scripts.
 - Build/install smoke tests for directory entry points, wheel resources, and Hermes entry-point metadata.

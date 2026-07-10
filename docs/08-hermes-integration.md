@@ -27,7 +27,8 @@ All verified discovery paths register exactly:
 - tools `wingstaff_submit_artifact`, `wingstaff_prepare_implementation`,
   `wingstaff_capture_implementation`, `wingstaff_record_verification`, and
   `wingstaff_deliver`;
-- skill `wingstaff:orchestrate`.
+- skill `wingstaff:orchestrate`;
+- operator command family `hermes wingstaff`.
 
 The root directory entry point must import the bundled package relatively.
 The Python entry point must resolve to the `wingstaff` module, not directly to
@@ -43,7 +44,7 @@ Phase 1. Run it from the Wingstaff repository root:
 isolated_home="$(mktemp -d)/home"
 mkdir -p "$isolated_home/plugins"
 ln -s "$PWD" "$isolated_home/plugins/wingstaff"
-HERMES_HOME="$isolated_home" hermes plugins enable wingstaff --no-allow-tool-override
+HERMES_HOME="$isolated_home" hermes plugins enable wingstaff
 HERMES_HOME="$isolated_home" hermes plugins list --user --json
 ```
 
@@ -52,8 +53,21 @@ Hermes process using the same `HERMES_HOME` must expose
 `wingstaff_pack_info`; loading `wingstaff:orchestrate` must return the bundled
 skill content.
 
-Wingstaff does not override built-in tools, so enable it with
-`--no-allow-tool-override`.
+Wingstaff does not override built-in tools.
+
+## Operator CLI registration
+
+The plugin registers `hermes wingstaff` through the documented
+`ctx.register_cli_command` API. Its setup callback and the standalone
+`wingstaff` executable share one argparse tree and one service dispatcher.
+
+Hermes v0.18.2 invokes plugin command callbacks but discards their integer
+return values. The native callback therefore raises `SystemExit` with the
+shared dispatcher's code. This narrow host-compatibility boundary keeps success
+and failure process codes equivalent across native and standalone invocations.
+Directory-loaded plugins run under a host-generated module namespace, so
+package resources resolve through the current `__package__`, not a hard-coded
+top-level `wingstaff` import.
 
 ## Wheel and entry-point verification
 
@@ -93,11 +107,10 @@ Hermes process to confirm that the plugin was enabled without errors, registered
 - Directory, entry-point, and public remote Git installation are verified.
 - Plugin registration, deterministic workflow state, local persistence,
   exact-skill and pinned-content gates, fresh worktrees, artifact capture,
-  verification evidence, review, uncommitted delivery, and standalone
-  dry-run/apply/check/update planning, and approval-gated idempotent Kanban
-  implementation dispatch are implemented. Registration under
-  `hermes wingstaff` and target commit/push remain
-  unavailable.
+  verification evidence, review, uncommitted delivery, shared native/standalone
+  operator commands, dry-run/apply/check/update planning, and approval-gated
+  idempotent Kanban implementation dispatch are implemented. Target commit/push
+  remains unavailable.
 - Compatibility with a newer Hermes release must be re-probed before widening
   the supported range.
 

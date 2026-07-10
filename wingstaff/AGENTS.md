@@ -8,7 +8,7 @@ Implement the Hermes plugin boundary, deterministic workflow mechanism, workflow
 
 | Path | Owns |
 |---|---|
-| `__init__.py` | Hermes plugin registration. |
+| `__init__.py` | Hermes tool, skill, and operator CLI registration. |
 | `errors.py` | Workflow-state and transition error hierarchy. |
 | `state.py` | Immutable workflow state, artifact references, and serialization. |
 | `workflow.py` | Deterministic workflow creation and state transitions. |
@@ -21,7 +21,7 @@ Implement the Hermes plugin boundary, deterministic workflow mechanism, workflow
 | `schemas.py` | Tool schemas exposed to the model. |
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
 | `packs.py` | Pack loading and deterministic validation. |
-| `cli.py` | Standalone pack validation, install/check/update planning, and the subprocess mutation boundary; later backs `hermes wingstaff`. |
+| `cli.py` | Shared `hermes wingstaff` and standalone operator command tree, lifecycle dispatch, pack operations, and subprocess mutation boundary. |
 | `packs/` | Skill-set-specific lifecycle mappings. |
 | `skills/` | Namespaced read-only skills bundled with the plugin. |
 
@@ -32,6 +32,7 @@ Implement the Hermes plugin boundary, deterministic workflow mechanism, workflow
 - Packs reference external skills by fully qualified installation target.
 - External packs pin a Git source revision, bounded Hermes version, and complete-directory digest per required skill.
 - Standalone CLI inventory comes from the profile skill directory; it never imports Hermes runtime internals.
+- Native and standalone operator commands share one parser and dispatch layer; setup and external installation remain dry-run by default.
 - Kanban integration uses only `ctx.dispatch_tool`; Wingstaff never imports or writes Hermes' Kanban database.
 - The engine never substitutes guessed data when a model, skill, or verifier fails.
 - No server, listening socket, or nested Hermes process is part of this package.
