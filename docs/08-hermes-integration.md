@@ -24,6 +24,9 @@ All verified discovery paths register exactly:
 - tool `wingstaff_pack_info`;
 - tools `wingstaff_start`, `wingstaff_status`, `wingstaff_validate`,
   `wingstaff_approve`, `wingstaff_modify`, and `wingstaff_cancel`;
+- tools `wingstaff_submit_artifact`, `wingstaff_prepare_implementation`,
+  `wingstaff_capture_implementation`, `wingstaff_record_verification`, and
+  `wingstaff_deliver`;
 - skill `wingstaff:orchestrate`.
 
 The root directory entry point must import the bundled package relatively.
@@ -88,11 +91,10 @@ Hermes process to confirm that the plugin was enabled without errors, registered
 
 - Hermes v0.18.2 is the only verified host version.
 - Directory, entry-point, and public remote Git installation are verified.
-- Plugin registration, deterministic workflow state, local persistence, and
-  public lifecycle/gate tools are implemented. Exact external-skill
-  prerequisite enforcement is read-only and blocks draft creation when a pack
-  requirement is missing. Workflow execution, Kanban integration, and delivery
-  remain unavailable.
+- Plugin registration, deterministic workflow state, local persistence,
+  exact-skill gates, fresh worktrees, artifact capture, verification evidence,
+  review, and uncommitted delivery are implemented. Kanban integration,
+  external-skill installation, and target commit/push remain unavailable.
 - Compatibility with a newer Hermes release must be re-probed before widening
   the supported range.
 
@@ -104,8 +106,8 @@ tested as a host integration contract.
 
 ## First-release execution policy
 
-The first executable Wingstaff release will support local target repositories
-only. Later workflow phases must implement these already-fixed rules:
+The first executable Wingstaff release supports local target repositories only
+and enforces these rules:
 
 - reject dirty target repositories;
 - implement in a fresh Wingstaff-owned worktree;
@@ -115,4 +117,5 @@ only. Later workflow phases must implement these already-fixed rules:
 - bind one approval to the complete plan digest and invalidate that approval
   after any plan modification.
 
-This policy is established for Phase 2 state design but is not yet executable.
+Phase 5 verifies this policy against a temporary repository with both passing
+and deliberately failing workflow slices.

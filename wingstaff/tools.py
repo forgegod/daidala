@@ -9,6 +9,7 @@ from typing import Any
 from .locations import resolve_data_root
 from .packs import load_pack
 from .service import WorkflowService
+from .state import WorkflowStage
 from .store import WorkflowStore
 
 ServiceFactory = Callable[[], WorkflowService]
@@ -118,6 +119,74 @@ def cancel(args: dict[str, Any], **kwargs: Any) -> str:
         operation=lambda service, values: service.cancel(
             str(values["workflow_id"]), str(values["reason"])
         ),
+    )
+
+
+def submit_artifact(args: dict[str, Any], **kwargs: Any) -> str:
+    """Persist a definition, plan, or review artifact."""
+    del kwargs
+    return _service_handler(
+        args,
+        allowed={"workflow_id", "stage", "content"},
+        required={"workflow_id", "stage", "content"},
+        operation=lambda service, values: service.submit_artifact(
+            str(values["workflow_id"]),
+            stage=WorkflowStage(str(values["stage"])),
+            content=str(values["content"]),
+        ),
+    )
+
+
+def prepare_implementation(args: dict[str, Any], **kwargs: Any) -> str:
+    """Create a fresh implementation worktree after approval."""
+    del kwargs
+    return _service_handler(
+        args,
+        allowed={"workflow_id"},
+        required={"workflow_id"},
+        operation=lambda service, values: service.prepare_implementation(
+            str(values["workflow_id"])
+        ),
+    )
+
+
+def capture_implementation(args: dict[str, Any], **kwargs: Any) -> str:
+    """Capture the real implementation worktree diff."""
+    del kwargs
+    return _service_handler(
+        args,
+        allowed={"workflow_id"},
+        required={"workflow_id"},
+        operation=lambda service, values: service.capture_implementation(
+            str(values["workflow_id"])
+        ),
+    )
+
+
+def record_verification(args: dict[str, Any], **kwargs: Any) -> str:
+    """Persist command output and structured verification evidence."""
+    del kwargs
+    return _service_handler(
+        args,
+        allowed={"workflow_id", "command", "exit_code", "output"},
+        required={"workflow_id", "command", "exit_code", "output"},
+        operation=lambda service, values: service.record_verification(
+            str(values["workflow_id"]),
+            command=str(values["command"]),
+            exit_code=values["exit_code"],
+            output=str(values["output"]),
+        ),
+    )
+
+
+def deliver(args: dict[str, Any], **kwargs: Any) -> str:
+    """Record delivery without committing or pushing target changes."""
+    del kwargs
+    return _service_handler(
+        args,
+        allowed={"workflow_id"},
+        required={"workflow_id"},
+        operation=lambda service, values: service.deliver(str(values["workflow_id"])),
     )
 
 

@@ -18,6 +18,11 @@ def register(ctx) -> None:
         "wingstaff_approve": tools.approve,
         "wingstaff_modify": tools.modify,
         "wingstaff_cancel": tools.cancel,
+        "wingstaff_submit_artifact": tools.submit_artifact,
+        "wingstaff_prepare_implementation": tools.prepare_implementation,
+        "wingstaff_capture_implementation": tools.capture_implementation,
+        "wingstaff_record_verification": tools.record_verification,
+        "wingstaff_deliver": tools.deliver,
     }
     for schema in schemas.ALL_TOOLS:
         ctx.register_tool(

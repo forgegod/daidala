@@ -16,6 +16,7 @@ Implement the Hermes plugin boundary, deterministic workflow mechanism, workflow
 | `store.py` | SQLite-backed workflow persistence with optimistic concurrency. |
 | `service.py` | Lifecycle operations, local Git validation, and state/store coordination. |
 | `skills.py` | Read-only exact installed-skill inventory and prerequisite checks. |
+| `execution.py` | Profile-local artifacts, detached worktrees, and diff capture. |
 | `schemas.py` | Tool schemas exposed to the model. |
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
 | `packs.py` | Pack loading and deterministic validation. |

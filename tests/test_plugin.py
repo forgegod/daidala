@@ -32,6 +32,11 @@ def test_register_exposes_tool_and_namespaced_skill_source() -> None:
         "wingstaff_approve",
         "wingstaff_modify",
         "wingstaff_cancel",
+        "wingstaff_submit_artifact",
+        "wingstaff_prepare_implementation",
+        "wingstaff_capture_implementation",
+        "wingstaff_record_verification",
+        "wingstaff_deliver",
     ]
     assert all(tool["toolset"] == "wingstaff" for tool in ctx.tools)
     assert [name for name, _ in ctx.skills] == ["orchestrate"]

@@ -1,9 +1,8 @@
 # 06 — Security and trust boundaries
 
-This document covers the bootstrap package and plugin boundary. Workflow
-execution, worktree isolation, persisted approval, command execution, Kanban,
-cron, and delivery are unavailable, so their planned controls are not claimed
-as current protection.
+This document covers the plugin, persisted workflow, and first executable
+worktree boundary. Kanban, cron, external-skill installation, and target
+commit/push remain unavailable and are not claimed as current protection.
 
 ## Current trust boundaries
 
@@ -12,7 +11,10 @@ flowchart LR
     OP["Operator"] -->|"explicitly enables plugin"| H["Existing Hermes process"]
     H -->|"loads Python package in-process"| W["Wingstaff plugin code"]
     W -->|"reads bundled package resource"| Y["Pack YAML"]
-    Y -."unresolved source and install strings".-> E["External skill repositories"]
+    W -->|"exact-name inventory check"| I["Hermes installed skills"]
+    W -->|"profile-local state and artifacts"| D["SQLite + workflow workspace"]
+    W -->|"detached worktree at approved baseline"| G["Local Git target"]
+    Y -."source and install strings".-> E["External skill repositories"]
     H -->|"explicit skill load"| S["Read-only wingstaff:orchestrate resource"]
 ```
 
@@ -22,9 +24,10 @@ require a separate trust opt-in according to the
 [official plugin documentation](https://hermes-agent.nousresearch.com/docs/user-guide/features/plugins).
 Review the repository and package provenance before enabling Wingstaff.
 
-The bootstrap does not fetch the `source` URL, install external skills, execute
-their content, run shell commands, open sockets, start services, mutate a target
-repository, access a model, or write workflow state.
+Wingstaff does not fetch pack sources, install external skills, access a model,
+open sockets, start services, commit, or push. Hermes loads skills and produces
+artifacts; normal Hermes tools perform implementation and verification work in
+the Wingstaff-owned detached worktree.
 
 ## Implemented controls
 
@@ -38,6 +41,12 @@ repository, access a model, or write workflow state.
 - `wingstaff_pack_info` catches `PackError` and returns a JSON string rather than
   raising across the plugin boundary.
 - External skill bodies are not vendored into this package.
+- Workflow state, artifacts, approval, worktrees, captured diffs, verification
+  evidence, and delivery manifests are durable under the resolved profile data
+  root.
+- Workflow IDs are validated before they can influence runtime paths.
+- Delivery uses the changed-path snapshot captured before verification, so test
+  byproducts cannot silently expand reviewed scope.
 - Registration uses documented Hermes plugin APIs rather than Hermes internals.
 
 These controls validate local structure. They do not establish upstream
@@ -45,15 +54,10 @@ identity, integrity, or suitability.
 
 ## Human approval boundary
 
-Schema v1 records `human_gate_after`, and the bundled orchestration skill says
-implementation must not start before explicit approval. The validator proves
-only that the named gate position is before `implement`.
-
-The bootstrap has no workflow state, plan digest, approval record, transition
-enforcement, or implementation tool. Therefore human approval is a documented
-contract, not yet an enforceable runtime security control. Do not use the
-bootstrap to run autonomous implementation work. Phase 2 owns digest-bound
-state; Phase 5 owns the first executable gated workflow.
+Schema v1 places the human gate after `plan`. Durable approval binds the exact
+plan digest, plan modification invalidates approval, and worktree creation
+rejects every state except `approved`. The target must still be clean and at the
+recorded baseline when implementation starts.
 
 ## External skills and supply chain
 
@@ -74,30 +78,24 @@ requirement.
 
 ## Secrets and generated state
 
-The bootstrap requires no credentials. Do not add credentials to pack
-YAML, bundled skills, documentation, tests, or package metadata. Future secrets
+Wingstaff requires no credentials. Do not add credentials to pack YAML,
+bundled skills, artifacts, documentation, tests, or package metadata. Secrets
 must remain in Hermes-owned configuration and approval paths, not Wingstaff
 artifacts.
 
 The repository must not contain live workflow state, target worktrees, SQLite
 databases, model transcripts, generated workspaces, or credentials. Runtime
-paths in future phases must use a Hermes-resolved, profile-aware data root and
-must never hard-code `~/.hermes`.
+paths use a Hermes-resolved, profile-aware data root and never hard-code
+`~/.hermes`.
 
-## Future execution requirements
+## Remaining execution requirements
 
-Before Wingstaff may execute implementation work, the owning phases must prove:
+Current execution proves approval, isolation, blocking verification, and
+uncommitted delivery. Remaining phases must prove:
 
-- approval is bound to the exact plan digest and invalidated by plan changes;
-- target repositories are local and clean before workflow progress;
-- implementation runs in a fresh Wingstaff-owned worktree;
-- delivery returns a reviewed diff without automatically committing or pushing
-  target changes;
-- failed validation or verification blocks progress;
 - command execution follows normal Hermes approval and tool-dispatch paths;
 - secrets are not copied into artifacts or logs;
 - external skill names and revisions are mechanically resolved;
-- delivery reports real changed paths and verification evidence;
 - no Wingstaff server, nested Hermes chat process, or private Hermes database
   coupling is introduced.
 
@@ -109,7 +107,10 @@ of these surfaces exists.
 - Manifest and package boundary: `plugin.yaml`, `pyproject.toml`
 - Registration: `wingstaff/__init__.py`
 - Pack loading and validation: `wingstaff/packs.py`
+- Workflow state and persistence: `wingstaff/state.py`, `wingstaff/store.py`
+- Worktree and artifact isolation: `wingstaff/execution.py`
+- Lifecycle coordination: `wingstaff/service.py`
 - Tool error boundary: `wingstaff/tools.py`
 - Bundled procedure: `wingstaff/skills/orchestrate/SKILL.md`
-- Tests: `tests/test_packs.py`, `tests/test_plugin.py`
+- Tests: `tests/test_packs.py`, `tests/test_plugin.py`, `tests/test_execution.py`
 - Host plugin trust model: [official Hermes plugin documentation](https://hermes-agent.nousresearch.com/docs/user-guide/features/plugins)

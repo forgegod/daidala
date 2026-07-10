@@ -9,15 +9,19 @@ from pathlib import Path
 from uuid import uuid4
 
 from .errors import WorkflowError
+from .execution import ExecutionError, ExecutionWorkspace
 from .packs import __version__, load_pack
 from .skills import HermesSkillInventory, SkillInventory, require_pack_skills
-from .state import WorkflowState
+from .state import WorkflowStage, WorkflowState, WorkflowStatus
 from .store import WorkflowStore
 from .workflow import (
     approve_plan,
     cancel_workflow,
     modify_plan,
     new_workflow,
+    record_artifact,
+    record_verification,
+    start_implementation,
     validate_target,
 )
 
@@ -41,6 +45,7 @@ class WorkflowService:
         self._clock = clock or (lambda: datetime.now(UTC))
         self._id_factory = id_factory or (lambda: str(uuid4()))
         self._skill_inventory = skill_inventory or HermesSkillInventory()
+        self._workspace = ExecutionWorkspace(store.data_root)
 
     def start(
         self,
@@ -53,9 +58,11 @@ class WorkflowService:
         """Create a draft after validating only local deterministic inputs."""
         pack = load_pack(pack_name)
         require_pack_skills(pack, self._skill_inventory)
+        selected_id = workflow_id or self._id_factory()
+        self._workspace.validate_workflow_id(selected_id)
         target = _canonical_local_path(target_repository)
         state = new_workflow(
-            workflow_id=workflow_id or self._id_factory(),
+            workflow_id=selected_id,
             target_repository=str(target),
             requested_goal=goal,
             pack_name=pack.name,
@@ -117,6 +124,174 @@ class WorkflowService:
             observed.state,
             reason=reason,
             cancelled_at=self._clock(),
+        )
+        return self.store.update(updated, expected_updated_at=observed.updated_at)
+
+    def submit_artifact(
+        self,
+        workflow_id: str,
+        *,
+        stage: WorkflowStage,
+        content: str,
+    ) -> WorkflowState:
+        """Store and record a model-produced definition, plan, or review."""
+        if not isinstance(content, str) or not content.strip():
+            raise ServiceError("artifact content must be a non-empty string")
+        if stage not in {WorkflowStage.DEFINE, WorkflowStage.PLAN, WorkflowStage.REVIEW}:
+            raise ServiceError(f"stage {stage.value!r} cannot be submitted as text")
+        observed = self.store.get_with_token(workflow_id)
+        state = observed.state
+        if state.status is not WorkflowStatus.RUNNING or state.current_stage is not stage:
+            raise ServiceError(
+                f"artifact requires running/{stage.value}; workflow is "
+                f"{state.status.value}/{state.current_stage.value}"
+            )
+        filename = {
+            WorkflowStage.DEFINE: "define.md",
+            WorkflowStage.PLAN: "plan.md",
+            WorkflowStage.REVIEW: "review.md",
+        }[stage]
+        artifact = self._workspace.write_artifact(workflow_id, filename, content)
+        updated = record_artifact(
+            state,
+            stage=stage,
+            path=artifact.path,
+            digest=artifact.digest,
+            recorded_at=self._clock(),
+        )
+        return self.store.update(updated, expected_updated_at=observed.updated_at)
+
+    def prepare_implementation(self, workflow_id: str) -> WorkflowState:
+        """Create a fresh detached worktree only after exact plan approval."""
+        observed = self.store.get_with_token(workflow_id)
+        state = observed.state
+        if (
+            state.status is WorkflowStatus.RUNNING
+            and state.current_stage is WorkflowStage.IMPLEMENT
+            and state.worktree_path
+        ):
+            return state
+        if state.status is not WorkflowStatus.APPROVED:
+            raise ServiceError("implementation requires approved workflow state")
+        baseline, is_clean = _inspect_repository(Path(state.target_repository))
+        if not is_clean or baseline != state.baseline_commit:
+            raise ServiceError("target repository changed after validation")
+        if state.baseline_commit is None:
+            raise ServiceError("workflow has no validated baseline commit")
+        worktree = self._workspace.create_worktree(
+            workflow_id,
+            state.target_repository,
+            state.baseline_commit,
+        )
+        updated = start_implementation(
+            state,
+            worktree_path=worktree,
+            started_at=self._clock(),
+        )
+        return self.store.update(updated, expected_updated_at=observed.updated_at)
+
+    def capture_implementation(self, workflow_id: str) -> WorkflowState:
+        """Capture the real worktree diff and advance to verification."""
+        observed = self.store.get_with_token(workflow_id)
+        state = observed.state
+        if (
+            state.status is WorkflowStatus.RUNNING
+            and state.current_stage is WorkflowStage.VERIFY
+            and state.artifact_for(WorkflowStage.IMPLEMENT) is not None
+        ):
+            return state
+        if (
+            state.status is not WorkflowStatus.RUNNING
+            or state.current_stage is not WorkflowStage.IMPLEMENT
+        ):
+            raise ServiceError("diff capture requires active implementation")
+        if not state.worktree_path:
+            raise ExecutionError("workflow has no implementation worktree")
+        diff = self._workspace.capture_diff(state.worktree_path)
+        changed_paths = self._workspace.changed_paths(state.worktree_path)
+        artifact = self._workspace.write_artifact(
+            workflow_id, "implementation.diff", diff
+        )
+        self._workspace.write_json_artifact(
+            workflow_id,
+            "implementation-paths.json",
+            {"changed_paths": list(changed_paths)},
+        )
+        updated = record_artifact(
+            state,
+            stage=WorkflowStage.IMPLEMENT,
+            path=artifact.path,
+            digest=artifact.digest,
+            recorded_at=self._clock(),
+        )
+        return self.store.update(updated, expected_updated_at=observed.updated_at)
+
+    def record_verification(
+        self,
+        workflow_id: str,
+        *,
+        command: str,
+        exit_code: int,
+        output: str,
+    ) -> WorkflowState:
+        """Persist actual command output and structured verification evidence."""
+        observed = self.store.get_with_token(workflow_id)
+        state = observed.state
+        if (
+            state.status is not WorkflowStatus.RUNNING
+            or state.current_stage is not WorkflowStage.VERIFY
+        ):
+            raise ServiceError("verification evidence requires verification stage")
+        artifact = self._workspace.write_artifact(
+            workflow_id, "verification.txt", output
+        )
+        updated = record_verification(
+            state,
+            command=command,
+            exit_code=exit_code,
+            output_reference=artifact.path,
+            recorded_at=self._clock(),
+        )
+        return self.store.update(updated, expected_updated_at=observed.updated_at)
+
+    def deliver(self, workflow_id: str) -> WorkflowState:
+        """Record reviewed paths and evidence without committing or pushing."""
+        observed = self.store.get_with_token(workflow_id)
+        state = observed.state
+        if (
+            state.status is not WorkflowStatus.RUNNING
+            or state.current_stage is not WorkflowStage.DELIVER
+        ):
+            raise ServiceError("delivery requires a completed review")
+        if not state.worktree_path:
+            raise ExecutionError("workflow has no implementation worktree")
+        implementation = self._workspace.read_json_artifact(
+            workflow_id, "implementation-paths.json"
+        )
+        changed_paths = implementation.get("changed_paths")
+        if not isinstance(changed_paths, list) or not all(
+            isinstance(path, str) and path for path in changed_paths
+        ):
+            raise ExecutionError("implementation changed-path manifest is invalid")
+        payload = {
+            "workflow_id": state.workflow_id,
+            "baseline_commit": state.baseline_commit,
+            "changed_paths": changed_paths,
+            "verification": [
+                evidence.to_dict() for evidence in state.verification_evidence
+            ],
+            "committed": False,
+            "pushed": False,
+        }
+        artifact = self._workspace.write_json_artifact(
+            workflow_id, "delivery.json", payload
+        )
+        updated = record_artifact(
+            state,
+            stage=WorkflowStage.DELIVER,
+            path=artifact.path,
+            digest=artifact.digest,
+            recorded_at=self._clock(),
         )
         return self.store.update(updated, expected_updated_at=observed.updated_at)
 

@@ -250,6 +250,27 @@ def test_pack_info_is_strict_and_still_reports_valid_pack() -> None:
     assert invalid["message"] == "unknown arguments: extra"
 
 
+def test_execution_handlers_keep_json_boundary() -> None:
+    cases = [
+        (tools.submit_artifact, {"workflow_id": "workflow", "stage": "define", "content": "x"}),
+        (tools.prepare_implementation, {"workflow_id": "workflow"}),
+        (tools.capture_implementation, {"workflow_id": "workflow"}),
+        (
+            tools.record_verification,
+            {"workflow_id": "workflow", "command": "pytest", "exit_code": 0, "output": "ok"},
+        ),
+        (tools.deliver, {"workflow_id": "workflow"}),
+    ]
+
+    for handler, arguments in cases:
+        result = call(handler, {**arguments, "extra": True})
+        assert result == {
+            "success": False,
+            "error": "ValueError",
+            "message": "unknown arguments: extra",
+        }
+
+
 def test_all_schemas_reject_unknown_fields() -> None:
     assert {schema["name"] for schema in schemas.ALL_TOOLS} == {
         "wingstaff_pack_info",
@@ -259,6 +280,11 @@ def test_all_schemas_reject_unknown_fields() -> None:
         "wingstaff_approve",
         "wingstaff_modify",
         "wingstaff_cancel",
+        "wingstaff_submit_artifact",
+        "wingstaff_prepare_implementation",
+        "wingstaff_capture_implementation",
+        "wingstaff_record_verification",
+        "wingstaff_deliver",
     }
     for schema in schemas.ALL_TOOLS:
         assert schema["parameters"]["additionalProperties"] is False

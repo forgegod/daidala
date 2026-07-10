@@ -21,27 +21,57 @@ Load this skill explicitly as `wingstaff:orchestrate` when starting or resuming 
 
 ## Procedure
 
-1. Call `wingstaff_pack_info` for the selected pack.
-2. Stop if the pack or any required skill cannot be resolved.
-3. Produce explicit artifacts for the `define` and `plan` stages.
-4. Present the plan, risks, scope, and verification criteria to the human.
-5. Do not create implementation work until the human explicitly approves.
-6. After approval, execute `implement`, `verify`, `review`, and `deliver` in order.
-7. Treat failed verification as a blocked workflow. Do not replace it with guessed output.
-8. Deliver paths, commands, and real verification results.
+1. Call `wingstaff_pack_info` for the selected pack, then call
+   `wingstaff_start` with an absolute local repository path and explicit goal.
+2. Call `wingstaff_validate`. Stop when the target is dirty, is not a repository
+   root, or any exact required skill is unavailable.
+3. Produce the definition with the pack's `define` skills and pass the complete
+   Markdown to `wingstaff_submit_artifact` with `stage: "define"`.
+4. Produce the complete plan with the pack's `plan` skills and pass it to
+   `wingstaff_submit_artifact` with `stage: "plan"`.
+5. Read the returned plan artifact and digest. Present the plan, risks, scope,
+   and verification criteria to the human. Do not call an implementation tool
+   until the human explicitly approves that exact digest.
+6. After approval, call `wingstaff_approve` with the returned plan digest, then
+   call `wingstaff_prepare_implementation`. Use only the returned detached
+   `worktree_path` for implementation.
+7. Load the `implement` skills and use normal Hermes `read_file`, `search_files`,
+   `patch`, `write_file`, and `terminal` tools in the worktree. Do not commit or
+   push target changes.
+8. Call `wingstaff_capture_implementation`. It must return a real, non-empty
+   diff artifact before verification can begin.
+9. Run every plan verification command through Hermes' `terminal` tool with the
+   worktree as `workdir`. Immediately pass the exact command, exit code, and
+   output to `wingstaff_record_verification`. A non-zero exit blocks the
+   workflow; do not fabricate a passing retry.
+10. Read the captured diff and verification evidence, run the pack's `review`
+    skills, and submit the review with `wingstaff_submit_artifact` using
+    `stage: "review"`.
+11. Call `wingstaff_deliver`. Report its changed paths, diff path, and
+    verification evidence. The delivery explicitly records `committed: false`
+    and `pushed: false`; separate authorization is required for either action.
+12. Use `wingstaff_status` to resume from durable state after interruption.
 
 ## Common Pitfalls
 
-- Treating a listed skill name as proof that the skill was loaded.
-- Starting implementation before approval.
+- Treating a listed skill name as proof that the exact skill is installed.
+- Writing implementation files in the target checkout instead of the returned
+  Wingstaff worktree.
+- Starting implementation before digest-bound human approval.
+- Recomputing delivery scope after verification instead of using the captured
+  implementation snapshot.
 - Reporting model prose as verification evidence.
-- spawning a new MCP or HTTP service instead of using Hermes facilities.
+- Committing or pushing target changes as part of delivery.
+- Spawning a new MCP, HTTP service, or nested `hermes chat` process.
 
 ## Verification Checklist
 
-- [ ] Pack validated.
-- [ ] Required skills resolved by exact name.
+- [ ] Pack and every exact skill validated.
+- [ ] Clean baseline commit recorded.
 - [ ] Define and plan artifacts exist.
-- [ ] Human approval recorded before implementation.
-- [ ] Tests or equivalent checks executed.
-- [ ] Delivery includes real paths and command results.
+- [ ] Human approval matches the current plan digest.
+- [ ] Implementation ran only in the returned fresh worktree.
+- [ ] Captured implementation diff is non-empty.
+- [ ] Verification command, exit code, and output reference are durable.
+- [ ] Review artifact exists after passing verification.
+- [ ] Delivery reports changed paths without a target commit or push.

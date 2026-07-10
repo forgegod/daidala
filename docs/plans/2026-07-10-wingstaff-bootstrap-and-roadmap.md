@@ -88,8 +88,8 @@ committed before work starts on the next phase.
 | 3 — durable persistence | Done | Preserve the optimistic-concurrency guard on update. |
 | 4 — read-only and gate tools | Done | Preserve strict JSON boundaries and monotonic transition timestamps. |
 | 4A — exact external-skill prerequisite check | Done | Preserve exact-name matching and read-only host inventory access. |
-| 5 — thin Addyosmani workflow | Todo | Next phase; requires Phases 1–4A. |
-| 6 — external skill installation and revision management | Todo | Expand the Phase 4A check without weakening it. |
+| 5 — thin Addyosmani workflow | Done | Preserve worktree isolation, immutable diff scope, and evidence-backed delivery. Gate: 19 Markdown files, 65 tests, Ruff, pack validation, build, Twine, diff check, and isolated 12-tool load passed. |
+| 6 — external skill installation and revision management | Todo | Next phase; expand the Phase 4A check without weakening it. |
 | 7 — Hermes Kanban mapping | Todo | Requires durable workflow state. |
 | 8 — `hermes wingstaff` operator CLI | Todo | Requires stable service operations. |
 | 9 — AI-DLC adapter | Todo | Requires a passing Addyosmani fixture workflow. |

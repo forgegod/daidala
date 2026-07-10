@@ -9,5 +9,10 @@ provides_tools:
   - wingstaff_approve
   - wingstaff_modify
   - wingstaff_cancel
+  - wingstaff_submit_artifact
+  - wingstaff_prepare_implementation
+  - wingstaff_capture_implementation
+  - wingstaff_record_verification
+  - wingstaff_deliver
 provides_skills:
   - orchestrate
