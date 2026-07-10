@@ -31,11 +31,15 @@ python -m build
 
 ## Hermes integration
 
-Directory and Python entry-point discovery are verified against Hermes v0.18.2.
-See the [Hermes integration guide](docs/08-hermes-integration.md) for the exact
-tested development procedure and compatibility limits. A remote
-`hermes plugins install` command will be published only after this repository
-has a real remote and that command has been exercised.
+Install and enable the public plugin with the command verified against Hermes
+v0.18.2:
+
+```bash
+hermes plugins install forgegod/hermes-wingstaff --enable
+```
+
+See the [Hermes integration guide](docs/08-hermes-integration.md) for the
+isolated verification procedure and compatibility limits.
 
 The standalone `wingstaff` executable is a development and diagnostics surface. The canonical operator interface will be `hermes wingstaff ...` once the plugin CLI is implemented.
 

@@ -43,9 +43,8 @@ Do not modify either sibling source repository while implementing Wingstaff.
 1. Repository, distribution, import package, and plugin name: `wingstaff`.
 2. Python: 3.11 or newer.
 3. License: MIT.
-4. Verified integration: Git-directory and Python module-entry-point discovery
-   on Hermes v0.18.2; publish a remote install command only after exercising a
-   real repository remote.
+4. Canonical install, verified on Hermes v0.18.2:
+   `hermes plugins install forgegod/hermes-wingstaff --enable`.
 5. Canonical operator surface: `hermes wingstaff ...`; standalone `wingstaff` remains diagnostics-only.
 6. Stable lifecycle: `discover -> define -> plan -> gate -> implement -> verify -> review -> deliver`.
 7. The first executable pack is Addy Osmani's `agent-skills`.
@@ -84,6 +83,7 @@ committed before work starts on the next phase.
 | 0C — Markdown verifier hardening | Done | Preserve the focused edge-case regression tests. |
 | 1 — isolated Hermes installation proof | Done | Preserve both directory and entry-point regression coverage. |
 | 1A — compatibility baseline and release policy | Done | Preserve the v0.18.2 host boundary and fixed execution policy. |
+| 1B — public Git installation proof | Done | Preserve the verified public install command and fresh-process probe. |
 | 2 — workflow state contract | Done | Preserve the BLOCKED-terminal rule and approval-digest binding. |
 | 3 — durable persistence | Done | Preserve the optimistic-concurrency guard on update. |
 | 4 — read-only and gate tools | Todo | Next phase after the Phase 3 commit. |
@@ -399,6 +399,28 @@ policy before the workflow state model is frozen.
 Every Phase 2 state invariant and every public Phase 4 tool can be evaluated
 against one unambiguous execution policy and a declared Hermes compatibility
 boundary.
+
+## Phase 1B — prove public Git installation
+
+### Objective
+
+Close the deferred remote-installation gap after the local repository is joined
+to a public GitHub repository.
+
+### Steps
+
+1. Push all completed phases to `forgegod/hermes-wingstaff`.
+2. Create a fresh `HERMES_HOME`.
+3. Run `hermes plugins install forgegod/hermes-wingstaff --enable`.
+4. Start a separate Hermes process using that home.
+5. Verify the plugin is enabled without errors, registers
+   `wingstaff_pack_info`, and loads `wingstaff:orchestrate`.
+6. Publish only that exercised command in the README and integration guide.
+
+### Verification gate
+
+The isolated installation reports source `user`, enabled status, one registered
+tool, and a successful explicit skill load.
 
 ## Phase 2 — define the workflow state contract
 

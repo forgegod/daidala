@@ -17,6 +17,7 @@ release:
 |---|---|---|
 | Directory containing `plugin.yaml` and root `__init__.py` | `user` (`git` in `hermes plugins list`) | Explicit enablement, tool registration, and bundled skill loading passed |
 | Python distribution entry point in `hermes_agent.plugins` | `entrypoint` | Explicit enablement, tool registration, and bundled skill loading passed |
+| Public Git repository `forgegod/hermes-wingstaff` | `user` (`git` in `hermes plugins list`) | Clone, enablement, fresh-process tool registration, and bundled skill loading passed |
 
 Both paths register exactly:
 
@@ -70,19 +71,24 @@ operator installation method.
 ## Installation CLI boundary
 
 On Hermes v0.18.2, `hermes plugins install` accepts a Git URL or `owner/repo`
-identifier. It does not accept a local directory or wheel. This repository has
-no configured Git remote, so Wingstaff does not yet publish an unverified
-`hermes plugins install` command. Once a remote exists, that exact remote-based
-command must be exercised in an isolated Hermes home before it is added here or
-to the runbook.
+identifier. It does not accept a local directory or wheel. The verified public
+installation command is:
+
+```bash
+hermes plugins install forgegod/hermes-wingstaff --enable
+```
+
+Phase 1B exercised this command in a fresh `HERMES_HOME`, then used a separate
+Hermes process to confirm that the plugin was enabled without errors, registered
+`wingstaff_pack_info`, and loaded `wingstaff:orchestrate`.
 
 ## Compatibility limits
 
 - Hermes v0.18.2 is the only verified host version.
-- Directory and entry-point discovery are verified; remote Git installation is
-  not yet verified.
-- Plugin registration is verified. Workflow execution, persistence, approval
-  tools, Kanban integration, and delivery remain unavailable.
+- Directory, entry-point, and public remote Git installation are verified.
+- Plugin registration, deterministic workflow state, and local persistence are
+  implemented. Public lifecycle tools, workflow execution, Kanban integration,
+  and delivery remain unavailable.
 - Compatibility with a newer Hermes release must be re-probed before widening
   the supported range.
 
