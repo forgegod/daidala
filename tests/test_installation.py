@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import runpy
 import subprocess
 import sys
 import tomllib
@@ -29,6 +30,12 @@ def test_directory_plugin_entrypoint_uses_bundled_package() -> None:
         for loaded_name in list(sys.modules):
             if loaded_name == module_name or loaded_name.startswith(f"{module_name}."):
                 sys.modules.pop(loaded_name, None)
+
+
+def test_root_entrypoint_can_be_collected_as_a_top_level_module() -> None:
+    namespace = runpy.run_path(str(REPOSITORY / "__init__.py"))
+
+    assert namespace["register"].__module__ == "wingstaff"
 
 
 def test_directory_plugin_entrypoint_loads_in_fresh_isolated_process(
