@@ -2,8 +2,10 @@
 
 This document covers the plugin, policy ledger, Kanban graph contract,
 executable worktree, worker handoff recovery, and pinned external-skill
-installation boundary. Cron and target commit/push remain unavailable and are
-not claimed as current protection.
+installation boundary. Wingstaff provides no scheduler and no commit or push
+surface. Hermes cron and webhooks may admit work through the composition
+documented in [Autonomous triggering](13-autonomous-triggering.md), which is
+not yet verified end to end and does not weaken Wingstaff's approval gate.
 
 ## Current trust boundaries
 

@@ -121,7 +121,7 @@ pushing the target requires a separate future authorization surface.
 
 ## Source of truth
 
-- Contract: this document and the active Kanban-native implementation plan
+- Contract: this document
 - Schemas and handlers: `wingstaff/schemas.py`, `wingstaff/tools.py`
 - Policy service and graph adapter: `wingstaff/service.py`,
   `wingstaff/kanban.py`

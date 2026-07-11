@@ -9,6 +9,14 @@
 > only after the user approves this plan. Phase 4 requires a separate structural
 > decision before it may start.
 
+## Progress
+
+- Phase 0: Done — baseline verification passed.
+- Phase 1: Done — stale normative and provenance claims reconciled.
+- Phase 2: Todo.
+- Phase 3: Todo.
+- Phase 4: Awaiting a separate structural decision.
+
 ## Goal
 
 Reconcile Wingstaff's numbered documentation with the implemented activation,

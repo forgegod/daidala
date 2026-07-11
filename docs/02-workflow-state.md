@@ -100,7 +100,7 @@ Runtime SQLite files and policy-ledger records are never repository artifacts.
 
 ## Source of truth
 
-- Contract: this document and the active Kanban-native implementation plan
+- Contract: this document
 - Ledger model: `wingstaff/state.py`
 - Policy operations: `wingstaff/workflow.py`
 - Persistence: `wingstaff/store.py`

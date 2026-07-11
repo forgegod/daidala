@@ -108,7 +108,7 @@ state machinery.
 
 ## Matt Pocock Skills
 
-The local assessment used `../mattpocock-skills/` at commit
+The assessment used [mattpocock/skills](https://github.com/mattpocock/skills) at commit
 `391a2701dd948f94f56a39f7533f8eea9a859c87`. Its package metadata identifies
 `https://github.com/mattpocock/skills` as the upstream repository, while the
 local checkout's Git origin is `forgegod/mattpocock-skills`; a production pack
@@ -426,7 +426,7 @@ be consumed without adopting Kiro's runtime.
 | [skills.sh leaderboard](https://skills.sh/) | Mutable skill-level install signals used for candidate discovery, not quality scoring |
 | [Hermes Skills Hub](https://hermes-agent.nousresearch.com/docs/skills/) | Catalog scope and Hermes discovery surface; no extractable ranking was available during assessment |
 | [Superpowers](https://github.com/obra/superpowers) | Lifecycle, composable skills, automatic bootstrap, behavioral evaluations, side effects, and MIT license |
-| `../mattpocock-skills/README.md` and `skills/engineering/` | Skill philosophy, catalog, stage coverage, side effects, and MIT license |
+| [mattpocock/skills](https://github.com/mattpocock/skills) `README.md` and `skills/engineering/` at commit `391a2701dd948f94f56a39f7533f8eea9a859c87` | Skill philosophy, catalog, stage coverage, side effects, and MIT license |
 | [Spec Kit Agent Skills](https://github.com/dceoy/speckit-agent-skills) | Community conversion, Spec Kit prerequisites, workflow coverage, scripts, and AGPL-3.0 license |
 | [BMad Method](https://github.com/bmad-code-org/BMAD-METHOD) | Complete framework scope, installer, agents, modules, workflows, MIT license, and trademark boundary |
 | [Get Shit Done Skills](https://github.com/ctsstc/get-shit-done-skills) | Upstream self-assessment, conversion status, workflow breadth, and missing root license |
