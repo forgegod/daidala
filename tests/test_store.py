@@ -1,13 +1,22 @@
 from __future__ import annotations
 
+import hashlib
 import sqlite3
 import threading
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
 
-from wingstaff.state import SkillDigest, StageProfile, WorkflowLedger, WorkflowStage
+from wingstaff.state import (
+    ActivationManifestReference,
+    ActivationReferenceState,
+    SkillDigest,
+    StageProfile,
+    WorkflowLedger,
+    WorkflowStage,
+)
 from wingstaff.store import StoreError, WorkflowStore
 from wingstaff.workflow import approve_plan, new_workflow, record_artifact
 
@@ -35,16 +44,36 @@ def make_ledger(workflow_id: str = "workflow-1") -> WorkflowLedger:
     )
 
 
+def with_activation(ledger: WorkflowLedger, stage: WorkflowStage) -> WorkflowLedger:
+    identity = f"{ledger.workflow_id}:{stage.value}"
+    return replace(
+        ledger,
+        activation_manifests=(
+            *ledger.activation_manifests,
+            ActivationManifestReference(
+                stage=stage,
+                plan_revision=ledger.activation_revision_for(stage),
+                sequence=1,
+                path=f"/tmp/{ledger.workflow_id}-{stage.value}-activation.json",
+                digest=hashlib.sha256(identity.encode()).hexdigest(),
+                state=ActivationReferenceState.FINALIZED,
+                blocked=False,
+                supersedes_digest=None,
+            ),
+        ),
+    )
+
+
 def make_planned() -> WorkflowLedger:
     ledger = record_artifact(
-        make_ledger(),
+        with_activation(make_ledger(), WorkflowStage.DEFINE),
         stage=WorkflowStage.DEFINE,
         path="artifacts/define.md",
         digest="define-v1",
         recorded_at=NOW + timedelta(minutes=1),
     )
     return record_artifact(
-        ledger,
+        with_activation(ledger, WorkflowStage.PLAN),
         stage=WorkflowStage.PLAN,
         path="artifacts/plan.md",
         digest="plan-v1",

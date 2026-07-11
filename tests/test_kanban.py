@@ -1,13 +1,21 @@
 from __future__ import annotations
 
+import hashlib
 import json
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
 import pytest
 
 from wingstaff.kanban import KanbanError, KanbanGraphAdapter
 from wingstaff.packs import load_pack
-from wingstaff.state import SkillDigest, StageProfile, WorkflowStage
+from wingstaff.state import (
+    ActivationManifestReference,
+    ActivationReferenceState,
+    SkillDigest,
+    StageProfile,
+    WorkflowStage,
+)
 from wingstaff.workflow import (
     approve_plan,
     new_workflow,
@@ -94,8 +102,27 @@ def make_ledger():
     )
 
 
+def with_activation(ledger, stage: WorkflowStage):
+    return replace(
+        ledger,
+        activation_manifests=(
+            *ledger.activation_manifests,
+            ActivationManifestReference(
+                stage=stage,
+                plan_revision=ledger.activation_revision_for(stage),
+                sequence=1,
+                path=f"/tmp/{stage.value}-activation.json",
+                digest=hashlib.sha256(stage.value.encode()).hexdigest(),
+                state=ActivationReferenceState.FINALIZED,
+                blocked=False,
+                supersedes_digest=None,
+            ),
+        ),
+    )
+
+
 def make_approved_worktree():
-    ledger = make_ledger()
+    ledger = with_activation(make_ledger(), WorkflowStage.DEFINE)
     ledger = record_artifact(
         ledger,
         stage=WorkflowStage.DEFINE,
@@ -104,7 +131,7 @@ def make_approved_worktree():
         recorded_at=NOW + timedelta(minutes=1),
     )
     ledger = record_artifact(
-        ledger,
+        with_activation(ledger, WorkflowStage.PLAN),
         stage=WorkflowStage.PLAN,
         path="artifacts/plan.md",
         digest="plan-v1",

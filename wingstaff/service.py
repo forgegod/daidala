@@ -36,6 +36,7 @@ from .state import (
 )
 from .store import StoreError, WorkflowStore
 from .workflow import (
+    _require_stage_activation,
     approve_plan,
     new_workflow,
     record_artifact,
@@ -218,6 +219,7 @@ class WorkflowService:
         if stage not in {WorkflowStage.DEFINE, WorkflowStage.PLAN, WorkflowStage.REVIEW}:
             raise ServiceError(f"stage {stage.value!r} cannot be submitted as text")
         observed = self.store.get_with_token(workflow_id)
+        _require_stage_activation(observed.ledger, stage)
         filename = {
             WorkflowStage.DEFINE: "define.md",
             WorkflowStage.PLAN: "plan.md",
@@ -261,6 +263,7 @@ class WorkflowService:
         """Capture the immutable pre-verification diff and changed-path scope."""
         observed = self.store.get_with_token(workflow_id)
         ledger = observed.ledger
+        _require_stage_activation(ledger, WorkflowStage.IMPLEMENT)
         existing = ledger.artifact_for(WorkflowStage.IMPLEMENT)
         if existing is not None:
             return ledger
@@ -297,6 +300,7 @@ class WorkflowService:
     ) -> WorkflowLedger:
         """Persist actual command output and structured verification evidence."""
         observed = self.store.get_with_token(workflow_id)
+        _require_stage_activation(observed.ledger, WorkflowStage.VERIFY)
         output_digest = hashlib.sha256(output.encode("utf-8")).hexdigest()
         artifact = self._workspace.write_artifact(
             workflow_id,
@@ -421,6 +425,7 @@ class WorkflowService:
         """Record reviewed evidence and remove the worktree without commit or push."""
         observed = self.store.get_with_token(workflow_id)
         ledger = observed.ledger
+        _require_stage_activation(ledger, WorkflowStage.DELIVER)
         delivery = ledger.artifact_for(WorkflowStage.DELIVER)
         if delivery is None:
             if not ledger.worktree_path or not ledger.worktree_owned:

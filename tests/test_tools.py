@@ -101,11 +101,13 @@ def seed_planned(service: WorkflowService, target: Path) -> str:
         stage_profiles=STAGE_PROFILES,
         workflow_id="workflow-plan",
     )
+    record_activation(service, ledger.workflow_id, WorkflowStage.DEFINE)
     ledger = service.submit_artifact(
         ledger.workflow_id,
         stage=WorkflowStage.DEFINE,
         content="# Definition\n",
     )
+    record_activation(service, ledger.workflow_id, WorkflowStage.PLAN)
     ledger = service.submit_artifact(
         ledger.workflow_id,
         stage=WorkflowStage.PLAN,
@@ -114,10 +116,14 @@ def seed_planned(service: WorkflowService, target: Path) -> str:
     return ledger.workflow_id
 
 
-def activation_decisions(service: WorkflowService, workflow_id: str) -> list[dict]:
+def activation_decisions(
+    service: WorkflowService,
+    workflow_id: str,
+    stage: WorkflowStage = WorkflowStage.DEFINE,
+) -> list[dict]:
     ledger = service.status(workflow_id)
     pack = load_pack(ledger.pack_name)
-    stage = next(row for row in pack.stages if row.id == "define")
+    pack_stage = next(row for row in pack.stages if row.id == stage.value)
     return [
         {
             "name": skill.name,
@@ -128,8 +134,26 @@ def activation_decisions(service: WorkflowService, workflow_id: str) -> list[dic
             "rationale": "Apply required guidance; omit conditional guidance for this fixture.",
             "condition": None,
         }
-        for skill in stage.skills
+        for skill in pack_stage.skills
     ]
+
+
+def record_activation(
+    service: WorkflowService,
+    workflow_id: str,
+    stage: WorkflowStage,
+) -> None:
+    ledger = service.status(workflow_id)
+    card = ledger.card_for(stage)
+    assert card is not None
+    service.record_skill_activation(
+        workflow_id,
+        stage=stage,
+        supersedes_digest=None,
+        decisions=activation_decisions(service, workflow_id, stage),
+        board_slug=ledger.board_slug,
+        task_id=card.task_id,
+    )
 
 
 def test_start_and_status_return_policy_ledger_without_status(
@@ -181,11 +205,13 @@ def test_start_restart_and_approval_create_one_idempotent_graph(
         WorkflowStage.PLAN,
     }
 
+    record_activation(service, second.workflow_id, WorkflowStage.DEFINE)
     service.submit_artifact(
         second.workflow_id,
         stage=WorkflowStage.DEFINE,
         content="# Definition\n",
     )
+    record_activation(service, second.workflow_id, WorkflowStage.PLAN)
     planned = service.submit_artifact(
         second.workflow_id,
         stage=WorkflowStage.PLAN,

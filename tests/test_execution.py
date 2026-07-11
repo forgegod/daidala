@@ -22,6 +22,7 @@ from wingstaff.state import (
     ActivationCategory,
     ActivationDecision,
     ActivationManifest,
+    ActivationManifestReference,
     WorkflowStage,
 )
 from wingstaff.store import WorkflowStore
@@ -48,6 +49,76 @@ class TickClock:
 
 class FixtureWorkflowService(WorkflowService):
     fixture_pack_name: str
+
+
+def record_stage_activation(
+    service: FixtureWorkflowService,
+    workflow_id: str,
+    stage: WorkflowStage,
+    *,
+    overrides: dict[str, ActivationCategory] | None = None,
+) -> ActivationManifestReference:
+    ledger = service.status(workflow_id)
+    card = ledger.card_for(stage)
+    assert card is not None
+    pack = load_pack(ledger.pack_name)
+    pack_stage = next(row for row in pack.stages if row.id == stage.value)
+    conditional_categories = (
+        ActivationCategory.APPLICABLE,
+        ActivationCategory.DEFERRED,
+        ActivationCategory.NOT_APPLICABLE,
+    )
+    applicable_rank = 0
+    conditional_index = 0
+    decisions = []
+    for skill in pack_stage.skills:
+        if overrides and skill.name in overrides:
+            category = overrides[skill.name]
+        elif skill.activation is SkillActivationMode.REQUIRED:
+            category = ActivationCategory.APPLICABLE
+        else:
+            category = conditional_categories[conditional_index % len(conditional_categories)]
+            conditional_index += 1
+        rank = None
+        if category is ActivationCategory.APPLICABLE:
+            applicable_rank += 1
+            rank = applicable_rank
+        decisions.append(
+            {
+                "name": skill.name,
+                "category": category.value,
+                "rank": rank,
+                "matched_criteria": [f"Pinned criteria were assessed for {skill.name}."],
+                "evidence": [f"The {stage.value} card and parent handoffs were inspected."],
+                "rationale": f"Classify {skill.name} as {category.value} for this fixture.",
+                "condition": (
+                    "Apply if the stage exposes the matching specialist condition."
+                    if category is ActivationCategory.DEFERRED
+                    else None
+                ),
+            }
+        )
+    reference, _ = service.record_skill_activation(
+        workflow_id,
+        stage=stage,
+        supersedes_digest=None,
+        decisions=decisions,
+        board_slug=ledger.board_slug,
+        task_id=card.task_id,
+    )
+    return reference
+
+
+def activation_handoff(ledger, stage: WorkflowStage) -> tuple[str, list[str]]:
+    reference = ledger.activation_for(stage)
+    assert reference is not None
+    manifest = json.loads(Path(reference.path).read_text(encoding="utf-8"))
+    active = [
+        decision["name"]
+        for decision in manifest["decisions"]
+        if decision["category"] == ActivationCategory.APPLICABLE.value
+    ]
+    return reference.digest, active
 
 
 @pytest.fixture
@@ -115,11 +186,13 @@ def prepare_planned_workflow(
         pack_name=service.fixture_pack_name,
         workflow_id=workflow_id,
     )
+    record_stage_activation(service, workflow_id, WorkflowStage.DEFINE)
     state = service.submit_artifact(
         state.workflow_id,
         stage=WorkflowStage.DEFINE,
         content="# Definition\n\n`answer()` must return 2.\n",
     )
+    record_stage_activation(service, workflow_id, WorkflowStage.PLAN)
     state = service.submit_artifact(
         state.workflow_id,
         stage=WorkflowStage.PLAN,
@@ -160,6 +233,7 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
         ledger = service.status(workflow_id)
         card = ledger.card_for(stage)
         assert card is not None
+        activation_digest, active_skills = activation_handoff(ledger, stage)
         fake_kanban_host.dispatch(
             "kanban_complete",
             {
@@ -168,8 +242,15 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
                 "metadata": {
                     "schema": "wingstaff.handoff/v1",
                     "workflow_id": workflow_id,
+                    "plan_revision": ledger.activation_revision_for(stage),
                     "stage": stage.value,
+                    "pack": ledger.pack_name,
+                    "pack_revision": ledger.pack_source_revision,
+                    "outcome": "completed",
+                    "artifact_refs": [artifact_digest],
                     "artifact_digest": artifact_digest,
+                    "skill_activation_digest": activation_digest,
+                    "active_skills": active_skills,
                 },
             },
         )
@@ -195,6 +276,7 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
         "def answer():\n    return 2\n", encoding="utf-8"
     )
     (worktree / "notes.txt").write_text("verified fixture\n", encoding="utf-8")
+    record_stage_activation(service, workflow_id, WorkflowStage.IMPLEMENT)
     verifying = service.capture_implementation(workflow_id)
     implementation = verifying.artifact_for(WorkflowStage.IMPLEMENT)
     assert implementation is not None
@@ -205,6 +287,7 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
 
     verification = run_fixture_tests(worktree)
     assert verification.returncode == 0, verification.stdout + verification.stderr
+    record_stage_activation(service, workflow_id, WorkflowStage.VERIFY)
     reviewing = service.record_verification(
         workflow_id,
         command=f"{sys.executable} -m pytest -q",
@@ -217,6 +300,7 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
         reviewing.verification_evidence[-1].output_digest,
     )
 
+    record_stage_activation(service, workflow_id, WorkflowStage.REVIEW)
     reviewed = service.submit_artifact(
         workflow_id,
         stage=WorkflowStage.REVIEW,
@@ -231,6 +315,7 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
         capture_output=True,
         text=True,
     ).stdout.strip()
+    record_stage_activation(service, workflow_id, WorkflowStage.DELIVER)
     completed = service.deliver(workflow_id)
 
     delivery = completed.artifact_for(WorkflowStage.DELIVER)
@@ -268,6 +353,57 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
             "wingstaff.handoff/v1"
         )
 
+    categories = {
+        decision["category"]
+        for reference in completed.activation_manifests
+        for decision in json.loads(Path(reference.path).read_text(encoding="utf-8"))[
+            "decisions"
+        ]
+    }
+    if service.fixture_pack_name == "addyosmani":
+        assert {
+            ActivationCategory.APPLICABLE.value,
+            ActivationCategory.DEFERRED.value,
+            ActivationCategory.NOT_APPLICABLE.value,
+        } <= categories
+    else:
+        assert categories == {ActivationCategory.APPLICABLE.value}
+
+
+def test_blocked_activation_denies_stage_evidence_without_completion_handoff(
+    service: FixtureWorkflowService,
+    target_repository: Path,
+    fake_kanban_host,
+) -> None:
+    ledger = service.start(
+        board_slug="wingstaff-test",
+        target_repository=str(target_repository),
+        goal="Prove blocked activation fails closed",
+        stage_profiles=STAGE_PROFILES,
+        pack_name=service.fixture_pack_name,
+        workflow_id="workflow-blocked-activation",
+    )
+    pack = load_pack(ledger.pack_name)
+    define = next(row for row in pack.stages if row.id == WorkflowStage.DEFINE.value)
+    blocked_skill = define.skills[0]
+    reference = record_stage_activation(
+        service,
+        ledger.workflow_id,
+        WorkflowStage.DEFINE,
+        overrides={blocked_skill.name: ActivationCategory.BLOCKED},
+    )
+
+    assert reference.blocked is True
+    with pytest.raises(PolicyViolationError, match="define skill activation is blocked"):
+        service.submit_artifact(
+            ledger.workflow_id,
+            stage=WorkflowStage.DEFINE,
+            content="# Definition\n",
+        )
+    card = service.status(ledger.workflow_id).card_for(WorkflowStage.DEFINE)
+    assert card is not None
+    assert "completion_metadata" not in fake_kanban_host.cards[card.task_id]
+
 
 def test_cancel_rolls_back_owned_implementation_worktree(
     service: FixtureWorkflowService,
@@ -304,10 +440,12 @@ def test_failed_verification_blocks_delivery(
     (worktree / "calculator.py").write_text(
         "def answer():\n    return 0\n", encoding="utf-8"
     )
+    record_stage_activation(service, workflow_id, WorkflowStage.IMPLEMENT)
     service.capture_implementation(workflow_id)
 
     verification = run_fixture_tests(worktree)
     assert verification.returncode != 0
+    record_stage_activation(service, workflow_id, WorkflowStage.VERIFY)
     blocked = service.record_verification(
         workflow_id,
         command=f"{sys.executable} -m pytest -q",
@@ -317,6 +455,7 @@ def test_failed_verification_blocks_delivery(
 
     assert blocked.verification_evidence[-1].exit_code != 0
     assert "status" not in blocked.to_dict()
+    record_stage_activation(service, workflow_id, WorkflowStage.DELIVER)
     with pytest.raises(PolicyViolationError, match="successful verification"):
         service.deliver(workflow_id)
 
@@ -336,12 +475,16 @@ def test_verification_worker_blocks_and_resumes_same_card_and_workspace(
     (worktree / "calculator.py").write_text(
         "def answer():\n    return 2\n", encoding="utf-8"
     )
+    record_stage_activation(service, workflow_id, WorkflowStage.IMPLEMENT)
     captured = service.capture_implementation(workflow_id)
     verify_card = captured.card_for(WorkflowStage.VERIFY)
     assert verify_card is not None
 
     first_show = json.loads(
         fake_kanban_host.dispatch("kanban_show", {"task_id": verify_card.task_id})
+    )
+    verification_activation = record_stage_activation(
+        service, workflow_id, WorkflowStage.VERIFY
     )
     failed = service.record_verification(
         workflow_id,
@@ -411,6 +554,10 @@ def test_verification_worker_blocks_and_resumes_same_card_and_workspace(
                 "artifact_refs": [
                     row.to_dict() for row in passed.verification_evidence
                 ],
+                "skill_activation_digest": verification_activation.digest,
+                "active_skills": activation_handoff(
+                    passed, WorkflowStage.VERIFY
+                )[1],
                 "workspace_path": str(worktree),
                 "baseline_commit": passed.baseline_commit,
             },
@@ -438,6 +585,7 @@ def test_capture_requires_real_diff_and_safe_workflow_id(
     )
     service.approve(workflow_id, plan_digest)
     service.prepare_implementation(workflow_id)
+    record_stage_activation(service, workflow_id, WorkflowStage.IMPLEMENT)
 
     with pytest.raises(ExecutionError, match="no working-tree diff"):
         service.capture_implementation(workflow_id)
@@ -457,8 +605,10 @@ def test_verification_retries_keep_immutable_output_artifacts(
     (worktree / "calculator.py").write_text(
         "def answer():\n    return 2\n", encoding="utf-8"
     )
+    record_stage_activation(service, workflow_id, WorkflowStage.IMPLEMENT)
     service.capture_implementation(workflow_id)
 
+    record_stage_activation(service, workflow_id, WorkflowStage.VERIFY)
     failed = service.record_verification(
         workflow_id,
         command="pytest -q",

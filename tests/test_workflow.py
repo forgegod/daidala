@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
@@ -11,6 +12,7 @@ from wingstaff.state import (
     ActivationCategory,
     ActivationDecision,
     ActivationManifest,
+    ActivationManifestReference,
     ActivationReferenceState,
     SkillDigest,
     StageProfile,
@@ -128,16 +130,45 @@ def make_ledger() -> WorkflowLedger:
     )
 
 
+def with_activation(
+    ledger: WorkflowLedger,
+    stage: WorkflowStage,
+    *,
+    state: ActivationReferenceState = ActivationReferenceState.FINALIZED,
+    blocked: bool = False,
+) -> WorkflowLedger:
+    identity = (
+        f"{stage.value}:{ledger.activation_revision_for(stage)}:"
+        f"{len(ledger.activation_manifests)}"
+    )
+    return replace(
+        ledger,
+        activation_manifests=(
+            *ledger.activation_manifests,
+            ActivationManifestReference(
+                stage=stage,
+                plan_revision=ledger.activation_revision_for(stage),
+                sequence=1,
+                path=f"/tmp/{stage.value}-activation.json",
+                digest=hashlib.sha256(identity.encode()).hexdigest(),
+                state=state,
+                blocked=blocked,
+                supersedes_digest=None,
+            ),
+        ),
+    )
+
+
 def make_planned() -> WorkflowLedger:
     ledger = record_artifact(
-        make_ledger(),
+        with_activation(make_ledger(), WorkflowStage.DEFINE),
         stage=WorkflowStage.DEFINE,
         path="artifacts/define.md",
         digest="define-v1",
         recorded_at=NOW + timedelta(minutes=1),
     )
     return record_artifact(
-        ledger,
+        with_activation(ledger, WorkflowStage.PLAN),
         stage=WorkflowStage.PLAN,
         path="artifacts/plan.md",
         digest="plan-v1",
@@ -266,7 +297,7 @@ def test_post_gate_facts_require_approval_and_owned_worktree() -> None:
     implementing = make_implementing()
     with pytest.raises(PolicyViolationError, match="implement artifact"):
         record_verification(
-            implementing,
+            with_activation(implementing, WorkflowStage.VERIFY),
             command="pytest",
             exit_code=0,
             output_reference="artifacts/pytest.txt",
@@ -277,14 +308,14 @@ def test_post_gate_facts_require_approval_and_owned_worktree() -> None:
 
 def test_verification_evidence_does_not_create_a_blocked_status() -> None:
     ledger = record_artifact(
-        make_implementing(),
+        with_activation(make_implementing(), WorkflowStage.IMPLEMENT),
         stage=WorkflowStage.IMPLEMENT,
         path="artifacts/implementation.diff",
         digest="diff-v1",
         recorded_at=NOW + timedelta(minutes=5),
     )
     failed = record_verification(
-        ledger,
+        with_activation(ledger, WorkflowStage.VERIFY),
         command="pytest",
         exit_code=1,
         output_reference="artifacts/pytest-1.txt",
@@ -305,7 +336,7 @@ def test_verification_evidence_does_not_create_a_blocked_status() -> None:
     assert repeated is failed
     with pytest.raises(PolicyViolationError, match="successful verification"):
         record_artifact(
-            failed,
+            with_activation(failed, WorkflowStage.REVIEW),
             stage=WorkflowStage.REVIEW,
             path="artifacts/review.md",
             digest="review-v1",
@@ -321,14 +352,14 @@ def test_verification_evidence_does_not_create_a_blocked_status() -> None:
         recorded_at=NOW + timedelta(minutes=7),
     )
     reviewed = record_artifact(
-        passed,
+        with_activation(passed, WorkflowStage.REVIEW),
         stage=WorkflowStage.REVIEW,
         path="artifacts/review.md",
         digest="review-v1",
         recorded_at=NOW + timedelta(minutes=8),
     )
     delivered = record_artifact(
-        reviewed,
+        with_activation(reviewed, WorkflowStage.DELIVER),
         stage=WorkflowStage.DELIVER,
         path="artifacts/delivery.json",
         digest="delivery-v1",
@@ -357,7 +388,7 @@ def test_timestamps_are_timezone_aware_and_monotonic() -> None:
         replace(make_ledger(), updated_at=NOW - timedelta(seconds=1))
     with pytest.raises(PolicyViolationError, match="before updated_at"):
         record_artifact(
-            make_planned(),
+            with_activation(make_planned(), WorkflowStage.IMPLEMENT),
             stage=WorkflowStage.IMPLEMENT,
             path="artifacts/implementation.diff",
             digest="diff-v1",
@@ -371,6 +402,38 @@ def test_deserialization_rejects_operational_status_payload() -> None:
 
     with pytest.raises(PolicyViolationError, match="unknown serialized"):
         WorkflowLedger.from_dict(raw)
+
+
+@pytest.mark.parametrize(
+    ("ledger", "message"),
+    (
+        (make_ledger(), "requires a finalized define"),
+        (
+            with_activation(
+                make_ledger(),
+                WorkflowStage.DEFINE,
+                state=ActivationReferenceState.PENDING,
+            ),
+            "requires a finalized define",
+        ),
+        (
+            with_activation(make_ledger(), WorkflowStage.DEFINE, blocked=True),
+            "define skill activation is blocked",
+        ),
+    ),
+)
+def test_stage_artifact_rejects_missing_pending_or_blocked_activation(
+    ledger: WorkflowLedger,
+    message: str,
+) -> None:
+    with pytest.raises(PolicyViolationError, match=message):
+        record_artifact(
+            ledger,
+            stage=WorkflowStage.DEFINE,
+            path="artifacts/define.md",
+            digest="define-v1",
+            recorded_at=NOW + timedelta(minutes=1),
+        )
 
 
 def test_activation_manifest_is_strict_canonical_and_round_trips() -> None:

@@ -36,6 +36,9 @@ workflow-pack adapters, and bundled orchestration skills.
   pack adapters own the mapping and the engine remains pack-neutral.
 - Skill activation manifests are immutable, exact-pack decision artifacts whose
   pending/finalized ledger references form a linear supersession chain.
+- Every stage evidence operation requires its current activation manifest to be
+  finalized and unblocked; successful worker handoffs carry its digest and the
+  active skill names.
 - The activation tool authorizes from `HERMES_KANBAN_BOARD` and
   `HERMES_KANBAN_TASK` against the ledger's current stage card; handler `task_id`
   is turn isolation and never grants workflow authority.

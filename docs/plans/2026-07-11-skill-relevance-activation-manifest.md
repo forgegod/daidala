@@ -1,6 +1,6 @@
 # Skill relevance activation manifest implementation plan
 
-> Status: Phase 3 is done; Phase 4 is next and has not started.
+> Status: Phase 4 is done; Phase 5 is next and has not started.
 >
 > Baseline: `65e6085` (`docs: explain autonomous skill selection and
 > handoffs`).
@@ -626,7 +626,14 @@ carry its digest across worker boundaries.
 
 ### Files
 
+- `wingstaff/workflow.py`
+- `wingstaff/service.py`
+- `wingstaff/AGENTS.md`
 - `wingstaff/skills/orchestrate/SKILL.md`
+- `tests/AGENTS.md`
+- `tests/test_workflow.py`
+- `tests/test_store.py`
+- `tests/test_tools.py`
 - `tests/test_worker_contract.py`
 - `tests/test_kanban.py`
 - `tests/test_execution.py`
@@ -666,6 +673,16 @@ carry its digest across worker boundaries.
 pytest tests/test_worker_contract.py tests/test_kanban.py tests/test_execution.py
 ruff check tests/test_worker_contract.py tests/test_kanban.py tests/test_execution.py
 ```
+
+Phase 4 gate: GREEN — the worker contract now requires card inspection followed
+by exact skill activation before methodology or evidence, and successful
+handoffs carry the finalized activation digest and active skill names. Missing,
+pending, and blocked manifests fail closed at all six evidence boundaries;
+cross-pack execution covers Addyosmani's required/conditional category mix and
+AI-DLC's required adapter path. The focused gate passed 48 tests. The repository
+gate passed with 28 Markdown files, 147 tests, Ruff, both pack validations,
+build, Twine, release-content audit, Lefthook validation, and diff checks. The
+isolated staged-tree directory-plugin probe loaded 11 tools with no plugin error.
 
 Commit only after the gate passes:
 

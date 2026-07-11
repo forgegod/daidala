@@ -70,8 +70,10 @@ def test_worker_contract_requires_kanban_handoff_and_recovery_protocol() -> None
 
     required = (
         "Call `kanban_show` before any file, terminal, or Wingstaff tool",
-        "Use the skills already pinned to the card",
+        "every other skill pinned",
+        "wingstaff_record_skill_activation",
         "wingstaff.handoff/v1",
+        "`skill_activation_digest`, and `active_skills`",
         "`workspace_path` and `baseline_commit`",
         "Before `kanban_block`, call `kanban_comment`",
         "`dependency` for an unfinished prerequisite",
@@ -80,6 +82,31 @@ def test_worker_contract_requires_kanban_handoff_and_recovery_protocol() -> None
         "`transient` only for genuinely flaky host failures",
         "approval from a generic unblock",
         "exactly one `kanban_complete` or `kanban_block` call",
+    )
+    for statement in required:
+        assert statement in instructions
+
+
+def test_worker_contract_requires_pre_work_activation_and_blocked_protocol() -> None:
+    instructions = worker_contract()
+
+    required = (
+        "before applying stage methodology",
+        "producing evidence. Loaded candidates are not automatically active",
+        "`required` means the pack requires the skill",
+        "`conditional` means the worker chooses",
+        "`applicable` skills are active now",
+        "`deferred` skills are inactive",
+        "`not_applicable` means current task evidence",
+        "`blocked` means a required or relevant skill cannot be applied",
+        "unique contiguous ranks",
+        "at 1 in attention order",
+        "non-empty matched criteria, task evidence, and rationale",
+        "comment with its digest and every blocked skill",
+        '`kanban_block(kind: "capability")`',
+        "Do not fabricate a successful handoff",
+        "wingstaff:orchestrate` as always required",
+        "discover replacement skills",
     )
     for statement in required:
         assert statement in instructions

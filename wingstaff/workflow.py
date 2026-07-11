@@ -118,6 +118,7 @@ def record_artifact(
         raise PolicyViolationError(
             f"stage {stage.value!r} uses approval or verification evidence, not an artifact"
         )
+    _require_stage_activation(ledger, stage)
     revision = 0 if stage is WorkflowStage.DEFINE else ledger.plan_revision
     candidate = ArtifactReference(
         stage=stage,
@@ -265,6 +266,7 @@ def record_verification(
     recorded_at: datetime,
 ) -> WorkflowLedger:
     """Record verification evidence without mirroring the Kanban card status."""
+    _require_stage_activation(ledger, WorkflowStage.VERIFY)
     _require_approval(ledger)
     _require_worktree(ledger)
     _require_artifact(ledger, WorkflowStage.IMPLEMENT)

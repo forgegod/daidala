@@ -51,16 +51,45 @@ not depend on the launcher session retaining these instructions.
    input. Confirm the card body names the expected workflow ID, stage, pack, and
    plan revision. Block with `kind: capability` if that context is missing or
    contradictory.
-2. Use the skills already pinned to the card. Do not call
-   `wingstaff_pack_info`, discover replacement skills, install skills, or
-   re-derive the stage mapping.
-3. Work only in `HERMES_KANBAN_WORKSPACE`. For post-gate cards, confirm it equals
+2. Treat `wingstaff:orchestrate` as always required and every other skill pinned
+   to the card as a pack-declared candidate. Do not call `wingstaff_pack_info`,
+   discover replacement skills, install skills, or re-derive the stage mapping.
+3. Inspect the relevant parent artifacts and classify every candidate against
+   its pinned `Use When`, `When NOT to Use`, capability requirements, the card,
+   parent handoffs, and this stage policy. Then call
+   `wingstaff_record_skill_activation` before applying stage methodology or
+   producing evidence. Loaded candidates are not automatically active.
+4. Work only in `HERMES_KANBAN_WORKSPACE`. For post-gate cards, confirm it equals
    the absolute persistent worktree in the card body. Never edit the original
    target checkout.
-4. Use Wingstaff tools only for policy and evidence operations. Hermes Kanban
+5. Use Wingstaff tools only for policy and evidence operations. Hermes Kanban
    remains the only lifecycle authority.
-5. End every run with exactly one `kanban_complete` or `kanban_block` call. A
+6. End every run with exactly one `kanban_complete` or `kanban_block` call. A
    prose response is not completion. Use `kanban_heartbeat` during long work.
+
+### Skill Activation
+
+Pack policy and worker judgment are separate:
+
+- `required` means the pack requires the skill. Record it as `applicable`, or
+  `blocked` when a missing capability or stage-policy conflict prevents use;
+  never demote it to another category.
+- `conditional` means the worker chooses `applicable`, `deferred`,
+  `not_applicable`, or `blocked` from the pinned criteria and current evidence.
+- `applicable` skills are active now. Give them unique contiguous ranks starting
+  at 1 in attention order.
+- `deferred` skills are inactive until a precise recorded condition occurs. If
+  it occurs, record a superseding manifest that makes the skill `applicable` or
+  `blocked` before submitting stage evidence.
+- `not_applicable` means current task evidence or negative criteria exclude the
+  skill.
+- `blocked` means a required or relevant skill cannot be applied. Persist the
+  manifest, comment with its digest and every blocked skill, then call
+  `kanban_block(kind: "capability")`. Do not fabricate a successful handoff.
+
+Every decision cites non-empty matched criteria, task evidence, and rationale.
+Only `deferred` has a non-empty condition; only `applicable` has a rank. Keep the
+returned activation digest for the handoff or blocking comment.
 
 ### Stage Operations
 
@@ -85,7 +114,7 @@ Successful workers call `kanban_complete` with a concise summary and metadata
 using schema `wingstaff.handoff/v1`. Metadata must contain:
 
 - `schema`, `workflow_id`, `plan_revision`, `stage`, `pack`, `pack_revision`,
-  `outcome`, and `artifact_refs`;
+  `outcome`, `artifact_refs`, `skill_activation_digest`, and `active_skills`;
 - `workspace_path` and `baseline_commit` for `implement`, `verify`, `review`, and
   `deliver`;
 - diff and changed-path manifest references for `implement`;
@@ -124,6 +153,11 @@ approval and graph revision.
 - Writing implementation files in the target checkout instead of the returned
   Wingstaff worktree.
 - Starting implementation before digest-bound human approval.
+- Treating every loaded candidate skill as active without recording an
+  activation decision.
+- Submitting evidence with a missing, pending, or blocked activation manifest.
+- Applying a deferred skill after its condition occurs without first recording
+  a superseding manifest.
 - Recomputing delivery scope after verification instead of using the captured
   implementation snapshot.
 - Modifying the worktree during verification or review after the implementation
@@ -136,6 +170,9 @@ approval and graph revision.
 
 - [ ] Pack and every exact skill validated.
 - [ ] Worker called `kanban_show` first and used the card's pinned skills.
+- [ ] Worker recorded a finalized, unblocked skill activation manifest before
+      stage methodology and evidence.
+- [ ] Successful handoff contains the activation digest and active skill names.
 - [ ] Clean baseline commit recorded.
 - [ ] Define and plan artifacts exist.
 - [ ] Human approval matches the current plan digest.

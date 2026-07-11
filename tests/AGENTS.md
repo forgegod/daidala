@@ -22,7 +22,8 @@ completeness without touching a real Hermes profile.
   equivalent.
 - Temporary Git worktree tests for the approved end-to-end executable slice.
 - Cross-pack fixture tests proving Addyosmani and AI-DLC use the same engine path
-  and leave complete structured handoff history across all executable cards.
+  and leave activation-gated structured handoff history across all executable
+  cards.
 - Subprocess tests for dependency-free repository verification scripts.
 - Release-content regressions for forbidden runtime paths and secret signatures.
 - Build/install smoke tests for directory entry points, wheel resources, and Hermes entry-point metadata.
@@ -36,7 +37,9 @@ completeness without touching a real Hermes profile.
 
 - Every new policy operation requires positive, policy-violation, and persistence tests.
 - Skill activation coverage must prove strict serialization, exact pack-stage
-  decisions, linear supersession, pending/finalized recovery, and exclusive artifact creation.
+  decisions, linear supersession, pending/finalized recovery, exclusive artifact
+  creation, and fail-closed evidence operations for missing, pending, or blocked
+  manifests.
 - Activation tool tests set real Kanban worker environment context and prove
   absent, wrong-board, wrong-card, matching-card, and unrelated handler `task_id` behavior.
 - Every new packaged resource requires a wheel-content assertion.
