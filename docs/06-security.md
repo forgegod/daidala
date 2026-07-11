@@ -173,5 +173,10 @@ of these surfaces exists.
 - Kanban graph adapter: `wingstaff/service.py`, `wingstaff/kanban.py`
 - Tool error boundary: `wingstaff/tools.py`
 - Bundled procedures: `wingstaff/skills/*/SKILL.md`
-- Tests: `tests/test_packs.py`, `tests/test_plugin.py`, `tests/test_execution.py`
+- Tests:
+  - Pack and registration boundary: `tests/test_packs.py`, `tests/test_plugin.py`
+  - Handler/card authorization and activation policy: `tests/test_tools.py`,
+    `tests/test_workflow.py`
+  - Persistence, artifact recovery, and executable path: `tests/test_store.py`,
+    `tests/test_execution.py`
 - Host plugin trust model: [official Hermes plugin documentation](https://hermes-agent.nousresearch.com/docs/user-guide/features/plugins)

@@ -17,7 +17,7 @@ architecture references.
 | [Policy ledger](02-workflow-state.md) | Status-free ledger and combined live Kanban diagnostics implemented | State, store, service, Kanban, and persistence tests |
 | [Pack reference](03-pack-reference.md) | Schema-v1 providers and required/conditional activation implemented | Pack loader, bundled YAML, and pack tests |
 | [Authoring packs](04-authoring-packs.md) | Pack-neutral mapping and activation authoring implemented | Pack loader and cross-pack tests |
-| [Lifecycle stages](05-lifecycle-stages.md) | Approval graph, activation gate, handoffs, and recovery implemented | Graph, activation, worker-contract, and recovery tests |
+| [Lifecycle stages](05-lifecycle-stages.md) | Approval graph, host-bound activation authorization, pending/finalized recovery, fail-closed evidence gates, and handoffs implemented | Graph, activation, worker-contract, and recovery tests |
 | [Security](06-security.md) | Approval, activation, worktree, artifact, secrets, and supply-chain boundaries implemented | Runtime and release-content tests |
 | [Runbook](07-runbook.md) | Native lifecycle and normal Kanban recovery commands verified | Shared CLI tests and isolated Hermes lifecycle probe |
 | [Hermes integration](08-hermes-integration.md) | Hermes v0.18.2 plugin, CLI, Kanban, and gateway boundary verified | Isolated directory, entry-point, public Git, CLI, and Kanban probes |
