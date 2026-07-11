@@ -1,14 +1,13 @@
 # Skill relevance activation manifest implementation plan
 
-> Status: proposed; implementation is not approved.
+> Status: Phase 0 feasibility is complete; implementation is not approved.
 >
 > Baseline: `65e6085` (`docs: explain autonomous skill selection and
 > handoffs`).
 >
-> Human approval is required before Phase 0 starts. Phase 0 is a source-read-only
-> feasibility check that may update only this plan with its result. Renewed human
-> approval is required before Phase 1 starts. This plan does not authorize source
-> changes.
+> Phase 0 was approved and completed as a source-read-only feasibility check that
+> updated only this plan. Renewed human approval is required before Phase 1 starts.
+> This plan does not authorize source changes.
 
 ## Goal
 
@@ -246,8 +245,11 @@ given an impossible manifest contract.
 The deterministic validator must require:
 
 1. The call comes from the Kanban card recorded for the same workflow, stage, and
-   plan revision. The exact host-owned context field is established by Phase 0;
-   do not trust a model-supplied task ID.
+   plan revision. Read the host-owned `HERMES_KANBAN_TASK` and
+   `HERMES_KANBAN_BOARD` process environment, require both, and compare them with
+   the ledger's board and current `card_for(stage)`. The handler `task_id` kwarg
+   is turn-isolation state, not Kanban identity. Do not trust a model-supplied
+   task ID or board.
 2. Every exact pack-stage skill appears once and only once.
 3. No undeclared or substituted entry appears. `wingstaff:orchestrate` is injected
    by the engine rather than declared by the pack, is outside the activation
@@ -373,24 +375,24 @@ judgment.
 
 ### Objective
 
-Prove the supported Hermes v0.18.2 plugin-handler context used to bind an
-activation call to the executing Kanban card. This is a read-only feasibility
-gate, not implementation authorization.
+Prove the supported Hermes v0.18.2 host context used to bind an activation call
+to the executing Kanban card. This is a read-only feasibility gate, not
+implementation authorization.
 
 ### Sources and files
 
 - current official Hermes plugin and Kanban documentation;
 - installed Hermes v0.18.2 handler-dispatch source;
 - `tests/test_plugin.py` and `tests/test_tools.py` for a later contract test;
-- this plan, to record the authoritative source and exact callback shape.
+- this plan, to record the authoritative source and exact host context shape.
 
 ### Steps
 
-1. Trace tool registration through invocation and record the exact handler
-   `kwargs` key, value type, and lifecycle for host-owned Kanban task identity.
+1. Trace tool registration through invocation and record the exact handler and
+   process context, value types, and lifecycles for host-owned Kanban identity.
 2. Verify whether identity is absent for calls outside a Kanban worker and require
    those calls to fail closed.
-3. Specify a contract test using the real callback shape rather than the current
+3. Specify a contract test using the real host context rather than the current
    invented `task_id="test"` fixture convention.
 4. Confirm the value can be compared with the current card selected from the
    ledger's `card_references`; Phase 2 may expose this existing lookup through the
@@ -402,10 +404,42 @@ gate, not implementation authorization.
 
 ### Gate
 
-After initial human approval, record the authoritative documentation/source
-location and exact callback shape in this section. Renewed human approval remains
-required afterwards and before Phase 1. A failed feasibility check stops
-implementation.
+Phase 0 gate: GREEN against Hermes Agent v0.18.2 at commit
+`7acaff5ef2bcbaa22bd23b72efe60906123a4f55`.
+
+Repository gate passed with 26 Markdown files, 129 tests, Ruff, both bundled
+pack validations, build, Twine, release-content audit, Lefthook validation, and
+unstaged/staged diff checks.
+
+The expected handler-kwarg identity does not exist. The supported boundary is
+the dispatcher-owned process environment:
+
+- The official worker-lane contract names `HERMES_KANBAN_TASK` as the executing
+  card ID and `HERMES_KANBAN_BOARD` as its board slug. The v0.18.2 dispatcher
+  writes `task.id` and the resolved board into those variables before spawning
+  `hermes -p <assignee> chat -q ...` in `hermes_cli/kanban_db.py`.
+- Normal plugin dispatch forwards a handler kwarg named `task_id`, but
+  `agent/turn_context.py` defines it as an optional caller value or a generated
+  UUID for per-turn terminal/browser isolation. The dispatcher-spawned quiet CLI
+  calls `run_conversation` without a `task_id`, so this kwarg is not the Kanban
+  card ID. `tools/registry.py` forwards the kwarg unchanged to
+  `handler(args, **kwargs)`.
+- Outside a dispatcher-spawned Kanban worker, both Kanban environment variables
+  are absent. The activation handler must fail closed when either is absent or
+  blank, even if its `task_id` kwarg has a value.
+- The activation handler must read both environment variables itself, pass them
+  separately to the service, and compare them with `WorkflowLedger.board_slug`
+  and `WorkflowLedger.card_for(stage).task_id`. It must never accept either value
+  in model-owned tool arguments.
+- Phase 3 contract tests must set and clear the two environment variables around
+  calls through the registered handler, pass an unrelated turn-isolation
+  `task_id` kwarg, and cover absent context, wrong board, wrong card, and the
+  matching current card. Existing `WorkflowLedger.card_for(stage)` already
+  selects revision 0 for define/plan and the current plan revision afterwards.
+
+This reliable alternative binding satisfies the feasibility gate without a
+Hermes change. Renewed human approval remains required before Phase 1 and all
+source changes.
 
 ## Phase 1 — make activation intent part of packs
 
@@ -529,10 +563,11 @@ Wingstaff tool boundary.
 1. Add `wingstaff_record_skill_activation` with bounded nested JSON schema for
    workflow ID, stage, superseded digest, and decisions.
 2. Preserve handler `args: dict, **kwargs` and JSON-string return behavior.
-3. Obtain the worker task ID through the exact host-owned context verified in
-   Phase 0 and pass it separately to the service. Reject absent context,
-   non-Kanban invocations, and mismatches with the current stage card. Do not
-   accept a task ID in tool arguments.
+3. Read `HERMES_KANBAN_TASK` and `HERMES_KANBAN_BOARD` in the handler and pass
+   them separately to the service. Reject absent or blank context, non-Kanban
+   invocations, board mismatches, and mismatches with the current stage card.
+   Ignore the turn-isolation `task_id` kwarg for authorization, and do not accept
+   a task ID or board in tool arguments.
 4. In the service, load the pinned pack, validate all candidates, enrich
    decisions with ledger digests and activation modes, canonicalize for
    idempotency, and use the pending/finalized atomic persistence protocol.
@@ -721,7 +756,7 @@ activation digest.
 | Human comments change relevance after the first attempt. | Append a superseding manifest bound to the previous digest; never overwrite history. |
 | A deferred condition occurs after initial assessment. | Require a superseding `applicable` or `blocked` decision before evidence submission; do not claim the engine interprets prose triggers. |
 | Concurrent or interrupted persistence corrupts history. | Reserve under optimistic concurrency, create artifacts exclusively, finalize only after digest verification, and deny pending references. |
-| Hermes does not expose trustworthy worker task identity. | Phase 0 stops implementation and requires plan amendment and renewed approval. |
+| A future Hermes host stops exposing trustworthy worker card or board identity. | Fail closed when `HERMES_KANBAN_TASK` or `HERMES_KANBAN_BOARD` is absent or mismatched; re-run Phase 0 and require plan amendment and renewed approval before adapting to another boundary. |
 | Ledger schema change breaks stale local data. | The runtime is unreleased; use one fresh schema and no compatibility reader, consistent with the existing replacement rule. |
 | All candidate skills still consume prompt context. | State this limitation explicitly. Do not add selector cards or unsupported dispatcher hooks merely to optimize tokens. |
 | Pack authors mark everything required. | Authoring guidance must require justification; bundled mappings and tests provide conservative examples. |
