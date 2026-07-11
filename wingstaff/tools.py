@@ -10,6 +10,7 @@ from .kanban import KanbanGraphAdapter, ToolDispatcher
 from .locations import resolve_data_root
 from .packs import load_pack
 from .service import WorkflowService
+from .skills import pack_skill_digests
 from .state import WorkflowStage
 from .store import WorkflowStore
 
@@ -38,14 +39,29 @@ def pack_info(args: dict[str, Any], **kwargs: Any) -> str:
 
     def operation(values: dict[str, Any]) -> dict[str, Any]:
         pack = load_pack(str(values.get("pack") or "addyosmani"))
+        digests = dict(pack_skill_digests(pack))
         return {
             "pack": pack.name,
             "source": pack.source,
+            "source_revision": pack.source_revision,
+            "hermes_version_constraint": pack.hermes_version_constraint,
             "lifecycle": list(pack.lifecycle),
             "human_gate_after": pack.human_gate_after,
             "skills": {
                 stage.id: [
-                    skill.install or f"bundled:{skill.bundled}" for skill in stage.skills
+                    {
+                        "name": skill.name,
+                        "provider": {
+                            "kind": "external" if skill.is_external else "bundled",
+                            "reference": skill.install or skill.bundled,
+                        },
+                        "content_digest": {
+                            "sha256": digests[skill.name],
+                            "source": "pack" if skill.is_external else "bundled-resource",
+                        },
+                        "activation": skill.activation.value,
+                    }
+                    for skill in stage.skills
                 ]
                 for stage in pack.stages
             },

@@ -1,13 +1,13 @@
 # Skill relevance activation manifest implementation plan
 
-> Status: Phase 0 feasibility is complete; implementation is not approved.
+> Status: Phase 1 is done; Phase 2 is next and has not started.
 >
 > Baseline: `65e6085` (`docs: explain autonomous skill selection and
 > handoffs`).
 >
-> Phase 0 was approved and completed as a source-read-only feasibility check that
-> updated only this plan. Renewed human approval is required before Phase 1 starts.
-> This plan does not authorize source changes.
+> Phase 0 completed as a source-read-only feasibility check. Renewed human
+> approval authorized Phase 1 implementation. Phases remain checkpointed and
+> advance only after their verification gate and commit succeed.
 
 ## Goal
 
@@ -456,6 +456,7 @@ changing card dispatch.
 - `wingstaff/tools.py`
 - `tests/test_packs.py`
 - `tests/test_tools.py`
+- `tests/test_plugin.py`
 - `wingstaff/AGENTS.md`
 
 ### Steps
@@ -481,6 +482,14 @@ ruff check wingstaff/packs.py wingstaff/tools.py tests/test_packs.py tests/test_
 wingstaff packs validate addyosmani
 wingstaff packs validate aidlc
 ```
+
+Phase 1 gate: GREEN — exact required/conditional mappings were checked against
+the pinned Addyosmani skill descriptions; focused tests passed with 22 tests;
+the repository gate passed with 26 Markdown files, 133 tests, Ruff, both pack
+validations, build, Twine, release-content audit, Lefthook validation, and diff
+checks. The public pack-info contract also had an older bundled-provider
+assertion in `tests/test_plugin.py`; keeping that regression aligned belongs in
+this phase because the output shape changed here.
 
 Commit only after the gate passes:
 

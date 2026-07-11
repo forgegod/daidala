@@ -9,24 +9,30 @@ lifecycle:
     - id: define
       skills:
         - name: aidlc-adapter
+          activation: required
           bundled: aidlc-adapter
     - id: plan
       skills:
         - name: aidlc-adapter
+          activation: required
           bundled: aidlc-adapter
     - id: implement
       skills:
         - name: aidlc-adapter
+          activation: required
           bundled: aidlc-adapter
     - id: verify
       skills:
         - name: aidlc-adapter
+          activation: required
           bundled: aidlc-adapter
     - id: review
       skills:
         - name: aidlc-adapter
+          activation: required
           bundled: aidlc-adapter
     - id: deliver
       skills:
         - name: aidlc-adapter
+          activation: required
           bundled: aidlc-adapter

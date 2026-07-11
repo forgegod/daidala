@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from enum import StrEnum
 from importlib.resources import files
 from typing import Any
 from urllib.parse import urlparse
@@ -18,9 +19,17 @@ class PackError(ValueError):
     """Raised when a workflow pack violates the Wingstaff pack contract."""
 
 
+class SkillActivationMode(StrEnum):
+    """Pack-owned obligation for applying one stage skill."""
+
+    REQUIRED = "required"
+    CONDITIONAL = "conditional"
+
+
 @dataclass(frozen=True)
 class SkillRef:
     name: str
+    activation: SkillActivationMode
     install: str | None = None
     content_digest: str | None = None
     bundled: str | None = None
@@ -104,6 +113,8 @@ def validate_pack(raw: Any) -> WorkflowPack:
         skill_rows = row.get("skills")
         if not isinstance(skill_rows, list) or not skill_rows:
             raise PackError(f"stage {stage_id!r} must declare at least one skill")
+        if len(skill_rows) > 32:
+            raise PackError(f"stage {stage_id!r} cannot declare more than 32 skills")
         skills = tuple(
             _validate_skill(stage_id, skill, source_owner_repo) for skill in skill_rows
         )
@@ -137,6 +148,13 @@ def _validate_skill(stage_id: str, raw: Any, source_owner_repo: str) -> SkillRef
         raise PackError(
             f"stage {stage_id!r} skill name must be a lowercase slug: {name!r}"
         )
+    activation_raw = _required_text(raw, "activation")
+    try:
+        activation = SkillActivationMode(activation_raw)
+    except ValueError as error:
+        raise PackError(
+            f"stage {stage_id!r} skill {name!r} activation must be required or conditional"
+        ) from error
     install = raw.get("install")
     bundled = raw.get("bundled")
     if (install is None) == (bundled is None):
@@ -156,7 +174,7 @@ def _validate_skill(stage_id: str, raw: Any, source_owner_repo: str) -> SkillRef
                 f"stage {stage_id!r} bundled skill {name!r} must not declare "
                 "content_digest"
             )
-        return SkillRef(name=name, bundled=bundled)
+        return SkillRef(name=name, activation=activation, bundled=bundled)
 
     install = _required_text(raw, "install")
     content_digest = _required_sha256(raw, "content_digest")
@@ -169,7 +187,12 @@ def _validate_skill(stage_id: str, raw: Any, source_owner_repo: str) -> SkillRef
         raise PackError(
             f"stage {stage_id!r} skill {name!r} does not match install target {install!r}"
         )
-    return SkillRef(name=name, install=install, content_digest=content_digest)
+    return SkillRef(
+        name=name,
+        activation=activation,
+        install=install,
+        content_digest=content_digest,
+    )
 
 
 def _github_owner_repo(source: str) -> str:

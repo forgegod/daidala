@@ -67,7 +67,14 @@ def test_pack_info_reports_bundled_skill_provider() -> None:
     result = json.loads(pack_info({"pack": "aidlc"}))
 
     assert result["success"] is True
-    assert result["skills"]["implement"] == ["bundled:aidlc-adapter"]
+    skill = result["skills"]["implement"][0]
+    assert skill["name"] == "aidlc-adapter"
+    assert skill["provider"] == {
+        "kind": "bundled",
+        "reference": "aidlc-adapter",
+    }
+    assert skill["content_digest"]["source"] == "bundled-resource"
+    assert skill["activation"] == "required"
 
 
 def test_pack_info_reports_unknown_pack_without_raising() -> None:

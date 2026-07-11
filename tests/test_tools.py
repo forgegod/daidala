@@ -332,6 +332,30 @@ def test_pack_info_is_strict_and_reports_valid_pack() -> None:
     result = call(tools.pack_info, {"pack": "addyosmani"})
     assert result["success"] is True
     assert result["pack"] == "addyosmani"
+    assert result["source_revision"] == "7ce442de03ddc1b72480c3b48d55c62880ea2a90"
+    assert result["skills"]["define"][0] == {
+        "name": "interview-me",
+        "provider": {
+            "kind": "external",
+            "reference": "addyosmani/agent-skills/skills/interview-me",
+        },
+        "content_digest": {
+            "sha256": "f271a5931d374e3ab970c79e0461a30b741123271519e599b5b9a29b8db2ffaf",
+            "source": "pack",
+        },
+        "activation": "conditional",
+    }
+
+    aidlc = call(tools.pack_info, {"pack": "aidlc"})
+    aidlc_skill = aidlc["skills"]["define"][0]
+    assert aidlc_skill["name"] == "aidlc-adapter"
+    assert aidlc_skill["provider"] == {
+        "kind": "bundled",
+        "reference": "aidlc-adapter",
+    }
+    assert aidlc_skill["activation"] == "required"
+    assert aidlc_skill["content_digest"]["source"] == "bundled-resource"
+    assert len(aidlc_skill["content_digest"]["sha256"]) == 64
 
     invalid = call(tools.pack_info, {"pack": "addyosmani", "extra": 1})
     assert invalid["success"] is False

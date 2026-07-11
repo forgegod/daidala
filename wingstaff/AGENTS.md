@@ -32,6 +32,8 @@ workflow-pack adapters, and bundled orchestration skills.
 - Tool handlers never raise across the plugin boundary and always return JSON strings.
 - Pack skills declare exactly one provider: a fully qualified external install
   target or a plugin-bundled skill with the same exact name.
+- Every pack skill explicitly declares `required` or `conditional` activation;
+  pack adapters own the mapping and the engine remains pack-neutral.
 - External packs pin a Git source revision, bounded Hermes version, and complete-directory digest per required skill.
 - Standalone CLI inventory comes from the profile skill directory; it never imports Hermes runtime internals.
 - Native and standalone operator commands share one parser and dispatch layer; setup and external installation remain dry-run by default.
