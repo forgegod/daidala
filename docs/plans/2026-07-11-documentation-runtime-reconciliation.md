@@ -1,6 +1,6 @@
 # Documentation/runtime reconciliation plan
 
-> Status: Approved — execution in progress.
+> Status: Done.
 >
 > Baseline: `de49ffb0f7eb2b44c92f76bb0127dece7f4b9cf2`
 > (`docs(trigger): explain [SILENT] marker semantics in cron prompts`).
@@ -15,7 +15,7 @@
 - Phase 1: Done — stale normative and provenance claims reconciled.
 - Phase 2: Done — activation and revision gates exposed.
 - Phase 3: Done — support claims aligned with enforcement tests.
-- Phase 4: Awaiting a separate structural decision.
+- Phase 4: Done — completed plans preserved unchanged per user decision.
 
 ## Goal
 
