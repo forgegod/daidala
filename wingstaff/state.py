@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
@@ -9,6 +11,12 @@ from pathlib import Path
 from typing import Any
 
 from .errors import PolicyViolationError
+from .packs import SkillActivationMode
+
+_DIGEST = re.compile(r"^[0-9a-f]{64}$")
+_REVISION = re.compile(r"^[0-9a-f]{40}$")
+_SKILL_NAME = re.compile(r"^[a-z0-9][a-z0-9-]{0,127}$")
+_ACTIVATION_SCHEMA = "wingstaff.skill-activation/v1"
 
 
 class WorkflowStage(StrEnum):
@@ -19,6 +27,257 @@ class WorkflowStage(StrEnum):
     VERIFY = "verify"
     REVIEW = "review"
     DELIVER = "deliver"
+
+
+class ActivationCategory(StrEnum):
+    APPLICABLE = "applicable"
+    DEFERRED = "deferred"
+    NOT_APPLICABLE = "not_applicable"
+    BLOCKED = "blocked"
+
+
+class ActivationReferenceState(StrEnum):
+    PENDING = "pending"
+    FINALIZED = "finalized"
+
+
+@dataclass(frozen=True)
+class ActivationDecision:
+    name: str
+    skill_digest: str
+    activation_mode: SkillActivationMode
+    category: ActivationCategory
+    rank: int | None
+    matched_criteria: tuple[str, ...]
+    evidence: tuple[str, ...]
+    rationale: str
+    condition: str | None
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.activation_mode, SkillActivationMode):
+            raise PolicyViolationError("activation mode must be required or conditional")
+        if not isinstance(self.category, ActivationCategory):
+            raise PolicyViolationError("activation category is invalid")
+        if not isinstance(self.name, str) or not _SKILL_NAME.fullmatch(self.name):
+            raise PolicyViolationError("activation decision name must be a canonical skill slug")
+        _require_digest(self.skill_digest, "activation skill digest")
+        _require_bounded_strings(self.matched_criteria, "matched_criteria")
+        _require_bounded_strings(self.evidence, "evidence")
+        _require_bounded_text(self.rationale, "rationale", 1000)
+        if self.category is ActivationCategory.APPLICABLE:
+            if isinstance(self.rank, bool) or not isinstance(self.rank, int) or self.rank < 1:
+                raise PolicyViolationError(
+                    "applicable activation decisions require a positive rank"
+                )
+        elif self.rank is not None:
+            raise PolicyViolationError("only applicable activation decisions may declare rank")
+        if self.category is ActivationCategory.DEFERRED:
+            _require_bounded_text(self.condition, "deferred condition", 500)
+        elif self.condition is not None:
+            raise PolicyViolationError("only deferred activation decisions may declare condition")
+        if (
+            self.activation_mode is SkillActivationMode.REQUIRED
+            and self.category not in {ActivationCategory.APPLICABLE, ActivationCategory.BLOCKED}
+        ):
+            raise PolicyViolationError("required skills must be applicable or blocked")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "skill_digest": self.skill_digest,
+            "activation_mode": self.activation_mode.value,
+            "category": self.category.value,
+            "rank": self.rank,
+            "matched_criteria": list(self.matched_criteria),
+            "evidence": list(self.evidence),
+            "rationale": self.rationale,
+            "condition": self.condition,
+        }
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> ActivationDecision:
+        _require_exact_fields(
+            raw,
+            {
+                "name", "skill_digest", "activation_mode", "category", "rank",
+                "matched_criteria", "evidence", "rationale", "condition",
+            },
+            "activation decision",
+        )
+        try:
+            return cls(
+                name=raw["name"],
+                skill_digest=raw["skill_digest"],
+                activation_mode=SkillActivationMode(raw["activation_mode"]),
+                category=ActivationCategory(raw["category"]),
+                rank=raw["rank"],
+                matched_criteria=tuple(raw["matched_criteria"]),
+                evidence=tuple(raw["evidence"]),
+                rationale=raw["rationale"],
+                condition=raw["condition"],
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            raise PolicyViolationError(f"invalid activation decision: {error}") from error
+
+
+@dataclass(frozen=True)
+class ActivationManifest:
+    schema: str
+    workflow_id: str
+    stage: WorkflowStage
+    plan_revision: int
+    pack: str
+    pack_source_revision: str
+    sequence: int
+    supersedes_digest: str | None
+    decisions: tuple[ActivationDecision, ...]
+
+    def __post_init__(self) -> None:
+        if self.schema != _ACTIVATION_SCHEMA:
+            raise PolicyViolationError(f"activation schema must be {_ACTIVATION_SCHEMA!r}")
+        _require_text(self.workflow_id, "activation workflow ID")
+        if not isinstance(self.stage, WorkflowStage) or self.stage is WorkflowStage.APPROVAL:
+            raise PolicyViolationError("approval has no skill activation manifest")
+        _require_revision(self.plan_revision)
+        _require_text(self.pack, "activation pack")
+        if not isinstance(self.pack_source_revision, str) or not _REVISION.fullmatch(
+            self.pack_source_revision
+        ):
+            raise PolicyViolationError("activation pack source revision must be 40 lowercase hex")
+        if (
+            isinstance(self.sequence, bool)
+            or not isinstance(self.sequence, int)
+            or self.sequence < 1
+        ):
+            raise PolicyViolationError("activation sequence must be a positive integer")
+        if self.supersedes_digest is not None:
+            _require_digest(self.supersedes_digest, "superseded activation digest")
+        if not isinstance(self.decisions, tuple) or not 1 <= len(self.decisions) <= 32:
+            raise PolicyViolationError("activation manifest requires 1-32 decisions")
+        names = [decision.name for decision in self.decisions]
+        if len(names) != len(set(names)):
+            raise PolicyViolationError("activation manifest cannot contain duplicate skills")
+        ranks = [
+            _applicable_rank(decision)
+            for decision in self.decisions
+            if decision.category is ActivationCategory.APPLICABLE
+        ]
+        if sorted(ranks) != list(range(1, len(ranks) + 1)):
+            raise PolicyViolationError("applicable activation ranks must be unique and contiguous")
+
+    @property
+    def blocked(self) -> bool:
+        return any(decision.category is ActivationCategory.BLOCKED for decision in self.decisions)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema": self.schema,
+            "workflow_id": self.workflow_id,
+            "stage": self.stage.value,
+            "plan_revision": self.plan_revision,
+            "pack": self.pack,
+            "pack_source_revision": self.pack_source_revision,
+            "sequence": self.sequence,
+            "supersedes_digest": self.supersedes_digest,
+            "decisions": [decision.to_dict() for decision in self.decisions],
+        }
+
+    def canonical_bytes(self) -> bytes:
+        return json.dumps(
+            self.to_dict(), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> ActivationManifest:
+        _require_exact_fields(
+            raw,
+            {
+                "schema", "workflow_id", "stage", "plan_revision", "pack",
+                "pack_source_revision", "sequence", "supersedes_digest", "decisions",
+            },
+            "activation manifest",
+        )
+        try:
+            return cls(
+                schema=raw["schema"],
+                workflow_id=raw["workflow_id"],
+                stage=WorkflowStage(raw["stage"]),
+                plan_revision=raw["plan_revision"],
+                pack=raw["pack"],
+                pack_source_revision=raw["pack_source_revision"],
+                sequence=raw["sequence"],
+                supersedes_digest=raw["supersedes_digest"],
+                decisions=tuple(ActivationDecision.from_dict(row) for row in raw["decisions"]),
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            raise PolicyViolationError(f"invalid activation manifest: {error}") from error
+
+
+@dataclass(frozen=True)
+class ActivationManifestReference:
+    stage: WorkflowStage
+    plan_revision: int
+    sequence: int
+    path: str
+    digest: str
+    state: ActivationReferenceState
+    blocked: bool
+    supersedes_digest: str | None
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.stage, WorkflowStage) or self.stage is WorkflowStage.APPROVAL:
+            raise PolicyViolationError("approval has no skill activation reference")
+        if not isinstance(self.state, ActivationReferenceState):
+            raise PolicyViolationError("activation reference state must be pending or finalized")
+        _require_revision(self.plan_revision)
+        if (
+            isinstance(self.sequence, bool)
+            or not isinstance(self.sequence, int)
+            or self.sequence < 1
+        ):
+            raise PolicyViolationError("activation sequence must be a positive integer")
+        _require_text(self.path, "activation artifact path")
+        _require_digest(self.digest, "activation artifact digest")
+        if not isinstance(self.blocked, bool):
+            raise PolicyViolationError("activation blocked must be a boolean")
+        if self.supersedes_digest is not None:
+            _require_digest(self.supersedes_digest, "superseded activation digest")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "stage": self.stage.value,
+            "plan_revision": self.plan_revision,
+            "sequence": self.sequence,
+            "path": self.path,
+            "digest": self.digest,
+            "state": self.state.value,
+            "blocked": self.blocked,
+            "supersedes_digest": self.supersedes_digest,
+        }
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> ActivationManifestReference:
+        _require_exact_fields(
+            raw,
+            {
+                "stage", "plan_revision", "sequence", "path", "digest", "state",
+                "blocked", "supersedes_digest",
+            },
+            "activation reference",
+        )
+        try:
+            return cls(
+                stage=WorkflowStage(raw["stage"]),
+                plan_revision=raw["plan_revision"],
+                sequence=raw["sequence"],
+                path=raw["path"],
+                digest=raw["digest"],
+                state=ActivationReferenceState(raw["state"]),
+                blocked=raw["blocked"],
+                supersedes_digest=raw["supersedes_digest"],
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            raise PolicyViolationError(f"invalid activation reference: {error}") from error
 
 
 @dataclass(frozen=True)
@@ -207,6 +466,7 @@ class WorkflowLedger:
     artifacts: tuple[ArtifactReference, ...] = ()
     approval: ApprovalRecord | None = None
     verification_evidence: tuple[VerificationEvidence, ...] = ()
+    activation_manifests: tuple[ActivationManifestReference, ...] = ()
     committed: bool = False
     pushed: bool = False
 
@@ -285,6 +545,31 @@ class WorkflowLedger:
                     "verification evidence must match the current plan revision"
                 )
 
+        activation_groups: dict[
+            tuple[WorkflowStage, int], list[ActivationManifestReference]
+        ] = {}
+        for reference in self.activation_manifests:
+            if reference.plan_revision > self.plan_revision or (
+                reference.stage in {WorkflowStage.DEFINE, WorkflowStage.PLAN}
+                and reference.plan_revision != 0
+            ):
+                raise PolicyViolationError("activation reference has an invalid stage revision")
+            activation_groups.setdefault(
+                (reference.stage, reference.plan_revision), []
+            ).append(reference)
+        digests = [reference.digest for reference in self.activation_manifests]
+        if len(digests) != len(set(digests)):
+            raise PolicyViolationError("workflow cannot contain duplicate activation digests")
+        for references in activation_groups.values():
+            for index, reference in enumerate(references, start=1):
+                if reference.sequence != index:
+                    raise PolicyViolationError(
+                        "activation references must have contiguous sequences"
+                    )
+                expected = None if index == 1 else references[index - 2].digest
+                if reference.supersedes_digest != expected:
+                    raise PolicyViolationError("activation references must form a linear chain")
+
     @property
     def current_plan_digest(self) -> str | None:
         plan = self.artifact_for(WorkflowStage.PLAN)
@@ -316,6 +601,22 @@ class WorkflowLedger:
         selected = WorkflowStage.PLAN if stage is WorkflowStage.APPROVAL else stage
         return next(row.profile for row in self.stage_profiles if row.stage is selected)
 
+    def activation_revision_for(self, stage: WorkflowStage) -> int:
+        if stage is WorkflowStage.APPROVAL:
+            raise PolicyViolationError("approval has no skill activation revision")
+        return 0 if stage in {WorkflowStage.DEFINE, WorkflowStage.PLAN} else self.plan_revision
+
+    def activation_for(self, stage: WorkflowStage) -> ActivationManifestReference | None:
+        revision = self.activation_revision_for(stage)
+        references = [
+            reference
+            for reference in self.activation_manifests
+            if reference.stage is stage and reference.plan_revision == revision
+        ]
+        if not references or references[-1].state is not ActivationReferenceState.FINALIZED:
+            return None
+        return references[-1]
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "workflow_id": self.workflow_id,
@@ -337,6 +638,9 @@ class WorkflowLedger:
             "approval": self.approval.to_dict() if self.approval else None,
             "verification_evidence": [
                 row.to_dict() for row in self.verification_evidence
+            ],
+            "activation_manifests": [
+                row.to_dict() for row in self.activation_manifests
             ],
             "committed": self.committed,
             "pushed": self.pushed,
@@ -364,6 +668,7 @@ class WorkflowLedger:
                 "artifacts",
                 "approval",
                 "verification_evidence",
+                "activation_manifests",
                 "committed",
                 "pushed",
             }
@@ -406,6 +711,10 @@ class WorkflowLedger:
                     VerificationEvidence.from_dict(row)
                     for row in raw["verification_evidence"]
                 ),
+                activation_manifests=tuple(
+                    ActivationManifestReference.from_dict(row)
+                    for row in raw["activation_manifests"]
+                ),
                 committed=raw["committed"],
                 pushed=raw["pushed"],
             )
@@ -418,6 +727,46 @@ class WorkflowLedger:
 def _require_text(value: str | None, label: str) -> None:
     if not isinstance(value, str) or not value.strip():
         raise PolicyViolationError(f"{label} must be a non-empty string")
+
+
+def _require_bounded_text(value: str | None, label: str, maximum: int) -> None:
+    _require_text(value, label)
+    if not isinstance(value, str):
+        raise PolicyViolationError(f"{label} must be a non-empty string")
+    if len(value) > maximum:
+        raise PolicyViolationError(f"{label} must be at most {maximum} characters")
+
+
+def _require_bounded_strings(values: tuple[str, ...], label: str) -> None:
+    if not isinstance(values, tuple) or not 1 <= len(values) <= 8:
+        raise PolicyViolationError(f"{label} must contain 1-8 strings")
+    for value in values:
+        _require_bounded_text(value, label, 500)
+
+
+def _require_digest(value: str, label: str) -> None:
+    if not isinstance(value, str) or not _DIGEST.fullmatch(value):
+        raise PolicyViolationError(f"{label} must be a lowercase SHA-256 digest")
+
+
+def _require_exact_fields(raw: Any, expected: set[str], label: str) -> None:
+    if not isinstance(raw, dict):
+        raise PolicyViolationError(f"{label} must be an object")
+    missing = sorted(expected - set(raw))
+    unknown = sorted(set(raw) - expected)
+    if missing or unknown:
+        detail = []
+        if missing:
+            detail.append(f"missing: {', '.join(missing)}")
+        if unknown:
+            detail.append(f"unknown: {', '.join(unknown)}")
+        raise PolicyViolationError(f"{label} fields are invalid ({'; '.join(detail)})")
+
+
+def _applicable_rank(decision: ActivationDecision) -> int:
+    if decision.rank is None:
+        raise PolicyViolationError("applicable activation decisions require a rank")
+    return decision.rank
 
 
 def _require_revision(value: int) -> None:

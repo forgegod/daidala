@@ -9,16 +9,21 @@ from pathlib import Path
 import pytest
 
 from wingstaff.errors import PolicyViolationError
-from wingstaff.execution import ExecutionError
+from wingstaff.execution import ExecutionError, ExecutionWorkspace
 from wingstaff.kanban import KanbanGraphAdapter
-from wingstaff.packs import load_pack
+from wingstaff.packs import SkillActivationMode, load_pack
 from wingstaff.service import WorkflowService
 from wingstaff.skills import (
     content_registry_from_digests,
     inventory_from_names,
     required_skills,
 )
-from wingstaff.state import WorkflowStage
+from wingstaff.state import (
+    ActivationCategory,
+    ActivationDecision,
+    ActivationManifest,
+    WorkflowStage,
+)
 from wingstaff.store import WorkflowStore
 
 NOW = datetime(2026, 7, 10, 12, 0, tzinfo=UTC)
@@ -482,3 +487,40 @@ def test_verification_retries_keep_immutable_output_artifacts(
     assert second.output_reference != first.output_reference
     assert first_path.read_text(encoding="utf-8") == "one failed\n"
     assert Path(second.output_reference).read_text(encoding="utf-8") == "one passed\n"
+
+
+def test_activation_artifact_creation_is_canonical_and_exclusive(tmp_path: Path) -> None:
+    manifest = ActivationManifest(
+        schema="wingstaff.skill-activation/v1",
+        workflow_id="workflow-activation",
+        stage=WorkflowStage.DEFINE,
+        plan_revision=0,
+        pack="test-pack",
+        pack_source_revision="a" * 40,
+        sequence=1,
+        supersedes_digest=None,
+        decisions=(
+            ActivationDecision(
+                name="test-skill",
+                skill_digest="b" * 64,
+                activation_mode=SkillActivationMode.REQUIRED,
+                category=ActivationCategory.APPLICABLE,
+                rank=1,
+                matched_criteria=("The pack requires this skill.",),
+                evidence=("The stage declares this skill.",),
+                rationale="Apply the required skill.",
+                condition=None,
+            ),
+        ),
+    )
+    workspace = ExecutionWorkspace(tmp_path / "data")
+
+    with pytest.raises(ExecutionError, match="does not match"):
+        workspace.write_activation_manifest("different-workflow", manifest)
+    stored = workspace.write_activation_manifest("workflow-activation", manifest)
+
+    assert Path(stored.path).name == "skill-activation-define-r0-1.json"
+    assert Path(stored.path).read_bytes() == manifest.canonical_bytes()
+    with pytest.raises(ExecutionError, match="already exists"):
+        workspace.write_activation_manifest("workflow-activation", manifest)
+    assert Path(stored.path).read_bytes() == manifest.canonical_bytes()

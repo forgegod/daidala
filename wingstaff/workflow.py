@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 
 from .errors import PolicyViolationError
+from .packs import WorkflowPack
 from .state import (
+    ActivationManifest,
+    ActivationManifestReference,
+    ActivationReferenceState,
     ApprovalRecord,
     ArtifactReference,
     CardReference,
@@ -286,6 +291,118 @@ def record_verification(
         verification_evidence=(*ledger.verification_evidence, evidence),
         updated_at=recorded_at,
     )
+
+
+def record_skill_activation(
+    ledger: WorkflowLedger,
+    *,
+    manifest: ActivationManifest,
+    pack: WorkflowPack,
+    path: str,
+    state: ActivationReferenceState,
+    recorded_at: datetime,
+) -> WorkflowLedger:
+    """Reserve or finalize one exact, immutable skill activation manifest."""
+    if not isinstance(state, ActivationReferenceState):
+        raise PolicyViolationError("activation reference state must be pending or finalized")
+    _validate_activation_manifest(ledger, manifest, pack)
+    digest = hashlib.sha256(manifest.canonical_bytes()).hexdigest()
+    revision = ledger.activation_revision_for(manifest.stage)
+    references = [
+        reference
+        for reference in ledger.activation_manifests
+        if reference.stage is manifest.stage and reference.plan_revision == revision
+    ]
+    latest = references[-1] if references else None
+
+    if state is ActivationReferenceState.FINALIZED:
+        if latest is None or latest.digest != digest or latest.sequence != manifest.sequence:
+            raise PolicyViolationError("activation finalization requires its pending reference")
+        if latest.path != path or latest.blocked != manifest.blocked:
+            raise PolicyViolationError(
+                "activation finalization does not match its pending reference"
+            )
+        if latest.state is ActivationReferenceState.FINALIZED:
+            return ledger
+        _require_not_before(ledger, recorded_at)
+        finalized = replace(latest, state=ActivationReferenceState.FINALIZED)
+        rows = tuple(
+            finalized if reference is latest else reference
+            for reference in ledger.activation_manifests
+        )
+        return replace(ledger, activation_manifests=rows, updated_at=recorded_at)
+
+    if latest is not None and latest.digest == digest:
+        if latest.path != path or latest.sequence != manifest.sequence:
+            raise PolicyViolationError("activation retry does not match its existing reference")
+        return ledger
+    if latest is not None and latest.state is ActivationReferenceState.PENDING:
+        raise PolicyViolationError("pending activation must be recovered before supersession")
+    expected_sequence = 1 if latest is None else latest.sequence + 1
+    expected_supersedes = None if latest is None else latest.digest
+    if manifest.sequence != expected_sequence:
+        raise PolicyViolationError(f"activation sequence must be {expected_sequence}")
+    if manifest.supersedes_digest != expected_supersedes:
+        raise PolicyViolationError("activation must supersede the latest effective digest")
+    _require_not_before(ledger, recorded_at)
+    pending = ActivationManifestReference(
+        stage=manifest.stage,
+        plan_revision=manifest.plan_revision,
+        sequence=manifest.sequence,
+        path=path,
+        digest=digest,
+        state=ActivationReferenceState.PENDING,
+        blocked=manifest.blocked,
+        supersedes_digest=manifest.supersedes_digest,
+    )
+    return replace(
+        ledger,
+        activation_manifests=(*ledger.activation_manifests, pending),
+        updated_at=recorded_at,
+    )
+
+
+def _validate_activation_manifest(
+    ledger: WorkflowLedger,
+    manifest: ActivationManifest,
+    pack: WorkflowPack,
+) -> None:
+    if manifest.workflow_id != ledger.workflow_id:
+        raise PolicyViolationError("activation workflow ID does not match the ledger")
+    if manifest.plan_revision != ledger.activation_revision_for(manifest.stage):
+        raise PolicyViolationError("activation plan revision does not match the stage")
+    if manifest.pack != ledger.pack_name or manifest.pack != pack.name:
+        raise PolicyViolationError("activation pack does not match the ledger")
+    if (
+        manifest.pack_source_revision != ledger.pack_source_revision
+        or manifest.pack_source_revision != pack.source_revision
+    ):
+        raise PolicyViolationError("activation pack source revision does not match the ledger")
+    stage = next((row for row in pack.stages if row.id == manifest.stage.value), None)
+    if stage is None:
+        raise PolicyViolationError("activation stage is not declared by the selected pack")
+    if [decision.name for decision in manifest.decisions] != [
+        skill.name for skill in stage.skills
+    ]:
+        raise PolicyViolationError(
+            "activation decisions must exactly follow pack stage skill order"
+        )
+    digests = {skill.name: skill.digest for skill in ledger.skill_digests}
+    for decision, skill in zip(manifest.decisions, stage.skills, strict=True):
+        if decision.activation_mode is not skill.activation:
+            raise PolicyViolationError("activation mode does not match pack policy")
+        if decision.skill_digest != digests.get(skill.name):
+            raise PolicyViolationError("activation skill digest does not match the ledger")
+
+
+def _require_stage_activation(ledger: WorkflowLedger, stage: WorkflowStage) -> None:
+    reference = ledger.activation_for(stage)
+    if reference is None:
+        raise PolicyViolationError(
+            f"operation requires a finalized {stage.value} skill activation manifest"
+        )
+    if reference.blocked:
+        raise PolicyViolationError(f"{stage.value} skill activation is blocked")
 
 
 def _card_revision(ledger: WorkflowLedger, stage: WorkflowStage) -> int:

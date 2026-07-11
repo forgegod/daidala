@@ -1,6 +1,6 @@
 # Skill relevance activation manifest implementation plan
 
-> Status: Phase 1 is done; Phase 2 is next and has not started.
+> Status: Phase 2 is done; Phase 3 is next and has not started.
 >
 > Baseline: `65e6085` (`docs: explain autonomous skill selection and
 > handoffs`).
@@ -543,6 +543,13 @@ gated before the recording tool and worker instructions exist.
 pytest tests/test_workflow.py tests/test_execution.py
 ruff check wingstaff/state.py wingstaff/workflow.py wingstaff/execution.py tests/test_workflow.py tests/test_execution.py
 ```
+
+Phase 2 gate: GREEN — strict canonical activation models, exact pack-stage
+validation, linear pending/finalized references, idempotent finalization,
+blocked supersession, and exclusive artifact creation passed 29 focused tests.
+The repository gate passed with 26 Markdown files, 138 tests, Ruff, both pack
+validations, build, Twine, release-content audit, Lefthook validation, and
+unstaged/staged diff checks. Evidence transitions remain ungated until Phase 4.
 
 Commit only after the gate passes:
 

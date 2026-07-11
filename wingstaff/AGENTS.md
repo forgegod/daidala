@@ -11,7 +11,7 @@ workflow-pack adapters, and bundled orchestration skills.
 |---|---|
 | `__init__.py` | Hermes tool, skill, and operator CLI registration. |
 | `errors.py` | Policy-ledger, persistence, and host-boundary error hierarchy. |
-| `state.py` | Immutable policy ledger, artifact evidence, Kanban identifiers, and serialization. |
+| `state.py` | Immutable policy ledger, artifact evidence, Kanban identifiers, skill activation manifests, and strict serialization. |
 | `workflow.py` | Deterministic policy checks and ledger updates; no operational status transitions. |
 | `locations.py` | Profile-aware data-root resolution; never hard-codes `~/.hermes`. |
 | `store.py` | SQLite-backed policy-ledger persistence with optimistic concurrency. |
@@ -34,6 +34,8 @@ workflow-pack adapters, and bundled orchestration skills.
   target or a plugin-bundled skill with the same exact name.
 - Every pack skill explicitly declares `required` or `conditional` activation;
   pack adapters own the mapping and the engine remains pack-neutral.
+- Skill activation manifests are immutable, exact-pack decision artifacts whose
+  pending/finalized ledger references form a linear supersession chain.
 - External packs pin a Git source revision, bounded Hermes version, and complete-directory digest per required skill.
 - Standalone CLI inventory comes from the profile skill directory; it never imports Hermes runtime internals.
 - Native and standalone operator commands share one parser and dispatch layer; setup and external installation remain dry-run by default.

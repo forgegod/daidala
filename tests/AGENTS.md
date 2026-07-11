@@ -35,6 +35,8 @@ completeness without touching a real Hermes profile.
 ## Work Guidance
 
 - Every new policy operation requires positive, policy-violation, and persistence tests.
+- Skill activation coverage must prove strict serialization, exact pack-stage
+  decisions, linear supersession, pending/finalized recovery, and exclusive artifact creation.
 - Every new packaged resource requires a wheel-content assertion.
 
 ## Verification

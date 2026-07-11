@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from .errors import WorkflowError
+from .state import ActivationManifest
 
 _WORKFLOW_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
@@ -58,6 +59,34 @@ class ExecutionWorkspace:
     ) -> StoredArtifact:
         content = json.dumps(payload, indent=2, sort_keys=True) + "\n"
         return self.write_artifact(workflow_id, filename, content)
+
+    def write_activation_manifest(
+        self,
+        workflow_id: str,
+        manifest: ActivationManifest,
+    ) -> StoredArtifact:
+        """Create one canonical activation artifact without overwriting collisions."""
+        if workflow_id != manifest.workflow_id:
+            raise ExecutionError("activation manifest workflow ID does not match artifact root")
+        filename = (
+            f"skill-activation-{manifest.stage.value}-r{manifest.plan_revision}"
+            f"-{manifest.sequence}.json"
+        )
+        directory = self._workflow_root(workflow_id) / "artifacts"
+        directory.mkdir(parents=True, exist_ok=True)
+        path = directory / filename
+        content = manifest.canonical_bytes()
+        try:
+            with path.open("xb") as stream:
+                stream.write(content)
+        except FileExistsError as error:
+            raise ExecutionError(f"workflow artifact already exists: {filename!r}") from error
+        except OSError as error:
+            raise ExecutionError(f"cannot create workflow artifact {filename!r}") from error
+        return StoredArtifact(
+            path=str(path),
+            digest=hashlib.sha256(content).hexdigest(),
+        )
 
     def read_json_artifact(self, workflow_id: str, filename: str) -> dict[str, Any]:
         """Read a Wingstaff-owned JSON sidecar from the workflow artifact root."""
