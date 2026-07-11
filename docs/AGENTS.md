@@ -17,6 +17,10 @@ Own current architecture documentation, the numbered reading set, and executable
 - `06-security.md` owns current trust boundaries and unavailable controls.
 - `08-hermes-integration.md` owns verified Hermes versions, discovery paths, and installation limitations.
 - `09-pack-adapters.md` owns implemented pack mappings and divergences.
+- `10-autonomous-development-use-cases.md` owns user-oriented task selection,
+  skill handoffs, steering controls, tutorial ideas, and future use cases.
+- `11-skill-usage-and-user-control.md` owns the design contract for card-scoped
+  skill loading, cross-stage handoff, and user selection boundaries.
 - `plans/` contains self-contained plans for future implementation sessions.
 
 ## Local Contracts
