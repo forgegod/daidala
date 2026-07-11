@@ -31,6 +31,9 @@ Own current architecture documentation, the numbered reading set, and executable
 
 - Update the active plan when a design decision changes before implementation begins.
 - Move stable implemented contracts into normal architecture/operator docs rather than leaving the plan as the only source.
+- Give new operators one user-centric, executable starting path before directing
+  them to architecture or reference material. State what starts the workflow,
+  what must remain running, what the user observes, and which action comes next.
 - Keep deterministic behavior distinct from skill or model judgment.
 - Do not publish operator commands until they have been exercised against the supported Hermes version.
 

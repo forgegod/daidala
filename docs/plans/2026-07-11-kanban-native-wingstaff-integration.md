@@ -596,7 +596,9 @@ supported Hermes version.
 ### Objective
 
 Lead with Wingstaff's value add and make the Hermes/Wingstaff authority split
-obvious before implementation details.
+obvious before implementation details. Give a new operator one user-centric,
+executable path from an installed plugin to a running first workflow; architecture
+documents must support that path rather than serve as the starting point.
 
 ### README.md
 
@@ -609,8 +611,11 @@ Rewrite the opening sections in this order:
 3. **How it integrates**: in-process plugin, Kanban graph, standard profile
    lanes, existing gateway dispatcher, no new server/dashboard/database access.
 4. **Workflow diagram** showing Kanban cards and the digest-bound human gate.
-5. **Operator quick start** using `hermes wingstaff start`, normal Kanban
-   observation, and explicit digest approval.
+5. **Operator quick start** with prerequisites, one minimal profile mapping, the
+   exact verified workflow-start entry point, normal Kanban observation, and
+   explicit digest approval. Link to `docs/00-getting-started.md` for the complete
+   walkthrough. Do not advertise `hermes wingstaff start` if Phase 5 has not
+   proved graph creation from that process against the supported Hermes host.
 6. **Current support and limits**, including supported Hermes version,
    local/single-host scope, and no automatic commit/push.
 7. Development and source-grounded documentation links.
@@ -623,6 +628,26 @@ workflow state as a product feature after the refactor.
 
 - `docs/README.md`: lead with the value-add and authority split; update support
   status, lifecycle diagram, reading order, and symptom routing.
+- Create `docs/00-getting-started.md` as the user-facing starting point. It must
+  walk through plugin readiness, board and profile prerequisites, starting the
+  gateway dispatcher, selecting a pack and stable workflow ID, starting the
+  workflow, observing `define` and `plan`, approving the exact plan digest, and
+  following the post-gate cards through delivery. Use one profile for every
+  stage in the minimal example and explain that dedicated stage profiles are
+  optional.
+- In `docs/00-getting-started.md`, explain the trigger and runtime boundary in
+  operator terms: a workflow starts through an explicit Wingstaff start action,
+  not through an implicit cron; `wingstaff_start` validates inputs and creates
+  the initial linked Kanban cards; the gateway's Kanban dispatcher is the only
+  unattended runtime that claims ready cards. Cron may prompt an agent to start
+  a workflow as an optional external trigger, but Wingstaff owns no scheduler,
+  daemon, or polling loop.
+- In `docs/00-getting-started.md`, include a concise technical-background section
+  explaining why Hermes issue #34977 does not determine Wingstaff routing:
+  Wingstaff selects the board explicitly, assigns every executable stage to an
+  explicit profile, and creates the graph directly rather than relying on global
+  `kanban.orchestrator_profile` goal decomposition. State any remaining
+  agent-process versus standalone-CLI limitation exactly as Phase 5 verified it.
 - `docs/01-architecture.md`: replace the dual-authority component/process
   diagrams with Kanban as lifecycle truth and Wingstaff as policy adapter.
 - `docs/02-workflow-state.md`: rename/reframe content around the policy ledger,
@@ -639,6 +664,8 @@ workflow state as a product feature after the refactor.
 - `docs/08-hermes-integration.md`: record the minimum verified Hermes version,
   public host APIs, worker lanes, board selection, and gateway requirement.
 - `docs/09-pack-adapters.md`: describe both packs as Kanban graph mappings.
+- `docs/AGENTS.md`: register `00-getting-started.md` as the owner of first-run
+  operator guidance and preserve the user-centric documentation contract.
 - `docs/plans/2026-07-10-wingstaff-bootstrap-and-roadmap.md`: rewrite affected
   sections to describe only the Kanban-native architecture; remove obsolete
   lifecycle and authority statements rather than preserving a decision trail.
@@ -647,12 +674,25 @@ workflow state as a product feature after the refactor.
 
 A reader must be able to answer, from README.md alone:
 
+- What must be installed or running before the first workflow starts?
+- What exact action starts a workflow, and which verified surface accepts it?
+- What happens immediately after start, and what component runs ready cards?
+- Is cron required, optional, or absent from Wingstaff's runtime?
+- Why does the global Hermes orchestrator-profile limitation not route
+  Wingstaff's stage cards?
 - Why use Wingstaff instead of plain Hermes Kanban?
 - Which system owns task status and retries?
 - How is human approval stronger than a normal unblock?
 - How do workflow packs affect workers?
 - Where are code changes made and what evidence is retained?
 - Does Wingstaff add a server, dashboard, model client, or commit/push behavior?
+
+The README quick start and `docs/00-getting-started.md` walkthrough must agree and
+must be executable against the supported Hermes version. Every command or
+agent-facing action must identify where it runs, its required inputs, the
+observable Kanban result, and the next human action. The walkthrough must include
+the approval stop and must not imply that generic Kanban unblock authorizes
+implementation.
 
 ### Verification gate
 
