@@ -8,19 +8,19 @@ repository safety, artifact integrity, and evidence-backed uncommitted delivery.
 
 | Document or surface | Status | Grounded by |
 |---|---|---|
-| [Architecture](01-architecture.md) | Policy ledger implemented; full Kanban graph migration pending | Runtime modules, Phase 0 host probe, Hermes plugin and Kanban docs |
-| [Policy ledger and Kanban state](02-workflow-state.md) | Policy ledger implemented; combined Kanban status pending | `wingstaff/state.py`, `wingstaff/store.py`, policy and persistence tests |
+| [Architecture](01-architecture.md) | Policy ledger and full approval-gated Kanban graph implemented | Runtime modules, fake-host graph tests, and isolated Hermes probe |
+| [Policy ledger and Kanban state](02-workflow-state.md) | Policy ledger and read-only combined Kanban status implemented | `wingstaff/state.py`, `wingstaff/store.py`, `wingstaff/kanban.py`, policy, persistence, and graph tests |
 | [Pack reference](03-pack-reference.md) | Schema v1 external and bundled skill references implemented | `wingstaff/packs.py`, bundled pack YAML, pack tests |
 | [Authoring packs](04-authoring-packs.md) | Implemented schema-v1 authoring path | Pack loader, bundled pack, pack tests |
-| [Lifecycle stages](05-lifecycle-stages.md) | Full Kanban graph contract defined; runtime migration pending | Active implementation plan and Phase 0 capability probe |
+| [Lifecycle stages](05-lifecycle-stages.md) | Approval-gated Kanban graph implemented; worker handoffs pending | Graph adapter tests and isolated Hermes host probe |
 | [Security](06-security.md) | Release-hardened plugin, approval, artifact, worktree, and supply-chain boundary | Runtime modules, release-content checker, dependency audit, and tests |
 | [Runbook](07-runbook.md) | Install and pack diagnostics implemented; Kanban-native workflow commands pending | Shared CLI tests and isolated Hermes command probe |
 | [Hermes integration](08-hermes-integration.md) | Compatibility matrix verified for Hermes v0.18.2 | Isolated directory, wheel-entry-point, public Git, CLI, and Kanban probes |
 | [Pack adapters](09-pack-adapters.md) | Addyosmani and AI-DLC v1.0.1 implemented | Pack YAML, bundled adapter skill, execution tests |
-| Wingstaff plugin tools | Current strict JSON tools implemented; Kanban-native set pending | `wingstaff/schemas.py`, `wingstaff/tools.py`, plugin and execution tests |
+| Wingstaff plugin tools | Kanban-native operator/model and scoped evidence tools implemented | `wingstaff/schemas.py`, `wingstaff/tools.py`, plugin and graph tests |
 | `wingstaff:orchestrate` | Bundled executable procedure | `wingstaff/skills/orchestrate/SKILL.md`, plugin and installation tests |
 | `hermes wingstaff` and standalone `wingstaff` | Shared operator parser and handlers implemented | `wingstaff/cli.py`, plugin and CLI-equivalence tests |
-| Approval-gated full Kanban graph | Contract defined; runtime migration pending | Active implementation plan and isolated Hermes host probe |
+| Approval-gated full Kanban graph | Implemented | `wingstaff/kanban.py`, `wingstaff/service.py`, fake-host tests, and isolated Hermes host probe |
 | Cron and target commit/push | Unavailable | Planned in the [roadmap](plans/2026-07-10-wingstaff-bootstrap-and-roadmap.md) |
 | Release CI and package audit | Implemented | `.github/workflows/release.yml`, release-content tests, build, Twine, and `pip-audit` |
 

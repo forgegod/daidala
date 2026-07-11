@@ -15,10 +15,10 @@ workflow-pack adapters, and bundled orchestration skills.
 | `workflow.py` | Deterministic policy checks and ledger updates; no operational status transitions. |
 | `locations.py` | Profile-aware data-root resolution; never hard-codes `~/.hermes`. |
 | `store.py` | SQLite-backed policy-ledger persistence with optimistic concurrency. |
-| `service.py` | Repository preflight, approval, artifact, worktree, and ledger coordination. |
+| `service.py` | Repository preflight, approval-gated graph, artifact, worktree, and ledger coordination. |
 | `skills.py` | Exact installed-skill inventory, content-digest verification, and mutation-free install planning. |
 | `execution.py` | Profile-local artifacts, detached worktrees, and diff capture. |
-| `kanban.py` | Public `ctx.dispatch_tool` adapter for idempotent Hermes task creation. |
+| `kanban.py` | Public `ctx.dispatch_tool` adapter for the idempotent, approval-gated Hermes card graph. |
 | `schemas.py` | Tool schemas exposed to the model. |
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
 | `packs.py` | Pack loading and deterministic validation. |
@@ -38,6 +38,8 @@ workflow-pack adapters, and bundled orchestration skills.
 - Hermes Kanban owns every operational status; Wingstaff persists no mirrored
   ready, running, blocked, done, or archived field.
 - Kanban integration uses only `ctx.dispatch_tool`; Wingstaff never imports or writes Hermes' Kanban database.
+- Start validates one explicit named board and a complete executable-stage profile map before creating cards.
+- Card IDs and idempotency keys are persisted as policy facts; live card status is read from Kanban and never mirrored.
 - The policy store uses one fresh schema and does not inspect or migrate the
   unreleased workflow-state database.
 - The engine never substitutes guessed data when a model, skill, or verifier fails.

@@ -1,8 +1,8 @@
 # 06 — Security and trust boundaries
 
 This document covers the plugin, policy ledger, Kanban graph contract,
-executable worktree, and pinned external-skill installation boundary. The full
-Wingstaff graph, cron, and target commit/push remain unavailable and are not
+executable worktree, and pinned external-skill installation boundary. Worker
+handoff recovery, cron, and target commit/push remain unavailable and are not
 claimed as current protection.
 
 ## Current trust boundaries
@@ -132,10 +132,9 @@ being converted into warnings or undocumented exceptions.
 
 ## Remaining execution requirements
 
-Current execution proves exact approval, isolation, blocking verification,
-uncommitted delivery, rollback cleanup, and release-content checks. The
-Kanban-native authority contract is approved, but its full runtime graph remains
-unavailable. Controls that remain host-owned or unavailable are:
+Current execution proves exact approval, the approval-gated Kanban graph,
+isolation, blocking verification, uncommitted delivery, rollback cleanup, and
+release-content checks. Controls that remain host-owned or unavailable are:
 
 - command execution follows normal Hermes approval and tool-dispatch paths;
 - model/tool secrets are not copied into artifacts or logs by host-owned calls;
@@ -154,7 +153,7 @@ of these surfaces exists.
 - Policy ledger and persistence: `wingstaff/state.py`, `wingstaff/workflow.py`,
   `wingstaff/store.py`
 - Worktree and artifact isolation: `wingstaff/execution.py`
-- Kanban graph migration target: `wingstaff/service.py`, `wingstaff/kanban.py`
+- Kanban graph adapter: `wingstaff/service.py`, `wingstaff/kanban.py`
 - Tool error boundary: `wingstaff/tools.py`
 - Bundled procedures: `wingstaff/skills/*/SKILL.md`
 - Tests: `tests/test_packs.py`, `tests/test_plugin.py`, `tests/test_execution.py`

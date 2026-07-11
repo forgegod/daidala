@@ -21,6 +21,15 @@ from wingstaff.skills import (
 )
 from wingstaff.store import WorkflowStore
 
+STAGE_PROFILES = {
+    "define": "architect",
+    "plan": "architect",
+    "implement": "engineer",
+    "verify": "engineer",
+    "review": "reviewer",
+    "deliver": "engineer",
+}
+
 
 def test_required_skills_are_exact_deduplicated_and_lifecycle_ordered() -> None:
     requirements = required_skills(load_pack("addyosmani"))
@@ -132,6 +141,8 @@ def test_missing_skill_blocks_tool_start_without_creating_state(
                 "target_repository": str(tmp_path / "target"),
                 "board_slug": "wingstaff-test",
                 "goal": "must stop before draft creation",
+                "stage_profiles": STAGE_PROFILES,
+                "workflow_id": "workflow-missing-skills",
             }
         )
     )

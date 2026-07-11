@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from wingstaff import schemas, tools
+from wingstaff.kanban import KanbanGraphAdapter
 from wingstaff.packs import load_pack
 from wingstaff.service import WorkflowService
 from wingstaff.skills import (
@@ -19,6 +20,14 @@ from wingstaff.state import WorkflowStage
 from wingstaff.store import WorkflowStore
 
 NOW = datetime(2026, 7, 10, 12, 0, tzinfo=UTC)
+STAGE_PROFILES = {
+    "define": "architect",
+    "plan": "architect",
+    "implement": "engineer",
+    "verify": "engineer",
+    "review": "reviewer",
+    "deliver": "engineer",
+}
 
 
 class TickClock:
@@ -56,7 +65,11 @@ def target_repository(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def service(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> WorkflowService:
+def service(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    kanban_adapter: KanbanGraphAdapter,
+) -> WorkflowService:
     pack = load_pack("addyosmani")
     skills = required_skills(pack)
     instance = WorkflowService(
@@ -67,6 +80,7 @@ def service(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> WorkflowService:
         skill_content_registry=content_registry_from_digests(
             {skill.name: skill.content_digest for skill in skills}
         ),
+        kanban=kanban_adapter,
     )
     monkeypatch.setattr(tools, "_service_factory", lambda: instance)
     return instance
@@ -83,6 +97,7 @@ def seed_planned(service: WorkflowService, target: Path) -> str:
         board_slug="wingstaff-test",
         target_repository=str(target),
         goal="Fix the failing fixture",
+        stage_profiles=STAGE_PROFILES,
         workflow_id="workflow-plan",
     )
     ledger = service.submit_artifact(
@@ -108,6 +123,8 @@ def test_start_and_status_return_policy_ledger_without_status(
             "board_slug": "wingstaff-test",
             "target_repository": str(target_repository),
             "goal": "Add one deterministic behavior",
+            "stage_profiles": STAGE_PROFILES,
+            "workflow_id": "workflow-generated",
         },
     )
 
@@ -118,7 +135,69 @@ def test_start_and_status_return_policy_ledger_without_status(
     assert ledger["baseline_commit"]
     assert ledger["skill_digests"]
     assert {"status", "current_stage", "failure_reason"}.isdisjoint(ledger)
-    assert call(tools.status, {"workflow_id": "workflow-generated"}) == started
+    status = call(tools.status, {"workflow_id": "workflow-generated"})
+    assert status["workflow"] == started["workflow"]
+    assert [row["stage"] for row in status["kanban"]] == ["define", "plan"]
+
+
+def test_start_restart_and_approval_create_one_idempotent_graph(
+    service: WorkflowService,
+    target_repository: Path,
+    fake_kanban_host,
+) -> None:
+    arguments = {
+        "board_slug": "wingstaff-test",
+        "target_repository": str(target_repository),
+        "goal": "Build one graph",
+        "stage_profiles": STAGE_PROFILES,
+        "workflow_id": "workflow-restart",
+    }
+    first = service.start(**arguments)
+    second = service.start(**arguments)
+
+    assert first.card_references == second.card_references
+    assert len(fake_kanban_host.cards) == 2
+    assert {card.stage for card in second.card_references} == {
+        WorkflowStage.DEFINE,
+        WorkflowStage.PLAN,
+    }
+
+    service.submit_artifact(
+        second.workflow_id,
+        stage=WorkflowStage.DEFINE,
+        content="# Definition\n",
+    )
+    planned = service.submit_artifact(
+        second.workflow_id,
+        stage=WorkflowStage.PLAN,
+        content="# Plan\n",
+    )
+    plan = planned.artifact_for(WorkflowStage.PLAN)
+    assert plan is not None
+    approved = service.approve(second.workflow_id, plan_digest=plan.digest)
+
+    assert len(fake_kanban_host.cards) == 7
+    assert [card.stage for card in approved.card_references] == list(WorkflowStage)
+    for parent, child in zip(
+        (
+            WorkflowStage.APPROVAL,
+            WorkflowStage.IMPLEMENT,
+            WorkflowStage.VERIFY,
+            WorkflowStage.REVIEW,
+        ),
+        (
+            WorkflowStage.IMPLEMENT,
+            WorkflowStage.VERIFY,
+            WorkflowStage.REVIEW,
+            WorkflowStage.DELIVER,
+        ),
+        strict=True,
+    ):
+        parent_card = approved.card_for(parent)
+        child_card = approved.card_for(child)
+        assert parent_card is not None and child_card is not None
+        child_args = fake_kanban_host.cards[child_card.task_id]["args"]
+        assert child_args["parents"] == [parent_card.task_id]
 
 
 def test_start_rejects_dirty_target_without_persisting_status(
@@ -133,6 +212,8 @@ def test_start_rejects_dirty_target_without_persisting_status(
             "board_slug": "wingstaff-test",
             "target_repository": str(target_repository),
             "goal": "Reject dirty target",
+            "stage_profiles": STAGE_PROFILES,
+            "workflow_id": "workflow-dirty",
         },
     )
 
@@ -174,6 +255,8 @@ def test_cancel_without_owned_worktree_does_not_create_lifecycle_state(
         board_slug="wingstaff-test",
         target_repository=str(target_repository),
         goal="Cancel me",
+        stage_profiles=STAGE_PROFILES,
+        workflow_id="workflow-cancel",
     ).workflow_id
 
     result = call(
@@ -216,7 +299,12 @@ def test_start_requires_explicit_board_and_local_repository(
 ) -> None:
     missing_board = call(
         tools.start,
-        {"target_repository": "/tmp/repo", "goal": "missing board"},
+        {
+            "target_repository": "/tmp/repo",
+            "goal": "missing board",
+            "stage_profiles": STAGE_PROFILES,
+            "workflow_id": "workflow-missing-board",
+        },
     )
     assert missing_board["success"] is False
     assert missing_board["message"] == "missing required arguments: board_slug"
@@ -228,6 +316,8 @@ def test_start_requires_explicit_board_and_local_repository(
                 "board_slug": "wingstaff-test",
                 "target_repository": target,
                 "goal": "invalid target",
+                "stage_profiles": STAGE_PROFILES,
+                "workflow_id": "workflow-invalid-target",
             },
         )
         assert result["success"] is False
@@ -296,6 +386,8 @@ def test_service_rejects_repository_subdirectory(
             "board_slug": "wingstaff-test",
             "target_repository": str(child),
             "goal": "Reject repository subdirectory",
+            "stage_profiles": STAGE_PROFILES,
+            "workflow_id": "workflow-subdirectory",
         },
     )
 

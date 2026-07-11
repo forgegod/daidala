@@ -6,6 +6,7 @@ import json
 from collections.abc import Callable
 from typing import Any
 
+from .kanban import KanbanGraphAdapter, ToolDispatcher
 from .locations import resolve_data_root
 from .packs import load_pack
 from .service import WorkflowService
@@ -13,11 +14,19 @@ from .state import WorkflowStage
 from .store import WorkflowStore
 
 ServiceFactory = Callable[[], WorkflowService]
+_host_dispatch: ToolDispatcher | None = None
+
+
+def configure_host(dispatch_tool: ToolDispatcher) -> None:
+    """Bind the public plugin-context tool dispatcher for this process."""
+    global _host_dispatch
+    _host_dispatch = dispatch_tool
 
 
 def _default_service() -> WorkflowService:
     root = resolve_data_root() / "wingstaff"
-    return WorkflowService(WorkflowStore(root))
+    kanban = KanbanGraphAdapter(_host_dispatch) if _host_dispatch is not None else None
+    return WorkflowService(WorkflowStore(root), kanban=kanban)
 
 
 _service_factory: ServiceFactory = _default_service
@@ -50,27 +59,51 @@ def start(args: dict[str, Any], **kwargs: Any) -> str:
     del kwargs
     return _service_handler(
         args,
-        allowed={"board_slug", "target_repository", "goal", "pack", "workflow_id"},
-        required={"board_slug", "target_repository", "goal"},
+        allowed={
+            "board_slug",
+            "target_repository",
+            "goal",
+            "stage_profiles",
+            "pack",
+            "workflow_id",
+        },
+        required={
+            "board_slug",
+            "target_repository",
+            "goal",
+            "stage_profiles",
+            "workflow_id",
+        },
         operation=lambda service, values: service.start(
             board_slug=str(values["board_slug"]),
             target_repository=str(values["target_repository"]),
             goal=str(values["goal"]),
+            stage_profiles=values["stage_profiles"],
             pack_name=str(values.get("pack") or "addyosmani"),
-            workflow_id=(str(values["workflow_id"]) if values.get("workflow_id") else None),
+            workflow_id=str(values["workflow_id"]),
         ),
     )
 
 
 def status(args: dict[str, Any], **kwargs: Any) -> str:
-    """Return Wingstaff policy facts without copying Kanban status."""
+    """Return policy facts beside live, read-only Kanban card status."""
     del kwargs
-    return _service_handler(
+    return _handle(
         args,
         allowed={"workflow_id"},
         required={"workflow_id"},
-        operation=lambda service, values: service.status(str(values["workflow_id"])),
+        operation=lambda values: _combined_status(
+            _service_factory(), str(values["workflow_id"])
+        ),
     )
+
+
+def _combined_status(service: WorkflowService, workflow_id: str) -> dict[str, Any]:
+    ledger = service.status(workflow_id)
+    return {
+        "workflow": ledger.to_dict(),
+        "kanban": [row.to_dict() for row in service.combined_status(workflow_id)],
+    }
 
 
 def approve(args: dict[str, Any], **kwargs: Any) -> str:

@@ -47,6 +47,10 @@ def test_register_exposes_tool_and_namespaced_skill_source() -> None:
     assert all(tool["toolset"] == "wingstaff" for tool in ctx.tools)
     assert [name for name, _ in ctx.skills] == ["aidlc-adapter", "orchestrate"]
     assert all(path.name == "SKILL.md" for _, path in ctx.skills)
+    orchestrate = next(path for name, path in ctx.skills if name == "orchestrate")
+    instructions = orchestrate.read_text(encoding="utf-8")
+    assert "wingstaff_validate" not in instructions
+    assert "stage-profile mapping" in instructions
     assert len(ctx.cli_commands) == 1
     assert ctx.cli_commands[0]["name"] == "wingstaff"
 

@@ -7,11 +7,16 @@ from pathlib import Path
 
 import pytest
 
-from wingstaff.state import SkillDigest, WorkflowLedger, WorkflowStage
+from wingstaff.state import SkillDigest, StageProfile, WorkflowLedger, WorkflowStage
 from wingstaff.store import StoreError, WorkflowStore
 from wingstaff.workflow import approve_plan, new_workflow, record_artifact
 
 NOW = datetime(2026, 7, 10, 12, 0, tzinfo=UTC)
+PROFILES = tuple(
+    StageProfile(stage=stage, profile=f"{stage.value}-profile")
+    for stage in WorkflowStage
+    if stage is not WorkflowStage.APPROVAL
+)
 TARGET = "/tmp/wingstaff-store-target"
 
 
@@ -25,6 +30,7 @@ def make_ledger(workflow_id: str = "workflow-1") -> WorkflowLedger:
         pack_name="addyosmani",
         pack_source_revision="source@abcdef",
         skill_digests=(SkillDigest(name="interview-me", digest="digest-1"),),
+        stage_profiles=PROFILES,
         created_at=NOW,
     )
 

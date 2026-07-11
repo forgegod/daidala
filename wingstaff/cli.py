@@ -41,8 +41,16 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     start.add_argument("target_repository")
     start.add_argument("goal")
     start.add_argument("--board", required=True, dest="board_slug")
+    start.add_argument(
+        "--profile",
+        action="append",
+        required=True,
+        dest="stage_profile",
+        metavar="STAGE=PROFILE",
+        help="Map one executable stage to an existing Hermes profile (repeatable)",
+    )
     start.add_argument("--pack", default="addyosmani")
-    start.add_argument("--workflow-id")
+    start.add_argument("--workflow-id", required=True)
 
     status = sub.add_parser("status", help="Show durable Wingstaff policy facts")
     status.add_argument("workflow_id")
@@ -194,6 +202,7 @@ def _run_lifecycle(args: argparse.Namespace, service_factory: ServiceFactory) ->
             board_slug=args.board_slug,
             target_repository=args.target_repository,
             goal=args.goal,
+            stage_profiles=_parse_stage_profiles(args.stage_profile),
             pack_name=args.pack,
             workflow_id=args.workflow_id,
         )
@@ -206,6 +215,18 @@ def _run_lifecycle(args: argparse.Namespace, service_factory: ServiceFactory) ->
         state = service.cancel(args.workflow_id, reason=args.reason)
     _print({"success": True, "operation": args.command, "workflow": state.to_dict()})
     return 0
+
+
+def _parse_stage_profiles(values: list[str]) -> dict[str, str]:
+    mapping: dict[str, str] = {}
+    for value in values:
+        stage, separator, profile = value.partition("=")
+        if not separator or not stage.strip() or not profile.strip():
+            raise ValueError("--profile must use STAGE=PROFILE")
+        if stage in mapping:
+            raise ValueError(f"duplicate --profile stage: {stage}")
+        mapping[stage] = profile
+    return mapping
 
 
 def _run_pack_operation(

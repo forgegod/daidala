@@ -10,6 +10,7 @@ import pytest
 
 from wingstaff.errors import PolicyViolationError
 from wingstaff.execution import ExecutionError
+from wingstaff.kanban import KanbanGraphAdapter
 from wingstaff.packs import load_pack
 from wingstaff.service import WorkflowService
 from wingstaff.skills import (
@@ -21,6 +22,14 @@ from wingstaff.state import WorkflowStage
 from wingstaff.store import WorkflowStore
 
 NOW = datetime(2026, 7, 10, 12, 0, tzinfo=UTC)
+STAGE_PROFILES = {
+    "define": "architect",
+    "plan": "architect",
+    "implement": "engineer",
+    "verify": "engineer",
+    "review": "reviewer",
+    "deliver": "engineer",
+}
 
 
 class TickClock:
@@ -68,7 +77,11 @@ def target_repository(tmp_path: Path) -> Path:
 
 
 @pytest.fixture(params=("addyosmani", "aidlc"))
-def service(tmp_path: Path, request: pytest.FixtureRequest) -> FixtureWorkflowService:
+def service(
+    tmp_path: Path,
+    request: pytest.FixtureRequest,
+    kanban_adapter: KanbanGraphAdapter,
+) -> FixtureWorkflowService:
     pack = load_pack(request.param)
     inventory = inventory_from_names(skill.name for skill in required_skills(pack))
     result = FixtureWorkflowService(
@@ -78,6 +91,7 @@ def service(tmp_path: Path, request: pytest.FixtureRequest) -> FixtureWorkflowSe
         skill_content_registry=content_registry_from_digests(
             {skill.name: skill.content_digest for skill in required_skills(pack)}
         ),
+        kanban=kanban_adapter,
     )
     result.fixture_pack_name = pack.name
     return result
@@ -92,6 +106,7 @@ def prepare_planned_workflow(
         board_slug="wingstaff-test",
         target_repository=str(target),
         goal="Make the deliberately failing test pass",
+        stage_profiles=STAGE_PROFILES,
         pack_name=service.fixture_pack_name,
         workflow_id=workflow_id,
     )
@@ -259,6 +274,7 @@ def test_capture_requires_real_diff_and_safe_workflow_id(
             board_slug="wingstaff-test",
             target_repository=str(target_repository),
             goal="unsafe id",
+            stage_profiles=STAGE_PROFILES,
             pack_name=service.fixture_pack_name,
             workflow_id="../escape",
         )

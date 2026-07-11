@@ -39,6 +39,24 @@ class SkillDigest:
 
 
 @dataclass(frozen=True)
+class StageProfile:
+    stage: WorkflowStage
+    profile: str
+
+    def __post_init__(self) -> None:
+        if self.stage is WorkflowStage.APPROVAL:
+            raise PolicyViolationError("approval uses the plan-stage profile")
+        _require_text(self.profile, "stage profile")
+
+    def to_dict(self) -> dict[str, str]:
+        return {"stage": self.stage.value, "profile": self.profile}
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> StageProfile:
+        return cls(stage=WorkflowStage(raw["stage"]), profile=raw["profile"])
+
+
+@dataclass(frozen=True)
 class ArtifactReference:
     stage: WorkflowStage
     plan_revision: int
@@ -179,6 +197,7 @@ class WorkflowLedger:
     pack_name: str
     pack_source_revision: str
     skill_digests: tuple[SkillDigest, ...]
+    stage_profiles: tuple[StageProfile, ...]
     created_at: datetime
     updated_at: datetime
     plan_revision: int = 0
@@ -215,6 +234,13 @@ class WorkflowLedger:
             raise PolicyViolationError("workflow requires exact skill digests")
         if len(skill_names) != len(set(skill_names)):
             raise PolicyViolationError("workflow cannot contain duplicate skill digests")
+
+        profile_stages = [row.stage for row in self.stage_profiles]
+        expected_profile_stages = set(WorkflowStage) - {WorkflowStage.APPROVAL}
+        if set(profile_stages) != expected_profile_stages or len(profile_stages) != len(
+            expected_profile_stages
+        ):
+            raise PolicyViolationError("workflow requires exactly one profile per executable stage")
 
         card_keys = [
             (card.stage, card.plan_revision) for card in self.card_references
@@ -286,6 +312,10 @@ class WorkflowLedger:
             None,
         )
 
+    def profile_for(self, stage: WorkflowStage) -> str:
+        selected = WorkflowStage.PLAN if stage is WorkflowStage.APPROVAL else stage
+        return next(row.profile for row in self.stage_profiles if row.stage is selected)
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "workflow_id": self.workflow_id,
@@ -296,6 +326,7 @@ class WorkflowLedger:
             "pack_name": self.pack_name,
             "pack_source_revision": self.pack_source_revision,
             "skill_digests": [row.to_dict() for row in self.skill_digests],
+            "stage_profiles": [row.to_dict() for row in self.stage_profiles],
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
             "plan_revision": self.plan_revision,
@@ -323,6 +354,7 @@ class WorkflowLedger:
                 "pack_name",
                 "pack_source_revision",
                 "skill_digests",
+                "stage_profiles",
                 "created_at",
                 "updated_at",
                 "plan_revision",
@@ -350,6 +382,9 @@ class WorkflowLedger:
                 pack_source_revision=raw["pack_source_revision"],
                 skill_digests=tuple(
                     SkillDigest.from_dict(row) for row in raw["skill_digests"]
+                ),
+                stage_profiles=tuple(
+                    StageProfile.from_dict(row) for row in raw["stage_profiles"]
                 ),
                 created_at=datetime.fromisoformat(raw["created_at"]),
                 updated_at=datetime.fromisoformat(raw["updated_at"]),

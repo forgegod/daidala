@@ -5,8 +5,9 @@ deterministic policy-ledger record per workflow. Judgment stays in Hermes and
 pack skills; Python owns identity, provenance, plan approval, repository safety,
 artifact integrity, and optimistic concurrency.
 
-The policy and artifact ledger is implemented. The full linked Kanban graph and
-combined status view remain unavailable until the host adapter is replaced.
+The policy and artifact ledger, full approval-gated Kanban graph, and combined
+read-only status view are implemented. Stage worker handoffs and recovery remain
+the next implementation boundary.
 
 ## Identity and baseline
 

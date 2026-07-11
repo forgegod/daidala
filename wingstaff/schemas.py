@@ -25,17 +25,46 @@ START = {
             "board_slug": {"type": "string"},
             "target_repository": {"type": "string"},
             "goal": {"type": "string"},
+            "stage_profiles": {
+                "type": "object",
+                "properties": {
+                    stage: {"type": "string"}
+                    for stage in (
+                        "define",
+                        "plan",
+                        "implement",
+                        "verify",
+                        "review",
+                        "deliver",
+                    )
+                },
+                "required": [
+                    "define",
+                    "plan",
+                    "implement",
+                    "verify",
+                    "review",
+                    "deliver",
+                ],
+                "additionalProperties": False,
+            },
             "pack": {"type": "string", "default": "addyosmani"},
             "workflow_id": {"type": "string"},
         },
-        "required": ["board_slug", "target_repository", "goal"],
+        "required": [
+            "board_slug",
+            "target_repository",
+            "goal",
+            "stage_profiles",
+            "workflow_id",
+        ],
         "additionalProperties": False,
     },
 }
 
 STATUS = {
     "name": "wingstaff_status",
-    "description": "Return Wingstaff policy facts without copying Kanban status.",
+    "description": "Return policy facts beside live, read-only Kanban card status.",
     "parameters": {
         "type": "object",
         "properties": {"workflow_id": {"type": "string"}},
@@ -74,7 +103,7 @@ CANCEL = {
 
 SUBMIT_ARTIFACT = {
     "name": "wingstaff_submit_artifact",
-    "description": "Store a definition, plan, or review artifact and advance state.",
+    "description": "Store and validate a definition, plan, or review artifact.",
     "parameters": {
         "type": "object",
         "properties": {

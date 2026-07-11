@@ -12,6 +12,7 @@ from .state import (
     ArtifactReference,
     CardReference,
     SkillDigest,
+    StageProfile,
     VerificationEvidence,
     WorkflowLedger,
     WorkflowStage,
@@ -28,6 +29,7 @@ def new_workflow(
     pack_name: str,
     pack_source_revision: str,
     skill_digests: tuple[SkillDigest, ...],
+    stage_profiles: tuple[StageProfile, ...],
     created_at: datetime,
 ) -> WorkflowLedger:
     """Create a policy ledger after deterministic preflight validation."""
@@ -40,6 +42,7 @@ def new_workflow(
         pack_name=pack_name,
         pack_source_revision=pack_source_revision,
         skill_digests=skill_digests,
+        stage_profiles=stage_profiles,
         created_at=created_at,
         updated_at=created_at,
     )
@@ -155,7 +158,11 @@ def approve_plan(
         plan_revision=ledger.plan_revision,
         decided_at=decided_at,
     )
-    if ledger.approval == candidate:
+    if (
+        ledger.approval is not None
+        and ledger.approval.plan_digest == plan_digest
+        and ledger.approval.plan_revision == ledger.plan_revision
+    ):
         return ledger
     plan = ledger.artifact_for(WorkflowStage.PLAN)
     if plan is None or plan.digest != plan_digest:

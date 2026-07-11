@@ -21,10 +21,13 @@ Load this skill explicitly as `wingstaff:orchestrate` when starting or resuming 
 
 ## Procedure
 
-1. Call `wingstaff_pack_info` for the selected pack, then call
-   `wingstaff_start` with an absolute local repository path and explicit goal.
-2. Call `wingstaff_validate`. Stop when the target is dirty, is not a repository
-   root, or any exact required skill is unavailable.
+1. Call `wingstaff_pack_info` for the selected pack. Choose an existing named
+   Kanban board, an explicit stable workflow ID, and a complete mapping from
+   every executable stage to an existing Hermes profile.
+2. Call `wingstaff_start` with that board, workflow ID, stage-profile mapping,
+   absolute local repository path, and explicit goal. Start validates the clean
+   repository baseline, exact skills, and profiles before it creates the linked
+   definition and plan cards. Stop on any validation or host error.
 3. Produce the definition with the pack's `define` skills and pass the complete
    Markdown to `wingstaff_submit_artifact` with `stage: "define"`.
 4. Produce the complete plan with the pack's `plan` skills and pass it to
@@ -33,9 +36,9 @@ Load this skill explicitly as `wingstaff:orchestrate` when starting or resuming 
    and verification criteria to the human. Do not call an implementation tool
    until the human explicitly approves that exact digest.
 6. After approval, call `wingstaff_approve` with the returned plan digest, then
-   call `wingstaff_prepare_implementation` with an existing Hermes profile as
-   `assignee`. Hermes Kanban dispatches that profile in the returned persistent
-   `worktree_path`; retries reuse the same implementation card.
+   call `wingstaff_prepare_implementation`. Hermes Kanban dispatches the
+   configured implementation profile in the returned persistent `worktree_path`;
+   retries reuse the same implementation card.
 7. Load the `implement` skills and use normal Hermes `read_file`, `search_files`,
    `patch`, `write_file`, and `terminal` tools in the worktree. Do not commit or
    push target changes.

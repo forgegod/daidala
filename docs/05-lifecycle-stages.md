@@ -5,8 +5,8 @@ policy and records evidence; it does not call a model, start another agent
 process, publish a competing task status, or automatically commit and push
 target changes.
 
-This is the approved runtime contract. The full graph and worker handoffs remain
-unavailable until Phases 3–5 implement and exercise them.
+The approval-gated graph is implemented. Stage worker handoffs, recovery, and
+the final operator-command path remain unavailable until Phases 4–5 exercise them.
 
 ## Stage contract
 
@@ -89,10 +89,10 @@ pushing the target requires a separate future authorization surface.
 ## Source of truth
 
 - Contract: this document and the active Kanban-native implementation plan
-- Target schemas and handlers: `wingstaff/schemas.py`, `wingstaff/tools.py`
-- Target policy service and graph adapter: `wingstaff/service.py`,
+- Schemas and handlers: `wingstaff/schemas.py`, `wingstaff/tools.py`
+- Policy service and graph adapter: `wingstaff/service.py`,
   `wingstaff/kanban.py`
 - Preserved artifact and worktree operations: `wingstaff/execution.py`
 - Target worker procedure: `wingstaff/skills/orchestrate/SKILL.md`
-- Verification after migration: `tests/test_execution.py`, Kanban adapter tests,
+- Graph verification: `tests/test_execution.py`, Kanban adapter tests,
   and an isolated end-to-end host probe

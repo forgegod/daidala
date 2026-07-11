@@ -10,6 +10,19 @@ import pytest
 
 from wingstaff import cli
 
+PROFILE_ARGS = [
+    item
+    for stage, profile in (
+        ("define", "architect"),
+        ("plan", "architect"),
+        ("implement", "engineer"),
+        ("verify", "engineer"),
+        ("review", "reviewer"),
+        ("deliver", "engineer"),
+    )
+    for item in ("--profile", f"{stage}={profile}")
+]
+
 
 @dataclass
 class FakeState:
@@ -62,6 +75,7 @@ def _factory(service: FakeService) -> cli.ServiceFactory:
             "Implement feature",
             "--board",
             "wingstaff-test",
+            *PROFILE_ARGS,
             "--workflow-id",
             "wf-1",
         ],

@@ -518,13 +518,13 @@ Provide the minimal safe plugin API before any autonomous execution.
 
 ### Tools
 
-- `wingstaff_start` — create a draft workflow for a local repository only;
-- `wingstaff_status` — inspect state and artifacts;
-- `wingstaff_validate` — validate pack and prerequisites, reject dirty targets,
-  and record the baseline commit;
-- `wingstaff_approve` — approve the exact current plan digest;
-- `wingstaff_modify` — record requested plan changes and invalidate approval;
-- `wingstaff_cancel` — terminal cancellation.
+- `wingstaff_start` — validate a clean local repository, exact skills, named
+  board, and complete stage-profile mapping, then create the initial card graph;
+- `wingstaff_status` — combine policy facts with live read-only Kanban status;
+- `wingstaff_approve` — approve the exact current plan digest and create the
+  post-gate graph;
+- `wingstaff_cancel` — clean up Wingstaff-owned worktree state and archive the
+  workflow cards with an operator-supplied reason.
 
 ### Files
 

@@ -1,6 +1,6 @@
 # Kanban-native Wingstaff integration implementation plan
 
-> Status: approved on 2026-07-11; Phase 2 is done.
+> Status: approved on 2026-07-11; Phase 3 is done.
 >
 > For the implementing agent: read `/AGENTS.md`, `wingstaff/AGENTS.md`,
 > `tests/AGENTS.md`, `docs/AGENTS.md`, this plan, the current official Hermes
@@ -20,7 +20,7 @@ be in progress.
 | 0 — verify the live Hermes boundary | Done | Preserve the v0.18.2 public capability matrix and agent-only dispatch boundary. |
 | 1 — define the Kanban-native contract | Done | Preserve one Kanban authority, one policy ledger, and the exact card/handoff/recovery contract. |
 | 2 — replace workflow state with a policy ledger | Done | Preserve the status-free ledger, fresh persistence schema, exact skill provenance, and migrated consumers. |
-| 3 — build the Kanban graph adapter | Todo | Start only after Phase 2 is pushed. |
+| 3 — build the Kanban graph adapter | Done | Preserve the explicit board/profile map, approval-gated graph, strict host parsing, and live read-only status. |
 | 4 — adapt workers, artifacts, and recovery | Todo | Start only after Phase 3 is pushed. |
 | 5 — simplify the CLI and operator experience | Todo | Start only after Phase 4 is pushed. |
 | 6 — rewrite product and integration documentation | Todo | Start only after Phase 5 is pushed. |
@@ -494,6 +494,12 @@ Use TDD for:
 
 Fake-host tests prove the graph and failure semantics. A real isolated-host test
 creates exactly one card per expected stage across two identical calls.
+
+Gate: GREEN — fake-host graph and failure coverage, 97 tests, Ruff, both pack
+validations, package build, Twine, release-content audit, Markdown links,
+Lefthook validation, and diff checks passed. A fresh isolated Hermes v0.18.2
+board received the same `define` (`t_5d3c8b81`) and `plan` (`t_6b697dc7`) card
+IDs across repeated host-dispatch calls and contained exactly two cards.
 
 ### Commit boundary
 

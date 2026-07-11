@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from wingstaff.errors import PolicyViolationError
-from wingstaff.state import SkillDigest, WorkflowLedger, WorkflowStage
+from wingstaff.state import SkillDigest, StageProfile, WorkflowLedger, WorkflowStage
 from wingstaff.workflow import (
     approve_plan,
     new_workflow,
@@ -19,6 +19,11 @@ from wingstaff.workflow import (
 )
 
 NOW = datetime(2026, 7, 10, 12, 0, tzinfo=UTC)
+PROFILES = tuple(
+    StageProfile(stage=stage, profile=f"{stage.value}-profile")
+    for stage in WorkflowStage
+    if stage is not WorkflowStage.APPROVAL
+)
 TARGET = "/tmp/wingstaff-target"
 WORKTREE = "/tmp/wingstaff-worktrees/workflow-1"
 
@@ -33,6 +38,7 @@ def make_ledger() -> WorkflowLedger:
         pack_name="addyosmani",
         pack_source_revision="source@0123456789abcdef",
         skill_digests=(SkillDigest(name="interview-me", digest="digest-1"),),
+        stage_profiles=PROFILES,
         created_at=NOW,
     )
 

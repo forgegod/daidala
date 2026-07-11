@@ -180,7 +180,7 @@ that capability generically.
 | Registration | `wingstaff/__init__.py` | `tests/test_plugin.py` fake-context assertions |
 | Tool schema and JSON boundary | `wingstaff/schemas.py`, `wingstaff/tools.py` | `tests/test_plugin.py` |
 | Policy ledger and persistence | `wingstaff/state.py`, `wingstaff/workflow.py`, `wingstaff/store.py` | State, policy, persistence, and restart tests |
-| Kanban graph and execution isolation | This contract; target `wingstaff/service.py`, `wingstaff/kanban.py`, `wingstaff/execution.py` | Pending Phases 3–4 migration |
+| Kanban graph and execution isolation | `wingstaff/service.py`, `wingstaff/kanban.py`, `wingstaff/execution.py` | Fake-host graph tests and isolated Hermes restart probe; worker handoffs remain Phase 4 |
 | Worktree cleanup and rollback | `wingstaff/service.py`, `wingstaff/execution.py` | Cross-pack delivery and cancellation tests |
 | Pack schema and invariants | `wingstaff/packs.py` | `tests/test_packs.py` |
 | Addy Osmani mapping | `wingstaff/packs/addyosmani.yaml` | Pack load and CLI validation |
