@@ -139,6 +139,7 @@ def run_fixture_tests(worktree: Path) -> subprocess.CompletedProcess[str]:
 def test_thin_workflow_delivers_verified_uncommitted_diff(
     service: FixtureWorkflowService,
     target_repository: Path,
+    fake_kanban_host,
 ) -> None:
     baseline = subprocess.run(
         ["git", "-C", str(target_repository), "rev-parse", "HEAD"],
@@ -149,6 +150,31 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
     workflow_id, plan_digest = prepare_planned_workflow(
         service, target_repository, "workflow-success"
     )
+
+    def complete_stage(stage: WorkflowStage, artifact_digest: str) -> None:
+        ledger = service.status(workflow_id)
+        card = ledger.card_for(stage)
+        assert card is not None
+        fake_kanban_host.dispatch(
+            "kanban_complete",
+            {
+                "task_id": card.task_id,
+                "summary": f"{stage.value} evidence recorded",
+                "metadata": {
+                    "schema": "wingstaff.handoff/v1",
+                    "workflow_id": workflow_id,
+                    "stage": stage.value,
+                    "artifact_digest": artifact_digest,
+                },
+            },
+        )
+
+    planned = service.status(workflow_id)
+    definition = planned.artifact_for(WorkflowStage.DEFINE)
+    plan = planned.artifact_for(WorkflowStage.PLAN)
+    assert definition is not None and plan is not None
+    complete_stage(WorkflowStage.DEFINE, definition.digest)
+    complete_stage(WorkflowStage.PLAN, plan.digest)
 
     with pytest.raises(PolicyViolationError, match="approval"):
         service.prepare_implementation(workflow_id)
@@ -167,6 +193,7 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
     verifying = service.capture_implementation(workflow_id)
     implementation = verifying.artifact_for(WorkflowStage.IMPLEMENT)
     assert implementation is not None
+    complete_stage(WorkflowStage.IMPLEMENT, implementation.digest)
     diff = Path(implementation.path).read_text(encoding="utf-8")
     assert "return 2" in diff
     assert "notes.txt" in diff
@@ -180,12 +207,19 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
         output=verification.stdout + verification.stderr,
     )
     assert reviewing.verification_evidence[-1].exit_code == 0
+    complete_stage(
+        WorkflowStage.VERIFY,
+        reviewing.verification_evidence[-1].output_digest,
+    )
 
-    service.submit_artifact(
+    reviewed = service.submit_artifact(
         workflow_id,
         stage=WorkflowStage.REVIEW,
         content="# Review\n\nThe diff is scoped and pytest passes.\n",
     )
+    review = reviewed.artifact_for(WorkflowStage.REVIEW)
+    assert review is not None
+    complete_stage(WorkflowStage.REVIEW, review.digest)
     worktree_head = subprocess.run(
         ["git", "-C", str(worktree), "rev-parse", "HEAD"],
         check=True,
@@ -196,6 +230,7 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
 
     delivery = completed.artifact_for(WorkflowStage.DELIVER)
     assert delivery is not None
+    complete_stage(WorkflowStage.DELIVER, delivery.digest)
     payload = json.loads(Path(delivery.path).read_text(encoding="utf-8"))
     assert payload["changed_paths"] == ["calculator.py", "notes.txt"]
     assert payload["verification"][0]["exit_code"] == 0
@@ -211,6 +246,22 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
         text=True,
     ).stdout.strip()
     assert target_head == worktree_head == baseline
+
+    assert len(fake_kanban_host.cards) == 7
+    assert all(card["status"] == "done" for card in fake_kanban_host.cards.values())
+    for stage in (
+        WorkflowStage.DEFINE,
+        WorkflowStage.PLAN,
+        WorkflowStage.IMPLEMENT,
+        WorkflowStage.VERIFY,
+        WorkflowStage.REVIEW,
+        WorkflowStage.DELIVER,
+    ):
+        card = completed.card_for(stage)
+        assert card is not None
+        assert fake_kanban_host.cards[card.task_id]["completion_metadata"]["schema"] == (
+            "wingstaff.handoff/v1"
+        )
 
 
 def test_cancel_rolls_back_owned_implementation_worktree(
@@ -322,6 +373,7 @@ def test_verification_worker_blocks_and_resumes_same_card_and_workspace(
     restarted_verify = restarted.card_for(WorkflowStage.VERIFY)
     assert restarted_verify is not None
     assert restarted_verify.task_id == verify_card.task_id
+    assert restarted.worktree_path == str(worktree)
     assert len(fake_kanban_host.cards) == 7
 
     fake_kanban_host.dispatch("kanban_unblock", {"task_id": verify_card.task_id})

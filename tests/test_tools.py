@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from wingstaff import schemas, tools
+from wingstaff.errors import PolicyViolationError
 from wingstaff.kanban import KanbanGraphAdapter
 from wingstaff.packs import load_pack
 from wingstaff.service import WorkflowService
@@ -245,6 +246,8 @@ def test_approve_binds_exact_digest_and_service_replacement_invalidates_it(
     )
     assert replacement.plan_revision == 1
     assert replacement.approval is None
+    with pytest.raises(PolicyViolationError, match="approval"):
+        service.prepare_implementation(workflow_id)
 
 
 def test_cancel_without_owned_worktree_does_not_create_lifecycle_state(

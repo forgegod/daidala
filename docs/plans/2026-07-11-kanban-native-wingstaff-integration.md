@@ -24,7 +24,7 @@ be in progress.
 | 4 — adapt workers, artifacts, and recovery | Done | Preserve card-pinned worker instructions, structured handoffs, same-card recovery, and immutable retry evidence. |
 | 5 — simplify the CLI and operator experience | Done | Preserve public Kanban CLI translation, one default profile with explicit overrides, and combined diagnostics. |
 | 6 — rewrite product and integration documentation | Done | Preserve the user-first starting path, Kanban authority split, explicit trigger model, and source-grounded runtime claims. |
-| 7 — end-to-end and release verification | Todo | Start only after Phase 6 is pushed. |
+| 7 — end-to-end and release verification | Done | Preserve the real-host seven-card lifecycle, cross-pack parity, recovery diagnostics, and release gate. |
 
 ## Goal
 
@@ -805,6 +805,20 @@ contract.
 - remove every stale dual-authority statement;
 - confirm no plan or normal document still instructs users to operate a second
   Wingstaff lifecycle.
+
+Gate: GREEN — an isolated Hermes v0.18.2 directory plugin completed the AI-DLC
+workflow across all seven real Kanban cards through native start, exact-digest
+approval, evidence capture, uncommitted delivery, and combined status; all cards
+ended `done`, the target checkout remained unchanged, and the worktree was
+removed. Parameterized Addyosmani and AI-DLC fixtures traverse the same engine
+and retain `wingstaff.handoff/v1` completion metadata on every executable card.
+Tests also prove stale-plan rejection before implementation, failed verification
+comment/block/unblock recovery, restart reuse of the same card and worktree,
+deleted-assignee visibility, owned-only cancellation, and false commit/push
+flags. The isolated plugin enabled from the Git directory and exposed both
+packs; the isolated wheel validated both packs and `pip-audit` reported no known
+vulnerabilities. Lefthook, 129 tests, Ruff, 23-file Markdown links, both pack
+validations, build, Twine, release-content audit, and diff checks passed.
 
 ### Commit boundary
 

@@ -21,7 +21,8 @@ completeness without touching a real Hermes profile.
   service calls, public Kanban command translation, JSON, and exit codes remain
   equivalent.
 - Temporary Git worktree tests for the approved end-to-end executable slice.
-- Cross-pack fixture tests proving Addyosmani and AI-DLC use the same engine path.
+- Cross-pack fixture tests proving Addyosmani and AI-DLC use the same engine path
+  and leave complete structured handoff history across all executable cards.
 - Subprocess tests for dependency-free repository verification scripts.
 - Release-content regressions for forbidden runtime paths and secret signatures.
 - Build/install smoke tests for directory entry points, wheel resources, and Hermes entry-point metadata.

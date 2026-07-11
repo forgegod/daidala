@@ -186,6 +186,22 @@ def test_unknown_assignee_stops_before_card_creation() -> None:
     assert not host.cards
 
 
+def test_deleted_assignee_remains_visible_in_live_card_status() -> None:
+    host = FakeHost()
+    adapter = KanbanGraphAdapter(host.dispatch)
+    ledger = make_ledger()
+    define = adapter.ensure_card(ledger, load_pack("addyosmani"), stage=WorkflowStage.DEFINE)
+    ledger = record_host_card(ledger, WorkflowStage.DEFINE, define.task_id, 1)
+
+    host.profiles.remove("architect")
+    status = adapter.combined_status(ledger)
+
+    assert len(status) == 1
+    assert status[0].stage is WorkflowStage.DEFINE
+    assert status[0].assignee == "architect"
+    assert status[0].status == "ready"
+
+
 def test_approval_and_post_gate_graph_use_blocked_gate_and_shared_worktree() -> None:
     host = FakeHost()
     adapter = KanbanGraphAdapter(host.dispatch)
