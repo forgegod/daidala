@@ -1,26 +1,26 @@
 # Wingstaff documentation
 
-Wingstaff is a Hermes plugin with deterministic workflow state, exact-skill
-gates, digest-bound approval, profile-local persistence, detached Git
-worktrees, and evidence-backed uncommitted delivery for two bundled packs.
+Wingstaff is a Hermes plugin that maps exact-skill workflow packs onto Hermes
+Kanban. Hermes owns operational state; Wingstaff owns digest-bound approval,
+repository safety, artifact integrity, and evidence-backed uncommitted delivery.
 
 ## Support status
 
 | Document or surface | Status | Grounded by |
 |---|---|---|
-| [Architecture](01-architecture.md) | Implemented plugin and execution boundary | Runtime modules, plugin tests, Hermes plugin docs |
-| [Workflow state](02-workflow-state.md) | Implemented and persisted | `wingstaff/state.py`, `wingstaff/workflow.py`, `wingstaff/store.py` |
+| [Architecture](01-architecture.md) | Kanban-native authority contract defined; runtime migration pending | Phase 0 host probe, runtime modules, Hermes plugin and Kanban docs |
+| [Policy ledger and Kanban state](02-workflow-state.md) | Contract defined; runtime migration pending | Active implementation plan and existing policy primitives |
 | [Pack reference](03-pack-reference.md) | Schema v1 external and bundled skill references implemented | `wingstaff/packs.py`, bundled pack YAML, pack tests |
 | [Authoring packs](04-authoring-packs.md) | Implemented schema-v1 authoring path | Pack loader, bundled pack, pack tests |
-| [Lifecycle stages](05-lifecycle-stages.md) | Thin executable Addyosmani workflow with Kanban dispatch implemented | `wingstaff/service.py`, `wingstaff/kanban.py`, execution and Kanban tests |
+| [Lifecycle stages](05-lifecycle-stages.md) | Full Kanban graph contract defined; runtime migration pending | Active implementation plan and Phase 0 capability probe |
 | [Security](06-security.md) | Release-hardened plugin, approval, artifact, worktree, and supply-chain boundary | Runtime modules, release-content checker, dependency audit, and tests |
-| [Runbook](07-runbook.md) | Implemented native operator procedures | Shared CLI tests and isolated Hermes command probe |
+| [Runbook](07-runbook.md) | Install and pack diagnostics implemented; Kanban-native workflow commands pending | Shared CLI tests and isolated Hermes command probe |
 | [Hermes integration](08-hermes-integration.md) | Compatibility matrix verified for Hermes v0.18.2 | Isolated directory, wheel-entry-point, public Git, CLI, and Kanban probes |
 | [Pack adapters](09-pack-adapters.md) | Addyosmani and AI-DLC v1.0.1 implemented | Pack YAML, bundled adapter skill, execution tests |
-| Wingstaff plugin tools | Twelve strict JSON tools implemented | `wingstaff/schemas.py`, `wingstaff/tools.py`, plugin and execution tests |
+| Wingstaff plugin tools | Current strict JSON tools implemented; Kanban-native set pending | `wingstaff/schemas.py`, `wingstaff/tools.py`, plugin and execution tests |
 | `wingstaff:orchestrate` | Bundled executable procedure | `wingstaff/skills/orchestrate/SKILL.md`, plugin and installation tests |
 | `hermes wingstaff` and standalone `wingstaff` | Shared operator parser and handlers implemented | `wingstaff/cli.py`, plugin and CLI-equivalence tests |
-| Approval-gated Kanban implementation dispatch | Implemented | `wingstaff/kanban.py`, fake-host tests, isolated Hermes host probe |
+| Approval-gated full Kanban graph | Contract defined; runtime migration pending | Active implementation plan and isolated Hermes host probe |
 | Cron and target commit/push | Unavailable | Planned in the [roadmap](plans/2026-07-10-wingstaff-bootstrap-and-roadmap.md) |
 | Release CI and package audit | Implemented | `.github/workflows/release.yml`, release-content tests, build, Twine, and `pip-audit` |
 
@@ -31,7 +31,7 @@ limited to the Hermes version and discovery paths recorded in the
 ## Reading order
 
 1. [Architecture](01-architecture.md) — process and component boundaries.
-2. [Workflow state](02-workflow-state.md) — durable statuses and transitions.
+2. [Policy ledger and Kanban state](02-workflow-state.md) — authority and integrity facts.
 3. [Pack reference](03-pack-reference.md) — the exact implemented schema.
 4. [Authoring packs](04-authoring-packs.md) — add a schema-v1 pack.
 5. [Lifecycle stages](05-lifecycle-stages.md) — executable inputs and outputs.
@@ -42,16 +42,15 @@ limited to the Hermes version and discovery paths recorded in the
 
 ## Lifecycle
 
-The pack-neutral target lifecycle includes discovery and an explicit gate.
-Hermes drives each stage through Wingstaff's registered tools; Wingstaff
-persists outputs and enforces the transition order.
+The pack-neutral target lifecycle is a Hermes Kanban graph with an explicit
+blocked approval card. Hermes owns card progress and recovery; Wingstaff checks
+the exact plan digest before creating or releasing implementation-capable work.
 
 ```mermaid
 flowchart LR
-    D["discover<br>local target and goal"] --> DF["define"]
-    DF --> P["plan"]
-    P --> G{"human approval<br>required before implementation"}
-    G --> I["implement"]
+    DF["define"] --> P["plan"]
+    P --> G["approval<br>blocked"]
+    G -->|"Wingstaff exact-digest approval"| I["implement"]
     I --> V["verify"]
     V --> R["review"]
     R --> DL["deliver"]

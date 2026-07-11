@@ -1,6 +1,6 @@
 # Kanban-native Wingstaff integration implementation plan
 
-> Status: approved on 2026-07-11; Phase 0 is done.
+> Status: approved on 2026-07-11; Phase 1 is done.
 >
 > For the implementing agent: read `/AGENTS.md`, `wingstaff/AGENTS.md`,
 > `tests/AGENTS.md`, `docs/AGENTS.md`, this plan, the current official Hermes
@@ -11,14 +11,15 @@
 
 ## Execution status
 
-Status changes only after a phase passes its verification gate and its commit
-is pushed. Exactly one phase may be in progress.
+A phase becomes `Done` only after its verification gate passes. The next phase
+remains `Todo` until the completed phase commit is pushed. Exactly one phase may
+be in progress.
 
 | Phase | Status | Next condition |
 |---|---|---|
 | 0 — verify the live Hermes boundary | Done | Preserve the v0.18.2 public capability matrix and agent-only dispatch boundary. |
-| 1 — define the Kanban-native contract | Todo | Start only after commit `test: probe kanban-native Wingstaff host capabilities` is pushed. |
-| 2 — replace workflow state with a policy ledger | Todo | Start only after Phase 1 is pushed. |
+| 1 — define the Kanban-native contract | Done | Preserve one Kanban authority, one policy ledger, and the exact card/handoff/recovery contract. |
+| 2 — replace workflow state with a policy ledger | Todo | Start only after commit `docs: define Kanban-native Wingstaff authority and workflow` is pushed. |
 | 3 — build the Kanban graph adapter | Todo | Start only after Phase 2 is pushed. |
 | 4 — adapt workers, artifacts, and recovery | Todo | Start only after Phase 3 is pushed. |
 | 5 — simplify the CLI and operator experience | Todo | Start only after Phase 4 is pushed. |
@@ -302,6 +303,9 @@ Establish the single authority model before changing runtime code.
 - update `docs/05-lifecycle-stages.md` with the card graph, stage handoffs, and
   approval behavior;
 - update `docs/08-hermes-integration.md` with the verified host version and APIs.
+- update `docs/README.md`, `docs/06-security.md`, `docs/07-runbook.md`, and
+  `docs/AGENTS.md` because their current support, security, ownership, and
+  recovery claims otherwise contradict the authority split.
 
 ### Required decisions
 
@@ -313,6 +317,43 @@ Establish the single authority model before changing runtime code.
 - shared workspace representation supported by the probed host;
 - evidence metadata schema;
 - worker block/retry semantics for verification and review failures.
+
+### Phase 1 decision record
+
+- The caller selects one existing named board per workflow; Wingstaff never
+  changes or relies on the global current-board pointer.
+- The caller supplies one default Hermes profile plus optional stage overrides.
+  Wingstaff expands and validates all stage assignees before creating any card.
+- Initial graph: `define -> plan -> approval`. The approval card is created only
+  after the plan digest exists, links to `plan`, and starts blocked.
+- Post-gate graph: `approval -> implement -> verify -> review -> deliver`.
+  Wingstaff creates it only after recording approval for the exact current plan
+  digest.
+- Every card uses idempotency key
+  `wingstaff:<workflow-id>:<plan-revision>:<stage>`, real parent links, exact pack
+  skills, and the expanded stage profile.
+- All post-gate cards use one absolute Wingstaff-owned worktree. No scratch or
+  relative workspace fallback is permitted.
+- Generic Kanban unblock never grants approval. Agent-facing tools use
+  `PluginContext.dispatch_tool`; operator CLI handlers use documented
+  `hermes kanban` commands through an injected runner.
+- Worker handoff metadata uses schema `wingstaff.handoff/v1` with required
+  `workflow_id`, `plan_revision`, `stage`, `pack`, `pack_revision`, `outcome`,
+  and `artifact_refs`; post-gate handoffs also require `workspace_path` and
+  `baseline_commit`. Verification adds exact command, exit-code, and output
+  references; implementation adds the diff and changed-path manifest.
+- Workers comment before blocking. Dependencies use `dependency`, missing host
+  access uses `capability`, deterministic verification/review feedback uses
+  `needs_input`, and only genuinely flaky host failures use `transient`.
+  Human comment/reassign/unblock resumes the same card and workspace.
+
+Phase 1 gate: GREEN — every planned transition maps to a documented Hermes
+v0.18.2 event and, where required, one Wingstaff policy check; no contract
+requires bidirectional status synchronization. Documentation ownership,
+support-status, security, runbook, architecture, ledger, lifecycle, compatibility,
+and both plans are synchronized. Repository gate passed with 22 Markdown files,
+97 tests, Ruff, both pack validations, build, Twine, release-content audit, and
+diff checks.
 
 ### Verification gate
 
@@ -399,7 +440,7 @@ adapter for the full workflow graph.
 - select an explicit board and preserve it for the workflow;
 - discover or validate every requested assignee before card creation;
 - create cards with deterministic idempotency keys
-  `wingstaff:<workflow-id>:<stage>`;
+  `wingstaff:<workflow-id>:<plan-revision>:<stage>`;
 - create parent links atomically with child creation where the host supports it;
 - pin exact stage skills from the selected pack;
 - create no implementation-capable card before digest-bound approval;

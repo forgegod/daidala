@@ -8,7 +8,8 @@ Own current architecture documentation, the numbered reading set, and executable
 
 - `README.md` is the only reading-order, support-status, and symptom-routing index.
 - `01-architecture.md` owns process and component boundaries.
-- `02-workflow-state.md` owns durable lifecycle state and transition contracts.
+- `02-workflow-state.md` owns the Wingstaff policy ledger, Hermes Kanban state
+  authority, and transition-ownership contract.
 - `03-pack-reference.md` owns the implemented workflow-pack schema.
 - `04-authoring-packs.md` owns pack-neutral adapter authoring.
 - `05-lifecycle-stages.md` owns executable stage inputs, outputs, and gates.

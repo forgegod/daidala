@@ -1,7 +1,7 @@
 # Hermes integration
 
 Wingstaff 0.1.0 has been exercised against Hermes Agent v0.18.2
-(`2026.7.7.2`, upstream `a9f3f087`) on Python 3.11.15. The proof used fresh
+(`2026.7.7.2`, upstream `7acaff5e`) on Python 3.11.15. The proof used fresh
 `HERMES_HOME` directories and did not read or modify the active Hermes profile.
 
 This document records observed behavior. The current Hermes
@@ -69,6 +69,36 @@ Directory-loaded plugins run under a host-generated module namespace, so
 package resources resolve through the current `__package__`, not a hard-coded
 top-level `wingstaff` import.
 
+`PluginContext.dispatch_tool` resolves built-in Kanban tools in an agent process.
+A standalone plugin CLI invocation does not load the agent tool registry and
+returned `Unknown tool: kanban_create` in the Phase 0 probe. Agent-facing
+Wingstaff tools will therefore use `ctx.dispatch_tool`; `hermes wingstaff`
+operator commands will use documented `hermes kanban` CLI operations through an
+injected, testable command runner. Neither migration path may import Hermes
+Kanban modules or access its SQLite database.
+
+## Kanban-native workflow boundary
+
+Hermes v0.18.2 exposes the required public operations for the complete graph.
+The table records verified host capability, not current Wingstaff implementation:
+
+| Capability | Verified surface |
+|---|---|
+| Named board | explicit `--board` and tool `board` argument |
+| Assignee validation | `hermes kanban assignees --json` |
+| Exact stage skills | repeated `--skill` and `kanban_create.skills` |
+| Dependencies | `--parent`, `kanban_create.parents`, and `kanban_link` |
+| Human gate | blocked initial status, comments, unblock, and completion |
+| Shared workspace | absolute `dir:<path>` / worktree path preserved across cards |
+| Idempotency | one key per workflow, plan revision, and stage |
+| Worker handoff | `kanban_complete(summary, metadata)` |
+| Recovery | comment, block kind, reassign, unblock, and run history |
+
+The caller selects one existing named board per workflow. It also supplies one
+default Hermes profile with optional per-stage overrides; Wingstaff expands and
+validates the complete mapping before card creation. The gateway's embedded
+dispatcher remains the only unattended runtime.
+
 ## Wheel and entry-point verification
 
 Build and inspect the distribution with:
@@ -105,12 +135,12 @@ Hermes process to confirm that the plugin was enabled without errors, registered
 
 | Hermes host | Directory plugin | Python entry point | Public Git install | Native CLI | Kanban restart/idempotency | Status |
 |---|---|---|---|---|---|---|
-| v0.18.2 (`2026.7.7.2`, `a9f3f087`) | Passed | Passed | Passed | Passed | Passed | Supported |
+| v0.18.2 (`2026.7.7.2`, `7acaff5e`) | Passed | Passed | Passed | Passed | Passed | Supported |
 | Other versions | Not probed | Not probed | Not probed | Not probed | Not probed | Unsupported until the full matrix passes |
 
 - Hermes v0.18.2 is the only verified host version.
 - Directory, entry-point, and public remote Git installation are verified.
-- Plugin registration, deterministic workflow state, local persistence,
+- Plugin registration, Kanban-native lifecycle, policy-ledger persistence,
   exact-skill and pinned-content gates, fresh worktrees, artifact capture,
   verification evidence, review, uncommitted delivery, shared native/standalone
   operator commands, dry-run/apply/check/update planning, and approval-gated

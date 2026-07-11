@@ -1,8 +1,9 @@
 # 06 — Security and trust boundaries
 
-This document covers the plugin, persisted workflow, executable worktree, and
-pinned external-skill installation boundary. Kanban, cron, and target
-commit/push remain unavailable and are not claimed as current protection.
+This document covers the plugin, policy ledger, Kanban graph contract,
+executable worktree, and pinned external-skill installation boundary. The full
+Wingstaff graph, cron, and target commit/push remain unavailable and are not
+claimed as current protection.
 
 ## Current trust boundaries
 
@@ -12,7 +13,8 @@ flowchart LR
     H -->|"loads Python package in-process"| W["Wingstaff plugin code"]
     W -->|"reads bundled package resource"| Y["Pack YAML"]
     W -->|"exact-name + content-digest check"| I["Profile-local Hermes skills"]
-    W -->|"profile-local state and artifacts"| D["SQLite + workflow workspace"]
+    W -->|"policy ledger + artifacts"| D["SQLite + workflow workspace"]
+    W -->|"public host operations"| K["Hermes Kanban board"]
     W -->|"detached worktree at approved baseline"| G["Local Git target"]
     Y -->|"pinned revision + install targets"| E["External skill repository"]
     H -->|"explicit skill load"| S["Read-only wingstaff:orchestrate resource"]
@@ -43,9 +45,9 @@ verification in the Wingstaff-owned detached worktree.
 - `wingstaff_pack_info` catches `PackError` and returns a JSON string rather than
   raising across the plugin boundary.
 - External skill bodies are not vendored into this package.
-- Workflow state, artifacts, approval, worktrees, captured diffs, verification
+- Policy facts, artifacts, approval, worktrees, captured diffs, verification
   evidence, and delivery manifests are durable under the resolved profile data
-  root.
+  root; operational card state remains in Hermes Kanban.
 - Workflow IDs are validated before they can influence runtime paths.
 - Delivery uses the changed-path snapshot captured before verification, so test
   byproducts cannot silently expand reviewed scope.
@@ -58,8 +60,9 @@ or suitable.
 ## Human approval boundary
 
 Schema v1 places the human gate after `plan`. Durable approval binds the exact
-plan digest, plan modification invalidates approval, and worktree creation
-rejects every state except `approved`. The target must still be clean and at the
+plan digest, plan modification invalidates approval, and no post-gate card or
+worktree may be created until the matching approval record exists. Generic
+Kanban unblock is not authorization. The target must still be clean and at the
 recorded baseline when implementation starts.
 
 ## External skills and supply chain
@@ -92,10 +95,10 @@ bundled skills, artifacts, documentation, tests, or package metadata. Secrets
 must remain in Hermes-owned configuration and approval paths, not Wingstaff
 artifacts.
 
-The repository must not contain live workflow state, target worktrees, SQLite
-databases, model transcripts, generated workspaces, or credentials. Runtime
-paths use a Hermes-resolved, profile-aware data root and never hard-code
-`~/.hermes`.
+The repository must not contain live Kanban or policy-ledger state, target
+worktrees, SQLite databases, model transcripts, generated workspaces, or
+credentials. Runtime paths use a Hermes-resolved, profile-aware data root and
+never hard-code `~/.hermes`.
 
 The dependency-free release-content check rejects tracked or packaged database,
 environment, cache, Hermes-home, and worktree paths plus high-confidence private
@@ -129,9 +132,10 @@ being converted into warnings or undocumented exceptions.
 
 ## Remaining execution requirements
 
-Current execution proves approval, isolation, blocking verification,
-uncommitted delivery, rollback cleanup, and release-content checks. Controls
-that remain host-owned or unavailable are:
+Current execution proves exact approval, isolation, blocking verification,
+uncommitted delivery, rollback cleanup, and release-content checks. The
+Kanban-native authority contract is approved, but its full runtime graph remains
+unavailable. Controls that remain host-owned or unavailable are:
 
 - command execution follows normal Hermes approval and tool-dispatch paths;
 - model/tool secrets are not copied into artifacts or logs by host-owned calls;
@@ -147,9 +151,9 @@ of these surfaces exists.
 - Manifest and package boundary: `plugin.yaml`, `pyproject.toml`
 - Registration: `wingstaff/__init__.py`
 - Pack loading and validation: `wingstaff/packs.py`
-- Workflow state and persistence: `wingstaff/state.py`, `wingstaff/store.py`
+- Policy-ledger migration target: `wingstaff/state.py`, `wingstaff/store.py`
 - Worktree and artifact isolation: `wingstaff/execution.py`
-- Lifecycle coordination: `wingstaff/service.py`
+- Kanban graph migration target: `wingstaff/service.py`, `wingstaff/kanban.py`
 - Tool error boundary: `wingstaff/tools.py`
 - Bundled procedures: `wingstaff/skills/*/SKILL.md`
 - Tests: `tests/test_packs.py`, `tests/test_plugin.py`, `tests/test_execution.py`

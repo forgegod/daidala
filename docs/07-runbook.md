@@ -58,34 +58,25 @@ the verified Hermes baseline.
 
 ## Start and resume a workflow
 
-Start requires a clean local Git repository and a concrete goal:
-
-```bash
-hermes wingstaff start /absolute/path/to/repository "Implement the approved change"
-```
-
-The command creates and validates durable workflow state, then prints JSON
-containing the workflow ID. Continue planning and artifact submission in a
-Hermes session with the bundled `wingstaff:orchestrate` skill and Wingstaff
-tools. Resume operator inspection at any time with:
-
-```bash
-hermes wingstaff status <workflow-id>
-```
-
-Status reads the SQLite authority; Kanban is not used as workflow state.
+Kanban-native start and status commands are unavailable until the policy-ledger
+and full-graph migration is implemented and exercised. Do not treat the current
+private SQLite workflow status as the canonical operator surface. The supported
+target contract requires an explicit named board, a validated default profile,
+optional stage-profile overrides, and live status from Hermes Kanban.
 
 ## Approve the exact plan
 
-Approval is bound to the SHA-256 digest recorded on the current plan artifact:
+Approval remains bound to the SHA-256 digest recorded on the current plan
+artifact:
 
 ```bash
 hermes wingstaff approve <workflow-id> <64-character-plan-digest>
 ```
 
 Do not copy a digest from an older plan revision. A mismatch fails without
-advancing the workflow. After approval, the orchestration skill prepares the
-persistent worktree and idempotently dispatches the implementation card.
+authorizing work. Generic `hermes kanban unblock` is not approval. Completion of
+the blocked approval card and creation of the post-gate graph remain unavailable
+until the Kanban-native runtime migration is complete.
 
 ## Cancel
 
@@ -95,27 +86,22 @@ Cancellation requires an audit reason:
 hermes wingstaff cancel <workflow-id> "Superseded by a different change"
 ```
 
-Cancellation is terminal. Start a new workflow instead of trying to reopen it.
-If implementation already created a Wingstaff worktree, cancellation removes
-that worktree and discards its uncommitted changes. The target checkout and
-captured durable artifacts are not modified. Successful delivery performs the
-same worktree cleanup after recording the reviewed manifest.
+Kanban-native cancellation must archive or stop applicable cards through public
+Hermes operations and clean only Wingstaff-owned worktrees. That workflow
+command is unavailable until the graph adapter and CLI migration are complete.
 
 ## Recovery
 
-Wingstaff transitions and Hermes cards are retry-safe at their boundary:
+Hermes Kanban owns retry and recovery:
 
-1. Run `hermes wingstaff status <workflow-id>` to inspect durable state.
-2. If implementation state exists but no worker card is visible, resume the
-   orchestration skill and retry implementation preparation. The same
-   `wingstaff:<workflow-id>:implement` idempotency key prevents duplicates.
-3. If a card is blocked, inspect the Hermes Kanban error. Missing assigned-profile
-   skills must be installed in that profile; Wingstaff does not cross-read or
-   mutate another profile's skill store.
-4. If verification failed, preserve its structured evidence and correct the
-   target worktree. Never fabricate replacement evidence.
-5. A blocked or cancelled workflow is terminal. Start a new workflow when the
-   underlying request remains valid.
+1. Inspect the named board and card with `hermes kanban --board <slug> show <id>`.
+2. Read the worker comment, run metadata, and exact block reason.
+3. Correct missing profile skills or capability prerequisites without mutating
+   another profile's store implicitly.
+4. Comment with the decision or remediation, reassign when necessary, and use
+   `hermes kanban --board <slug> unblock <id> --reason "..."`.
+5. The dispatcher respawns the card with its full thread and preserved absolute
+   worktree. Never fabricate replacement evidence.
 
 ## Upgrade
 

@@ -1,46 +1,52 @@
 # 05 — Lifecycle stages
 
-The executable lifecycle is driven by Hermes through Wingstaff's JSON tools.
-Wingstaff records explicit outputs and enforces order; it does not call a model,
-start another agent process, or automatically commit and push target changes.
+The executable lifecycle is a Hermes Kanban card graph. Wingstaff validates
+policy and records evidence; it does not call a model, start another agent
+process, publish a competing task status, or automatically commit and push
+target changes.
+
+This is the approved runtime contract. The full graph and worker handoffs remain
+unavailable until Phases 3–5 implement and exercise them.
 
 ## Stage contract
 
-| Stage | Input | Durable output | Next state |
+| Card | Input | Durable handoff | Hermes result |
 |---|---|---|---|
-| Discover | Absolute local repository and goal | Workflow identity | `draft` |
-| Define | Valid pack, exact installed skills, clean baseline | `define.md` and digest | `running/plan` |
-| Plan | Complete definition | `plan.md` and digest | `awaiting_approval` |
-| Approve | Human decision and exact plan digest | Approval record | `approved` |
-| Implement | Approved plan, unchanged baseline, and assignee profile | Detached worktree, idempotent Kanban card, and captured `implementation.diff` | `running/verify` |
-| Verify | Command, exit code, and exact output | `verification.txt` and structured evidence | `running/review` or `blocked` |
-| Review | Captured implementation scope and passing evidence | `review.md` and digest | `running/deliver` |
-| Deliver | Reviewed immutable implementation snapshot | `delivery.json` | `completed` |
+| Define | Goal, pack, exact skills, clean baseline | `define.md` path and digest | Complete or block |
+| Plan | Definition handoff | `plan.md` path and digest | Complete or block |
+| Approval | Current plan digest | Approval actor, time, and digest | Remain blocked until Wingstaff approval; then complete |
+| Implement | Approved revision and absolute owned worktree | Captured diff and changed-path manifest | Complete or block |
+| Verify | Immutable implementation scope and exact commands | Commands, exit codes, and output references | Complete or block |
+| Review | Captured diff and passing evidence | Review artifact and decision | Complete or block |
+| Deliver | Approved review and immutable evidence | `delivery.json` with `committed: false`, `pushed: false` | Complete or block |
 
-## Tool sequence
+## Graph creation and assignment
 
-1. `wingstaff_start`
-2. `wingstaff_validate`
-3. `wingstaff_submit_artifact` with `stage: "define"`
-4. `wingstaff_submit_artifact` with `stage: "plan"`
-5. present the complete plan and wait for explicit human approval
-6. `wingstaff_approve` with the current plan digest
-7. `wingstaff_prepare_implementation` with an existing Hermes profile as `assignee`
-8. let Hermes Kanban dispatch that profile in the persistent `worktree_path`
-9. `wingstaff_capture_implementation`
-10. run verification through Hermes' `terminal` tool in the worktree
-11. `wingstaff_record_verification` with the exact result
-12. `wingstaff_submit_artifact` with `stage: "review"`
-13. `wingstaff_deliver`
+1. The caller selects an existing named board, one default Hermes profile, and
+   optional per-stage profile overrides.
+2. Wingstaff expands and persists the complete stage-to-profile mapping, then
+   validates every profile before creating cards.
+3. `wingstaff_start` creates `define` and dependent `plan` with exact pack skills
+   and deterministic idempotency keys.
+4. After the plan handoff, Wingstaff records its digest and creates a blocked
+   approval card linked from `plan`.
+5. `hermes wingstaff approve <workflow-id> <digest>` records exact approval.
+   The command annotates and completes the gate through documented host
+   operations; generic `hermes kanban unblock` does not satisfy Wingstaff policy.
+6. Wingstaff creates `implement → verify → review → deliver` only after approval.
+   Every card uses its resolved profile, exact stage skills, real parent links,
+   and the same absolute Wingstaff-owned worktree.
 
-`wingstaff_status` is read-only and may be called at every point. A nonterminal
-workflow may be stopped with `wingstaff_cancel`.
+`wingstaff_status` is read-only and combines ledger facts with live Kanban card
+data. Cancellation cleans Wingstaff-owned resources and uses documented Kanban
+operations; card lifecycle remains visible on the board.
 
 ## Human gate
 
-No worktree is created before approval. Approval binds the entire current plan
-artifact, not a task subset. Changing the plan invalidates approval and returns
-the workflow to `awaiting_approval`.
+No worktree or post-gate card is created before approval. Approval binds the
+entire current plan artifact, not a task subset. Changing the plan invalidates
+approval, increments the graph revision, and prevents evidence submission from
+the previous graph.
 
 ## Implementation isolation
 
@@ -54,12 +60,25 @@ Immediately after implementation, Wingstaff captures:
 Verification and delivery use that immutable snapshot. An empty implementation
 diff cannot advance.
 
-## Verification and blocking
+## Blocking and recovery
 
-Hermes runs the plan's real commands through its normal `terminal` tool.
-Wingstaff stores the command, integer exit code, output reference, and timestamp.
-Exit code zero advances to review. Any non-zero exit makes the workflow terminal
-`blocked`; review and delivery cannot proceed.
+Every worker starts with `kanban_show` and ends with `kanban_complete` or
+`kanban_block`. Before blocking, it writes a concise comment with `workflow_id`,
+stage, pack revision, artifact or worktree references, exact command evidence,
+and the decision required.
+
+- Missing dependency uses `kind: dependency`; Hermes returns the card to `todo`
+  and promotes it when parents complete.
+- Missing access or host capability uses `kind: capability`.
+- Verification or review feedback uses `kind: needs_input` with a
+  `verification-failed:` or `review-required:` reason.
+- A genuinely flaky host failure uses `kind: transient`; deterministic test
+  failures are not transient.
+
+A human comments with the decision or remediation, may reassign the blocked
+card to an implementation-capable profile, and unblocks it. Hermes respawns the
+card with its full thread and the same preserved worktree. Wingstaff does not
+rewind or mirror a private status.
 
 ## Delivery boundary
 
@@ -69,9 +88,11 @@ pushing the target requires a separate future authorization surface.
 
 ## Source of truth
 
-- Schemas and handlers: `wingstaff/schemas.py`, `wingstaff/tools.py`
-- Lifecycle service: `wingstaff/service.py`
-- Artifact and worktree operations: `wingstaff/execution.py`
-- State transitions: `wingstaff/workflow.py`
-- Procedure: `wingstaff/skills/orchestrate/SKILL.md`
-- Executable fixture: `tests/test_execution.py`
+- Contract: this document and the active Kanban-native implementation plan
+- Target schemas and handlers: `wingstaff/schemas.py`, `wingstaff/tools.py`
+- Target policy service and graph adapter: `wingstaff/service.py`,
+  `wingstaff/kanban.py`
+- Preserved artifact and worktree operations: `wingstaff/execution.py`
+- Target worker procedure: `wingstaff/skills/orchestrate/SKILL.md`
+- Verification after migration: `tests/test_execution.py`, Kanban adapter tests,
+  and an isolated end-to-end host probe

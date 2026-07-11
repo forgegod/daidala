@@ -4,14 +4,17 @@
 
 ## Goal
 
-Deliver Wingstaff as a native, installable Hermes Agent plugin that coordinates autonomous software-development workflows from interchangeable skill packs, requires one explicit human approval before implementation, and introduces no separate server or daemon.
+Deliver Wingstaff as a native, installable Hermes Agent plugin that maps
+interchangeable software-development packs onto Hermes Kanban, requires one
+digest-bound human approval before implementation, and introduces no separate
+server, daemon, or user-visible state machine.
 
 ## Product boundary
 
 Wingstaff is:
 
 - a Hermes general plugin;
-- deterministic workflow and validation code;
+- deterministic policy, provenance, repository-safety, and evidence code;
 - namespaced bundled orchestration skills;
 - workflow-pack adapters for external skill repositories;
 - an operator CLI registered as `hermes wingstaff ...`;
@@ -46,11 +49,13 @@ Do not modify either sibling source repository while implementing Wingstaff.
 4. Canonical install, verified on Hermes v0.18.2:
    `hermes plugins install forgegod/hermes-wingstaff --enable`.
 5. Canonical operator surface: `hermes wingstaff ...`; standalone `wingstaff` remains diagnostics-only.
-6. Stable lifecycle: `discover -> define -> plan -> gate -> implement -> verify -> review -> deliver`.
+6. Stable Kanban graph: `define -> plan -> approval -> implement -> verify -> review -> deliver`.
 7. The first executable pack is Addy Osmani's `agent-skills`.
 8. AI-DLC is added only after one real end-to-end workflow passes.
 9. External skills are referenced by fully qualified install targets and not vendored.
-10. Runtime state belongs below a profile-aware Hermes home resolved through supported APIs; never hard-code `~/.hermes`.
+10. Wingstaff policy and artifact-integrity data belongs below a profile-aware
+    Hermes home resolved through supported APIs; Kanban remains the operational
+    state authority. Never hard-code `~/.hermes`.
 11. The existing Hermes gateway is the only required long-running process for unattended operation.
 
 ## Bootstrap delivered with this plan
@@ -84,13 +89,13 @@ committed before work starts on the next phase.
 | 1 — isolated Hermes installation proof | Done | Preserve both directory and entry-point regression coverage. |
 | 1A — compatibility baseline and release policy | Done | Preserve the v0.18.2 host boundary and fixed execution policy. |
 | 1B — public Git installation proof | Done | Preserve the verified public install command and fresh-process probe. |
-| 2 — workflow state contract | Done | Preserve the BLOCKED-terminal rule and approval-digest binding. |
-| 3 — durable persistence | Done | Preserve the optimistic-concurrency guard on update. |
-| 4 — read-only and gate tools | Done | Preserve strict JSON boundaries and monotonic transition timestamps. |
+| 2 — workflow state contract | Done | Migrate approval and evidence facts into the policy ledger; do not preserve Wingstaff statuses. |
+| 3 — durable persistence | Done | Preserve optimistic concurrency while removing operational status ownership. |
+| 4 — read-only and gate tools | Done | Preserve strict JSON boundaries while moving lifecycle transitions to Kanban. |
 | 4A — exact external-skill prerequisite check | Done | Preserve exact-name matching and read-only host inventory access. |
-| 5 — thin Addyosmani workflow | Done | Preserve worktree isolation, immutable diff scope, and evidence-backed delivery. Gate: 19 Markdown files, 65 tests, Ruff, pack validation, build, Twine, diff check, and isolated 12-tool load passed. |
+| 5 — thin Addyosmani workflow | Done | Preserve worktree isolation, immutable diff scope, and evidence-backed delivery while moving progress to Kanban. |
 | 6 — external skill installation and revision management | Done | Preserve publisher-pinned targets, bounded Hermes compatibility, complete-directory digests, dry-run-by-default mutation plans, post-apply verification, and refused recursive installation. Gate: 19 Markdown files, 75 tests, Ruff, pack validation, build, Twine, diff check, 20-action standalone dry-run, recursive refusal, and on-disk digest-mismatch blocking passed. |
-| 7 — Hermes Kanban mapping | Done | Preserve `ctx.dispatch_tool` isolation, post-approval creation, persistent worktree assignment, exact skill pins, idempotency keys, and Wingstaff/Hermes authority separation. Gate: 19 Markdown files, 77 tests, Ruff, pack validation, build, Twine, diff check, interruption recovery, restart deduplication, and isolated real-host one-card/two-call probe passed. |
+| 7 — Hermes Kanban mapping | Done | Expand into the canonical full card graph: one named board, real parent links, exact skills, stage profiles, one shared worktree, and retry-safe keys. |
 | 8 — `hermes wingstaff` operator CLI | Done | Preserve the shared parser/service dispatcher, profile-local dry-run initialization, read-only doctor, required cancellation reasons, isolated-module resource loading, and v0.18.2 process exit-code shim. Gate: 20 Markdown files, 86 tests, Ruff, pack validation, build, Twine, diff check, isolated native Hermes command/doctor probes, and clean-wheel standalone init/list probe passed. |
 | 9 — AI-DLC adapter | Done | Preserve the pinned MIT-0 adapter, mutually exclusive external/bundled skill providers, and pack-neutral engine path. Gate: 21 Markdown files, 92 tests, Ruff, both pack validations, build, Twine, diff check, isolated two-skill directory load, and no-`aidlc`-runtime-literal scan passed. |
 | 10 — operational hardening and release | Done | Preserve owned-worktree cleanup, restart idempotency, host-owned token accounting, the v0.18.2 compatibility matrix, release-content and dependency audits, and the Python 3.11/3.12 release gate. Gate: 21 Markdown files, 97 tests, Ruff, both pack validations, build, Twine, wheel inspection, isolated wheel installation, clean runtime dependency audit, workflow parse, and diff checks passed. |
@@ -422,11 +427,13 @@ to a public GitHub repository.
 The isolated installation reports source `user`, enabled status, one registered
 tool, and a successful explicit skill load.
 
-## Phase 2 — define the workflow state contract
+## Phase 2 — define the policy ledger contract
 
 ### Objective
 
-Model workflow state and transitions without running agents or touching Kanban.
+Persist only Wingstaff-owned policy and integrity facts. Hermes Kanban owns card
+status, dependencies, assignment, claims, completion, blocking, retry, and
+recovery.
 
 ### Files
 
@@ -436,7 +443,7 @@ Model workflow state and transitions without running agents or touching Kanban.
 - create `tests/test_workflow.py`
 - update `wingstaff/AGENTS.md`
 
-### Required state
+### Required ledger facts
 
 Each workflow records:
 
@@ -446,28 +453,31 @@ Each workflow records:
 - Wingstaff worktree path once implementation begins;
 - fixed delivery mode `reviewed_diff_only`;
 - selected pack and exact pack/source revision;
-- current stage and status;
-- artifact references per completed stage;
+- selected board and deterministic stage-to-card identifiers;
+- expanded stage-to-profile mapping;
+- artifact references and digests per stage;
 - human-gate decision, exact approved plan digest, and timestamp;
 - verification evidence;
-- failure/block reason;
+- evidence and policy-invalidity reason when Wingstaff must refuse an operation;
 - created/updated timestamps.
 
-Allowed statuses are explicit: `draft`, `running`, `awaiting_approval`, `approved`, `blocked`, `failed`, `completed`, `cancelled`.
+No operational status is stored in Wingstaff. Hermes Kanban supplies the card
+state and run history used by combined status reads.
 
 ### Rules
 
-- No transition skips the human gate.
+- No post-gate card or worktree exists before exact-digest approval.
 - Workflow creation accepts local repository paths only.
-- Forward progress from `draft` requires a clean target and recorded baseline
-  commit; tracked or untracked target changes block validation.
+- Graph creation requires a clean target and recorded baseline commit; tracked
+  or untracked target changes fail policy validation before cards are created.
 - Implementation requires a fresh Wingstaff-owned worktree distinct from the
   target checkout.
 - Approval is single-shot and bound to a plan artifact digest.
 - Modifying the plan after approval invalidates approval.
 - Delivery produces a reviewed diff and cannot represent an automatic target
   commit or push.
-- Failed validation or verification blocks forward progress.
+- Workers block and resume through Hermes Kanban; Wingstaff does not mirror that
+  operational status.
 - Re-running a completed transition is idempotent.
 - No guessed artifact is accepted.
 
@@ -475,11 +485,12 @@ Allowed statuses are explicit: `draft`, `running`, `awaiting_approval`, `approve
 
 Unit tests cover every valid transition, every invalid transition, approval invalidation, idempotency, and serialization round-trip.
 
-## Phase 3 — add durable local persistence
+## Phase 3 — add durable policy-ledger persistence
 
 ### Objective
 
-Persist state using a simple local store while keeping Kanban as coordination rather than the database of record.
+Persist Wingstaff policy facts using a simple local store while keeping Hermes
+Kanban as the operational database of record.
 
 ### Files
 
@@ -549,7 +560,7 @@ the minimum read-only availability check before executable work begins.
 A missing or mismatched skill blocks workflow start before definition or plan
 artifacts are requested. A complete fake inventory passes without mutation.
 
-## Phase 5 — implement one thin end-to-end workflow
+## Phase 5 — implement one thin end-to-end Kanban workflow
 
 ### Objective
 
@@ -559,18 +570,17 @@ Prove one issue can move from request to delivered verified change using Hermes 
 
 Only this vertical slice:
 
-1. User starts a workflow against a local Git repository.
-2. Wingstaff rejects a dirty target and records its baseline commit.
-3. Wingstaff validates the Addyosmani pack and uses the Phase 4A prerequisite
-   check for every exact required skill.
-4. Hermes produces a definition artifact.
-5. Hermes produces a plan artifact.
-6. Wingstaff pauses at `awaiting_approval` and presents the plan.
-7. Human approves the plan digest.
-8. One implementation task runs in a fresh Wingstaff-owned Git worktree.
-9. Verification runs and captures command, exit code, and output reference.
-10. Review runs against the diff.
-11. Delivery reports changed paths and verification evidence. It does not commit or push unless separately authorized.
+1. User selects a named board, local Git repository, default profile, and
+   optional stage overrides.
+2. Wingstaff validates the clean baseline, profiles, pack, and exact skills.
+3. Wingstaff creates linked `define` and `plan` cards.
+4. After the plan handoff, Wingstaff creates a blocked approval card.
+5. Human approves the exact plan digest through Wingstaff policy.
+6. Wingstaff creates linked `implement`, `verify`, `review`, and `deliver` cards
+   in one persistent worktree.
+7. Workers complete or block through Kanban with structured handoffs.
+8. Delivery reports changed paths and verification evidence. It does not commit
+   or push unless separately authorized.
 
 ### Execution boundary
 
@@ -635,10 +645,12 @@ Use the built-in durable queue without private database coupling.
 ### Rules
 
 - Board cards reference Wingstaff workflow/stage IDs.
-- Wingstaff state remains authoritative for lifecycle and approval.
-- Kanban remains authoritative for assignment, claim, heartbeat, completion, and dependency readiness.
-- The first post-gate task is created only after approval.
+- Hermes Kanban remains authoritative for the complete operational lifecycle.
+- Wingstaff remains authoritative only for pack policy, exact approval,
+  repository safety, and artifact/evidence integrity.
+- The first post-gate card and worktree are created only after approval.
 - Workers use persistent worktrees/workspaces across dependent stages.
+- Generic Kanban unblock is interaction, not Wingstaff authorization.
 
 ### Verification gate
 
@@ -740,12 +752,13 @@ Do not build one. Use Hermes CLI, gateway messages, Kanban, and existing observa
 
 ## Decisions for the first executable slice
 
-The conservative defaults are accepted and move into Phase 1A as binding
-first-release policy: no automatic target commit or push, one approval bound to
-the whole plan digest, reapproval after plan changes, rejection of dirty target
-repositories, fresh Wingstaff worktrees, and local repositories only. Hermes
-v0.18.2 is the only supported host boundary until another release passes the
-same directory and entry-point probes.
+The conservative defaults remain binding first-release policy: Hermes Kanban is
+the sole operational state authority; Wingstaff owns exact-digest approval and
+evidence integrity; there is no automatic target commit or push; plan changes
+require reapproval; dirty targets are rejected; one absolute Wingstaff worktree
+is shared by post-gate cards; and local repositories only are supported. Hermes
+v0.18.2 (`7acaff5e`) is the only supported host boundary until another release
+passes the same plugin and Kanban capability probes.
 
 ## Remaining commit boundaries
 
@@ -753,8 +766,8 @@ Keep every remaining phase independently green and commit it before starting
 the next phase:
 
 1. `docs: lock Hermes compatibility and release policy`
-2. `feat: define deterministic workflow state`
-3. `feat: persist workflow state and approval decisions`
+2. `refactor: reduce Wingstaff state to policy and artifact ledger`
+3. `feat: persist policy and approval decisions`
 4. `feat: expose Wingstaff lifecycle tools`
 5. `feat: validate exact external skill prerequisites`
 6. `feat: execute approved Addyosmani workflow slice`

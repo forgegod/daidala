@@ -4,9 +4,9 @@
 
 Wingstaff is a general Hermes plugin plus bundled resources. Hermes owns the
 agent process, model access, tool registry, skill loading, gateway, delegation,
-Kanban, and cron facilities. Wingstaff adds pack validation, deterministic
-workflow state, profile-local persistence, approval gates, artifact capture,
-and detached-worktree coordination on top of those host facilities.
+Kanban lifecycle, and cron facilities. Wingstaff adds workflow packs, exact
+skill provenance, plan-digest approval, repository safety, and evidence
+integrity on top of those host facilities.
 
 Wingstaff is not an MCP server, HTTP service, dashboard service, model provider,
 message gateway, scheduler, or nested `hermes chat` launcher.
@@ -26,8 +26,8 @@ flowchart TB
             REG["register(ctx)"]
             TOOL["JSON tool handlers"]
             PACK["deterministic pack loader and validator"]
-            SERVICE["lifecycle service"]
-            STATE["state + SQLite store"]
+            SERVICE["policy service"]
+            STATE["policy + artifact ledger"]
             EXEC["artifact + worktree boundary"]
             KBA["public Kanban dispatch adapter"]
             SKILL["bundled orchestrate SKILL.md"]
@@ -59,21 +59,45 @@ flowchart TB
 ```
 
 Wingstaff has no autonomous execution loop, scheduler, model client, or second
-service. Its Kanban adapter calls the documented host tool dispatcher; it never
-imports or writes Hermes' board database. Hermes owns task assignment, claims,
-heartbeats, completion, dependency readiness, and worker restart.
+service. Its Kanban adapter calls documented host operations; it never imports
+or writes Hermes' board database. Hermes owns card status, assignment, claims,
+heartbeats, completion, dependencies, retries, and worker restart. Wingstaff's
+SQLite data is a narrow policy and artifact-integrity ledger, not another task
+state machine.
+
+## Authority split
+
+| Concern | Authority |
+|---|---|
+| Board, card status, dependencies, assignment, claims, retries, comments, and run history | Hermes Kanban |
+| User-visible progress and recovery | Hermes Kanban CLI, slash command, dashboard, and gateway |
+| Pack selection, stage skills, provenance, and compatibility | Wingstaff |
+| Repository baseline, owned worktree, and immutable implementation scope | Wingstaff |
+| Plan digest, exact approval, artifact digests, and verification evidence | Wingstaff policy ledger |
+| Target commit or push | Unavailable without separate authorization |
+
+No operational transition requires bidirectional status synchronization.
+Wingstaff reads Hermes status when presenting a combined view and applies only
+Wingstaff-owned policy checks before creating or releasing cards.
 
 ## Process boundary
 
 ```mermaid
 flowchart LR
-    START["Start an existing Hermes process"] --> LOAD["Hermes discovers and loads Wingstaff"]
-    LOAD --> REGISTER["Wingstaff registers tools and bundled skill"]
-    REGISTER --> READY["Hermes remains the only agent process"]
-    READY --> CALL["Hermes invokes Wingstaff lifecycle tools"]
-    CALL --> GATE["validate exact skills, clean baseline, and approval"]
-    GATE --> WORK["Hermes works in the returned detached worktree"]
-    WORK --> EVIDENCE["Wingstaff captures diff, verification, review, delivery"]
+    START["Wingstaff validates pack, profiles, and clean baseline"] --> DEFINE["define card"]
+    DEFINE --> PLAN["plan card"]
+    PLAN --> APPROVAL["blocked approval card"]
+    APPROVAL -->|"exact digest approved"| IMPLEMENT["implement card"]
+    IMPLEMENT --> VERIFY["verify card"]
+    VERIFY --> REVIEW["review card"]
+    REVIEW --> DELIVER["deliver card"]
+
+    KB["Hermes Kanban owns every card status and retry"] --> DEFINE
+    LEDGER["Wingstaff policy ledger"] -."digests + evidence refs".-> APPROVAL
+    WORKTREE["One absolute Wingstaff-owned worktree"] --> IMPLEMENT
+    WORKTREE --> VERIFY
+    WORKTREE --> REVIEW
+    WORKTREE --> DELIVER
 
     CLI["Standalone wingstaff diagnostics process"] --> VALIDATE["Validate bundled pack and exit"]
 ```
@@ -83,24 +107,26 @@ orchestration surface and not a long-running process.
 
 ## Deterministic mechanism and model judgment
 
-The implemented deterministic boundary includes:
+The Kanban-native deterministic boundary keeps the implemented pack,
+repository, and artifact mechanisms and replaces private lifecycle state with:
 
 - `wingstaff.packs.load_pack()` resolves a conservative bundled pack name;
 - `yaml.safe_load()` parses the package resource;
 - `validate_pack()` validates schema shape, lifecycle order, skill references,
   and pre-implementation gate placement;
-- immutable dataclasses and SQLite enforce lifecycle state, optimistic updates,
-  exact plan approval, and terminal failure;
-- exact installed-skill names gate draft creation and validation;
+- immutable dataclasses and SQLite enforce policy-ledger invariants, optimistic
+  updates, exact plan approval, and artifact integrity;
+- exact installed-skill names gate workflow graph creation and validation;
 - profile-local artifact paths and detached Git worktrees isolate execution;
 - captured diffs, changed paths, command results, and delivery flags remain
   deterministic;
 - every plugin handler serializes success or failure as JSON.
 
-Wingstaff calls no model. Hermes and the selected pack skills produce
-definition, plan, implementation, and review judgment. Wingstaff records those
-artifacts and keeps transitions, digests, validation, verification evidence,
-and delivery scope deterministic.
+Wingstaff calls no model. Hermes profile workers and the selected pack skills
+produce definition, plan, implementation, verification, and review judgment.
+Workers terminate through `kanban_complete` or `kanban_block`; Wingstaff records
+artifact digests, approval, verification evidence, and delivery scope without
+declaring a second operational status.
 
 ## First-release execution policy
 
@@ -148,13 +174,13 @@ that capability generically.
 
 ## Source of truth
 
-| Contract | Source | Verification |
+| Contract | Current source or migration target | Verification |
 |---|---|---|
 | Plugin declarations | `plugin.yaml`, `pyproject.toml` | `tests/test_installation.py`; live directory and entry-point probes |
 | Registration | `wingstaff/__init__.py` | `tests/test_plugin.py` fake-context assertions |
 | Tool schema and JSON boundary | `wingstaff/schemas.py`, `wingstaff/tools.py` | `tests/test_plugin.py` |
-| Workflow state and persistence | `wingstaff/state.py`, `wingstaff/store.py` | `tests/test_workflow.py`, `tests/test_store.py` |
-| Lifecycle and execution isolation | `wingstaff/service.py`, `wingstaff/execution.py` | `tests/test_execution.py`, `tests/test_tools.py` |
+| Policy ledger and persistence | This contract; target `wingstaff/state.py`, `wingstaff/store.py` | Pending Phase 2 migration |
+| Kanban graph and execution isolation | This contract; target `wingstaff/service.py`, `wingstaff/kanban.py`, `wingstaff/execution.py` | Pending Phases 3–4 migration |
 | Worktree cleanup and rollback | `wingstaff/service.py`, `wingstaff/execution.py` | Cross-pack delivery and cancellation tests |
 | Pack schema and invariants | `wingstaff/packs.py` | `tests/test_packs.py` |
 | Addy Osmani mapping | `wingstaff/packs/addyosmani.yaml` | Pack load and CLI validation |

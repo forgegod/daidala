@@ -1,8 +1,12 @@
-# 02 — Workflow state
+# 02 — Policy ledger and Kanban state
 
-Wingstaff persists one deterministic state document per workflow. Judgment stays
-in Hermes and pack skills; Python owns transitions, timestamps, approval
-digests, artifact references, and terminal outcomes.
+Hermes Kanban is the only operational state machine. Wingstaff persists one
+deterministic policy-ledger record per workflow. Judgment stays in Hermes and
+pack skills; Python owns identity, provenance, plan approval, repository safety,
+artifact integrity, and optimistic concurrency.
+
+This document is the approved migration contract. The current runtime model is
+not the authority for new work; Phase 2 replaces it with this ledger.
 
 ## Identity and baseline
 
@@ -12,79 +16,93 @@ A workflow records:
 - an absolute local target repository root;
 - the requested goal and selected pack revision;
 - the clean target baseline commit;
+- selected board slug and expanded stage-to-profile mapping;
+- deterministic stage-to-card IDs and idempotency keys;
 - creation and last-update timestamps.
 
-`wingstaff_start` creates `draft` state only after every exact pack skill is
-available. `wingstaff_validate` records the baseline and moves a clean target to
-`running/define`; a dirty target becomes terminal `blocked`.
+`wingstaff_start` validates every exact pack skill, every resolved profile, the
+named board, and the clean baseline before creating the linked `define` and
+`plan` cards. Failed policy validation creates no graph.
 
-## Statuses
+## Operational status
 
-| Status | Meaning |
+Wingstaff stores no `draft`, `running`, `blocked`, or `completed` field. Card
+status is read from the workflow's named Hermes board. Wingstaff may return a
+combined read-only view containing Kanban card statuses beside policy facts, but
+it never mirrors those statuses into its ledger.
+
+| Fact | Source |
 |---|---|
-| `draft` | Created but target validation has not passed. |
-| `running` | The current stage may accept its required output. |
-| `awaiting_approval` | The complete plan exists and implementation is paused. |
-| `approved` | Human approval matches the current plan digest. |
-| `blocked` | Validation or verification failed; terminal. |
-| `failed` | Runtime failure; terminal. |
-| `completed` | Delivery artifact recorded; terminal. |
-| `cancelled` | Operator cancelled a nonterminal workflow; terminal. |
+| Card readiness, running, blocking, completion, retry, and archive state | Hermes Kanban |
+| Current approved plan digest and approval actor/time | Wingstaff ledger |
+| Baseline, worktree ownership, and immutable changed-path manifest | Wingstaff ledger |
+| Worker summaries, comments, run outcomes, and retry history | Hermes Kanban |
+| Artifact bytes, digests, and exact verification evidence | Wingstaff artifact store and ledger |
 
-Terminal state cannot be rewound or cancelled. Recovery starts a new workflow;
-Wingstaff does not fabricate retries.
-
-## Stage transitions
+## Card graph
 
 ```mermaid
 flowchart LR
-    D["draft"] --> DF["running / define"]
-    DF --> P["running / plan"]
-    P --> G["awaiting_approval"]
-    G --> A["approved"]
-    A --> I["running / implement"]
-    I --> V["running / verify"]
-    V --> R["running / review"]
-    R --> DL["running / deliver"]
-    DL --> C["completed"]
-    D -."dirty target".-> B["blocked"]
-    V -."non-zero exit".-> B
+    D["define"] --> P["plan"]
+    P --> A["approval — blocked"]
+    A -->|"matching digest"| I["implement"]
+    I --> V["verify"]
+    V --> R["review"]
+    R --> DL["deliver"]
 ```
 
-Every transition rejects timestamps older than `updated_at`. Repeating a
-transition is accepted only where the transition contract defines an identical
-idempotent result.
+Cards use idempotency key `wingstaff:<workflow-id>:<plan-revision>:<stage>`.
+The initial `define` and `plan` cards use revision zero. Post-approval cards use
+the approved plan digest's ledger revision, so a changed plan cannot reuse an
+authorized graph. Hermes parent links own readiness promotion.
+
+## Transition ownership
+
+| Transition | Hermes Kanban event | Wingstaff policy check |
+|---|---|---|
+| Start accepted | `created` for `define` and dependent `plan` | Named board, clean baseline, exact skills, and all expanded profiles validate |
+| Definition begins or succeeds | `claimed`, then `completed` | `wingstaff.handoff/v1` definition artifact reference and digest validate |
+| Plan becomes runnable or succeeds | `promoted`, `claimed`, then `completed` | Definition digest matches; plan artifact reference and digest validate |
+| Human gate appears | `created` with blocked status and `plan` parent | Current plan digest is persisted before creation |
+| Approval succeeds | `completed` on the approval card | Supplied digest exactly matches the current plan and approval is recorded first |
+| Post-gate graph appears | `created` for `implement`, `verify`, `review`, and `deliver` | Approval, baseline, plan revision, profiles, exact skills, and worktree all validate |
+| Stage succeeds | `completed` | Handoff schema, plan revision, stage artifact, and evidence digest validate |
+| Stage needs intervention | `blocked` or `dependency_wait` | Structured comment names the current workflow, revision, evidence, and required decision |
+| Operator resumes work | `unblocked` | No approval is inferred; later Wingstaff evidence calls still validate the current revision |
+| Plan is replaced | `archived` on obsolete post-gate cards | Approval is cleared and plan revision increments before any new graph |
+| Workflow is cancelled | `archived` on nonterminal cards | Only Wingstaff-owned worktree and policy references may be cleaned |
+
+`created`, `promoted`, `claimed`, `completed`, `blocked`, `dependency_wait`,
+`unblocked`, and `archived` are Hermes v0.18.2 event kinds. Wingstaff does not
+invent parallel transition names.
 
 ## Approval integrity
 
 The plan artifact has a SHA-256 digest. `wingstaff_approve` accepts only that
-exact current digest. `wingstaff_modify` replaces the plan reference and clears
-approval, so stale approval cannot authorize changed implementation scope.
+exact current digest. A generic Kanban unblock is interaction, not approval.
+Only after Wingstaff records the matching digest may it annotate and complete
+the approval card and create the post-gate graph.
 
-Worktree creation checks approval again and confirms the target is still clean
-and still at the recorded baseline.
-
-After that transition is persisted, Wingstaff creates the implementation card
-through Hermes Kanban with idempotency key
-`wingstaff:<workflow-id>:implement`. Repeating preparation after interruption
-reuses that card and the same persistent worktree. Wingstaff state remains
-authoritative for lifecycle and approval; Hermes Kanban remains authoritative
-for assignment, claim, heartbeat, completion, and worker recovery.
+Replacing a plan clears approval, increments the plan revision, and makes every
+older post-gate card ineligible for Wingstaff evidence submission. Worktree
+creation rechecks approval, target cleanliness, and the baseline. Repeating graph
+creation reuses the same cards and absolute worktree for that plan revision.
 
 ## Persistence and concurrency
 
-`WorkflowStore` persists JSON state in profile-local SQLite. Updates use the
+`WorkflowStore` persists policy facts in profile-local SQLite. Updates use the
 previous `updated_at` as an optimistic concurrency token. A stale writer raises
 `StoreError("modified concurrently")`; the service does not auto-retry or hide
 the conflict.
 
-Runtime SQLite files and workflow state are never repository artifacts.
+Runtime SQLite files and policy-ledger records are never repository artifacts.
 
 ## Source of truth
 
-- Model: `wingstaff/state.py`
-- Transitions: `wingstaff/workflow.py`
-- Persistence: `wingstaff/store.py`
-- Coordination: `wingstaff/service.py`
-- Verification: `tests/test_workflow.py`, `tests/test_store.py`,
+- Contract: this document and the active Kanban-native implementation plan
+- Target ledger model: `wingstaff/state.py`
+- Target policy transitions: `wingstaff/workflow.py`
+- Target persistence: `wingstaff/store.py`
+- Target coordination: `wingstaff/service.py`
+- Verification after migration: `tests/test_workflow.py`, `tests/test_store.py`,
   `tests/test_execution.py`
