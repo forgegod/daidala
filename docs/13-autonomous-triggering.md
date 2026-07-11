@@ -125,6 +125,17 @@ but it does not replace the explicit admission fields in the prompt.
 `--deliver local` is the copy-safe default; route production notifications to a
 configured attended channel such as Telegram, Discord, or Slack.
 
+`[SILENT]` is Hermes' cron quiet marker, not a Wingstaff status or output tag.
+Per the official Hermes [silent-suppression
+contract](https://hermes-agent.nousresearch.com/docs/user-guide/features/cron#silent-suppression),
+a successful cron run whose final agent response contains `[SILENT]` is saved in
+the local cron output for audit but is not sent to the configured delivery
+target. Failed jobs still deliver regardless of the marker. In this prompt,
+“respond with only `[SILENT]`” therefore means that polling completed normally
+and found no admissible issue; it prevents a no-op notification while preserving
+the run record. This differs from the script-only pattern below, where empty
+stdout—not an agent response marker—silences a successful tick.
+
 ### Script-only poller
 
 Use `--no-agent` when a deterministic script can query, filter, and directly
