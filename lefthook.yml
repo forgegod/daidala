@@ -1,0 +1,4 @@
+post-commit:
+  jobs:
+    - name: update code review graph
+      run: code-review-graph update

@@ -31,6 +31,7 @@ Target commit/push remains outside the current delivery contract.
 ```bash
 python -m venv .venv
 .venv/bin/pip install -e '.[dev]'
+.venv/bin/lefthook install
 .venv/bin/pytest
 .venv/bin/ruff check .
 .venv/bin/wingstaff packs validate addyosmani
@@ -38,6 +39,9 @@ python -m venv .venv
 python -m build
 .venv/bin/python scripts/check_release_contents.py . --wheel dist/*.whl
 ```
+
+The tracked Lefthook `post-commit` hook runs `code-review-graph update`. Install
+`code-review-graph` separately and keep it available on `PATH` when committing.
 
 Preview profile-local dependency mutations without applying them:
 

@@ -85,6 +85,7 @@ Default section order:
 Project verification:
 
 ```bash
+lefthook validate
 pytest
 ruff check .
 wingstaff packs validate addyosmani
@@ -114,6 +115,7 @@ Project-wide durable preferences (style, workflow, conventions) live in user mem
 ## Session-start tooling
 
 - Use `code-review-graph` MCP tools for structural queries (callers, blast radius, code review) before scanning files. See the `code-review-graph` skill for tool selection and pitfalls. Projects that opt in register their repo in `~/.code-review-graph/registry.json`; pass the registered `repo_root` on tool calls.
+- Git hooks are tracked in `lefthook.yml`. Run `.venv/bin/lefthook install` after development setup; the `post-commit` hook updates the code-review graph.
 
 ## Child DOX Index
 
