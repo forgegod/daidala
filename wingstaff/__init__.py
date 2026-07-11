@@ -27,6 +27,7 @@ def register(ctx) -> None:
         "wingstaff_submit_artifact": tools.submit_artifact,
         "wingstaff_prepare_implementation": tools.prepare_implementation,
         "wingstaff_capture_implementation": tools.capture_implementation,
+        "wingstaff_record_skill_activation": tools.record_skill_activation,
         "wingstaff_record_verification": tools.record_verification,
         "wingstaff_deliver": tools.deliver,
     }

@@ -154,6 +154,72 @@ RECORD_VERIFICATION = {
     },
 }
 
+RECORD_SKILL_ACTIVATION = {
+    "name": "wingstaff_record_skill_activation",
+    "description": "Validate and persist this stage worker's skill activation decisions.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "workflow_id": {"type": "string"},
+            "stage": {
+                "type": "string",
+                "enum": ["define", "plan", "implement", "verify", "review", "deliver"],
+            },
+            "supersedes_digest": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+            "decisions": {
+                "type": "array", "minItems": 1, "maxItems": 32,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "pattern": "^[a-z0-9][a-z0-9-]{0,127}$",
+                        },
+                        "category": {
+                            "type": "string",
+                            "enum": [
+                                "applicable",
+                                "deferred",
+                                "not_applicable",
+                                "blocked",
+                            ],
+                        },
+                        "rank": {"type": ["integer", "null"], "minimum": 1, "maximum": 32},
+                        "matched_criteria": {
+                            "type": "array",
+                            "minItems": 1,
+                            "maxItems": 8,
+                            "items": {"type": "string", "minLength": 1, "maxLength": 500},
+                        },
+                        "evidence": {
+                            "type": "array",
+                            "minItems": 1,
+                            "maxItems": 8,
+                            "items": {"type": "string", "minLength": 1, "maxLength": 500},
+                        },
+                        "rationale": {"type": "string", "minLength": 1, "maxLength": 1000},
+                        "condition": {"type": ["string", "null"], "minLength": 1, "maxLength": 500},
+                    },
+                    "required": [
+                        "name",
+                        "category",
+                        "rank",
+                        "matched_criteria",
+                        "evidence",
+                        "rationale",
+                        "condition",
+                    ],
+                    "additionalProperties": False,
+                },
+            },
+        },
+        "required": ["workflow_id", "stage", "supersedes_digest", "decisions"],
+        "additionalProperties": False,
+    },
+}
+
 DELIVER = {
     "name": "wingstaff_deliver",
     "description": "Record reviewed paths and evidence without commit or push.",
@@ -170,6 +236,7 @@ EXECUTION_TOOLS = (
     SUBMIT_ARTIFACT,
     PREPARE_IMPLEMENTATION,
     CAPTURE_IMPLEMENTATION,
+    RECORD_SKILL_ACTIVATION,
     RECORD_VERIFICATION,
     DELIVER,
 )

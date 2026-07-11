@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import subprocess
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
@@ -22,13 +23,24 @@ from .skills import (
     require_pack_skill_revisions,
     require_pack_skills,
 )
-from .state import SkillDigest, StageProfile, WorkflowLedger, WorkflowStage
+from .state import (
+    ActivationCategory,
+    ActivationDecision,
+    ActivationManifest,
+    ActivationManifestReference,
+    ActivationReferenceState,
+    SkillDigest,
+    StageProfile,
+    WorkflowLedger,
+    WorkflowStage,
+)
 from .store import StoreError, WorkflowStore
 from .workflow import (
     approve_plan,
     new_workflow,
     record_artifact,
     record_card,
+    record_skill_activation,
     record_verification,
     record_worktree,
     release_worktree,
@@ -112,7 +124,7 @@ class WorkflowService:
             baseline_commit=baseline,
             requested_goal=goal,
             pack_name=pack.name,
-            pack_source_revision=f"{pack.source}@{pack.source_revision}",
+            pack_source_revision=pack.source_revision,
             skill_digests=skills,
             stage_profiles=profiles,
             created_at=self._clock(),
@@ -301,6 +313,110 @@ class WorkflowService:
         )
         return self.store.update(updated, expected_updated_at=observed.updated_at)
 
+    def record_skill_activation(
+        self,
+        workflow_id: str,
+        *,
+        stage: WorkflowStage,
+        supersedes_digest: str | None,
+        decisions: list[dict],
+        board_slug: str,
+        task_id: str,
+    ) -> tuple[ActivationManifestReference, WorkflowLedger]:
+        """Validate, reserve, create, and finalize one worker activation manifest."""
+        for attempt in range(3):
+            try:
+                return self._record_skill_activation_once(
+                    workflow_id,
+                    stage=stage,
+                    supersedes_digest=supersedes_digest,
+                    decisions=decisions,
+                    board_slug=board_slug,
+                    task_id=task_id,
+                )
+            except StoreError as error:
+                if "modified concurrently" not in str(error) or attempt == 2:
+                    raise
+        raise AssertionError("unreachable activation retry state")
+
+    def _record_skill_activation_once(
+        self,
+        workflow_id: str,
+        *,
+        stage: WorkflowStage,
+        supersedes_digest: str | None,
+        decisions: list[dict],
+        board_slug: str,
+        task_id: str,
+    ) -> tuple[ActivationManifestReference, WorkflowLedger]:
+        observed = self.store.get_with_token(workflow_id)
+        ledger = observed.ledger
+        card = ledger.card_for(stage)
+        if board_slug != ledger.board_slug:
+            raise ServiceError("Kanban board does not match the workflow")
+        if card is None or task_id != card.task_id:
+            raise ServiceError("Kanban task does not match the current stage card")
+        pack = load_pack(ledger.pack_name)
+        manifest = _activation_manifest(
+            ledger,
+            pack,
+            stage=stage,
+            supersedes_digest=supersedes_digest,
+            decisions=decisions,
+        )
+        references = [
+            row
+            for row in ledger.activation_manifests
+            if row.stage is stage
+            and row.plan_revision == ledger.activation_revision_for(stage)
+        ]
+        latest = references[-1] if references else None
+        if latest is not None and latest.state is ActivationReferenceState.FINALIZED:
+            existing = self._workspace.read_activation_manifest(workflow_id, latest.path)
+            if (
+                existing.decisions == manifest.decisions
+                and existing.supersedes_digest == supersedes_digest
+            ):
+                return latest, ledger
+            manifest = replace(manifest, sequence=latest.sequence + 1)
+        path = self._workspace.activation_manifest_path(workflow_id, manifest)
+        pending = record_skill_activation(
+            ledger,
+            manifest=manifest,
+            pack=pack,
+            path=path,
+            state=ActivationReferenceState.PENDING,
+            recorded_at=self._clock(),
+        )
+        if pending is not ledger:
+            pending = self.store.update(pending, expected_updated_at=observed.updated_at)
+        reference = pending.activation_manifests[-1]
+        if reference.state is ActivationReferenceState.FINALIZED:
+            return reference, pending
+        try:
+            stored = self._workspace.write_activation_manifest(workflow_id, manifest)
+        except ExecutionError as error:
+            if "already exists" not in str(error):
+                raise
+            existing = self._workspace.read_activation_manifest(workflow_id, path)
+            if existing.canonical_bytes() != manifest.canonical_bytes():
+                raise ServiceError("existing activation artifact content conflicts") from error
+        else:
+            if stored.path != path or stored.digest != reference.digest:
+                raise ServiceError("stored activation artifact does not match its reservation")
+        observed = self.store.get_with_token(workflow_id)
+        finalized = record_skill_activation(
+            observed.ledger,
+            manifest=manifest,
+            pack=pack,
+            path=path,
+            state=ActivationReferenceState.FINALIZED,
+            recorded_at=self._clock(),
+        )
+        if finalized is not observed.ledger:
+            finalized = self.store.update(finalized, expected_updated_at=observed.updated_at)
+        return finalized.activation_manifests[-1], finalized
+
     def deliver(self, workflow_id: str) -> WorkflowLedger:
         """Record reviewed evidence and remove the worktree without commit or push."""
         observed = self.store.get_with_token(workflow_id)
@@ -436,6 +552,75 @@ class WorkflowService:
         if self._kanban is None:
             raise ServiceError("Kanban host dispatch is unavailable")
         return self._kanban
+
+
+def _activation_manifest(
+    ledger: WorkflowLedger,
+    pack,
+    *,
+    stage: WorkflowStage,
+    supersedes_digest: str | None,
+    decisions: list[dict],
+) -> ActivationManifest:
+    if not isinstance(decisions, list):
+        raise ServiceError("activation decisions must be an array")
+    pack_stage = next((row for row in pack.stages if row.id == stage.value), None)
+    if pack_stage is None:
+        raise ServiceError("activation stage is not declared by the selected pack")
+    if len(decisions) != len(pack_stage.skills):
+        raise ServiceError("activation decisions must cover the exact stage skill set")
+    supplied: dict[str, dict] = {}
+    expected_fields = {
+        "name",
+        "category",
+        "rank",
+        "matched_criteria",
+        "evidence",
+        "rationale",
+        "condition",
+    }
+    for raw in decisions:
+        if not isinstance(raw, dict) or set(raw) != expected_fields:
+            raise ServiceError("activation decision fields are invalid")
+        name = raw["name"]
+        if not isinstance(name, str) or name in supplied:
+            raise ServiceError("activation decision names must be unique strings")
+        supplied[name] = raw
+    expected_names = {skill.name for skill in pack_stage.skills}
+    if set(supplied) != expected_names:
+        raise ServiceError("activation decisions must cover the exact stage skill set")
+    digests = {row.name: row.digest for row in ledger.skill_digests}
+    enriched = tuple(
+        ActivationDecision(
+            name=skill.name,
+            skill_digest=digests[skill.name],
+            activation_mode=skill.activation,
+            category=ActivationCategory(supplied[skill.name]["category"]),
+            rank=supplied[skill.name]["rank"],
+            matched_criteria=tuple(supplied[skill.name]["matched_criteria"]),
+            evidence=tuple(supplied[skill.name]["evidence"]),
+            rationale=supplied[skill.name]["rationale"],
+            condition=supplied[skill.name]["condition"],
+        )
+        for skill in pack_stage.skills
+    )
+    references = [
+        row
+        for row in ledger.activation_manifests
+        if row.stage is stage and row.plan_revision == ledger.activation_revision_for(stage)
+    ]
+    sequence = references[-1].sequence if references else 1
+    return ActivationManifest(
+        schema="wingstaff.skill-activation/v1",
+        workflow_id=ledger.workflow_id,
+        stage=stage,
+        plan_revision=ledger.activation_revision_for(stage),
+        pack=ledger.pack_name,
+        pack_source_revision=ledger.pack_source_revision,
+        sequence=sequence,
+        supersedes_digest=supersedes_digest,
+        decisions=enriched,
+    )
 
 
 def _stage_profiles(values: dict[str, str]) -> tuple[StageProfile, ...]:

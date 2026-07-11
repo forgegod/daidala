@@ -88,6 +88,32 @@ class ExecutionWorkspace:
             digest=hashlib.sha256(content).hexdigest(),
         )
 
+    def activation_manifest_path(
+        self,
+        workflow_id: str,
+        manifest: ActivationManifest,
+    ) -> str:
+        """Return the deterministic path reserved for an activation manifest."""
+        if workflow_id != manifest.workflow_id:
+            raise ExecutionError("activation manifest workflow ID does not match artifact root")
+        filename = (
+            f"skill-activation-{manifest.stage.value}-r{manifest.plan_revision}"
+            f"-{manifest.sequence}.json"
+        )
+        return str(self._workflow_root(workflow_id) / "artifacts" / filename)
+
+    def read_activation_manifest(self, workflow_id: str, path: str) -> ActivationManifest:
+        """Read one activation manifest only from its Wingstaff-owned artifact root."""
+        artifact = Path(path).resolve()
+        expected_parent = (self._workflow_root(workflow_id) / "artifacts").resolve()
+        if artifact.parent != expected_parent:
+            raise ExecutionError("activation manifest path is outside the workflow artifact root")
+        try:
+            payload = json.loads(artifact.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            raise ExecutionError("cannot read activation manifest") from error
+        return ActivationManifest.from_dict(payload)
+
     def read_json_artifact(self, workflow_id: str, filename: str) -> dict[str, Any]:
         """Read a Wingstaff-owned JSON sidecar from the workflow artifact root."""
         path = self._workflow_root(workflow_id) / "artifacts" / filename

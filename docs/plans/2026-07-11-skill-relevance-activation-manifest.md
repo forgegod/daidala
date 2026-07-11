@@ -1,6 +1,6 @@
 # Skill relevance activation manifest implementation plan
 
-> Status: Phase 2 is done; Phase 3 is next and has not started.
+> Status: Phase 3 is done; Phase 4 is next and has not started.
 >
 > Baseline: `65e6085` (`docs: explain autonomous skill selection and
 > handoffs`).
@@ -601,6 +601,15 @@ Wingstaff tool boundary.
 pytest tests/test_tools.py tests/test_plugin.py tests/test_execution.py
 ruff check wingstaff/schemas.py wingstaff/tools.py wingstaff/service.py wingstaff/__init__.py tests/test_tools.py tests/test_plugin.py tests/test_execution.py
 ```
+
+Phase 3 gate: GREEN — 31 focused tests cover strict nested input, host-owned
+Kanban board/card authorization, blocked supersession, idempotency, and
+optimistic-concurrency recovery. The service now stores the pack's bare pinned
+commit because the previous URL-qualified value could not satisfy the Phase 2
+manifest contract. The isolated local-Git plugin probe loaded 11 tools with no
+plugin error. The repository gate passed with 27 Markdown files, 141 tests,
+Ruff, both pack validations, build, Twine, release-content audit, Lefthook
+validation, and diff checks.
 
 Commit only after the gate passes:
 

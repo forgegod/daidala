@@ -18,7 +18,7 @@ from wingstaff.skills import (
     required_skills,
 )
 from wingstaff.state import WorkflowStage
-from wingstaff.store import WorkflowStore
+from wingstaff.store import StoreError, WorkflowStore
 
 NOW = datetime(2026, 7, 10, 12, 0, tzinfo=UTC)
 STAGE_PROFILES = {
@@ -112,6 +112,24 @@ def seed_planned(service: WorkflowService, target: Path) -> str:
         content="# Plan\n",
     )
     return ledger.workflow_id
+
+
+def activation_decisions(service: WorkflowService, workflow_id: str) -> list[dict]:
+    ledger = service.status(workflow_id)
+    pack = load_pack(ledger.pack_name)
+    stage = next(row for row in pack.stages if row.id == "define")
+    return [
+        {
+            "name": skill.name,
+            "category": "applicable" if skill.activation.value == "required" else "not_applicable",
+            "rank": 1 if skill.activation.value == "required" else None,
+            "matched_criteria": ["The pinned skill criteria were assessed."],
+            "evidence": ["The current definition card was inspected."],
+            "rationale": "Apply required guidance; omit conditional guidance for this fixture.",
+            "condition": None,
+        }
+        for skill in stage.skills
+    ]
 
 
 def test_start_and_status_return_policy_ledger_without_status(
@@ -297,6 +315,168 @@ def test_handlers_return_json_errors_instead_of_raising(
     assert missing["message"] == "missing required arguments: reason"
 
 
+def test_record_skill_activation_requires_exact_kanban_worker_context(
+    service: WorkflowService,
+    target_repository: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workflow_id = service.start(
+        board_slug="wingstaff-test",
+        target_repository=str(target_repository),
+        goal="Assess definition skills",
+        stage_profiles=STAGE_PROFILES,
+        workflow_id="workflow-activation",
+    ).workflow_id
+    arguments = {
+        "workflow_id": workflow_id,
+        "stage": "define",
+        "supersedes_digest": None,
+        "decisions": activation_decisions(service, workflow_id),
+    }
+
+    absent = call(tools.record_skill_activation, arguments)
+    assert absent["success"] is False
+    assert "Kanban worker context" in absent["message"]
+
+    ledger = service.status(workflow_id)
+    card = ledger.card_for(WorkflowStage.DEFINE)
+    assert card is not None
+    monkeypatch.setenv("HERMES_KANBAN_BOARD", "wrong-board")
+    monkeypatch.setenv("HERMES_KANBAN_TASK", card.task_id)
+    wrong_board = call(tools.record_skill_activation, arguments)
+    assert wrong_board["success"] is False
+    assert "board" in wrong_board["message"]
+
+    monkeypatch.setenv("HERMES_KANBAN_BOARD", ledger.board_slug)
+    monkeypatch.setenv("HERMES_KANBAN_TASK", "wrong-card")
+    wrong_card = call(tools.record_skill_activation, arguments)
+    assert wrong_card["success"] is False
+    assert "task" in wrong_card["message"]
+
+    monkeypatch.setenv("HERMES_KANBAN_TASK", card.task_id)
+    recorded = call(tools.record_skill_activation, arguments)
+    assert recorded["success"] is True
+    assert recorded["activation"]["state"] == "finalized"
+    assert recorded["activation"]["sequence"] == 1
+    assert recorded["workflow"]["pack_source_revision"] == load_pack(
+        "addyosmani"
+    ).source_revision
+
+    repeated = call(tools.record_skill_activation, arguments)
+    assert repeated["success"] is True
+    assert repeated["activation"] == recorded["activation"]
+    assert len(repeated["workflow"]["activation_manifests"]) == 1
+
+
+def test_record_skill_activation_rejects_malformed_and_persists_blocked_supersession(
+    service: WorkflowService,
+    target_repository: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workflow_id = service.start(
+        board_slug="wingstaff-test",
+        target_repository=str(target_repository),
+        goal="Reassess definition skills",
+        stage_profiles=STAGE_PROFILES,
+        workflow_id="workflow-activation-supersession",
+    ).workflow_id
+    ledger = service.status(workflow_id)
+    card = ledger.card_for(WorkflowStage.DEFINE)
+    assert card is not None
+    monkeypatch.setenv("HERMES_KANBAN_BOARD", ledger.board_slug)
+    monkeypatch.setenv("HERMES_KANBAN_TASK", card.task_id)
+    decisions = activation_decisions(service, workflow_id)
+    first = call(
+        tools.record_skill_activation,
+        {
+            "workflow_id": workflow_id,
+            "stage": "define",
+            "supersedes_digest": None,
+            "decisions": decisions,
+        },
+    )
+    digest = first["activation"]["digest"]
+
+    malformed = [*decisions[:-1], {**decisions[-1], "unknown": True}]
+    rejected = call(
+        tools.record_skill_activation,
+        {
+            "workflow_id": workflow_id,
+            "stage": "define",
+            "supersedes_digest": digest,
+            "decisions": malformed,
+        },
+    )
+    assert rejected["success"] is False
+    assert "fields" in rejected["message"]
+
+    blocked = [*decisions]
+    required_index = next(
+        index for index, decision in enumerate(blocked) if decision["rank"] == 1
+    )
+    blocked[required_index] = {
+        **blocked[required_index],
+        "category": "blocked",
+        "rank": None,
+        "rationale": "The required capability is unavailable.",
+    }
+    superseded = call(
+        tools.record_skill_activation,
+        {
+            "workflow_id": workflow_id,
+            "stage": "define",
+            "supersedes_digest": digest,
+            "decisions": blocked,
+        },
+    )
+    assert superseded["success"] is True
+    assert superseded["activation"]["sequence"] == 2
+    assert superseded["activation"]["blocked"] is True
+
+
+def test_record_skill_activation_reloads_after_reservation_race(
+    service: WorkflowService,
+    target_repository: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workflow_id = service.start(
+        board_slug="wingstaff-test",
+        target_repository=str(target_repository),
+        goal="Retry activation reservation",
+        stage_profiles=STAGE_PROFILES,
+        workflow_id="workflow-activation-race",
+    ).workflow_id
+    ledger = service.status(workflow_id)
+    card = ledger.card_for(WorkflowStage.DEFINE)
+    assert card is not None
+    monkeypatch.setenv("HERMES_KANBAN_BOARD", ledger.board_slug)
+    monkeypatch.setenv("HERMES_KANBAN_TASK", card.task_id)
+    original_update = service.store.update
+    raced = False
+
+    def update_with_one_race(updated, *, expected_updated_at=None):
+        nonlocal raced
+        if updated.activation_manifests and not raced:
+            raced = True
+            raise StoreError(f"workflow {workflow_id!r} was modified concurrently")
+        return original_update(updated, expected_updated_at=expected_updated_at)
+
+    monkeypatch.setattr(service.store, "update", update_with_one_race)
+    result = call(
+        tools.record_skill_activation,
+        {
+            "workflow_id": workflow_id,
+            "stage": "define",
+            "supersedes_digest": None,
+            "decisions": activation_decisions(service, workflow_id),
+        },
+    )
+
+    assert raced is True
+    assert result["success"] is True
+    assert result["activation"]["state"] == "finalized"
+
+
 def test_start_requires_explicit_board_and_local_repository(
     service: WorkflowService,
 ) -> None:
@@ -393,11 +573,15 @@ def test_public_schemas_have_no_removed_lifecycle_aliases() -> None:
         "wingstaff_submit_artifact",
         "wingstaff_prepare_implementation",
         "wingstaff_capture_implementation",
+        "wingstaff_record_skill_activation",
         "wingstaff_record_verification",
         "wingstaff_deliver",
     }
     for schema in schemas.ALL_TOOLS:
         assert schema["parameters"]["additionalProperties"] is False
+    decision = schemas.RECORD_SKILL_ACTIVATION["parameters"]["properties"]["decisions"]
+    assert decision["maxItems"] == 32
+    assert decision["items"]["additionalProperties"] is False
 
 
 def test_service_rejects_repository_subdirectory(

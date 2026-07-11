@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Callable
 from typing import Any
 
@@ -202,6 +203,35 @@ def record_verification(args: dict[str, Any], **kwargs: Any) -> str:
             exit_code=values["exit_code"],
             output=str(values["output"]),
         ),
+    )
+
+
+def record_skill_activation(args: dict[str, Any], **kwargs: Any) -> str:
+    """Persist skill decisions authorized by the executing Kanban card context."""
+    del kwargs
+
+    def operation(values: dict[str, Any]) -> dict[str, Any]:
+        if "supersedes_digest" not in values:
+            raise ValueError("missing required arguments: supersedes_digest")
+        board_slug = os.environ.get("HERMES_KANBAN_BOARD")
+        task_id = os.environ.get("HERMES_KANBAN_TASK")
+        if not board_slug or not board_slug.strip() or not task_id or not task_id.strip():
+            raise ValueError("skill activation requires Hermes Kanban worker context")
+        reference, ledger = _service_factory().record_skill_activation(
+            str(values["workflow_id"]),
+            stage=WorkflowStage(str(values["stage"])),
+            supersedes_digest=values["supersedes_digest"],
+            decisions=values["decisions"],
+            board_slug=board_slug,
+            task_id=task_id,
+        )
+        return {"activation": reference.to_dict(), "workflow": ledger.to_dict()}
+
+    return _handle(
+        args,
+        allowed={"workflow_id", "stage", "supersedes_digest", "decisions"},
+        required={"workflow_id", "stage", "decisions"},
+        operation=operation,
     )
 
 

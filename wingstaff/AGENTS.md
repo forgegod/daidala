@@ -36,6 +36,9 @@ workflow-pack adapters, and bundled orchestration skills.
   pack adapters own the mapping and the engine remains pack-neutral.
 - Skill activation manifests are immutable, exact-pack decision artifacts whose
   pending/finalized ledger references form a linear supersession chain.
+- The activation tool authorizes from `HERMES_KANBAN_BOARD` and
+  `HERMES_KANBAN_TASK` against the ledger's current stage card; handler `task_id`
+  is turn isolation and never grants workflow authority.
 - External packs pin a Git source revision, bounded Hermes version, and complete-directory digest per required skill.
 - Standalone CLI inventory comes from the profile skill directory; it never imports Hermes runtime internals.
 - Native and standalone operator commands share one parser and dispatch layer; setup and external installation remain dry-run by default.

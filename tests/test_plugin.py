@@ -41,6 +41,7 @@ def test_register_exposes_tool_and_namespaced_skill_source() -> None:
         "wingstaff_submit_artifact",
         "wingstaff_prepare_implementation",
         "wingstaff_capture_implementation",
+        "wingstaff_record_skill_activation",
         "wingstaff_record_verification",
         "wingstaff_deliver",
     ]
