@@ -1,9 +1,9 @@
 # 06 — Security and trust boundaries
 
 This document covers the plugin, policy ledger, Kanban graph contract,
-executable worktree, and pinned external-skill installation boundary. Worker
-handoff recovery, cron, and target commit/push remain unavailable and are not
-claimed as current protection.
+executable worktree, worker handoff recovery, and pinned external-skill
+installation boundary. Cron and target commit/push remain unavailable and are
+not claimed as current protection.
 
 ## Current trust boundaries
 

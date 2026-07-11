@@ -5,11 +5,13 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shlex
 import subprocess
 from collections.abc import Callable
 from importlib import resources
 from typing import NoReturn, cast
 
+from .kanban import KanbanGraphAdapter
 from .locations import resolve_data_root
 from .packs import PackError, load_pack
 from .service import WorkflowService
@@ -20,6 +22,7 @@ from .skills import (
     SkillInventory,
     plan_pack_install,
 )
+from .state import WorkflowStage
 from .store import WorkflowStore
 
 CommandRunner = Callable[[tuple[str, ...]], tuple[int, str]]
@@ -37,29 +40,38 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     doctor = sub.add_parser("doctor", help="Check host, pack, and installed skill readiness")
     doctor.add_argument("--pack", default="addyosmani")
 
-    start = sub.add_parser("start", help="Validate inputs and create a policy ledger")
+    start = sub.add_parser("start", help="Validate inputs and create the initial Kanban graph")
     start.add_argument("target_repository")
     start.add_argument("goal")
     start.add_argument("--board", required=True, dest="board_slug")
     start.add_argument(
-        "--profile",
-        action="append",
+        "--default-profile",
+        dest="profile",
         required=True,
-        dest="stage_profile",
+        help="Default existing Hermes profile for every executable stage",
+    )
+    start.add_argument(
+        "--stage-profile",
+        action="append",
+        default=[],
         metavar="STAGE=PROFILE",
-        help="Map one executable stage to an existing Hermes profile (repeatable)",
+        help="Override the default profile for one executable stage (repeatable)",
     )
     start.add_argument("--pack", default="addyosmani")
     start.add_argument("--workflow-id", required=True)
 
-    status = sub.add_parser("status", help="Show durable Wingstaff policy facts")
+    status = sub.add_parser(
+        "status", help="Show Wingstaff policy facts and live Kanban card status"
+    )
     status.add_argument("workflow_id")
 
     approve = sub.add_parser("approve", help="Approve the exact current plan digest")
     approve.add_argument("workflow_id")
     approve.add_argument("plan_digest")
 
-    cancel = sub.add_parser("cancel", help="Clean up a Wingstaff-owned worktree")
+    cancel = sub.add_parser(
+        "cancel", help="Archive workflow cards and clean the Wingstaff-owned worktree"
+    )
     cancel.add_argument("workflow_id")
     cancel.add_argument("reason")
 
@@ -154,7 +166,10 @@ def run_command(
                 operation="doctor",
             )
         if args.command in {"start", "status", "approve", "cancel"}:
-            return _run_lifecycle(args, service_factory or _default_service)
+            selected_factory = service_factory or (
+                lambda: _default_service(command_runner=command_runner)
+            )
+            return _run_lifecycle(args, selected_factory)
         if args.command == "packs":
             return _run_pack_operation(
                 args,
@@ -202,13 +217,24 @@ def _run_lifecycle(args: argparse.Namespace, service_factory: ServiceFactory) ->
             board_slug=args.board_slug,
             target_repository=args.target_repository,
             goal=args.goal,
-            stage_profiles=_parse_stage_profiles(args.stage_profile),
+            stage_profiles=_parse_stage_profiles(args.profile, args.stage_profile),
             pack_name=args.pack,
             workflow_id=args.workflow_id,
         )
 
     elif args.command == "status":
         state = service.status(args.workflow_id)
+        _print(
+            {
+                "success": True,
+                "operation": args.command,
+                "workflow": state.to_dict(),
+                "kanban": [
+                    row.to_dict() for row in service.combined_status(args.workflow_id)
+                ],
+            }
+        )
+        return 0
     elif args.command == "approve":
         state = service.approve(args.workflow_id, plan_digest=args.plan_digest)
     else:
@@ -217,15 +243,22 @@ def _run_lifecycle(args: argparse.Namespace, service_factory: ServiceFactory) ->
     return 0
 
 
-def _parse_stage_profiles(values: list[str]) -> dict[str, str]:
-    mapping: dict[str, str] = {}
+def _parse_stage_profiles(default_profile: str, values: list[str]) -> dict[str, str]:
+    executable = {
+        stage.value for stage in WorkflowStage if stage is not WorkflowStage.APPROVAL
+    }
+    mapping = {stage: default_profile for stage in executable}
+    overridden: set[str] = set()
     for value in values:
         stage, separator, profile = value.partition("=")
         if not separator or not stage.strip() or not profile.strip():
-            raise ValueError("--profile must use STAGE=PROFILE")
-        if stage in mapping:
-            raise ValueError(f"duplicate --profile stage: {stage}")
+            raise ValueError("--stage-profile must use STAGE=PROFILE")
+        if stage not in executable:
+            raise ValueError(f"unknown --stage-profile stage: {stage}")
+        if stage in overridden:
+            raise ValueError(f"duplicate --stage-profile stage: {stage}")
         mapping[stage] = profile
+        overridden.add(stage)
     return mapping
 
 
@@ -352,8 +385,107 @@ def _bundled_pack_names() -> list[str]:
     )
 
 
-def _default_service() -> WorkflowService:
-    return WorkflowService(WorkflowStore(resolve_data_root() / "wingstaff"))
+def _default_service(*, command_runner: CommandRunner | None = None) -> WorkflowService:
+    data_root = resolve_data_root()
+    registry = ProfileSkillContentRegistry(data_root / "skills")
+    runner = command_runner or _run_command
+    return WorkflowService(
+        WorkflowStore(data_root / "wingstaff"),
+        skill_inventory=registry,
+        skill_content_registry=registry,
+        kanban=KanbanGraphAdapter(
+            lambda name, args: _dispatch_kanban_cli(runner, name, args)
+        ),
+    )
+
+
+def _dispatch_kanban_cli(
+    runner: CommandRunner,
+    name: str,
+    args: dict[str, object],
+) -> str:
+    """Translate the narrow graph adapter boundary to public Hermes CLI calls."""
+    if name == "terminal":
+        command = tuple(shlex.split(str(args["command"])))
+        if command[:2] != ("hermes", "kanban"):
+            return json.dumps(
+                {"exit_code": 1, "output": "refused non-Kanban host command"}
+            )
+        code, output = runner(command)
+        return json.dumps({"exit_code": code, "output": output})
+
+    board = str(args["board"])
+    prefix = ("hermes", "kanban", "--board", board)
+    if name == "kanban_create":
+        command = [*prefix, "create", str(args["title"])]
+        command.extend(("--body", str(args["body"])))
+        assignee = args.get("assignee")
+        if assignee is not None:
+            command.extend(("--assignee", str(assignee)))
+        for parent in cast(list[object], args.get("parents", [])):
+            command.extend(("--parent", str(parent)))
+        workspace_path = args.get("workspace_path")
+        if workspace_path is not None:
+            command.extend(("--workspace", f"dir:{workspace_path}"))
+        command.extend(("--idempotency-key", str(args["idempotency_key"])))
+        for skill in cast(list[object], args.get("skills", [])):
+            command.extend(("--skill", str(skill)))
+        initial_status = args.get("initial_status")
+        if initial_status is not None:
+            command.extend(("--initial-status", str(initial_status)))
+        command.append("--json")
+        code, output = runner(tuple(command))
+        if code != 0:
+            return json.dumps({"ok": False, "error": output})
+        payload = _parse_cli_json(output)
+        return json.dumps(
+            {
+                "ok": True,
+                "task_id": payload.get("id"),
+                "status": payload.get("status"),
+            }
+        )
+
+    task_id = str(args["task_id"])
+    if name == "kanban_show":
+        code, output = runner((*prefix, "show", task_id, "--json"))
+        if code != 0:
+            return json.dumps({"ok": False, "error": output})
+        payload = _parse_cli_json(output)
+        return json.dumps({"ok": True, "task": payload.get("task")})
+
+    if name == "kanban_complete":
+        command = [*prefix, "complete", task_id]
+        summary = args.get("summary")
+        if summary is not None:
+            command.extend(("--summary", str(summary)))
+        metadata = args.get("metadata")
+        if metadata is not None:
+            command.extend(("--metadata", json.dumps(metadata, sort_keys=True)))
+        code, output = runner(tuple(command))
+        return json.dumps(
+            {"ok": code == 0, "task_id": task_id, "error": output if code else None}
+        )
+
+    if name == "kanban_comment":
+        code, output = runner(
+            (*prefix, "comment", task_id, str(args["body"]))
+        )
+        return json.dumps(
+            {"ok": code == 0, "task_id": task_id, "error": output if code else None}
+        )
+
+    return json.dumps({"ok": False, "error": f"unsupported Kanban operation: {name}"})
+
+
+def _parse_cli_json(output: str) -> dict[str, object]:
+    try:
+        payload = json.loads(output)
+    except json.JSONDecodeError as error:
+        raise RuntimeError("Hermes Kanban CLI returned invalid JSON") from error
+    if not isinstance(payload, dict):
+        raise RuntimeError("Hermes Kanban CLI returned a non-object JSON payload")
+    return cast(dict[str, object], payload)
 
 
 def _plan_payload(

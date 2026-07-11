@@ -18,7 +18,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `service.py` | Repository preflight, approval-gated graph, artifact, worktree, and ledger coordination. |
 | `skills.py` | Exact installed-skill inventory, content-digest verification, and mutation-free install planning. |
 | `execution.py` | Profile-local artifacts, detached worktrees, and diff capture. |
-| `kanban.py` | Public `ctx.dispatch_tool` adapter for the idempotent, approval-gated Hermes card graph. |
+| `kanban.py` | Public host-boundary adapter for the idempotent, approval-gated Hermes card graph. |
 | `schemas.py` | Tool schemas exposed to the model. |
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
 | `packs.py` | Pack loading and deterministic validation. |
@@ -37,7 +37,12 @@ workflow-pack adapters, and bundled orchestration skills.
 - Native and standalone operator commands share one parser and dispatch layer; setup and external installation remain dry-run by default.
 - Hermes Kanban owns every operational status; Wingstaff persists no mirrored
   ready, running, blocked, done, or archived field.
-- Kanban integration uses only `ctx.dispatch_tool`; Wingstaff never imports or writes Hermes' Kanban database.
+- Agent-facing Kanban integration uses `ctx.dispatch_tool`; native and standalone
+  CLI handlers translate the same narrow adapter boundary into documented
+  `hermes kanban` subprocess commands. Wingstaff never imports or writes Hermes'
+  Kanban database.
+- Native `start` uses `--default-profile`; `--profile` is reserved and consumed
+  by the Hermes host before plugin subcommand parsing.
 - Start validates one explicit named board and a complete executable-stage profile map before creating cards.
 - Every executable card pins `wingstaff:orchestrate` plus its exact pack-stage
   skills, so worker lifecycle instructions survive launcher-session exit.

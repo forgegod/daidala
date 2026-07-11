@@ -11,16 +11,14 @@ import pytest
 from wingstaff import cli
 
 PROFILE_ARGS = [
-    item
-    for stage, profile in (
-        ("define", "architect"),
-        ("plan", "architect"),
-        ("implement", "engineer"),
-        ("verify", "engineer"),
-        ("review", "reviewer"),
-        ("deliver", "engineer"),
-    )
-    for item in ("--profile", f"{stage}={profile}")
+    "--default-profile",
+    "engineer",
+    "--stage-profile",
+    "define=architect",
+    "--stage-profile",
+    "plan=architect",
+    "--stage-profile",
+    "review=reviewer",
 ]
 
 
@@ -30,6 +28,12 @@ class FakeState:
 
     def to_dict(self) -> dict[str, str]:
         return {"workflow_id": self.workflow_id, "board_slug": "wingstaff-test"}
+
+
+@dataclass
+class FakeCardStatus:
+    def to_dict(self) -> dict[str, str]:
+        return {"stage": "define", "status": "ready"}
 
 
 @dataclass
@@ -54,6 +58,10 @@ class FakeService:
 
     def cancel(self, workflow_id: str, *, reason: str) -> FakeState:
         return self._call("cancel", workflow_id, reason=reason)
+
+    def combined_status(self, workflow_id: str) -> list[FakeCardStatus]:
+        self.calls.append(("combined_status", (workflow_id,), {}))
+        return [FakeCardStatus()]
 
 
 def _host_args(argv: list[str]) -> argparse.Namespace:
@@ -100,6 +108,18 @@ def test_standalone_and_hermes_surfaces_make_equivalent_service_calls(
     assert json.loads(host_output) == json.loads(standalone_output)
     if argv[0] == "start":
         assert [call[0] for call in host.calls] == ["start"]
+        assert host.calls[0][2]["stage_profiles"] == {
+            "define": "architect",
+            "plan": "architect",
+            "implement": "engineer",
+            "verify": "engineer",
+            "review": "reviewer",
+            "deliver": "engineer",
+        }
+    if argv[0] == "status":
+        assert json.loads(host_output)["kanban"] == [
+            {"stage": "define", "status": "ready"}
+        ]
 
 
 def test_init_is_dry_run_by_default(tmp_path: Path, monkeypatch, capsys) -> None:
@@ -161,3 +181,127 @@ def test_hermes_callback_preserves_dispatch_exit_code(monkeypatch) -> None:
         cli.dispatch_cli(argparse.Namespace())
 
     assert raised.value.code == 7
+
+
+def test_default_profile_expands_without_stage_overrides(capsys) -> None:
+    service = FakeService()
+
+    code = cli.main(
+        [
+            "start",
+            "/repo",
+            "Implement feature",
+            "--board",
+            "wingstaff-test",
+            "--default-profile",
+            "engineer",
+            "--workflow-id",
+            "wf-1",
+        ],
+        service_factory=_factory(service),
+    )
+
+    assert code == 0
+    assert set(service.calls[0][2]["stage_profiles"].values()) == {"engineer"}
+    assert json.loads(capsys.readouterr().out)["success"] is True
+
+
+def test_cli_kanban_dispatch_translates_public_create_and_show_commands() -> None:
+    commands: list[tuple[str, ...]] = []
+
+    def run(command: tuple[str, ...]) -> tuple[int, str]:
+        commands.append(command)
+        if "create" in command:
+            return 0, json.dumps({"id": "t_define", "status": "ready"})
+        return 0, json.dumps({"task": {"id": "t_define", "status": "ready"}})
+
+    created = json.loads(
+        cli._dispatch_kanban_cli(
+            run,
+            "kanban_create",
+            {
+                "board": "wingstaff-test",
+                "title": "Define workflow",
+                "body": "workflow_id=wf-1 stage=define",
+                "assignee": "engineer",
+                "parents": [],
+                "workspace_path": "/repo",
+                "idempotency_key": "wingstaff:wf-1:0:define",
+                "skills": ["wingstaff:orchestrate", "aidlc-adapter"],
+            },
+        )
+    )
+    shown = json.loads(
+        cli._dispatch_kanban_cli(
+            run,
+            "kanban_show",
+            {"board": "wingstaff-test", "task_id": "t_define"},
+        )
+    )
+
+    assert created == {"ok": True, "status": "ready", "task_id": "t_define"}
+    assert shown["task"]["id"] == "t_define"
+    assert commands[0] == (
+        "hermes",
+        "kanban",
+        "--board",
+        "wingstaff-test",
+        "create",
+        "Define workflow",
+        "--body",
+        "workflow_id=wf-1 stage=define",
+        "--assignee",
+        "engineer",
+        "--workspace",
+        "dir:/repo",
+        "--idempotency-key",
+        "wingstaff:wf-1:0:define",
+        "--skill",
+        "wingstaff:orchestrate",
+        "--skill",
+        "aidlc-adapter",
+        "--json",
+    )
+    assert commands[1] == (
+        "hermes",
+        "kanban",
+        "--board",
+        "wingstaff-test",
+        "show",
+        "t_define",
+        "--json",
+    )
+
+
+def test_cli_kanban_dispatch_refuses_non_kanban_terminal_command() -> None:
+    result = json.loads(
+        cli._dispatch_kanban_cli(
+            lambda command: pytest.fail(f"unexpected command: {command}"),
+            "terminal",
+            {"command": "rm -rf /"},
+        )
+    )
+
+    assert result == {
+        "exit_code": 1,
+        "output": "refused non-Kanban host command",
+    }
+
+
+@pytest.mark.parametrize("output", ("not-json", "[]"))
+def test_cli_kanban_json_parser_rejects_invalid_host_output(output: str) -> None:
+    with pytest.raises(RuntimeError, match="Hermes Kanban CLI returned"):
+        cli._parse_cli_json(output)
+
+
+def test_cli_kanban_dispatch_propagates_host_command_failure() -> None:
+    payload = json.loads(
+        cli._dispatch_kanban_cli(
+            lambda command: (2, f"failed: {' '.join(command)}"),
+            "kanban_show",
+            {"board": "wingstaff-test", "task_id": "t_missing"},
+        )
+    )
+
+    assert payload["ok"] is False
+    assert "t_missing" in payload["error"]

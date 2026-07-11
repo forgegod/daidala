@@ -5,9 +5,8 @@ policy and records evidence; it does not call a model, start another agent
 process, publish a competing task status, or automatically commit and push
 target changes.
 
-The approval-gated graph and stage worker handoff/recovery contract are
-implemented. The final operator-command path remains unavailable until Phase 5
-exercises it.
+The approval-gated graph, stage worker handoff/recovery contract, and native and
+standalone operator-command paths are implemented.
 
 ## Stage contract
 

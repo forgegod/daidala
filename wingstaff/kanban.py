@@ -42,7 +42,7 @@ class KanbanCardStatus:
 
 @dataclass(frozen=True)
 class KanbanGraphAdapter:
-    """Drive one named board only through ``PluginContext.dispatch_tool``."""
+    """Drive one named board through an injected public Hermes host boundary."""
 
     dispatch_tool: ToolDispatcher
 

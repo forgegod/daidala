@@ -6,9 +6,8 @@ pack skills; Python owns identity, provenance, plan approval, repository safety,
 artifact integrity, and optimistic concurrency.
 
 The policy and artifact ledger, full approval-gated Kanban graph, combined
-read-only status view, and card-scoped worker handoff/recovery contract are
-implemented. The final operator-command path remains the next implementation
-boundary.
+read-only status view, card-scoped worker handoff/recovery contract, and native
+and standalone operator-command paths are implemented.
 
 ## Identity and baseline
 

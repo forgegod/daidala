@@ -22,7 +22,7 @@ be in progress.
 | 2 — replace workflow state with a policy ledger | Done | Preserve the status-free ledger, fresh persistence schema, exact skill provenance, and migrated consumers. |
 | 3 — build the Kanban graph adapter | Done | Preserve the explicit board/profile map, approval-gated graph, strict host parsing, and live read-only status. |
 | 4 — adapt workers, artifacts, and recovery | Done | Preserve card-pinned worker instructions, structured handoffs, same-card recovery, and immutable retry evidence. |
-| 5 — simplify the CLI and operator experience | Todo | Start only after Phase 4 is pushed. |
+| 5 — simplify the CLI and operator experience | Done | Preserve public Kanban CLI translation, one default profile with explicit overrides, and combined diagnostics. |
 | 6 — rewrite product and integration documentation | Todo | Start only after Phase 5 is pushed. |
 | 7 — end-to-end and release verification | Todo | Start only after Phase 6 is pushed. |
 
@@ -582,6 +582,15 @@ Make normal Hermes Kanban surfaces the default workflow interface.
 - update CLI tests;
 - update completion/registration tests if applicable.
 
+The lifecycle service constructed by the CLI must translate Wingstaff's narrow
+Kanban adapter calls into documented `hermes kanban` subprocess commands. It must
+not rely on the in-agent `PluginContext.dispatch_tool` registry, import Hermes
+internals, or access Kanban SQLite directly. `start` accepts one required default
+profile through `--default-profile` plus repeatable
+`--stage-profile STAGE=PROFILE` overrides and expands the complete map before
+policy validation. Do not use `--profile`: Hermes consumes that host-level flag
+before the plugin subcommand parser receives it.
+
 ### Operator flow
 
 The documented happy path should be no larger than:
@@ -602,6 +611,16 @@ owned-resource cleanup. Card operations remain under `hermes kanban`.
 Native and standalone parser tests pass, help output does not teach duplicate
 lifecycle commands, and every published command has been exercised against the
 supported Hermes version.
+
+Gate: GREEN — shared parser and fake-command coverage passed; an isolated
+directory plugin on Hermes v0.18.2 exercised native `start`, combined `status`,
+exact-digest `approve`, and `cancel` through documented `hermes kanban`
+subprocess operations, producing the full approval-gated graph and archiving it
+without importing Hermes internals or reading Kanban SQLite. Standalone `start`
+and combined `status` produced the same graph boundary. Native help exposed one
+lifecycle command set and used `--default-profile`, avoiding Hermes' reserved
+`--profile` option. Lefthook, 22-file Markdown links, 128 tests, Ruff, both pack
+validations, package build, Twine, release-content audit, and diff checks passed.
 
 ### Commit boundary
 

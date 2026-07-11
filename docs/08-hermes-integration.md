@@ -72,11 +72,10 @@ top-level `wingstaff` import.
 `PluginContext.dispatch_tool` resolves built-in Kanban tools in an agent process.
 A standalone plugin CLI invocation does not load the agent tool registry and
 returned `Unknown tool: kanban_create` in the Phase 0 probe. Agent-facing
-Wingstaff tools use `ctx.dispatch_tool`; assignee discovery and archival dispatch
-the terminal tool to documented `hermes kanban` CLI commands because Hermes
-v0.18.2 exposes no equivalent model tools. The standalone operator graph path
-remains unavailable until Phase 5. Wingstaff never imports Hermes Kanban modules
-or accesses its SQLite database.
+Wingstaff tools therefore use `ctx.dispatch_tool`, while native and standalone
+operator commands translate the same narrow graph-adapter calls into documented
+`hermes kanban` subprocess commands. Both paths use public host operations;
+Wingstaff never imports Hermes Kanban modules or accesses its SQLite database.
 
 ## Kanban-native workflow boundary
 
@@ -145,8 +144,8 @@ Hermes process to confirm that the plugin was enabled without errors, registered
   exact-skill and pinned-content gates, fresh worktrees, artifact capture,
   verification evidence, review, uncommitted delivery, shared native/standalone
   operator commands, dry-run/apply/check/update planning, and approval-gated
-  idempotent Kanban graph dispatch are implemented. Worker recovery and target
-  commit/push remain unavailable.
+  idempotent Kanban graph dispatch, operator CLI graph creation, and worker
+  recovery are implemented. Target commit/push remains unavailable.
 - Compatibility with a newer Hermes release must be re-probed before widening
   the supported range.
 

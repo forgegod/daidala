@@ -58,11 +58,31 @@ the verified Hermes baseline.
 
 ## Start and resume a workflow
 
-Kanban-native start and status commands are unavailable until the policy-ledger
-and full-graph migration is implemented and exercised. Do not treat the current
-private SQLite workflow status as the canonical operator surface. The supported
-target contract requires an explicit named board, a validated default profile,
-optional stage-profile overrides, and live status from Hermes Kanban.
+Start explicitly on an existing named board. One default profile is sufficient;
+override only stages that need a different profile:
+
+```bash
+hermes wingstaff start /absolute/path/to/repo "Implement the requested change" \
+  --board project-board \
+  --default-profile engineer \
+  --stage-profile define=architect \
+  --stage-profile review=reviewer \
+  --pack addyosmani \
+  --workflow-id stable-workflow-id
+```
+
+Do not use `--profile`; Hermes consumes it as a host-level option before the
+plugin command parser receives it. Wingstaff expands and validates the complete
+stage map, then creates `define → plan`. Observe progress through normal Kanban
+surfaces and use combined diagnostics when needed:
+
+```bash
+hermes kanban --board project-board watch
+hermes wingstaff status stable-workflow-id
+```
+
+The gateway's Kanban dispatcher executes ready cards. The start command creates
+the graph; it does not start a second scheduler, daemon, or nested agent.
 
 ## Approve the exact plan
 
@@ -74,9 +94,9 @@ hermes wingstaff approve <workflow-id> <64-character-plan-digest>
 ```
 
 Do not copy a digest from an older plan revision. A mismatch fails without
-authorizing work. Generic `hermes kanban unblock` is not approval. Completion of
-the blocked approval card and creation of the post-gate graph remain unavailable
-until the Kanban-native runtime migration is complete.
+authorizing work. Generic `hermes kanban unblock` is not approval. Successful
+approval completes the blocked gate and creates
+`implement → verify → review → deliver` in one persistent worktree.
 
 ## Cancel
 
@@ -86,9 +106,9 @@ Cancellation requires an audit reason:
 hermes wingstaff cancel <workflow-id> "Superseded by a different change"
 ```
 
-Kanban-native cancellation must archive or stop applicable cards through public
-Hermes operations and clean only Wingstaff-owned worktrees. That workflow
-command is unavailable until the graph adapter and CLI migration are complete.
+Cancellation comments and archives the workflow's cards through public Hermes
+operations and cleans only its Wingstaff-owned worktree. The policy and artifact
+ledger remains available for diagnostics.
 
 ## Recovery
 
