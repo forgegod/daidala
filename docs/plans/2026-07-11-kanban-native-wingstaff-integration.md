@@ -21,7 +21,7 @@ be in progress.
 | 1 — define the Kanban-native contract | Done | Preserve one Kanban authority, one policy ledger, and the exact card/handoff/recovery contract. |
 | 2 — replace workflow state with a policy ledger | Done | Preserve the status-free ledger, fresh persistence schema, exact skill provenance, and migrated consumers. |
 | 3 — build the Kanban graph adapter | Done | Preserve the explicit board/profile map, approval-gated graph, strict host parsing, and live read-only status. |
-| 4 — adapt workers, artifacts, and recovery | Todo | Start only after Phase 3 is pushed. |
+| 4 — adapt workers, artifacts, and recovery | Done | Preserve card-pinned worker instructions, structured handoffs, same-card recovery, and immutable retry evidence. |
 | 5 — simplify the CLI and operator experience | Todo | Start only after Phase 4 is pushed. |
 | 6 — rewrite product and integration documentation | Todo | Start only after Phase 5 is pushed. |
 | 7 — end-to-end and release verification | Todo | Start only after Phase 6 is pushed. |
@@ -515,6 +515,11 @@ Kanban recovery.
 ### Files
 
 - refactor `wingstaff/skills/orchestrate/SKILL.md`;
+- update `wingstaff/kanban.py` so every executable card pins the bundled
+  `wingstaff:orchestrate` worker contract in addition to its exact pack skills;
+- update verification evidence persistence in `wingstaff/service.py` and
+  `wingstaff/workflow.py` so retry output uses immutable content-addressed
+  artifacts and repeated identical evidence remains idempotent;
 - update `wingstaff/execution.py` only where shared-workspace ownership requires
   it;
 - update pack YAML only if the generic stage mapping needs assignee or handoff
@@ -525,6 +530,8 @@ Kanban recovery.
 
 - call `kanban_show` first and treat its card context as the task input;
 - use the card's pinned skills rather than re-deriving stage skills;
+- load the bundled Wingstaff worker contract from the card itself; a worker must
+  not depend on a launcher session retaining orchestration instructions;
 - write artifacts through narrowly scoped Wingstaff evidence tools;
 - comment durable context and complete with structured metadata;
 - block through Kanban for dependency, capability, transient, review-required,
@@ -549,6 +556,15 @@ Kanban recovery.
 Exercise interruption, crash/reclaim, verification block/unblock, review
 feedback, and restart idempotency. The board history must be sufficient to
 understand what happened without reading Wingstaff's SQLite file.
+
+Gate: GREEN — every executable stage for both packs pins the bundled worker
+contract plus exact pack skills; fake-host recovery exercised
+`show → comment → block → restart → unblock → show → complete` on the same card
+and workspace; verification retries preserve prior content-addressed output and
+deduplicate identical evidence. Lefthook, Markdown links, 122 tests, Ruff, both
+pack validations, package build, Twine, release-content audit, and diff checks
+passed. An isolated Hermes v0.18.2 card retained `wingstaff:orchestrate` and its
+pack skill in the public Kanban task record.
 
 ### Commit boundary
 

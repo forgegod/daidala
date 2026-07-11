@@ -265,6 +265,103 @@ def test_failed_verification_blocks_delivery(
         service.deliver(workflow_id)
 
 
+def test_verification_worker_blocks_and_resumes_same_card_and_workspace(
+    service: FixtureWorkflowService,
+    target_repository: Path,
+    fake_kanban_host,
+) -> None:
+    workflow_id, plan_digest = prepare_planned_workflow(
+        service, target_repository, "workflow-worker-recovery"
+    )
+    service.approve(workflow_id, plan_digest)
+    implementing = service.prepare_implementation(workflow_id)
+    assert implementing.worktree_path is not None
+    worktree = Path(implementing.worktree_path)
+    (worktree / "calculator.py").write_text(
+        "def answer():\n    return 2\n", encoding="utf-8"
+    )
+    captured = service.capture_implementation(workflow_id)
+    verify_card = captured.card_for(WorkflowStage.VERIFY)
+    assert verify_card is not None
+
+    first_show = json.loads(
+        fake_kanban_host.dispatch("kanban_show", {"task_id": verify_card.task_id})
+    )
+    failed = service.record_verification(
+        workflow_id,
+        command="pytest -q",
+        exit_code=1,
+        output="one failed\n",
+    )
+    failure = failed.verification_evidence[-1]
+    comment = (
+        f"workflow_id={workflow_id} stage=verify revision={failed.plan_revision} "
+        f"output={failure.output_reference}; rerun after operator remediation"
+    )
+    fake_kanban_host.dispatch(
+        "kanban_comment", {"task_id": verify_card.task_id, "body": comment}
+    )
+    fake_kanban_host.dispatch(
+        "kanban_block",
+        {
+            "task_id": verify_card.task_id,
+            "kind": "needs_input",
+            "reason": "verification-failed: pytest -q exited 1",
+        },
+    )
+    assert fake_kanban_host.cards[verify_card.task_id]["status"] == "blocked"
+
+    restarted = service.start(
+        board_slug="wingstaff-test",
+        target_repository=str(target_repository),
+        goal="Make the deliberately failing test pass",
+        stage_profiles=STAGE_PROFILES,
+        pack_name=service.fixture_pack_name,
+        workflow_id=workflow_id,
+    )
+    restarted_verify = restarted.card_for(WorkflowStage.VERIFY)
+    assert restarted_verify is not None
+    assert restarted_verify.task_id == verify_card.task_id
+    assert len(fake_kanban_host.cards) == 7
+
+    fake_kanban_host.dispatch("kanban_unblock", {"task_id": verify_card.task_id})
+    retry_show = json.loads(
+        fake_kanban_host.dispatch("kanban_show", {"task_id": verify_card.task_id})
+    )
+    assert retry_show["task"]["id"] == first_show["task"]["id"]
+    assert retry_show["task"]["args"]["workspace_path"] == str(worktree)
+    assert retry_show["task"]["comments"] == [comment]
+
+    passed = service.record_verification(
+        workflow_id,
+        command="pytest -q",
+        exit_code=0,
+        output="one passed\n",
+    )
+    fake_kanban_host.dispatch(
+        "kanban_complete",
+        {
+            "task_id": verify_card.task_id,
+            "summary": "verification passed after unblock",
+            "metadata": {
+                "schema": "wingstaff.handoff/v1",
+                "workflow_id": workflow_id,
+                "plan_revision": passed.plan_revision,
+                "stage": "verify",
+                "pack": passed.pack_name,
+                "pack_revision": passed.pack_source_revision,
+                "outcome": "completed",
+                "artifact_refs": [
+                    row.to_dict() for row in passed.verification_evidence
+                ],
+                "workspace_path": str(worktree),
+                "baseline_commit": passed.baseline_commit,
+            },
+        },
+    )
+    assert fake_kanban_host.cards[verify_card.task_id]["status"] == "done"
+
+
 def test_capture_requires_real_diff_and_safe_workflow_id(
     service: FixtureWorkflowService,
     target_repository: Path,
@@ -287,3 +384,49 @@ def test_capture_requires_real_diff_and_safe_workflow_id(
 
     with pytest.raises(ExecutionError, match="no working-tree diff"):
         service.capture_implementation(workflow_id)
+
+
+def test_verification_retries_keep_immutable_output_artifacts(
+    service: FixtureWorkflowService,
+    target_repository: Path,
+) -> None:
+    workflow_id, plan_digest = prepare_planned_workflow(
+        service, target_repository, "workflow-verification-retry"
+    )
+    service.approve(workflow_id, plan_digest)
+    implementing = service.prepare_implementation(workflow_id)
+    assert implementing.worktree_path is not None
+    worktree = Path(implementing.worktree_path)
+    (worktree / "calculator.py").write_text(
+        "def answer():\n    return 2\n", encoding="utf-8"
+    )
+    service.capture_implementation(workflow_id)
+
+    failed = service.record_verification(
+        workflow_id,
+        command="pytest -q",
+        exit_code=1,
+        output="one failed\n",
+    )
+    first = failed.verification_evidence[-1]
+    first_path = Path(first.output_reference)
+    assert first_path.read_text(encoding="utf-8") == "one failed\n"
+
+    repeated = service.record_verification(
+        workflow_id,
+        command="pytest -q",
+        exit_code=1,
+        output="one failed\n",
+    )
+    assert repeated.verification_evidence == failed.verification_evidence
+
+    passed = service.record_verification(
+        workflow_id,
+        command="pytest -q",
+        exit_code=0,
+        output="one passed\n",
+    )
+    second = passed.verification_evidence[-1]
+    assert second.output_reference != first.output_reference
+    assert first_path.read_text(encoding="utf-8") == "one failed\n"
+    assert Path(second.output_reference).read_text(encoding="utf-8") == "one passed\n"

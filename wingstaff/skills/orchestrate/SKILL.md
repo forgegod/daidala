@@ -13,13 +13,18 @@ metadata:
 
 ## Overview
 
-Coordinate a pack-defined software-development lifecycle using Hermes' existing tools. Wingstaff does not start another server or call nested Hermes processes.
+Coordinate a pack-defined software-development lifecycle on Hermes Kanban. This
+skill has two entry modes: a launcher explicitly starts or resumes a workflow;
+each dispatcher-spawned stage worker follows the card-scoped worker contract.
+Wingstaff does not start another server or call nested Hermes processes.
 
 ## When to Use
 
-Load this skill explicitly as `wingstaff:orchestrate` when starting or resuming a Wingstaff workflow.
+Load this skill explicitly as `wingstaff:orchestrate` when starting or resuming a
+workflow. Wingstaff also pins it to every executable stage card so a worker does
+not depend on the launcher session retaining these instructions.
 
-## Procedure
+## Launch or Resume
 
 1. Call `wingstaff_pack_info` for the selected pack. Choose an existing named
    Kanban board, an explicit stable workflow ID, and a complete mapping from
@@ -28,42 +33,101 @@ Load this skill explicitly as `wingstaff:orchestrate` when starting or resuming 
    absolute local repository path, and explicit goal. Start validates the clean
    repository baseline, exact skills, and profiles before it creates the linked
    definition and plan cards. Stop on any validation or host error.
-3. Produce the definition with the pack's `define` skills and pass the complete
-   Markdown to `wingstaff_submit_artifact` with `stage: "define"`.
-4. Produce the complete plan with the pack's `plan` skills and pass it to
-   `wingstaff_submit_artifact` with `stage: "plan"`.
-5. Read the returned plan artifact and digest. Present the plan, risks, scope,
-   and verification criteria to the human. Do not call an implementation tool
-   until the human explicitly approves that exact digest.
-6. After approval, call `wingstaff_approve` with the returned plan digest, then
-   call `wingstaff_prepare_implementation`. Hermes Kanban dispatches the
-   configured implementation profile in the returned persistent `worktree_path`;
-   retries reuse the same implementation card.
-7. Load the `implement` skills and use normal Hermes `read_file`, `search_files`,
-   `patch`, `write_file`, and `terminal` tools in the worktree. Do not commit or
-   push target changes.
-8. Call `wingstaff_capture_implementation`. It must return a real, non-empty
-   diff artifact before verification can begin.
-9. Run every plan verification command through Hermes' `terminal` tool with the
-   worktree as `workdir`. Immediately pass the exact command, exit code, and
-   output to `wingstaff_record_verification`. A non-zero exit blocks the
-   workflow; do not fabricate a passing retry.
-10. Read the captured diff and verification evidence, run the pack's `review`
-    skills, and submit the review with `wingstaff_submit_artifact` using
-    `stage: "review"`.
-11. Call `wingstaff_deliver`. Report its changed paths, diff path, and
-    verification evidence. The delivery explicitly records `committed: false`
-    and `pushed: false`; separate authorization is required for either action.
-12. Use `wingstaff_status` to resume from durable state after interruption.
+3. Stop launching. Hermes Kanban dispatches `define` and promotes the linked
+   cards as their parents complete. Use `wingstaff_status` and normal Kanban
+   surfaces to inspect or resume; do not execute stage work in the launcher.
+4. When the plan worker completes, present the plan, risks, scope, verification
+   criteria, and returned digest to the human. Do not approve until the human
+   explicitly accepts that exact digest.
+5. Call `wingstaff_approve` with the accepted digest. This records approval,
+   creates the persistent worktree, completes the blocked gate, and creates the
+   linked post-gate cards. Do not call `wingstaff_prepare_implementation`
+   separately unless recovery diagnostics show the approved worktree is absent.
+
+## Stage Worker Contract
+
+1. Call `kanban_show` before any file, terminal, or Wingstaff tool. Treat its
+   worker context, parent handoffs, prior attempts, and comments as the task
+   input. Confirm the card body names the expected workflow ID, stage, pack, and
+   plan revision. Block with `kind: capability` if that context is missing or
+   contradictory.
+2. Use the skills already pinned to the card. Do not call
+   `wingstaff_pack_info`, discover replacement skills, install skills, or
+   re-derive the stage mapping.
+3. Work only in `HERMES_KANBAN_WORKSPACE`. For post-gate cards, confirm it equals
+   the absolute persistent worktree in the card body. Never edit the original
+   target checkout.
+4. Use Wingstaff tools only for policy and evidence operations. Hermes Kanban
+   remains the only lifecycle authority.
+5. End every run with exactly one `kanban_complete` or `kanban_block` call. A
+   prose response is not completion. Use `kanban_heartbeat` during long work.
+
+### Stage Operations
+
+| Stage | Required Wingstaff operation | Successful Kanban result |
+|---|---|---|
+| `define` | Submit the complete definition with `wingstaff_submit_artifact(stage: "define")`. | Complete with the definition artifact reference and digest. |
+| `plan` | Submit the complete plan with `wingstaff_submit_artifact(stage: "plan")`. | Complete with the plan reference and digest; implementation still waits for exact human approval. |
+| `implement` | Apply only the approved plan in the persistent worktree, then call `wingstaff_capture_implementation`. | Complete with the immutable diff and changed-path references. |
+| `verify` | Run every approved command in the persistent worktree and immediately call `wingstaff_record_verification` with the exact command, exit code, and output. | Complete only when the final evidence passes; otherwise comment and block. |
+| `review` | Review the captured diff and verification evidence without changing files, then submit the decision with `wingstaff_submit_artifact(stage: "review")`. | Complete only for an accepted review; otherwise comment and block. |
+| `deliver` | Call `wingstaff_deliver` and inspect its durable delivery artifact. | Complete with changed paths and evidence references, explicitly reporting `committed: false` and `pushed: false`. |
+
+Implementation scope is immutable after `wingstaff_capture_implementation`.
+Verification and review workers must not modify it. If review or deterministic
+verification reveals required code changes, comment and block; the operator must
+replace the plan and create a new approved graph revision rather than patching a
+captured diff in place.
+
+## Structured Handoff
+
+Successful workers call `kanban_complete` with a concise summary and metadata
+using schema `wingstaff.handoff/v1`. Metadata must contain:
+
+- `schema`, `workflow_id`, `plan_revision`, `stage`, `pack`, `pack_revision`,
+  `outcome`, and `artifact_refs`;
+- `workspace_path` and `baseline_commit` for `implement`, `verify`, `review`, and
+  `deliver`;
+- diff and changed-path manifest references for `implement`;
+- exact commands, exit codes, and output references for `verify`;
+- the review decision for `review`;
+- the delivery artifact and its `committed: false`, `pushed: false` restrictions
+  for `deliver`.
+
+Use artifact references and digests, not large artifact bodies or raw logs. Keep
+credentials, tokens, and unrelated transcripts out of comments and metadata.
+
+## Blocking and Recovery
+
+Before `kanban_block`, call `kanban_comment` with the workflow ID, stage, plan
+revision, relevant evidence references, what happened, and the exact decision or
+remediation required. Then choose the narrowest supported kind:
+
+- `dependency` for an unfinished prerequisite;
+- `capability` for missing tools, skills, access, or valid worker context;
+- `needs_input` with a `verification-failed:` or `review-required:` reason for
+  deterministic verification or review feedback;
+- `transient` only for genuinely flaky host failures.
+
+A human comments with the decision or remediation and unblocks the same card.
+On retry, call `kanban_show` again, read the full thread and prior attempts, and
+reuse the preserved workspace and idempotent Wingstaff evidence. Never infer
+approval from a generic unblock. A changed plan requires a new digest-bound
+approval and graph revision.
 
 ## Common Pitfalls
 
 - Treating a listed skill name as proof that the exact skill is installed.
+- Shelling out to `hermes kanban` from a worker instead of using task-scoped
+  `kanban_*` tools.
+- Exiting without `kanban_complete` or `kanban_block`.
 - Writing implementation files in the target checkout instead of the returned
   Wingstaff worktree.
 - Starting implementation before digest-bound human approval.
 - Recomputing delivery scope after verification instead of using the captured
   implementation snapshot.
+- Modifying the worktree during verification or review after the implementation
+  snapshot was captured.
 - Reporting model prose as verification evidence.
 - Committing or pushing target changes as part of delivery.
 - Spawning a new MCP, HTTP service, or nested `hermes chat` process.
@@ -71,6 +135,7 @@ Load this skill explicitly as `wingstaff:orchestrate` when starting or resuming 
 ## Verification Checklist
 
 - [ ] Pack and every exact skill validated.
+- [ ] Worker called `kanban_show` first and used the card's pinned skills.
 - [ ] Clean baseline commit recorded.
 - [ ] Define and plan artifacts exist.
 - [ ] Human approval matches the current plan digest.
@@ -79,3 +144,5 @@ Load this skill explicitly as `wingstaff:orchestrate` when starting or resuming 
 - [ ] Verification command, exit code, and output reference are durable.
 - [ ] Review artifact exists after passing verification.
 - [ ] Delivery reports changed paths without a target commit or push.
+- [ ] Every worker run ended through `kanban_complete` or `kanban_block` with a
+      durable `wingstaff.handoff/v1` handoff or blocking comment.

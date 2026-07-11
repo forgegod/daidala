@@ -225,7 +225,7 @@ class KanbanGraphAdapter:
         if stage is WorkflowStage.APPROVAL:
             return []
         selected = next(row for row in pack.stages if row.id == stage.value)
-        return [skill.name for skill in selected.skills]
+        return ["wingstaff:orchestrate", *(skill.name for skill in selected.skills)]
 
     def _tool_json(self, name: str, args: dict[str, object]) -> dict[str, object]:
         try:

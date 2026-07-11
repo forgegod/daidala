@@ -39,6 +39,8 @@ workflow-pack adapters, and bundled orchestration skills.
   ready, running, blocked, done, or archived field.
 - Kanban integration uses only `ctx.dispatch_tool`; Wingstaff never imports or writes Hermes' Kanban database.
 - Start validates one explicit named board and a complete executable-stage profile map before creating cards.
+- Every executable card pins `wingstaff:orchestrate` plus its exact pack-stage
+  skills, so worker lifecycle instructions survive launcher-session exit.
 - Card IDs and idempotency keys are persisted as policy facts; live card status is read from Kanban and never mirrored.
 - The policy store uses one fresh schema and does not inspect or migrate the
   unreleased workflow-state database.

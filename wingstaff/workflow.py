@@ -271,8 +271,15 @@ def record_verification(
         plan_revision=ledger.plan_revision,
         recorded_at=recorded_at,
     )
-    if evidence in ledger.verification_evidence:
-        return ledger
+    for existing in ledger.verification_evidence:
+        if (
+            existing.command == evidence.command
+            and existing.exit_code == evidence.exit_code
+            and existing.output_reference == evidence.output_reference
+            and existing.output_digest == evidence.output_digest
+            and existing.plan_revision == evidence.plan_revision
+        ):
+            return ledger
     _require_not_before(ledger, recorded_at)
     return replace(
         ledger,

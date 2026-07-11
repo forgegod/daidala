@@ -152,10 +152,13 @@ def test_initial_graph_pins_board_profiles_skills_and_parent() -> None:
     assert define_args["board"] == "wingstaff-test"
     assert define_args["assignee"] == "architect"
     assert define_args["skills"] == [
-        skill.name
-        for skill in next(
-            stage for stage in load_pack("addyosmani").stages if stage.id == "define"
-        ).skills
+        "wingstaff:orchestrate",
+        *(
+            skill.name
+            for skill in next(
+                stage for stage in load_pack("addyosmani").stages if stage.id == "define"
+            ).skills
+        ),
     ]
     assert plan_args["parents"] == [define.task_id]
     assert plan_args["idempotency_key"] == "wingstaff:workflow-1:0:plan"

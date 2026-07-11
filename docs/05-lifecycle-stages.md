@@ -5,8 +5,9 @@ policy and records evidence; it does not call a model, start another agent
 process, publish a competing task status, or automatically commit and push
 target changes.
 
-The approval-gated graph is implemented. Stage worker handoffs, recovery, and
-the final operator-command path remain unavailable until Phases 4–5 exercise them.
+The approval-gated graph and stage worker handoff/recovery contract are
+implemented. The final operator-command path remains unavailable until Phase 5
+exercises it.
 
 ## Stage contract
 
@@ -26,16 +27,17 @@ the final operator-command path remain unavailable until Phases 4–5 exercise t
    optional per-stage profile overrides.
 2. Wingstaff expands and persists the complete stage-to-profile mapping, then
    validates every profile before creating cards.
-3. `wingstaff_start` creates `define` and dependent `plan` with exact pack skills
-   and deterministic idempotency keys.
+3. `wingstaff_start` creates `define` and dependent `plan` with the bundled
+   `wingstaff:orchestrate` worker contract, exact pack skills, and deterministic
+   idempotency keys.
 4. After the plan handoff, Wingstaff records its digest and creates a blocked
    approval card linked from `plan`.
 5. `hermes wingstaff approve <workflow-id> <digest>` records exact approval.
    The command annotates and completes the gate through documented host
    operations; generic `hermes kanban unblock` does not satisfy Wingstaff policy.
 6. Wingstaff creates `implement → verify → review → deliver` only after approval.
-   Every card uses its resolved profile, exact stage skills, real parent links,
-   and the same absolute Wingstaff-owned worktree.
+   Every card uses its resolved profile, the bundled worker contract, exact stage
+   skills, real parent links, and the same absolute Wingstaff-owned worktree.
 
 `wingstaff_status` is read-only and combines ledger facts with live Kanban card
 data. Cancellation cleans Wingstaff-owned resources and uses documented Kanban
@@ -79,6 +81,11 @@ A human comments with the decision or remediation, may reassign the blocked
 card to an implementation-capable profile, and unblocks it. Hermes respawns the
 card with its full thread and the same preserved worktree. Wingstaff does not
 rewind or mirror a private status.
+
+The implementation diff is immutable after capture. Verification and review may
+retry or request input in the preserved worktree, but they must not change its
+captured implementation scope. Required code changes replace the plan and use a
+new digest-bound approval and graph revision.
 
 ## Delivery boundary
 

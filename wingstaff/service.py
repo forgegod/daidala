@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import subprocess
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -284,9 +285,10 @@ class WorkflowService:
     ) -> WorkflowLedger:
         """Persist actual command output and structured verification evidence."""
         observed = self.store.get_with_token(workflow_id)
+        output_digest = hashlib.sha256(output.encode("utf-8")).hexdigest()
         artifact = self._workspace.write_artifact(
             workflow_id,
-            "verification.txt",
+            f"verification-{output_digest}.txt",
             output,
         )
         updated = record_verification(

@@ -209,6 +209,15 @@ def test_verification_evidence_does_not_create_a_blocked_status() -> None:
 
     assert failed.verification_evidence[-1].exit_code == 1
     assert "status" not in failed.to_dict()
+    repeated = record_verification(
+        failed,
+        command="pytest",
+        exit_code=1,
+        output_reference="artifacts/pytest-1.txt",
+        output_digest="verify-failed",
+        recorded_at=NOW + timedelta(minutes=7),
+    )
+    assert repeated is failed
     with pytest.raises(PolicyViolationError, match="successful verification"):
         record_artifact(
             failed,

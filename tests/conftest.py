@@ -22,6 +22,7 @@ class FakeKanbanHost:
         self.cards: dict[str, dict[str, object]] = {}
         self.by_key: dict[str, str] = {}
         self.archived: list[str] = []
+        self.comments: dict[str, list[str]] = {}
         self.profiles = {"architect", "engineer", "reviewer"}
 
     def dispatch(self, name: str, args: dict[str, object]) -> str:
@@ -56,13 +57,26 @@ class FakeKanbanHost:
             )
         if name == "kanban_show":
             task_id = str(args["task_id"])
-            return json.dumps({"ok": True, "task": self.cards[task_id]})
+            task = {**self.cards[task_id], "comments": self.comments.get(task_id, [])}
+            return json.dumps({"ok": True, "task": task})
         if name == "kanban_complete":
             task_id = str(args["task_id"])
             self.cards[task_id]["status"] = "done"
             return json.dumps({"ok": True, "task_id": task_id, "status": "done"})
         if name == "kanban_comment":
-            return json.dumps({"ok": True, "task_id": args["task_id"]})
+            task_id = str(args["task_id"])
+            self.comments.setdefault(task_id, []).append(str(args["body"]))
+            return json.dumps({"ok": True, "task_id": task_id})
+        if name == "kanban_block":
+            task_id = str(args["task_id"])
+            self.cards[task_id]["status"] = "blocked"
+            self.cards[task_id]["block_kind"] = args.get("kind")
+            self.cards[task_id]["block_reason"] = args["reason"]
+            return json.dumps({"ok": True, "task_id": task_id, "status": "blocked"})
+        if name == "kanban_unblock":
+            task_id = str(args["task_id"])
+            self.cards[task_id]["status"] = "ready"
+            return json.dumps({"ok": True, "task_id": task_id, "status": "ready"})
         raise AssertionError(f"unexpected host call: {name}")
 
 
