@@ -54,6 +54,47 @@ workflow-pack adapters, and bundled orchestration skills.
 - Native `start` uses `--default-profile`; `--profile` is reserved and consumed
   by the Hermes host before plugin subcommand parsing.
 - Start validates one explicit named board and a complete executable-stage profile map before creating cards.
+
+### Public start surface (single source of truth)
+
+The argument names accepted by `wingstaff_start` and the CLI flags accepted
+by `hermes wingstaff start` are an external contract: cron prompts, webhook
+prompts, agent-driven admission, and operator shell invocations all consume
+the same names. `schemas.py::START` defines the JSON schema the model sees;
+`cli.py::start` defines the CLI flag set. The two are intentionally aligned.
+
+- Tool parameters: `board_slug`, `target_repository`, `goal`, `stage_profiles`
+  (object keyed by stage with values `define`, `plan`, `implement`, `verify`,
+  `review`, `deliver`), `pack` (default `addyosmani`), `workflow_id`.
+- CLI flags: positional `target_repository` and `goal`; `--board`, `--pack`,
+  `--default-profile`, repeated `--stage-profile STAGE=PROFILE`, `--workflow-id`.
+- `--default-profile` fills every executable stage whose per-stage override
+  is omitted, so a prompt may list only the stages that differ from the
+  default. Operators reading a snippet must not interpret missing
+  `--stage-profile` entries as missing stages.
+
+### Cross-document bindings (must stay synchronized)
+
+The following documents restate parts of the start surface and therefore
+share ownership of its names with `schemas.py` and `cli.py`. Editing the
+names here without updating the consumers leaves operators with snippets
+that no longer match the plugin:
+
+- `docs/00-getting-started.md` — first-workflow shell example using
+  `--board`, `--default-profile`, and `--stage-profile`.
+- `docs/13-autonomous-triggering.md` — agent prompt bodies that name
+  `board`, `pack`, `workflow_id`, target repository, and the full
+  `stage_profiles` mapping; plus a direct `hermes wingstaff start` shell
+  snippet using `--default-profile` with explicit per-stage overrides.
+- `wingstaff/skills/orchestrate/SKILL.md` — instructs the orchestration
+  worker to call `wingstaff_start` with the same argument names.
+
+When `schemas.py::START` or `cli.py::start` changes any of these names,
+update all four locations in the same commit (or commit series). The
+verification gate does not catch doc drift against the live schema; only
+`ruff check wingstaff tests` and `wingstaff packs validate <pack>` run.
+Add a unit test or schema assertion whenever feasible so the next rename
+fails locally rather than in production.
 - Every executable card pins `wingstaff:orchestrate` plus its exact pack-stage
   skills, so worker lifecycle instructions survive launcher-session exit.
 - External card skills retain their exact unqualified names; plugin-bundled card
