@@ -1,6 +1,6 @@
 # Skill relevance activation manifest implementation plan
 
-> Status: Phase 5 is done; final verification is next.
+> Status: Done.
 >
 > Baseline: `65e6085` (`docs: explain autonomous skill selection and
 > handoffs`).
@@ -771,6 +771,13 @@ Do not mark the implementation done if any command fails, if a stage evidence op
 can succeed without a current finalized activation manifest, if a blocked or
 pending manifest permits evidence acceptance, or if a handoff omits its
 activation digest.
+
+Final verification: GREEN — Lefthook validation, 147 tests, Ruff, both pack
+validations, build, Twine, release-content audit, the 28-file Markdown link
+check, and diff checks passed. Commits `443b5a7` through `43658eb` form the
+verified implementation sequence. Pre-existing operator-document changes in
+`docs/AGENTS.md`, `docs/README.md`, `docs/12-market-overview.md`, and
+`docs/13-autonomous-triggering.md` remain outside this plan's commits.
 
 ## Acceptance criteria
 
