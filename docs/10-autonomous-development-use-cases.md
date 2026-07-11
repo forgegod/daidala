@@ -29,6 +29,7 @@ operational questions that appear when the user stops watching every tool call:
 Wingstaff adds this missing control layer without replacing Hermes:
 
 - workflow packs pin the stage-to-skill mapping and skill provenance;
+- workers persist task-specific activation decisions before applying methodology;
 - Hermes Kanban owns assignment, dependencies, execution, comments, retries,
   and recovery;
 - Wingstaff binds approval to the current plan digest;
@@ -37,9 +38,9 @@ Wingstaff adds this missing control layer without replacing Hermes:
   and delivery;
 - delivery reports evidence but does not commit, push, merge, or deploy.
 
-The result is not a claim that the model followed every sentence of every skill.
-It is a reproducible record of the instructions made available to each worker
-and the outputs that passed the workflow's policy gates.
+The result is not a claim that the model followed every sentence of an active
+skill. It is a reproducible record of the candidates loaded, the task-specific
+activation decisions, and the outputs that passed the workflow's policy gates.
 
 ## Choose work that fits autonomous execution
 
@@ -80,10 +81,10 @@ Suppose the goal is:
 
 Choose a pack when starting the workflow:
 
-- `addyosmani` gives each stage a focused set of external skills. Definition
-  uses interview, refinement, and specification skills; implementation uses
-  incremental, test-driven, source-driven, and doubt-driven skills; later
-  stages receive verification, review, and delivery skills.
+- `addyosmani` gives each stage a focused set of external candidates. Definition
+  always requires specification while interview and refinement are conditional;
+  implementation, verification, and delivery classify their specialist skills
+  from the current task and evidence.
 - `aidlc` loads the bundled `wingstaff:aidlc-adapter` at every stage. The card's
   stage tells the adapter whether to apply AI-DLC inception, planning,
   construction, verification, review, or delivery guidance.
@@ -93,18 +94,20 @@ supplies the common worker protocol: inspect the card first, work in the assigne
 workspace, record evidence, and finish through Kanban completion or blocking.
 The approval card has no worker skills because it represents a human decision.
 
-Skills are contextual instructions, not functions called in sequence. If a card
-has four pack skills, all four are available to the worker. The model decides
-how to combine their guidance under the orchestration contract. Wingstaff
-validates exact names and content but does not expose a per-run skill priority
-or prove which paragraphs influenced the model's reasoning.
+Skills are contextual instructions, not functions called in sequence. Every
+mapped skill is loaded as a candidate. After `kanban_show`, the worker records
+which candidates are applicable, deferred, not applicable, or blocked. Required
+entries must be applicable or blocked; only applicable entries receive contiguous
+attention ranks. Wingstaff validates and persists that decision but cannot prove
+which paragraphs influenced the model's reasoning.
 
 ### 2. Let definition and planning run
 
 The definition worker receives the goal, repository, selected pack, assigned
-profile, and its exact skills. It records a definition artifact and completes
-with a compact `wingstaff.handoff/v1` record containing artifact references and
-workflow identity.
+profile, and its exact skill candidates. It records a finalized activation
+manifest before the definition artifact, then completes with a compact
+`wingstaff.handoff/v1` record containing artifact references, activation digest,
+active skill names, and workflow identity.
 
 Completion makes the dependent planning card runnable. Its worker calls
 `kanban_show`, reads the parent handoff, uses its own phase skills, and records a
@@ -159,7 +162,11 @@ card body + parent metadata + artifact references
                          |
                     kanban_show
                          v
-              stage worker + pinned skills
+           inspect pinned skill candidates
+                         |
+       wingstaff_record_skill_activation
+                         v
+              stage worker + active skills
                          |
           Wingstaff artifact/evidence operation
                          |
@@ -169,10 +176,12 @@ card body + parent metadata + artifact references
 ```
 
 The next worker receives small, structured metadata and follows references to
-full artifacts. Post-approval workers also receive the same absolute worktree
-and baseline. If a worker blocks, its comment and run history remain on the same
-card; after remediation and unblock, the replacement worker reads that thread
-before continuing.
+full artifacts, including the immutable activation manifest. Post-approval
+workers also receive the same absolute worktree and baseline. If activation is
+blocked, the worker cites the activation digest and blocked skill, then blocks
+without fabricating a completion handoff. After remediation and unblock, the
+replacement worker reads that thread and records a superseding manifest before
+continuing.
 
 This design addresses a common multi-agent failure mode: context is lost or
 mutated when one model summarizes work for another. Wingstaff still relies on
@@ -188,6 +197,7 @@ verification evidence are durable and checked at the handoff boundary.
 | Default and per-stage profiles | Before start | Which Hermes profile, model, tools, and profile instructions execute each stage. |
 | Plan approval | After planning | Whether the exact current plan may create implementation work. |
 | Kanban comment | When a worker asks or blocks | Durable clarification or remediation visible on retry. |
+| Activation correction | Before stage evidence | Human guidance on a blocked or deferred decision; the worker records a superseding manifest rather than editing history. |
 | Reassignment | When another capability or independent reviewer is needed | The profile used for the next run of that card. |
 | Unblock | After fixing a dependency or supplying input | Allows Hermes to retry the same card; it never substitutes for plan approval. |
 | Cancel | At any point | Archives cards and removes only the Wingstaff-owned worktree. |

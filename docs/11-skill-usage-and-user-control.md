@@ -22,8 +22,9 @@ For the pack schema, see the [Workflow-pack reference](03-pack-reference.md).
 flowchart LR
     U["User selects<br>goal + pack + profiles"] --> W["Wingstaff validates<br>pack + exact skills"]
     W --> C["Hermes Kanban card<br>stage context + pinned skills"]
-    C --> A["Stage worker<br>model judgment"]
-    A --> E["Wingstaff artifact<br>or evidence operation"]
+    C --> A["Stage worker<br>records activation manifest"]
+    A --> J["Active skills<br>model judgment"]
+    J --> E["Wingstaff artifact<br>or evidence operation"]
     E --> H["kanban_complete<br>wingstaff.handoff/v1"]
     H --> N["Dependent card<br>next stage skills"]
 
@@ -54,16 +55,17 @@ wingstaff:orchestrate
 + every exact skill declared for this pack stage
 ```
 
-Hermes dispatches the card with those skills available to the worker. The model
-then applies their instructions while reading the repository, producing an
-artifact, changing the approved worktree, running verification, or reviewing
-evidence.
+Hermes dispatches the card with those skills available as candidates. The worker
+first calls `kanban_show`, evaluates each pinned criterion against current task
+evidence, and records a `wingstaff.skill-activation/v1` manifest. Only applicable
+skills become active guidance for producing an artifact, changing the approved
+worktree, running verification, or reviewing evidence.
 
-If multiple skills are pinned to one card, they are available together. The
-current design does not define an executable order such as “run skill A, then
-skill B,” and it does not assign numeric priority or weight. Their listed order
-is reproducible pack data, but interpretation remains model judgment under the
-common orchestration contract.
+If multiple skills are pinned to one card, they are loaded together. Applicable
+skills receive unique contiguous attention ranks starting at 1; rank orders
+attention but is not an executable sequence or weight. Deferred and
+not-applicable skills receive no rank. Interpretation remains model judgment
+under the common orchestration contract.
 
 ### Multiple skills on one stage
 
@@ -91,8 +93,8 @@ argument for every listed skill. All five skill documents are loaded into that
 worker's initial context, on top of Hermes' Kanban worker guidance. They do not
 become separate cards, agents, tool calls, or sequential subprocesses.
 
-The worker performs one implementation task while applying the skills as
-complementary constraints:
+The worker performs one implementation task. It may activate the skills as
+complementary constraints when their criteria match:
 
 - `incremental-implementation` guides change size and iteration;
 - `test-driven-development` guides the test-and-code feedback loop;
@@ -104,17 +106,16 @@ complementary constraints:
   and blocking protocol around all of them.
 
 There is no intermediate result such as “incremental implementation finished,
-now start TDD.” The skills overlap throughout the run. For example, the worker
-may inspect neighboring source, add one failing test, implement the smallest
-slice, run the test, and stop to investigate an uncertain API. That single loop
-simultaneously applies all four pack skills.
+now start TDD.” Active skills can overlap throughout the run. A documentation-only
+task may mark TDD not applicable, while an unfamiliar framework change may rank
+source-driven and doubt-driven guidance ahead of the remaining active skills.
 
-The YAML order is preserved when Wingstaff builds the card's skill list, but
-neither Wingstaff nor Hermes interprets the first skill as higher priority. If
-two skills conflict, the worker must reconcile them using the normal instruction
-hierarchy and task context. There is currently no deterministic conflict
-resolver, per-skill completion state, weighting, or proof that each skill had a
-distinct effect.
+The YAML order is preserved when Wingstaff builds the card's candidate list, but
+it does not make the first skill active or higher priority. The manifest's rank
+is explicit worker judgment. If two active skills conflict, the worker must
+reconcile them using the normal instruction hierarchy and task context. There is
+no deterministic conflict resolver, per-skill completion state, weighting, or
+proof that each skill had a distinct effect.
 
 All named skills must already be installed and loadable in the assignee profile.
 The dispatcher does not install missing skills at runtime. Wingstaff's readiness
@@ -125,14 +126,14 @@ the workflow instead of silently running with a partial methodology.
 
 The Addyosmani catalog gives every skill a `Use When` description, and each
 skill's `SKILL.md` carries more detailed `When to Use` and often `When NOT to
-Use` guidance. That information is highly relevant because a stage mapping is
-currently a candidate set: Wingstaff and Hermes load every mapped skill even
-when only some are useful for the concrete task.
+Use` guidance. A stage mapping is a candidate set: Wingstaff and Hermes load
+every mapped skill, then the worker evaluates those pinned criteria against the
+card and inherited evidence before applying methodology.
 
-The upstream README says skills can activate automatically, but Wingstaff does
-not currently run the `using-agent-skills` discovery tree or evaluate `Use When`
-criteria. Its pack adapter explicitly pins the complete stage list, and Hermes
-loads that list as given.
+Wingstaff does not run the upstream `using-agent-skills` discovery tree or let a
+worker find replacements. Its pack adapter pins the complete candidate list and
+the required-versus-conditional policy; the activation manifest records the
+task-specific decision for that exact list.
 
 For example, the Addyosmani implementation set is intentionally broad:
 
@@ -166,22 +167,23 @@ must evaluate four dimensions:
 4. **Policy compatibility** — would the skill attempt an action Wingstaff
    forbids, such as changing captured scope, committing, pushing, or deploying?
 
-### Prefer activation categories over a numeric score
+### Activation modes and decisions
 
 An AI can rank the criteria, but a numeric score creates false precision and
 does not define what the worker should do. A more operational result is:
 
-| Category | Meaning |
-|---|---|
-| `required` | The stage contract or task makes this guidance mandatory. |
-| `applicable` | Positive `Use When` evidence exists and no stage or policy conflict exists. |
-| `deferred` | The skill becomes relevant only if a named condition occurs, such as a failed check. |
-| `not_applicable` | Negative criteria or the current task exclude it. |
-| `blocked` | The skill is relevant, but required worker capability is unavailable or its actions conflict with policy. |
+| Kind | Value | Meaning |
+|---|---|---|
+| Pack mode | `required` | Pack policy makes the guidance mandatory; the decision must be applicable or blocked. |
+| Pack mode | `conditional` | Current evidence determines whether the guidance applies. |
+| Decision | `applicable` | Positive criteria exist and no stage or policy conflict exists. |
+| Decision | `deferred` | A named future condition can make a conditional skill applicable. |
+| Decision | `not_applicable` | Negative criteria or the current task exclude a conditional skill. |
+| Decision | `blocked` | The skill is relevant, but required capability is unavailable or its actions conflict with policy. |
 
-Each decision should cite task evidence and the matched criterion. Ranking can
-then order the `required` and `applicable` skills for attention, but rank should
-not replace the category or rationale.
+Each decision cites task evidence, matched criteria, and rationale. Applicable
+skills receive unique contiguous ranks starting at 1. Rank orders attention but
+does not replace the decision or rationale.
 
 The canonical criteria should come from the pinned skill directory—frontmatter,
 `When to Use`, `When NOT to Use`, and capability requirements—not only from the
@@ -189,7 +191,22 @@ repository README table. The README is a useful catalog, but Wingstaff verifies
 the installed skill directory's digest, and the full skill often contains
 constraints omitted by the one-line catalog summary.
 
-### `pre_llm_call` is suitable for an advisory ranking
+### Persisted manifest and correction
+
+`wingstaff_record_skill_activation` validates the complete exact stage skill
+set, pack mode, decision legality, evidence shape, ranks, and optional deferred
+condition. It writes an immutable canonical JSON artifact, then finalizes its
+ledger reference. Evidence operations accept only the latest finalized,
+unblocked reference for the current stage and graph revision.
+
+Invalid output does not produce a fallback decision. A blocked manifest records
+the evidence but stops the card without a completion handoff. Human correction
+arrives through the Kanban thread; a retry records a new manifest linked by
+`supersedes`. If a deferred condition occurs during work, the worker must record
+that superseding manifest before submitting evidence. Prior artifacts remain
+unchanged for audit.
+
+### `pre_llm_call` remains advisory only
 
 Hermes supports shell hooks and Python plugin callbacks on `pre_llm_call`. A
 Kanban-aware hook can read `HERMES_KANBAN_TASK`, `HERMES_KANBAN_BOARD`,
@@ -207,8 +224,8 @@ model without mutating the stored card or session history. The dispatcher uses
 `--accept-hooks`, so hooks configured in the assignee profile are available to
 the non-interactive worker process.
 
-This is a good extension point for a proof-of-concept relevance adviser because
-it requires no Hermes core change and can use fresh runtime facts. It should:
+This remains a possible profile-local relevance adviser because it requires no
+Hermes core change and can use fresh runtime facts. It should:
 
 - return `{}` outside a Kanban worker;
 - evaluate once on the first turn or cache by task and run ID;
@@ -222,7 +239,7 @@ ephemeral context for API calls in that turn's internal tool loop. It is not a
 new independent ranking before every tool-follow-up API request. Goal-mode or
 later user turns can invoke it again, so caching still matters.
 
-### `pre_llm_call` is not an authoritative gate
+It is not Wingstaff's authoritative gate:
 
 Calling the hook a gate would overstate what it enforces:
 
@@ -243,32 +260,19 @@ Calling the hook a gate would overstate what it enforces:
 - Profile-local configuration means every possible assignee profile must carry
   and approve the same hook, or ranking behavior will vary by assignment.
 
-Therefore the recommended interpretation is:
-
-- **Advisory activation:** use a Kanban-aware `pre_llm_call` hook to tell the
-  already-spawned worker which loaded skills are required, applicable, deferred,
-  or incompatible.
-- **Enforced activation:** resolve the active set before worker spawn, persist a
-  `wingstaff.skill-activation/v1` manifest with the matched criteria and pack
-  revision, attach only the active skill names to the card, and fail closed when
-  selection cannot be validated.
-
-The enforced form belongs in Wingstaff's pack and graph-creation boundary, not
-only in a profile hook. It changes the effective methodology and must therefore
-be as durable and reviewable as the pack revision, plan digest, and artifact
-handoffs.
+Wingstaff instead enforces the persisted manifest at its artifact and evidence
+operations. This is post-spawn activation: all candidates remain loaded on the
+card, while the worker contract forbids applying methodology or producing
+evidence before a valid manifest exists. No current hook filters card skills
+before spawn.
 
 ### Relevance verdict
 
-`Use When` ranking is a worthwhile improvement. It reduces instruction overload,
-makes broad stage mappings task-sensitive, and gives the worker an explicit
-reason to apply or defer each skill. It is especially valuable for verification,
-review, and delivery, where most mapped skills are conditional.
-
-It should not silently turn the current fixed pack into a dynamic one. Start as
-an advisory, evidence-backed ranking. Promote it to an execution gate only when
-Wingstaff can persist the activation decision, validate its schema and source
-criteria, attach the resulting active set before spawn, and stop on failure.
+`Use When` assessment is implemented as an evidence-backed, fail-closed worker
+decision. It makes broad mappings task-sensitive and gives the worker an explicit
+reason to apply, defer, exclude, or block each skill. It does not silently turn
+the fixed pack into discovery: names, content, modes, and candidate order remain
+pack data, and all candidates remain loaded.
 
 Wingstaff can prove:
 
@@ -276,6 +280,7 @@ Wingstaff can prove:
 - which exact skill names were required for each stage;
 - that external skill directories matched their pinned content digests;
 - which skill names were attached to each card;
+- which finalized activation decisions authorized each stage's evidence;
 - which artifacts and evidence were accepted by policy operations.
 
 Wingstaff cannot prove that the model followed every instruction inside a skill
@@ -292,6 +297,7 @@ rules:
 
 - call `kanban_show` before doing work;
 - trust the card's pinned skills instead of discovering replacements;
+- record and finalize exact activation decisions before methodology or evidence;
 - use only the assigned target checkout or persistent worktree;
 - record artifacts and evidence through Wingstaff operations;
 - end through exactly one `kanban_complete` or `kanban_block` call;
@@ -352,7 +358,7 @@ conversation.
 Each card body records the workflow ID, stage, plan revision, pack, pack source
 revision, goal, and—after approval—the plan digest and persistent worktree. The
 card also receives its resolved profile, parents, workspace, idempotency key,
-`wingstaff:orchestrate`, and exact pack-stage skills.
+`wingstaff:orchestrate`, and exact pack-stage skill candidates.
 
 ### 2. The worker reads inherited state
 
@@ -361,7 +367,15 @@ card context, parent handoffs, comments, previous attempts, and current
 assignment. The worker follows artifact references when it needs the full
 content of a definition, plan, diff, verification output, or review.
 
-### 3. The worker records a durable result
+### 3. The worker records skill activation
+
+The worker evaluates every exact candidate and calls
+`wingstaff_record_skill_activation`. Required entries must be applicable or
+blocked. Conditional entries may also be deferred or not applicable. The
+finalized manifest digest becomes part of every later successful handoff for
+that stage. A blocked result stops here and blocks the card.
+
+### 4. The worker records a durable result
 
 The stage uses the matching Wingstaff operation:
 
@@ -375,24 +389,27 @@ The stage uses the matching Wingstaff operation:
 | Deliver | `wingstaff_deliver` |
 
 These operations write artifacts and policy facts before the worker reports the
-card complete.
+card complete. Each rejects missing, pending, stale-revision, or blocked
+activation references.
 
-### 4. The worker completes with structured metadata
+### 5. The worker completes with structured metadata
 
 A successful worker calls `kanban_complete` with a concise summary and
 `wingstaff.handoff/v1` metadata. The metadata includes workflow, pack, plan
-revision, stage, outcome, and artifact references. Post-approval handoffs also
-carry workspace and baseline facts; implementation, verification, review, and
-delivery add their stage-specific evidence.
+revision, stage, outcome, artifact references, `skill_activation_digest`, and
+active skill names. Post-approval handoffs also carry workspace and baseline
+facts; implementation, verification, review, and delivery add their
+stage-specific evidence.
 
 Large artifacts and raw logs are not copied into handoff metadata. Their paths
 and digests make the handoff compact while preserving an auditable source.
 
-### 5. Hermes promotes the dependent card
+### 6. Hermes promotes the dependent card
 
 Hermes Kanban observes parent completion and makes the next card runnable. The
-next worker starts a new card-scoped run, loads that stage's skills, calls
-`kanban_show`, and consumes the durable parent handoff.
+next worker starts a new card-scoped run, loads that stage's candidates, calls
+`kanban_show`, and consumes the durable parent handoff before recording its own
+activation manifest.
 
 This is why stage skills do not need to call each other. The artifact and Kanban
 contracts connect the stages while each skill remains focused on its own form of
@@ -467,7 +484,7 @@ bundled adapters ship with the plugin.
 | Substitute a similarly named installed skill | Rejected; matching uses exact canonical names. |
 | Edit an external skill without changing the pack | Rejected by the pinned complete-directory digest. |
 | Ask a worker to discover a better skill | Forbidden by the worker contract; the card mapping is authoritative. |
-| Assign priorities or weights to skills on one card | Unsupported; skills are contextual guidance without an executable priority model. |
+| Assign priorities or weights to skills on one card | Unsupported as a user override; the worker records contiguous attention ranks for applicable skills in the immutable manifest. |
 | Change the pack after workflow start | Unsupported as an in-place operator action. |
 | Approve only part of the plan | Unsupported; approval binds the entire current plan artifact. |
 | Let Kanban unblock imply approval | Forbidden; interaction state and Wingstaff authorization are separate. |
@@ -494,18 +511,14 @@ network allowlists, runtime budgets, additional approval gates, and authorized
 commit or pull-request delivery. Skills can recommend these controls, but model
 instructions must not be mistaken for deterministic enforcement.
 
-Conditional skill activation is also outside the current pack model. A
-`pre_llm_call` relevance adviser can improve how the worker uses the already
-loaded set, but a fail-closed, persisted activation manifest is required before
-Wingstaff can claim that `Use When` is an enforced gate.
-
 ## Why this design matters
 
 Wingstaff's value is not that it supplies more prompts. It makes methodology
 selection inspectable and connects model judgment to deterministic controls:
 
-- the pack says which skills should guide each stage;
-- the card proves which skills were assigned;
+- the pack says which skills are required or conditional candidates;
+- the card proves which candidates were assigned and loaded;
+- the activation manifest proves which decisions authorized stage evidence;
 - the handoff preserves what each stage produced;
 - the plan digest defines what the human authorized;
 - the captured diff defines what verification and review assessed;
@@ -525,6 +538,8 @@ approval or the evidence required for completion.
 - Worker procedure: `wingstaff/skills/orchestrate/SKILL.md`
 - AI-DLC stage interpretation: `wingstaff/skills/aidlc-adapter/SKILL.md`
 - Policy and artifact coordination: `wingstaff/service.py`
+- Activation model and evidence gate: `wingstaff/state.py`,
+  `wingstaff/workflow.py`
 - Skill and handoff contract tests: `tests/test_worker_contract.py`,
   `tests/test_skills.py`, `tests/test_kanban.py`, and
   `tests/test_execution.py`

@@ -29,18 +29,21 @@ Do not encode card lifecycle mechanics inside a pack.
 5. Map at least one skill into every required stage and declare exactly one
    provider: `install` for an external Hermes skill or `bundled` for a
    plugin-packaged adapter.
-6. For external skills, use install targets under the same
+6. Declare `activation: required` when pack policy always requires the skill in
+   that stage; otherwise declare `activation: conditional`. Do not omit the field
+   or mark every skill required merely to avoid worker judgment.
+7. For external skills, use install targets under the same
    publisher/repository. The final segment must exactly match `name`.
-7. Hash every complete external skill directory into `content_digest`, including
+8. Hash every complete external skill directory into `content_digest`, including
    linked scripts and references rather than only `SKILL.md`. Bundled skills
    must omit the digest and carry any required attribution beside the skill.
-8. Keep `human_gate_after: plan` unless a different declared stage still occurs
+9. Keep `human_gate_after: plan` unless a different declared stage still occurs
    before `implement` and accurately represents the adapter.
-9. Add tests that load the real package resource and assert its lifecycle, gate,
-   and representative skill mappings.
-10. Add a wheel-content assertion when package installation tests exist; the
+10. Add tests that load the real package resource and assert its lifecycle, gate,
+   exact activation mapping, and representative skill mappings.
+11. Add a wheel-content assertion when package installation tests exist; the
    package-data rule already includes `wingstaff/packs/*.yaml`.
-11. Run the verification commands below.
+12. Run the verification commands below.
 
 ## Keep the engine pack-neutral
 
@@ -50,6 +53,7 @@ Put these in YAML:
 - source revision and Hermes compatibility range;
 - per-skill complete-directory digests;
 - external-versus-bundled skill provider selection;
+- required-versus-conditional activation policy;
 - stage-to-skill mappings;
 - pack-specific skill names and install targets.
 
@@ -89,6 +93,8 @@ A new bundled pack should have tests for:
 - a gate before implementation;
 - at least one representative mapping from each stage;
 - any new generic schema invariant, with both accepted and rejected examples;
+- explicit activation on every skill, including rejection of missing or unknown
+  modes and a maximum of 32 skills per stage;
 - packaged resource presence once wheel inspection is available.
 
 Keep malformed inline dictionaries for validator edge cases; use real YAML

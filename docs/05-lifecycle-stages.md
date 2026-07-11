@@ -42,6 +42,33 @@ standalone operator-command paths are implemented.
 data. Cancellation cleans Wingstaff-owned resources and uses documented Kanban
 operations; card lifecycle remains visible on the board.
 
+## Skill activation before evidence
+
+Every executable worker follows the same ordering:
+
+```text
+kanban_show
+    -> inspect parent artifacts and pinned skill criteria
+    -> wingstaff_record_skill_activation
+    -> apply active methodology
+    -> stage evidence operation
+    -> kanban_complete with activation digest + active skill names
+```
+
+The card still loads `wingstaff:orchestrate` and the full exact pack-stage skill
+set. Loaded pack skills are candidates, not proof that every skill applies.
+`required` is pack policy; `conditional` permits worker judgment. The immutable
+activation artifact records applicable, deferred, not-applicable, or blocked
+decisions with criteria, evidence, rationale, and applicable-skill rank.
+
+Wingstaff accepts each stage's artifact, implementation capture, verification
+record, review, or delivery only when the current stage/revision has a finalized,
+unblocked activation reference. Missing and pending references fail closed. A
+blocked manifest remains durable for audit, but the worker comments with its
+digest and blocked skill and blocks the Kanban card without a completion handoff.
+A deferred skill whose condition occurs requires a superseding manifest before
+evidence submission.
+
 ## Human gate
 
 No worktree or post-gate card is created before approval. Approval binds the
@@ -66,7 +93,7 @@ diff cannot advance.
 Every worker starts with `kanban_show` and ends with `kanban_complete` or
 `kanban_block`. Before blocking, it writes a concise comment with `workflow_id`,
 stage, pack revision, artifact or worktree references, exact command evidence,
-and the decision required.
+the activation digest and blocked skill when relevant, and the decision required.
 
 - Missing dependency uses `kind: dependency`; Hermes returns the card to `todo`
   and promotes it when parents complete.

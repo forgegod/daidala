@@ -3,8 +3,8 @@
 Pack adapters map external skill sets onto Wingstaff's pack-neutral lifecycle.
 The engine validates common mechanics only; skill selection and sequencing live
 in bundled pack YAML. Both adapters expand into the same approval-gated Kanban
-graph and `wingstaff.handoff/v1` worker contract; only the pinned stage skills
-and their judgment differ.
+graph, activation manifest, and `wingstaff.handoff/v1` worker contract; only the
+pinned stage skills, activation policy, and methodology judgment differ.
 
 ## Implemented adapters
 
@@ -15,18 +15,23 @@ and their judgment differ.
 
 ## Addyosmani mapping
 
-| Stage | Exact skills |
-|---|---|
-| Define | `interview-me`, `idea-refine`, `spec-driven-development` |
-| Plan | `planning-and-task-breakdown` |
-| Implement | `incremental-implementation`, `test-driven-development`, `source-driven-development`, `doubt-driven-development` |
-| Verify | `test-driven-development`, `debugging-and-error-recovery`, `browser-testing-with-devtools` |
-| Review | `code-review-and-quality`, `code-simplification`, `security-and-hardening`, `performance-optimization` |
-| Deliver | `git-workflow-and-versioning`, `ci-cd-and-automation`, `documentation-and-adrs`, `observability-and-instrumentation`, `shipping-and-launch`, `deprecation-and-migration` |
+| Stage | Required skills | Conditional candidates |
+|---|---|---|
+| Define | `spec-driven-development` | `interview-me`, `idea-refine` |
+| Plan | `planning-and-task-breakdown` | — |
+| Implement | — | `incremental-implementation`, `test-driven-development`, `source-driven-development`, `doubt-driven-development` |
+| Verify | — | `test-driven-development`, `debugging-and-error-recovery`, `browser-testing-with-devtools` |
+| Review | `code-review-and-quality` | `code-simplification`, `security-and-hardening`, `performance-optimization` |
+| Deliver | — | `git-workflow-and-versioning`, `ci-cd-and-automation`, `documentation-and-adrs`, `observability-and-instrumentation`, `shipping-and-launch`, `deprecation-and-migration` |
 
 `test-driven-development` is intentionally referenced by both implement and
 verify. The prerequisite check deduplicates exact names while preserving their
 first lifecycle position.
+
+All listed skills remain pinned to the card and loaded as candidates. The worker
+cannot demote a required entry. It classifies each conditional entry from the
+pinned skill criteria and current card evidence, then persists the exact decision
+before Wingstaff accepts stage evidence.
 
 Every install target is fully qualified as
 `addyosmani/agent-skills/skills/<exact-name>`. A similar name does not satisfy
@@ -42,6 +47,7 @@ The Addyosmani adapter does not add conditionals to Python. All packs share:
   lifecycle;
 - one human gate after plan and before implementation;
 - exact skill-name and install-target validation;
+- the same required/conditional activation schema and fail-closed evidence gate;
 - the same artifact, worktree, verification, review, and delivery mechanics.
 
 A pack-specific behavior belongs in YAML or its orchestration instructions. A
@@ -55,7 +61,8 @@ rule-detail directories for coding harnesses. It does not distribute Agent
 Skills. Wingstaff therefore packages one attributed `aidlc-adapter` skill and
 references it through the generic `bundled` provider field in every stage.
 Worker cards load it by its Hermes plugin-qualified name,
-`wingstaff:aidlc-adapter`.
+`wingstaff:aidlc-adapter`. The adapter is `required` in every executable stage,
+so each activation manifest records it as applicable or blocked.
 
 | Wingstaff stage | AI-DLC concept and artifact intent |
 |---|---|

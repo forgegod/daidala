@@ -25,31 +25,37 @@ lifecycle:
     - id: define
       skills:
         - name: requirements-skill
+          activation: required
           install: publisher/repository/skills/requirements-skill
           content_digest: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
     - id: plan
       skills:
         - name: planning-skill
+          activation: required
           install: publisher/repository/skills/planning-skill
           content_digest: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
     - id: implement
       skills:
         - name: implementation-skill
+          activation: conditional
           install: publisher/repository/skills/implementation-skill
           content_digest: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
     - id: verify
       skills:
         - name: verification-skill
+          activation: conditional
           install: publisher/repository/skills/verification-skill
           content_digest: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
     - id: review
       skills:
         - name: review-skill
+          activation: required
           install: publisher/repository/skills/review-skill
           content_digest: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
     - id: deliver
       skills:
         - name: delivery-skill
+          activation: conditional
           install: publisher/repository/skills/delivery-skill
           content_digest: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 ```
@@ -68,6 +74,7 @@ lifecycle:
 | `lifecycle.stages[].id` | string | Required, non-empty, and unique. |
 | `lifecycle.stages[].skills` | non-empty list | At least one skill per stage. |
 | `lifecycle.stages[].skills[].name` | string | Required lowercase slug and exact installed name. |
+| `lifecycle.stages[].skills[].activation` | string | Required `required` or `conditional`; there is no compatibility default. |
 | `lifecycle.stages[].skills[].install` | string or omitted | External provider; must begin with the source publisher/repository and end with `name`. Mutually exclusive with `bundled`. |
 | `lifecycle.stages[].skills[].content_digest` | string or omitted | Required with `install`: SHA-256 of the complete canonical skill directory. Forbidden with `bundled`. |
 | `lifecycle.stages[].skills[].bundled` | string or omitted | Plugin-bundled provider; must exactly equal `name`. Mutually exclusive with `install`. |
@@ -82,10 +89,18 @@ The human gate is metadata between `plan` and `implement`, not a separate
 stage.
 
 At graph creation, every executable stage becomes one Hermes Kanban card pinned
-with `wingstaff:orchestrate` plus the exact skills declared for that stage. The
-approval card is Wingstaff policy infrastructure and carries no worker skills.
-Profiles, card links, workspaces, and `wingstaff.handoff/v1` metadata are generic
-runtime contracts rather than pack fields.
+with `wingstaff:orchestrate` plus the exact skills declared for that stage. All
+declared skills are loaded as candidates. After `kanban_show`, the worker records
+a `wingstaff.skill-activation/v1` manifest before stage methodology or evidence:
+`required` skills must be applicable or blocked, while `conditional` skills may
+be applicable, deferred, not applicable, or blocked. The approval card is
+Wingstaff policy infrastructure and carries no worker skills. Profiles, card
+links, workspaces, activation decisions, and `wingstaff.handoff/v1` metadata use
+pack-neutral runtime contracts.
+
+Each stage may declare at most 32 skills, matching the activation tool and
+artifact bounds. Missing or unknown `activation` values fail pack validation;
+schema version 1 has no migration reader for the unreleased older shape.
 
 External card skills use their exact `name`. A `bundled` skill is loaded through
 the plugin namespace as `wingstaff:<name>`; for example, the AI-DLC worker card
@@ -95,7 +110,7 @@ pins `wingstaff:aidlc-adapter`.
 
 Successful validation produces frozen dataclasses:
 
-- `SkillRef(name, install, content_digest, bundled)`;
+- `SkillRef(name, activation, install, content_digest, bundled)`;
 - `Stage(id, skills)`;
 - `WorkflowPack(name, source, source_revision, hermes_version_constraint,
   stages, human_gate_after)`.
@@ -134,4 +149,5 @@ use the same `SkillRef` and stage machinery.
 - Installation and revision mechanism: `wingstaff/skills.py`, `wingstaff/cli.py`
 - Bundled adapters: `wingstaff/packs/addyosmani.yaml`, `wingstaff/packs/aidlc.yaml`
 - Validation tests: `tests/test_packs.py`
+- Activation-policy tests: `tests/test_workflow.py`, `tests/test_execution.py`
 - Installation tests: `tests/test_skill_installation.py`

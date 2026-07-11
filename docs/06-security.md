@@ -48,6 +48,9 @@ verification in the Wingstaff-owned detached worktree.
 - Policy facts, artifacts, approval, worktrees, captured diffs, verification
   evidence, and delivery manifests are durable under the resolved profile data
   root; operational card state remains in Hermes Kanban.
+- Skill activation decisions are immutable JSON artifacts. Only finalized,
+  unblocked references authorize stage evidence; pending or blocked references
+  fail closed.
 - Workflow IDs are validated before they can influence runtime paths.
 - Delivery uses the changed-path snapshot captured before verification, so test
   byproducts cannot silently expand reviewed scope.
@@ -76,6 +79,18 @@ workflow start. Digest mismatches produce update plans; they are never silently
 replaced during an active workflow. Kanban cards pin the pack's exact
 implementation skill names. Hermes owns loading those names for the assigned
 profile; missing context fails closed rather than being substituted.
+
+Every mapped card skill is loaded before the worker starts, but loading does not
+authorize its use. The worker records exact pack-stage decisions after inspecting
+the card and parent evidence. Required skills cannot be demoted; conditional
+skills may be deferred or excluded with rationale. Successful handoffs expose
+the activation digest and active names without copying full rationale into card
+metadata. Superseded artifacts remain immutable and linearly linked.
+
+A profile-local `pre_llm_call` hook may add advisory context, but it is not this
+gate: hook output is ephemeral and fail-open, and it cannot remove already loaded
+skills. Wingstaff authorization comes from the persisted manifest checked at the
+evidence boundary.
 
 AI-DLC v1.0.1 is pinned to its upstream commit but ships editor rule files,
 not Hermes skills. Wingstaff therefore packages a small MIT-0-attributed

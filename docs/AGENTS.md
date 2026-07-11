@@ -11,16 +11,20 @@ Own current architecture documentation, the numbered reading set, and executable
 - `01-architecture.md` owns process and component boundaries.
 - `02-workflow-state.md` owns the Wingstaff policy ledger, Hermes Kanban state
   authority, and transition-ownership contract.
-- `03-pack-reference.md` owns the implemented workflow-pack schema.
-- `04-authoring-packs.md` owns pack-neutral adapter authoring.
-- `05-lifecycle-stages.md` owns executable stage inputs, outputs, and gates.
-- `06-security.md` owns current trust boundaries and unavailable controls.
+- `03-pack-reference.md` owns the workflow-pack schema and activation modes.
+- `04-authoring-packs.md` owns pack-neutral adapter and activation authoring.
+- `05-lifecycle-stages.md` owns executable stage inputs, activation, outputs,
+  and gates.
+- `06-security.md` owns current trust, activation-audit, and unavailable-control
+  boundaries.
 - `08-hermes-integration.md` owns verified Hermes versions, discovery paths, and installation limitations.
-- `09-pack-adapters.md` owns implemented pack mappings and divergences.
+- `09-pack-adapters.md` owns implemented pack mappings, activation policy, and
+  divergences.
 - `10-autonomous-development-use-cases.md` owns user-oriented task selection,
   skill handoffs, steering controls, tutorial ideas, and future use cases.
 - `11-skill-usage-and-user-control.md` owns the design contract for card-scoped
-  skill loading, cross-stage handoff, and user selection boundaries.
+  candidate loading, persisted activation, cross-stage handoff, and user
+  selection boundaries.
 - `plans/` contains self-contained plans for future implementation sessions.
 
 ## Local Contracts

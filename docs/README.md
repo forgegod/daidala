@@ -1,9 +1,9 @@
 # Wingstaff documentation
 
-Wingstaff adds pack provenance, digest-bound approval, Git isolation, and durable
-evidence to Hermes Kanban. Hermes owns card status, dependencies, assignment,
-retries, comments, and worker runs; Wingstaff owns only its policy and artifact
-integrity boundary.
+Wingstaff adds pack provenance, persisted skill activation, digest-bound
+approval, Git isolation, and durable evidence to Hermes Kanban. Hermes owns card
+status, dependencies, assignment, retries, comments, and worker runs; Wingstaff
+owns only its policy and artifact integrity boundary.
 
 New operators should start with [Getting started](00-getting-started.md), not the
 architecture references.
@@ -15,15 +15,15 @@ architecture references.
 | [Getting started](00-getting-started.md) | Native first-workflow path verified on Hermes v0.18.2 | Isolated native lifecycle probe and CLI tests |
 | [Architecture](01-architecture.md) | In-process policy adapter and Kanban authority split implemented | Runtime modules, graph tests, and isolated Hermes probes |
 | [Policy ledger](02-workflow-state.md) | Status-free ledger and combined live Kanban diagnostics implemented | State, store, service, Kanban, and persistence tests |
-| [Pack reference](03-pack-reference.md) | Schema-v1 external and bundled skill mappings implemented | Pack loader, bundled YAML, and pack tests |
-| [Authoring packs](04-authoring-packs.md) | Pack-neutral authoring and card mapping implemented | Pack loader and cross-pack tests |
-| [Lifecycle stages](05-lifecycle-stages.md) | Full approval-gated graph, handoffs, and recovery implemented | Graph, worker-contract, and recovery tests |
-| [Security](06-security.md) | Approval, worktree, artifact, secrets, and supply-chain boundaries implemented | Runtime and release-content tests |
+| [Pack reference](03-pack-reference.md) | Schema-v1 providers and required/conditional activation implemented | Pack loader, bundled YAML, and pack tests |
+| [Authoring packs](04-authoring-packs.md) | Pack-neutral mapping and activation authoring implemented | Pack loader and cross-pack tests |
+| [Lifecycle stages](05-lifecycle-stages.md) | Approval graph, activation gate, handoffs, and recovery implemented | Graph, activation, worker-contract, and recovery tests |
+| [Security](06-security.md) | Approval, activation, worktree, artifact, secrets, and supply-chain boundaries implemented | Runtime and release-content tests |
 | [Runbook](07-runbook.md) | Native lifecycle and normal Kanban recovery commands verified | Shared CLI tests and isolated Hermes lifecycle probe |
 | [Hermes integration](08-hermes-integration.md) | Hermes v0.18.2 plugin, CLI, Kanban, and gateway boundary verified | Isolated directory, entry-point, public Git, CLI, and Kanban probes |
-| [Pack adapters](09-pack-adapters.md) | Addyosmani and AI-DLC graph mappings implemented | Pack YAML, bundled adapter, and cross-pack execution tests |
-| [Autonomous development use cases](10-autonomous-development-use-cases.md) | Current use cases, skill handoffs, user controls, tutorial ideas, and unsupported opportunities documented | Runtime contracts plus external agent-development research |
-| [Skill usage and user control](11-skill-usage-and-user-control.md) | Pack selection, card-scoped skill loading, structured handoff, and user-selection boundaries documented | Pack, Kanban adapter, worker contract, and cross-pack tests |
+| [Pack adapters](09-pack-adapters.md) | Addyosmani and AI-DLC mappings and activation modes implemented | Pack YAML, bundled adapter, and cross-pack execution tests |
+| [Autonomous development use cases](10-autonomous-development-use-cases.md) | Current use cases, activation handoffs, user controls, tutorial ideas, and unsupported opportunities documented | Runtime contracts plus external agent-development research |
+| [Skill usage and user control](11-skill-usage-and-user-control.md) | Candidate loading, persisted activation, structured handoff, and user-selection boundaries documented | Pack, policy ledger, worker contract, and cross-pack tests |
 | Cron and target commit/push | Not part of Wingstaff runtime | Cron may be an external trigger; delivery records both flags as false |
 
 “Implemented” means present in this repository. Compatibility claims are limited
@@ -55,6 +55,11 @@ Wingstaff creates the graph explicitly. The existing gateway's Kanban dispatcher
 runs ready cards; Wingstaff adds no scheduler, daemon, dashboard, or polling
 loop. Generic Kanban unblock is interaction, not plan authorization.
 
+Every executable card loads the complete exact pack-stage candidate set. After
+`kanban_show`, its worker must persist a finalized, unblocked activation manifest
+before applying methodology or submitting stage evidence. Successful handoffs
+carry that manifest's digest and active skill names.
+
 ## Reading order
 
 1. [Getting started](00-getting-started.md) — run the first workflow.
@@ -78,6 +83,7 @@ loop. Generic Kanban unblock is interaction, not plan authorization.
 | Who owns status and retries? | [Policy ledger](02-workflow-state.md) |
 | Why is Kanban unblock not approval? | [Security](06-security.md#human-approval-boundary) |
 | What must each worker record? | [Lifecycle stages](05-lifecycle-stages.md) |
+| Why is a loaded skill not necessarily active? | [Skill usage and user control](11-skill-usage-and-user-control.md#what-using-a-skill-means) |
 | How do I recover a blocked card? | [Operator runbook](07-runbook.md#recovery) |
 | Which Hermes version and commands are verified? | [Hermes integration](08-hermes-integration.md) |
 | How do packs change stage workers without engine branches? | [Authoring packs](04-authoring-packs.md) |

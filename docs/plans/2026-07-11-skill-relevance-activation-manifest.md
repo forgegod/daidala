@@ -1,6 +1,6 @@
 # Skill relevance activation manifest implementation plan
 
-> Status: Phase 4 is done; Phase 5 is next and has not started.
+> Status: Phase 5 is done; final verification is next.
 >
 > Baseline: `65e6085` (`docs: explain autonomous skill selection and
 > handoffs`).
@@ -733,6 +733,13 @@ enforcement.
 python scripts/check_md_links.py .
 git diff --check
 ```
+
+Phase 5 gate: GREEN — operator and design documentation now distinguishes loaded
+candidates from active guidance, documents the persisted manifest and
+supersession path, and keeps `pre_llm_call` advisory. The DOX ownership pass,
+Markdown table structure audit, and link check passed across 28 Markdown files.
+The repository gate passed with 147 tests, Ruff, both pack validations, build,
+Twine, release-content audit, Lefthook validation, and diff checks.
 
 Commit only after the gate passes:
 
