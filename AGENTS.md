@@ -114,10 +114,21 @@ Project-wide durable preferences (style, workflow, conventions) live in user mem
 - Do not commit credentials, live workflow state, SQLite databases, or generated workspaces.
 - Do not commit, push, or publish unless explicitly requested.
 
-## Session-start tooling
+## Codebase exploration — mandatory graph-first workflow
 
-- Use `code-review-graph` MCP tools for structural queries (callers, blast radius, code review) before scanning files. See the `code-review-graph` skill for tool selection and pitfalls. Projects that opt in register their repo in `~/.code-review-graph/registry.json`; pass the registered `repo_root` on tool calls.
-- Git hooks are tracked in `lefthook.yml`. Run `.venv/bin/lefthook install` after development setup; the `post-commit` hook updates the code-review graph.
+For source-code discovery, tracing, debugging, review, or impact analysis,
+MUST use the `code-review-graph` MCP before `search_files`, `read_file`, grep,
+glob, find, or directory scans.
+
+1. Load the `code-review-graph` skill.
+2. Call `get_minimal_context_tool` first with the explicit `repo_root`.
+3. Use the recommended graph query to identify symbols, relationships, flows,
+   affected files, and tests.
+4. Only then use targeted file reads to verify exact implementation details.
+
+Do not silently bypass the graph. If unavailable or stale, retry with
+`repo_root`, build/update it when possible, and report the failure before
+falling back to targeted file tools.
 
 ## Child DOX Index
 
