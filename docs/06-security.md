@@ -151,7 +151,8 @@ of these surfaces exists.
 - Manifest and package boundary: `plugin.yaml`, `pyproject.toml`
 - Registration: `wingstaff/__init__.py`
 - Pack loading and validation: `wingstaff/packs.py`
-- Policy-ledger migration target: `wingstaff/state.py`, `wingstaff/store.py`
+- Policy ledger and persistence: `wingstaff/state.py`, `wingstaff/workflow.py`,
+  `wingstaff/store.py`
 - Worktree and artifact isolation: `wingstaff/execution.py`
 - Kanban graph migration target: `wingstaff/service.py`, `wingstaff/kanban.py`
 - Tool error boundary: `wingstaff/tools.py`

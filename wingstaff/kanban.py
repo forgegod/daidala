@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from .packs import WorkflowPack
-from .state import WorkflowStage, WorkflowState, WorkflowStatus
+from .state import WorkflowLedger
 
 
 class KanbanError(RuntimeError):
@@ -31,18 +31,13 @@ class KanbanCoordinator:
 
     def ensure_implementation_task(
         self,
-        state: WorkflowState,
+        state: WorkflowLedger,
         pack: WorkflowPack,
         *,
         assignee: str,
     ) -> KanbanTask:
-        if (
-            state.status is not WorkflowStatus.RUNNING
-            or state.current_stage is not WorkflowStage.IMPLEMENT
-            or not state.worktree_path
-            or state.approval is None
-        ):
-            raise KanbanError("implementation task requires a running implement-stage worktree")
+        if not state.worktree_path or not state.worktree_owned or state.approval is None:
+            raise KanbanError("implementation task requires an approved Wingstaff-owned worktree")
         selected_assignee = assignee.strip()
         if not selected_assignee:
             raise KanbanError("implementation task requires an assignee profile")
@@ -56,12 +51,14 @@ class KanbanCoordinator:
                 f"Goal: {state.requested_goal}\n"
                 f"Approved plan digest: {state.approval.plan_digest}\n"
                 f"Persistent worktree: {state.worktree_path}\n"
-                "Use Wingstaff lifecycle tools for capture, verification, review, "
-                "and delivery. Wingstaff state remains authoritative."
+                "Use Wingstaff policy tools for capture and evidence. Hermes Kanban "
+                "remains authoritative for lifecycle state."
             ),
             "workspace_kind": "worktree",
             "workspace_path": state.worktree_path,
-            "idempotency_key": f"wingstaff:{state.workflow_id}:implement",
+            "idempotency_key": (
+                f"wingstaff:{state.workflow_id}:{state.plan_revision}:implement"
+            ),
             "skills": [skill.name for skill in implement.skills],
         }
         try:

@@ -18,34 +18,24 @@ PACK_INFO = {
 
 START = {
     "name": "wingstaff_start",
-    "description": "Create a draft workflow for an absolute local target repository.",
+    "description": "Create a validated policy ledger for one named Kanban board.",
     "parameters": {
         "type": "object",
         "properties": {
+            "board_slug": {"type": "string"},
             "target_repository": {"type": "string"},
             "goal": {"type": "string"},
             "pack": {"type": "string", "default": "addyosmani"},
             "workflow_id": {"type": "string"},
         },
-        "required": ["target_repository", "goal"],
+        "required": ["board_slug", "target_repository", "goal"],
         "additionalProperties": False,
     },
 }
 
 STATUS = {
     "name": "wingstaff_status",
-    "description": "Return durable workflow state without changing it.",
-    "parameters": {
-        "type": "object",
-        "properties": {"workflow_id": {"type": "string"}},
-        "required": ["workflow_id"],
-        "additionalProperties": False,
-    },
-}
-
-VALIDATE = {
-    "name": "wingstaff_validate",
-    "description": "Validate the workflow pack and clean local Git target baseline.",
+    "description": "Return Wingstaff policy facts without copying Kanban status.",
     "parameters": {
         "type": "object",
         "properties": {"workflow_id": {"type": "string"}},
@@ -68,24 +58,9 @@ APPROVE = {
     },
 }
 
-MODIFY = {
-    "name": "wingstaff_modify",
-    "description": "Replace the plan artifact and invalidate prior approval.",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "workflow_id": {"type": "string"},
-            "path": {"type": "string"},
-            "digest": {"type": "string"},
-        },
-        "required": ["workflow_id", "path", "digest"],
-        "additionalProperties": False,
-    },
-}
-
 CANCEL = {
     "name": "wingstaff_cancel",
-    "description": "Cancel a nonterminal workflow with an operator-provided reason.",
+    "description": "Clean up Wingstaff-owned worktree state before Kanban archival.",
     "parameters": {
         "type": "object",
         "properties": {
@@ -114,17 +89,11 @@ SUBMIT_ARTIFACT = {
 
 PREPARE_IMPLEMENTATION = {
     "name": "wingstaff_prepare_implementation",
-    "description": "Create the approved worktree and idempotent Hermes Kanban task.",
+    "description": "Create the exact-approved Wingstaff implementation worktree.",
     "parameters": {
         "type": "object",
-        "properties": {
-            "workflow_id": {"type": "string"},
-            "assignee": {
-                "type": "string",
-                "description": "Existing Hermes profile assigned to implementation.",
-            },
-        },
-        "required": ["workflow_id", "assignee"],
+        "properties": {"workflow_id": {"type": "string"}},
+        "required": ["workflow_id"],
         "additionalProperties": False,
     },
 }
@@ -167,7 +136,7 @@ DELIVER = {
     },
 }
 
-LIFECYCLE_TOOLS = (START, STATUS, VALIDATE, APPROVE, MODIFY, CANCEL)
+LIFECYCLE_TOOLS = (START, STATUS, APPROVE, CANCEL)
 EXECUTION_TOOLS = (
     SUBMIT_ARTIFACT,
     PREPARE_IMPLEMENTATION,

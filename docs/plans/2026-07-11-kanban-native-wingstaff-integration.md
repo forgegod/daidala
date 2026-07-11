@@ -1,6 +1,6 @@
 # Kanban-native Wingstaff integration implementation plan
 
-> Status: approved on 2026-07-11; Phase 1 is done.
+> Status: approved on 2026-07-11; Phase 2 is done.
 >
 > For the implementing agent: read `/AGENTS.md`, `wingstaff/AGENTS.md`,
 > `tests/AGENTS.md`, `docs/AGENTS.md`, this plan, the current official Hermes
@@ -19,7 +19,7 @@ be in progress.
 |---|---|---|
 | 0 — verify the live Hermes boundary | Done | Preserve the v0.18.2 public capability matrix and agent-only dispatch boundary. |
 | 1 — define the Kanban-native contract | Done | Preserve one Kanban authority, one policy ledger, and the exact card/handoff/recovery contract. |
-| 2 — replace workflow state with a policy ledger | Todo | Start only after commit `docs: define Kanban-native Wingstaff authority and workflow` is pushed. |
+| 2 — replace workflow state with a policy ledger | Done | Preserve the status-free ledger, fresh persistence schema, exact skill provenance, and migrated consumers. |
 | 3 — build the Kanban graph adapter | Todo | Start only after Phase 2 is pushed. |
 | 4 — adapt workers, artifacts, and recovery | Todo | Start only after Phase 3 is pushed. |
 | 5 — simplify the CLI and operator experience | Todo | Start only after Phase 4 is pushed. |
@@ -377,7 +377,11 @@ Persist only Wingstaff-owned integrity facts and Kanban identifiers.
 - refactor or replace `wingstaff/workflow.py`;
 - replace `wingstaff/store.py` with the minimal policy-ledger schema;
 - update `wingstaff/errors.py` for current policy violations;
-- rewrite `tests/test_workflow.py` and `tests/test_store.py`.
+- migrate direct state consumers in `wingstaff/service.py`, `wingstaff/tools.py`,
+  `wingstaff/cli.py`, and registration without implementing Phase 3 host graph
+  dispatch;
+- rewrite state/store tests and update affected service, tool, CLI, execution,
+  and installation expectations.
 
 ### Ledger model
 
@@ -414,6 +418,10 @@ operational status field in the new model.
 
 Focused state/store tests pass and a repository search shows no new code that
 mirrors Kanban task status into Wingstaff persistence.
+
+Gate: GREEN — 91 tests, Ruff, both pack validations, package build, Twine,
+release-content audit, Markdown links, Lefthook validation, and status-mirroring
+search passed.
 
 ### Commit boundary
 

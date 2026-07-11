@@ -31,26 +31,27 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     """Register the command tree shared by ``wingstaff`` and ``hermes wingstaff``."""
     sub = parser.add_subparsers(dest="command", required=True)
 
-    init = sub.add_parser("init", help="Preview or initialize profile-local Wingstaff state")
-    init.add_argument("--apply", action="store_true", help="Create the state directory and schema")
+    init = sub.add_parser("init", help="Preview or initialize the profile-local policy ledger")
+    init.add_argument("--apply", action="store_true", help="Create the ledger directory and schema")
 
     doctor = sub.add_parser("doctor", help="Check host, pack, and installed skill readiness")
     doctor.add_argument("--pack", default="addyosmani")
 
-    start = sub.add_parser("start", help="Create and validate a workflow")
+    start = sub.add_parser("start", help="Validate inputs and create a policy ledger")
     start.add_argument("target_repository")
     start.add_argument("goal")
+    start.add_argument("--board", required=True, dest="board_slug")
     start.add_argument("--pack", default="addyosmani")
     start.add_argument("--workflow-id")
 
-    status = sub.add_parser("status", help="Show durable workflow state")
+    status = sub.add_parser("status", help="Show durable Wingstaff policy facts")
     status.add_argument("workflow_id")
 
     approve = sub.add_parser("approve", help="Approve the exact current plan digest")
     approve.add_argument("workflow_id")
     approve.add_argument("plan_digest")
 
-    cancel = sub.add_parser("cancel", help="Cancel a nonterminal workflow")
+    cancel = sub.add_parser("cancel", help="Clean up a Wingstaff-owned worktree")
     cancel.add_argument("workflow_id")
     cancel.add_argument("reason")
 
@@ -190,12 +191,13 @@ def _run_lifecycle(args: argparse.Namespace, service_factory: ServiceFactory) ->
     service = service_factory()
     if args.command == "start":
         state = service.start(
+            board_slug=args.board_slug,
             target_repository=args.target_repository,
             goal=args.goal,
             pack_name=args.pack,
             workflow_id=args.workflow_id,
         )
-        state = service.validate(state.workflow_id)
+
     elif args.command == "status":
         state = service.status(args.workflow_id)
     elif args.command == "approve":

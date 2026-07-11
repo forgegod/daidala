@@ -15,9 +15,8 @@ from wingstaff.skills import (
     inventory_from_names,
     required_skills,
 )
-from wingstaff.state import WorkflowStage, WorkflowStatus
+from wingstaff.state import WorkflowStage
 from wingstaff.store import WorkflowStore
-from wingstaff.workflow import record_artifact
 
 NOW = datetime(2026, 7, 10, 12, 0, tzinfo=UTC)
 
@@ -59,15 +58,14 @@ def target_repository(tmp_path: Path) -> Path:
 @pytest.fixture
 def service(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> WorkflowService:
     pack = load_pack("addyosmani")
+    skills = required_skills(pack)
     instance = WorkflowService(
         WorkflowStore(tmp_path / "data"),
         clock=TickClock(),
         id_factory=lambda: "workflow-generated",
-        skill_inventory=inventory_from_names(
-            skill.name for skill in required_skills(pack)
-        ),
+        skill_inventory=inventory_from_names(skill.name for skill in skills),
         skill_content_registry=content_registry_from_digests(
-            {skill.name: skill.content_digest for skill in required_skills(pack)}
+            {skill.name: skill.content_digest for skill in skills}
         ),
     )
     monkeypatch.setattr(tools, "_service_factory", lambda: instance)
@@ -80,126 +78,100 @@ def call(handler, args: object) -> dict:
     return json.loads(raw)
 
 
-def seed_awaiting_approval(
-    service: WorkflowService, target_repository: Path
-) -> str:
-    state = service.start(
-        target_repository=str(target_repository),
+def seed_planned(service: WorkflowService, target: Path) -> str:
+    ledger = service.start(
+        board_slug="wingstaff-test",
+        target_repository=str(target),
         goal="Fix the failing fixture",
         workflow_id="workflow-plan",
     )
-    state = service.validate(state.workflow_id)
-    state = record_artifact(
-        state,
+    ledger = service.submit_artifact(
+        ledger.workflow_id,
         stage=WorkflowStage.DEFINE,
-        path="artifacts/define.md",
-        digest="define-v1",
-        recorded_at=state.updated_at,
+        content="# Definition\n",
     )
-    state = record_artifact(
-        state,
+    ledger = service.submit_artifact(
+        ledger.workflow_id,
         stage=WorkflowStage.PLAN,
-        path="artifacts/plan.md",
-        digest="plan-v1",
-        recorded_at=state.updated_at,
+        content="# Plan\n",
     )
-    service.store.update(state)
-    return state.workflow_id
+    return ledger.workflow_id
 
 
-def test_start_and_status_return_durable_json_state(
-    service: WorkflowService, target_repository: Path
+def test_start_and_status_return_policy_ledger_without_status(
+    service: WorkflowService,
+    target_repository: Path,
 ) -> None:
     started = call(
         tools.start,
         {
+            "board_slug": "wingstaff-test",
             "target_repository": str(target_repository),
             "goal": "Add one deterministic behavior",
         },
     )
 
     assert started["success"] is True
-    workflow = started["workflow"]
-    assert workflow["workflow_id"] == "workflow-generated"
-    assert workflow["status"] == "draft"
-    assert workflow["pack_source_revision"] == (
-        "https://github.com/addyosmani/agent-skills@"
-        "7ce442de03ddc1b72480c3b48d55c62880ea2a90"
-    )
-
-    status = call(tools.status, {"workflow_id": workflow["workflow_id"]})
-    assert status == started
+    ledger = started["workflow"]
+    assert ledger["workflow_id"] == "workflow-generated"
+    assert ledger["board_slug"] == "wingstaff-test"
+    assert ledger["baseline_commit"]
+    assert ledger["skill_digests"]
+    assert {"status", "current_stage", "failure_reason"}.isdisjoint(ledger)
+    assert call(tools.status, {"workflow_id": "workflow-generated"}) == started
 
 
-def test_validate_records_clean_baseline(
-    service: WorkflowService, target_repository: Path
+def test_start_rejects_dirty_target_without_persisting_status(
+    service: WorkflowService,
+    target_repository: Path,
 ) -> None:
-    workflow_id = service.start(
-        target_repository=str(target_repository),
-        goal="Validate target",
-    ).workflow_id
-
-    result = call(tools.validate, {"workflow_id": workflow_id})
-
-    assert result["success"] is True
-    state = result["workflow"]
-    assert state["status"] == "running"
-    assert state["target_is_clean"] is True
-    assert state["baseline_commit"]
-
-
-def test_validate_dirty_target_blocks_workflow(
-    service: WorkflowService, target_repository: Path
-) -> None:
-    workflow_id = service.start(
-        target_repository=str(target_repository),
-        goal="Reject dirty target",
-    ).workflow_id
     (target_repository / "dirty.txt").write_text("dirty\n", encoding="utf-8")
 
-    result = call(tools.validate, {"workflow_id": workflow_id})
+    result = call(
+        tools.start,
+        {
+            "board_slug": "wingstaff-test",
+            "target_repository": str(target_repository),
+            "goal": "Reject dirty target",
+        },
+    )
 
-    assert result["success"] is True
-    assert result["workflow"]["status"] == "blocked"
-    assert result["workflow"]["failure_reason"] == "target repository is dirty"
+    assert result["success"] is False
+    assert result["error"] == "ServiceError"
+    assert "dirty" in result["message"]
+    assert service.store.list_all() == ()
 
 
-def test_approve_and_modify_bind_and_invalidate_exact_plan(
-    service: WorkflowService, target_repository: Path
+def test_approve_binds_exact_digest_and_service_replacement_invalidates_it(
+    service: WorkflowService,
+    target_repository: Path,
 ) -> None:
-    workflow_id = seed_awaiting_approval(service, target_repository)
+    workflow_id = seed_planned(service, target_repository)
+    plan = service.status(workflow_id).artifact_for(WorkflowStage.PLAN)
+    assert plan is not None
 
     approved = call(
         tools.approve,
-        {"workflow_id": workflow_id, "plan_digest": "plan-v1"},
+        {"workflow_id": workflow_id, "plan_digest": plan.digest},
     )
     assert approved["success"] is True
-    assert approved["workflow"]["status"] == "approved"
-    assert approved["workflow"]["approval"]["plan_digest"] == "plan-v1"
+    assert approved["workflow"]["approval"]["plan_digest"] == plan.digest
 
-    modified = call(
-        tools.modify,
-        {
-            "workflow_id": workflow_id,
-            "path": "artifacts/plan.md",
-            "digest": "plan-v2",
-        },
+    replacement = service.replace_plan(
+        workflow_id,
+        path="artifacts/plan-v2.md",
+        digest="plan-v2",
     )
-    assert modified["success"] is True
-    assert modified["workflow"]["status"] == "awaiting_approval"
-    assert modified["workflow"]["approval"] is None
-    plan = next(
-        artifact
-        for artifact in modified["workflow"]["artifacts"]
-        if artifact["stage"] == "plan"
-    )
-    assert plan["digest"] == "plan-v2"
+    assert replacement.plan_revision == 1
+    assert replacement.approval is None
 
 
-def test_cancel_records_terminal_reason(
-    service: WorkflowService, target_repository: Path
+def test_cancel_without_owned_worktree_does_not_create_lifecycle_state(
+    service: WorkflowService,
+    target_repository: Path,
 ) -> None:
     workflow_id = service.start(
+        board_slug="wingstaff-test",
         target_repository=str(target_repository),
         goal="Cancel me",
     ).workflow_id
@@ -210,21 +182,21 @@ def test_cancel_records_terminal_reason(
     )
 
     assert result["success"] is True
-    assert result["workflow"]["status"] == "cancelled"
-    assert result["workflow"]["failure_reason"] == "operator stopped workflow"
+    assert {"status", "failure_reason"}.isdisjoint(result["workflow"])
 
 
 def test_handlers_return_json_errors_instead_of_raising(
-    service: WorkflowService, target_repository: Path
+    service: WorkflowService,
+    target_repository: Path,
 ) -> None:
-    workflow_id = seed_awaiting_approval(service, target_repository)
+    workflow_id = seed_planned(service, target_repository)
 
     wrong_digest = call(
         tools.approve,
         {"workflow_id": workflow_id, "plan_digest": "wrong"},
     )
     assert wrong_digest["success"] is False
-    assert wrong_digest["error"] == "InvalidTransitionError"
+    assert wrong_digest["error"] == "PolicyViolationError"
     assert "current plan digest" in wrong_digest["message"]
 
     unknown = call(tools.status, {"workflow_id": workflow_id, "extra": True})
@@ -236,21 +208,34 @@ def test_handlers_return_json_errors_instead_of_raising(
 
     missing = call(tools.cancel, {"workflow_id": workflow_id})
     assert missing["success"] is False
-    assert "missing required arguments: reason" == missing["message"]
+    assert missing["message"] == "missing required arguments: reason"
 
 
-def test_start_rejects_remote_and_relative_targets(service: WorkflowService) -> None:
+def test_start_requires_explicit_board_and_local_repository(
+    service: WorkflowService,
+) -> None:
+    missing_board = call(
+        tools.start,
+        {"target_repository": "/tmp/repo", "goal": "missing board"},
+    )
+    assert missing_board["success"] is False
+    assert missing_board["message"] == "missing required arguments: board_slug"
+
     for target in ("owner/repo", "https://example.invalid/repo.git"):
         result = call(
             tools.start,
-            {"target_repository": target, "goal": "invalid target"},
+            {
+                "board_slug": "wingstaff-test",
+                "target_repository": target,
+                "goal": "invalid target",
+            },
         )
         assert result["success"] is False
         assert result["error"] == "ServiceError"
         assert "absolute local path" in result["message"]
 
 
-def test_pack_info_is_strict_and_still_reports_valid_pack() -> None:
+def test_pack_info_is_strict_and_reports_valid_pack() -> None:
     result = call(tools.pack_info, {"pack": "addyosmani"})
     assert result["success"] is True
     assert result["pack"] == "addyosmani"
@@ -281,14 +266,12 @@ def test_execution_handlers_keep_json_boundary() -> None:
         }
 
 
-def test_all_schemas_reject_unknown_fields() -> None:
+def test_public_schemas_have_no_removed_lifecycle_aliases() -> None:
     assert {schema["name"] for schema in schemas.ALL_TOOLS} == {
         "wingstaff_pack_info",
         "wingstaff_start",
         "wingstaff_status",
-        "wingstaff_validate",
         "wingstaff_approve",
-        "wingstaff_modify",
         "wingstaff_cancel",
         "wingstaff_submit_artifact",
         "wingstaff_prepare_implementation",
@@ -301,17 +284,21 @@ def test_all_schemas_reject_unknown_fields() -> None:
 
 
 def test_service_rejects_repository_subdirectory(
-    service: WorkflowService, target_repository: Path
+    service: WorkflowService,
+    target_repository: Path,
 ) -> None:
     child = target_repository / "child"
     child.mkdir()
-    workflow_id = service.start(
-        target_repository=str(child),
-        goal="Reject repository subdirectory",
-    ).workflow_id
 
-    result = call(tools.validate, {"workflow_id": workflow_id})
+    result = call(
+        tools.start,
+        {
+            "board_slug": "wingstaff-test",
+            "target_repository": str(child),
+            "goal": "Reject repository subdirectory",
+        },
+    )
+
     assert result["success"] is False
     assert result["error"] == "ServiceError"
     assert "repository root" in result["message"]
-    assert service.status(workflow_id).status is WorkflowStatus.DRAFT

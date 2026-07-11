@@ -8,15 +8,16 @@ from pathlib import Path
 
 import pytest
 
+from wingstaff.errors import PolicyViolationError
 from wingstaff.execution import ExecutionError
 from wingstaff.packs import load_pack
-from wingstaff.service import ServiceError, WorkflowService
+from wingstaff.service import WorkflowService
 from wingstaff.skills import (
     content_registry_from_digests,
     inventory_from_names,
     required_skills,
 )
-from wingstaff.state import WorkflowStage, WorkflowStatus
+from wingstaff.state import WorkflowStage
 from wingstaff.store import WorkflowStore
 
 NOW = datetime(2026, 7, 10, 12, 0, tzinfo=UTC)
@@ -88,12 +89,12 @@ def prepare_planned_workflow(
     workflow_id: str,
 ) -> tuple[str, str]:
     state = service.start(
+        board_slug="wingstaff-test",
         target_repository=str(target),
         goal="Make the deliberately failing test pass",
         pack_name=service.fixture_pack_name,
         workflow_id=workflow_id,
     )
-    state = service.validate(state.workflow_id)
     state = service.submit_artifact(
         state.workflow_id,
         stage=WorkflowStage.DEFINE,
@@ -134,7 +135,7 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
         service, target_repository, "workflow-success"
     )
 
-    with pytest.raises(ServiceError, match="approved"):
+    with pytest.raises(PolicyViolationError, match="approval"):
         service.prepare_implementation(workflow_id)
 
     service.approve(workflow_id, plan_digest)
@@ -163,7 +164,7 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
         exit_code=verification.returncode,
         output=verification.stdout + verification.stderr,
     )
-    assert reviewing.current_stage is WorkflowStage.REVIEW
+    assert reviewing.verification_evidence[-1].exit_code == 0
 
     service.submit_artifact(
         workflow_id,
@@ -178,7 +179,6 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
     ).stdout.strip()
     completed = service.deliver(workflow_id)
 
-    assert completed.status is WorkflowStatus.COMPLETED
     delivery = completed.artifact_for(WorkflowStage.DELIVER)
     assert delivery is not None
     payload = json.loads(Path(delivery.path).read_text(encoding="utf-8"))
@@ -213,7 +213,8 @@ def test_cancel_rolls_back_owned_implementation_worktree(
 
     cancelled = service.cancel(workflow_id, "Operator requested rollback")
 
-    assert cancelled.status is WorkflowStatus.CANCELLED
+    assert cancelled.worktree_path is None
+    assert cancelled.worktree_owned is False
     assert not worktree.exists()
     assert "return 1" in (target_repository / "calculator.py").read_text(encoding="utf-8")
 
@@ -243,8 +244,9 @@ def test_failed_verification_blocks_delivery(
         output=verification.stdout + verification.stderr,
     )
 
-    assert blocked.status is WorkflowStatus.BLOCKED
-    with pytest.raises(ServiceError, match="completed review"):
+    assert blocked.verification_evidence[-1].exit_code != 0
+    assert "status" not in blocked.to_dict()
+    with pytest.raises(PolicyViolationError, match="successful verification"):
         service.deliver(workflow_id)
 
 
@@ -254,6 +256,7 @@ def test_capture_requires_real_diff_and_safe_workflow_id(
 ) -> None:
     with pytest.raises(ExecutionError, match="workflow_id"):
         service.start(
+            board_slug="wingstaff-test",
             target_repository=str(target_repository),
             goal="unsafe id",
             pack_name=service.fixture_pack_name,

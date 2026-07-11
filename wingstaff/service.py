@@ -1,4 +1,4 @@
-"""Application service for Wingstaff lifecycle tools."""
+"""Application service for Wingstaff policy and artifact operations."""
 
 from __future__ import annotations
 
@@ -10,36 +10,35 @@ from uuid import uuid4
 
 from .errors import WorkflowError
 from .execution import ExecutionError, ExecutionWorkspace
-from .kanban import KanbanCoordinator
 from .packs import load_pack
 from .skills import (
     HermesSkillInventory,
     ProfileSkillContentRegistry,
     SkillContentRegistry,
     SkillInventory,
+    pack_skill_digests,
     require_pack_skill_revisions,
     require_pack_skills,
 )
-from .state import WorkflowStage, WorkflowState, WorkflowStatus
+from .state import SkillDigest, WorkflowLedger, WorkflowStage
 from .store import WorkflowStore
 from .workflow import (
     approve_plan,
-    cancel_workflow,
-    modify_plan,
     new_workflow,
     record_artifact,
     record_verification,
-    start_implementation,
-    validate_target,
+    record_worktree,
+    release_worktree,
+    replace_plan,
 )
 
 
 class ServiceError(WorkflowError):
-    """Raised when a lifecycle operation cannot satisfy its boundary contract."""
+    """Raised when an operation cannot satisfy the policy boundary."""
 
 
 class WorkflowService:
-    """Coordinate deterministic transitions with durable persistence."""
+    """Coordinate policy checks, artifacts, worktrees, and durable ledgers."""
 
     def __init__(
         self,
@@ -49,7 +48,6 @@ class WorkflowService:
         id_factory: Callable[[], str] | None = None,
         skill_inventory: SkillInventory | None = None,
         skill_content_registry: SkillContentRegistry | None = None,
-        kanban: KanbanCoordinator | None = None,
     ) -> None:
         self.store = store
         self._clock = clock or (lambda: datetime.now(UTC))
@@ -59,92 +57,87 @@ class WorkflowService:
             store.data_root.parent / "skills"
         )
         self._workspace = ExecutionWorkspace(store.data_root)
-        self._kanban = kanban
 
     def start(
         self,
         *,
+        board_slug: str,
         target_repository: str,
         goal: str,
         pack_name: str = "addyosmani",
         workflow_id: str | None = None,
-    ) -> WorkflowState:
-        """Create a draft after validating only local deterministic inputs."""
+    ) -> WorkflowLedger:
+        """Validate deterministic inputs and create a fresh policy ledger."""
         pack = load_pack(pack_name)
         require_pack_skills(pack, self._skill_inventory)
         require_pack_skill_revisions(pack, self._skill_content_registry)
         selected_id = workflow_id or self._id_factory()
         self._workspace.validate_workflow_id(selected_id)
         target = _canonical_local_path(target_repository)
-        state = new_workflow(
+        baseline, is_clean = _inspect_repository(target)
+        if not is_clean:
+            raise ServiceError("target repository is dirty")
+        skills = tuple(
+            SkillDigest(name=name, digest=digest)
+            for name, digest in pack_skill_digests(pack)
+        )
+        ledger = new_workflow(
             workflow_id=selected_id,
+            board_slug=board_slug,
             target_repository=str(target),
+            baseline_commit=baseline,
             requested_goal=goal,
             pack_name=pack.name,
             pack_source_revision=f"{pack.source}@{pack.source_revision}",
+            skill_digests=skills,
             created_at=self._clock(),
         )
-        return self.store.create(state)
+        return self.store.create(ledger)
 
-    def status(self, workflow_id: str) -> WorkflowState:
-        """Return durable state without changing it."""
+    def status(self, workflow_id: str) -> WorkflowLedger:
+        """Return Wingstaff policy facts without reading or copying Kanban status."""
         return self.store.get(workflow_id)
 
-    def validate(self, workflow_id: str) -> WorkflowState:
-        """Validate the selected pack and the target repository's clean baseline."""
-        observed = self.store.get_with_token(workflow_id)
-        state = observed.state
-        pack = load_pack(state.pack_name)
-        require_pack_skills(pack, self._skill_inventory)
-        require_pack_skill_revisions(pack, self._skill_content_registry)
-        baseline, is_clean = _inspect_repository(Path(state.target_repository))
-        updated = validate_target(
-            state,
-            target_is_clean=is_clean,
-            baseline_commit=baseline if is_clean else None,
-            validated_at=self._clock(),
-        )
-        return self.store.update(updated, expected_updated_at=observed.updated_at)
-
-    def approve(self, workflow_id: str, plan_digest: str) -> WorkflowState:
-        """Approve exactly the current durable plan digest."""
+    def approve(self, workflow_id: str, plan_digest: str) -> WorkflowLedger:
+        """Approve exactly the current durable plan revision and digest."""
         observed = self.store.get_with_token(workflow_id)
         updated = approve_plan(
-            observed.state,
+            observed.ledger,
             plan_digest=plan_digest,
             decided_at=self._clock(),
         )
         return self.store.update(updated, expected_updated_at=observed.updated_at)
 
-    def modify(
+    def replace_plan(
         self,
         workflow_id: str,
         *,
         path: str,
         digest: str,
-    ) -> WorkflowState:
-        """Replace the plan artifact and invalidate any durable approval."""
+    ) -> WorkflowLedger:
+        """Record a new plan revision and invalidate approval."""
         observed = self.store.get_with_token(workflow_id)
-        updated = modify_plan(
-            observed.state,
+        updated = replace_plan(
+            observed.ledger,
             path=path,
             digest=digest,
-            modified_at=self._clock(),
+            replaced_at=self._clock(),
         )
         return self.store.update(updated, expected_updated_at=observed.updated_at)
 
-    def cancel(self, workflow_id: str, reason: str) -> WorkflowState:
-        """Record terminal operator cancellation."""
+    def cancel(self, workflow_id: str, reason: str) -> WorkflowLedger:
+        """Remove a Wingstaff-owned worktree; Kanban owns cancellation state."""
+        if not isinstance(reason, str) or not reason.strip():
+            raise ServiceError("cancellation reason must be a non-empty string")
         observed = self.store.get_with_token(workflow_id)
-        updated = cancel_workflow(
-            observed.state,
-            reason=reason,
-            cancelled_at=self._clock(),
+        ledger = observed.ledger
+        if not ledger.worktree_owned or ledger.worktree_path is None:
+            return ledger
+        self._workspace.remove_worktree(
+            ledger.target_repository,
+            ledger.worktree_path,
         )
-        if observed.state.worktree_path:
-            self._workspace.remove_worktree(
-                observed.state.target_repository, observed.state.worktree_path
-            )
+        updated = release_worktree(ledger, released_at=self._clock())
         return self.store.update(updated, expected_updated_at=observed.updated_at)
 
     def submit_artifact(
@@ -153,19 +146,13 @@ class WorkflowService:
         *,
         stage: WorkflowStage,
         content: str,
-    ) -> WorkflowState:
+    ) -> WorkflowLedger:
         """Store and record a model-produced definition, plan, or review."""
         if not isinstance(content, str) or not content.strip():
             raise ServiceError("artifact content must be a non-empty string")
         if stage not in {WorkflowStage.DEFINE, WorkflowStage.PLAN, WorkflowStage.REVIEW}:
             raise ServiceError(f"stage {stage.value!r} cannot be submitted as text")
         observed = self.store.get_with_token(workflow_id)
-        state = observed.state
-        if state.status is not WorkflowStatus.RUNNING or state.current_stage is not stage:
-            raise ServiceError(
-                f"artifact requires running/{stage.value}; workflow is "
-                f"{state.status.value}/{state.current_stage.value}"
-            )
         filename = {
             WorkflowStage.DEFINE: "define.md",
             WorkflowStage.PLAN: "plan.md",
@@ -173,7 +160,7 @@ class WorkflowService:
         }[stage]
         artifact = self._workspace.write_artifact(workflow_id, filename, content)
         updated = record_artifact(
-            state,
+            observed.ledger,
             stage=stage,
             path=artifact.path,
             digest=artifact.digest,
@@ -181,74 +168,42 @@ class WorkflowService:
         )
         return self.store.update(updated, expected_updated_at=observed.updated_at)
 
-    def prepare_implementation(
-        self, workflow_id: str, *, assignee: str | None = None
-    ) -> WorkflowState:
-        """Create the approved worktree and retry-safe Hermes implementation card."""
+    def prepare_implementation(self, workflow_id: str) -> WorkflowLedger:
+        """Create and record a worktree only after exact plan approval."""
         observed = self.store.get_with_token(workflow_id)
-        state = observed.state
-        if (
-            state.status is WorkflowStatus.RUNNING
-            and state.current_stage is WorkflowStage.IMPLEMENT
-            and state.worktree_path
-        ):
-            self._ensure_implementation_task(state, assignee)
-            return state
-        if state.status is not WorkflowStatus.APPROVED:
-            raise ServiceError("implementation requires approved workflow state")
-        baseline, is_clean = _inspect_repository(Path(state.target_repository))
-        if not is_clean or baseline != state.baseline_commit:
-            raise ServiceError("target repository changed after validation")
-        if state.baseline_commit is None:
-            raise ServiceError("workflow has no validated baseline commit")
+        ledger = observed.ledger
+        if ledger.worktree_owned and ledger.worktree_path:
+            return ledger
+        baseline, is_clean = _inspect_repository(Path(ledger.target_repository))
+        if not is_clean or baseline != ledger.baseline_commit:
+            raise ServiceError("target repository changed after workflow creation")
         worktree = self._workspace.create_worktree(
             workflow_id,
-            state.target_repository,
-            state.baseline_commit,
+            ledger.target_repository,
+            ledger.baseline_commit,
         )
-        updated = start_implementation(
-            state,
+        updated = record_worktree(
+            ledger,
             worktree_path=worktree,
-            started_at=self._clock(),
+            recorded_at=self._clock(),
         )
-        persisted = self.store.update(updated, expected_updated_at=observed.updated_at)
-        self._ensure_implementation_task(persisted, assignee)
-        return persisted
+        return self.store.update(updated, expected_updated_at=observed.updated_at)
 
-    def _ensure_implementation_task(
-        self, state: WorkflowState, assignee: str | None
-    ) -> None:
-        if self._kanban is None:
-            return
-        if not assignee or not assignee.strip():
-            raise ServiceError("Kanban implementation requires an assignee profile")
-        self._kanban.ensure_implementation_task(
-            state,
-            load_pack(state.pack_name),
-            assignee=assignee,
-        )
-
-    def capture_implementation(self, workflow_id: str) -> WorkflowState:
-        """Capture the real worktree diff and advance to verification."""
+    def capture_implementation(self, workflow_id: str) -> WorkflowLedger:
+        """Capture the immutable pre-verification diff and changed-path scope."""
         observed = self.store.get_with_token(workflow_id)
-        state = observed.state
-        if (
-            state.status is WorkflowStatus.RUNNING
-            and state.current_stage is WorkflowStage.VERIFY
-            and state.artifact_for(WorkflowStage.IMPLEMENT) is not None
-        ):
-            return state
-        if (
-            state.status is not WorkflowStatus.RUNNING
-            or state.current_stage is not WorkflowStage.IMPLEMENT
-        ):
-            raise ServiceError("diff capture requires active implementation")
-        if not state.worktree_path:
-            raise ExecutionError("workflow has no implementation worktree")
-        diff = self._workspace.capture_diff(state.worktree_path)
-        changed_paths = self._workspace.changed_paths(state.worktree_path)
+        ledger = observed.ledger
+        existing = ledger.artifact_for(WorkflowStage.IMPLEMENT)
+        if existing is not None:
+            return ledger
+        if not ledger.worktree_path or not ledger.worktree_owned:
+            raise ExecutionError("workflow has no Wingstaff-owned implementation worktree")
+        diff = self._workspace.capture_diff(ledger.worktree_path)
+        changed_paths = self._workspace.changed_paths(ledger.worktree_path)
         artifact = self._workspace.write_artifact(
-            workflow_id, "implementation.diff", diff
+            workflow_id,
+            "implementation.diff",
+            diff,
         )
         self._workspace.write_json_artifact(
             workflow_id,
@@ -256,7 +211,7 @@ class WorkflowService:
             {"changed_paths": list(changed_paths)},
         )
         updated = record_artifact(
-            state,
+            ledger,
             stage=WorkflowStage.IMPLEMENT,
             path=artifact.path,
             digest=artifact.digest,
@@ -271,68 +226,79 @@ class WorkflowService:
         command: str,
         exit_code: int,
         output: str,
-    ) -> WorkflowState:
+    ) -> WorkflowLedger:
         """Persist actual command output and structured verification evidence."""
         observed = self.store.get_with_token(workflow_id)
-        state = observed.state
-        if (
-            state.status is not WorkflowStatus.RUNNING
-            or state.current_stage is not WorkflowStage.VERIFY
-        ):
-            raise ServiceError("verification evidence requires verification stage")
         artifact = self._workspace.write_artifact(
-            workflow_id, "verification.txt", output
+            workflow_id,
+            "verification.txt",
+            output,
         )
         updated = record_verification(
-            state,
+            observed.ledger,
             command=command,
             exit_code=exit_code,
             output_reference=artifact.path,
+            output_digest=artifact.digest,
             recorded_at=self._clock(),
         )
         return self.store.update(updated, expected_updated_at=observed.updated_at)
 
-    def deliver(self, workflow_id: str) -> WorkflowState:
-        """Record reviewed paths and evidence without committing or pushing."""
+    def deliver(self, workflow_id: str) -> WorkflowLedger:
+        """Record reviewed evidence and remove the worktree without commit or push."""
         observed = self.store.get_with_token(workflow_id)
-        state = observed.state
-        if (
-            state.status is not WorkflowStatus.RUNNING
-            or state.current_stage is not WorkflowStage.DELIVER
-        ):
-            raise ServiceError("delivery requires a completed review")
-        if not state.worktree_path:
-            raise ExecutionError("workflow has no implementation worktree")
-        implementation = self._workspace.read_json_artifact(
-            workflow_id, "implementation-paths.json"
-        )
-        changed_paths = implementation.get("changed_paths")
-        if not isinstance(changed_paths, list) or not all(
-            isinstance(path, str) and path for path in changed_paths
-        ):
-            raise ExecutionError("implementation changed-path manifest is invalid")
-        payload = {
-            "workflow_id": state.workflow_id,
-            "baseline_commit": state.baseline_commit,
-            "changed_paths": changed_paths,
-            "verification": [
-                evidence.to_dict() for evidence in state.verification_evidence
-            ],
-            "committed": False,
-            "pushed": False,
-        }
-        artifact = self._workspace.write_json_artifact(
-            workflow_id, "delivery.json", payload
-        )
-        self._workspace.remove_worktree(state.target_repository, state.worktree_path)
-        updated = record_artifact(
-            state,
-            stage=WorkflowStage.DELIVER,
-            path=artifact.path,
-            digest=artifact.digest,
-            recorded_at=self._clock(),
-        )
-        return self.store.update(updated, expected_updated_at=observed.updated_at)
+        ledger = observed.ledger
+        delivery = ledger.artifact_for(WorkflowStage.DELIVER)
+        if delivery is None:
+            if not ledger.worktree_path or not ledger.worktree_owned:
+                raise ExecutionError("workflow has no Wingstaff-owned implementation worktree")
+            implementation = self._workspace.read_json_artifact(
+                workflow_id,
+                "implementation-paths.json",
+            )
+            changed_paths = implementation.get("changed_paths")
+            if not isinstance(changed_paths, list) or not all(
+                isinstance(path, str) and path for path in changed_paths
+            ):
+                raise ExecutionError("implementation changed-path manifest is invalid")
+            payload = {
+                "workflow_id": ledger.workflow_id,
+                "baseline_commit": ledger.baseline_commit,
+                "changed_paths": changed_paths,
+                "verification": [
+                    evidence.to_dict() for evidence in ledger.verification_evidence
+                ],
+                "committed": False,
+                "pushed": False,
+            }
+            artifact = self._workspace.write_json_artifact(
+                workflow_id,
+                "delivery.json",
+                payload,
+            )
+            ledger = record_artifact(
+                ledger,
+                stage=WorkflowStage.DELIVER,
+                path=artifact.path,
+                digest=artifact.digest,
+                recorded_at=self._clock(),
+            )
+            ledger = self.store.update(
+                ledger,
+                expected_updated_at=observed.updated_at,
+            )
+        if ledger.worktree_path and ledger.worktree_owned:
+            self._workspace.remove_worktree(
+                ledger.target_repository,
+                ledger.worktree_path,
+            )
+            observed_after_delivery = ledger.updated_at.isoformat()
+            ledger = release_worktree(ledger, released_at=self._clock())
+            ledger = self.store.update(
+                ledger,
+                expected_updated_at=observed_after_delivery,
+            )
+        return ledger
 
 
 def _canonical_local_path(value: str) -> Path:

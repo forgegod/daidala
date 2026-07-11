@@ -1,4 +1,4 @@
-"""Deterministic workflow creation and state transitions."""
+"""Deterministic updates to the Wingstaff policy and artifact ledger."""
 
 from __future__ import annotations
 
@@ -6,328 +6,303 @@ from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 
-from .errors import InvalidTransitionError, InvalidWorkflowError
+from .errors import PolicyViolationError
 from .state import (
     ApprovalRecord,
     ArtifactReference,
+    CardReference,
+    SkillDigest,
     VerificationEvidence,
+    WorkflowLedger,
     WorkflowStage,
-    WorkflowState,
-    WorkflowStatus,
 )
 
 
 def new_workflow(
     *,
     workflow_id: str,
+    board_slug: str,
     target_repository: str,
+    baseline_commit: str,
     requested_goal: str,
     pack_name: str,
     pack_source_revision: str,
+    skill_digests: tuple[SkillDigest, ...],
     created_at: datetime,
-) -> WorkflowState:
-    """Create an immutable draft without touching the target repository."""
-    return WorkflowState(
+) -> WorkflowLedger:
+    """Create a policy ledger after deterministic preflight validation."""
+    return WorkflowLedger(
         workflow_id=workflow_id,
+        board_slug=board_slug,
         target_repository=target_repository,
+        baseline_commit=baseline_commit,
         requested_goal=requested_goal,
         pack_name=pack_name,
         pack_source_revision=pack_source_revision,
-        current_stage=WorkflowStage.DEFINE,
-        status=WorkflowStatus.DRAFT,
+        skill_digests=skill_digests,
         created_at=created_at,
         updated_at=created_at,
     )
 
 
-def validate_target(
-    state: WorkflowState,
+def record_card(
+    ledger: WorkflowLedger,
     *,
-    target_is_clean: bool,
-    baseline_commit: str | None,
-    validated_at: datetime,
-) -> WorkflowState:
-    """Record deterministic target validation and block dirty targets."""
-    if (
-        state.target_is_clean is target_is_clean
-        and state.baseline_commit == baseline_commit
-        and state.target_validated_at == validated_at
-    ):
-        return state
-    _require_state(
-        state,
-        status=WorkflowStatus.DRAFT,
-        stage=WorkflowStage.DEFINE,
-        recorded_at=validated_at,
-    )
-    if not isinstance(target_is_clean, bool):
-        raise InvalidWorkflowError("target_is_clean must be a boolean")
-
-    if not target_is_clean:
-        return replace(
-            state,
-            status=WorkflowStatus.BLOCKED,
-            target_is_clean=False,
-            target_validated_at=validated_at,
-            updated_at=validated_at,
-            failure_reason="target repository is dirty",
+    stage: WorkflowStage,
+    task_id: str,
+    idempotency_key: str,
+    recorded_at: datetime,
+) -> WorkflowLedger:
+    """Record one host-owned Kanban card without copying its status."""
+    revision = _card_revision(ledger, stage)
+    expected_key = f"wingstaff:{ledger.workflow_id}:{revision}:{stage.value}"
+    if idempotency_key != expected_key:
+        raise PolicyViolationError(
+            f"Kanban idempotency key must be {expected_key!r}"
         )
-    if not isinstance(baseline_commit, str) or not baseline_commit.strip():
-        raise InvalidWorkflowError("baseline commit must be a non-empty string")
+    candidate = CardReference(
+        stage=stage,
+        plan_revision=revision,
+        task_id=task_id,
+        idempotency_key=idempotency_key,
+    )
+    existing = next(
+        (
+            row
+            for row in ledger.card_references
+            if row.stage is stage and row.plan_revision == revision
+        ),
+        None,
+    )
+    if existing == candidate:
+        return ledger
+    if existing is not None:
+        raise PolicyViolationError(
+            f"stage {stage.value!r} already maps to a different Kanban card"
+        )
+    if stage is WorkflowStage.APPROVAL and ledger.current_plan_digest is None:
+        raise PolicyViolationError("approval card requires a plan artifact")
+    if stage in {
+        WorkflowStage.IMPLEMENT,
+        WorkflowStage.VERIFY,
+        WorkflowStage.REVIEW,
+        WorkflowStage.DELIVER,
+    }:
+        _require_approval(ledger)
+    _require_not_before(ledger, recorded_at)
     return replace(
-        state,
-        status=WorkflowStatus.RUNNING,
-        target_is_clean=True,
-        baseline_commit=baseline_commit.strip(),
-        target_validated_at=validated_at,
-        updated_at=validated_at,
+        ledger,
+        card_references=(*ledger.card_references, candidate),
+        updated_at=recorded_at,
     )
 
 
 def record_artifact(
-    state: WorkflowState,
+    ledger: WorkflowLedger,
     *,
     stage: WorkflowStage,
     path: str,
     digest: str,
     recorded_at: datetime,
-) -> WorkflowState:
-    """Record the current stage artifact and advance without skipping the gate."""
-    candidate = ArtifactReference(stage=stage, path=path, digest=digest, recorded_at=recorded_at)
-    existing = state.artifact_for(stage)
-    if existing == candidate:
-        return state
-    if existing is not None:
-        raise InvalidTransitionError(f"stage {stage.value!r} already has a different artifact")
-    _require_state(
-        state,
-        status=WorkflowStatus.RUNNING,
+) -> WorkflowLedger:
+    """Record an immutable stage artifact after its Wingstaff policy checks."""
+    if stage in {WorkflowStage.APPROVAL, WorkflowStage.VERIFY}:
+        raise PolicyViolationError(
+            f"stage {stage.value!r} uses approval or verification evidence, not an artifact"
+        )
+    revision = 0 if stage is WorkflowStage.DEFINE else ledger.plan_revision
+    candidate = ArtifactReference(
         stage=stage,
+        plan_revision=revision,
+        path=path,
+        digest=digest,
         recorded_at=recorded_at,
     )
-
-    next_stage: WorkflowStage
-    next_status = WorkflowStatus.RUNNING
-    if stage is WorkflowStage.DEFINE:
-        next_stage = WorkflowStage.PLAN
-    elif stage is WorkflowStage.PLAN:
-        next_stage = WorkflowStage.PLAN
-        next_status = WorkflowStatus.AWAITING_APPROVAL
+    existing = ledger.artifact_for(stage)
+    if existing == candidate:
+        return ledger
+    if existing is not None:
+        raise PolicyViolationError(
+            f"stage {stage.value!r} already has a different artifact"
+        )
+    _require_not_before(ledger, recorded_at)
+    if stage is WorkflowStage.PLAN:
+        _require_artifact(ledger, WorkflowStage.DEFINE)
     elif stage is WorkflowStage.IMPLEMENT:
-        next_stage = WorkflowStage.VERIFY
+        _require_approval(ledger)
+        _require_worktree(ledger)
     elif stage is WorkflowStage.REVIEW:
-        next_stage = WorkflowStage.DELIVER
+        _require_successful_verification(ledger)
     elif stage is WorkflowStage.DELIVER:
-        next_stage = WorkflowStage.DELIVER
-        next_status = WorkflowStatus.COMPLETED
-    else:
-        raise InvalidTransitionError("verification requires structured verification evidence")
-
+        _require_successful_verification(ledger)
+        _require_artifact(ledger, WorkflowStage.REVIEW)
     return replace(
-        state,
-        artifacts=(*state.artifacts, candidate),
-        current_stage=next_stage,
-        status=next_status,
+        ledger,
+        artifacts=(*ledger.artifacts, candidate),
         updated_at=recorded_at,
     )
 
 
 def approve_plan(
-    state: WorkflowState,
+    ledger: WorkflowLedger,
     *,
     plan_digest: str,
     decided_at: datetime,
-) -> WorkflowState:
-    """Bind approval to the exact current plan digest."""
-    if state.approval is not None and state.approval.plan_digest == plan_digest:
-        return state
-    if state.status is not WorkflowStatus.AWAITING_APPROVAL:
-        raise InvalidTransitionError("plan approval requires awaiting_approval status")
-    _require_not_before(state, decided_at)
-    plan = state.artifact_for(WorkflowStage.PLAN)
-    if plan is None or plan.digest != plan_digest:
-        raise InvalidTransitionError("approval must match the current plan digest")
-    return replace(
-        state,
-        status=WorkflowStatus.APPROVED,
-        current_stage=WorkflowStage.IMPLEMENT,
-        approval=ApprovalRecord(plan_digest=plan_digest, decided_at=decided_at),
-        updated_at=decided_at,
+) -> WorkflowLedger:
+    """Bind approval to the exact current plan revision and digest."""
+    candidate = ApprovalRecord(
+        plan_digest=plan_digest,
+        plan_revision=ledger.plan_revision,
+        decided_at=decided_at,
     )
+    if ledger.approval == candidate:
+        return ledger
+    plan = ledger.artifact_for(WorkflowStage.PLAN)
+    if plan is None or plan.digest != plan_digest:
+        raise PolicyViolationError("approval must match the current plan digest")
+    if ledger.approval is not None:
+        raise PolicyViolationError("current plan revision already has a different approval")
+    _require_not_before(ledger, decided_at)
+    return replace(ledger, approval=candidate, updated_at=decided_at)
 
 
-def modify_plan(
-    state: WorkflowState,
+def replace_plan(
+    ledger: WorkflowLedger,
     *,
     path: str,
     digest: str,
-    modified_at: datetime,
-) -> WorkflowState:
-    """Replace the plan artifact and invalidate any existing approval."""
-    if state.status not in {WorkflowStatus.AWAITING_APPROVAL, WorkflowStatus.APPROVED}:
-        raise InvalidTransitionError("plan modification requires a planned workflow")
-    _require_not_before(state, modified_at)
+    replaced_at: datetime,
+) -> WorkflowLedger:
+    """Create a fresh plan revision and invalidate approval and post-gate facts."""
+    current = ledger.artifact_for(WorkflowStage.PLAN)
+    if current is None:
+        raise PolicyViolationError("plan replacement requires a plan artifact")
+    if ledger.worktree_owned:
+        raise PolicyViolationError("release the owned worktree before replacing the plan")
+    if current.path == path and current.digest == digest and ledger.approval is None:
+        return ledger
+    _require_not_before(ledger, replaced_at)
+    revision = ledger.plan_revision + 1
     replacement = ArtifactReference(
         stage=WorkflowStage.PLAN,
+        plan_revision=revision,
         path=path,
         digest=digest,
-        recorded_at=modified_at,
+        recorded_at=replaced_at,
     )
-    artifacts = tuple(
-        replacement if artifact.stage is WorkflowStage.PLAN else artifact
-        for artifact in state.artifacts
-    )
-    if not any(artifact.stage is WorkflowStage.PLAN for artifact in state.artifacts):
-        raise InvalidTransitionError("plan modification requires a plan artifact")
-    if state.artifact_for(WorkflowStage.PLAN) == replacement and state.approval is None:
-        return state
     return replace(
-        state,
-        artifacts=artifacts,
+        ledger,
+        plan_revision=revision,
+        artifacts=(*ledger.artifacts, replacement),
         approval=None,
-        status=WorkflowStatus.AWAITING_APPROVAL,
-        current_stage=WorkflowStage.PLAN,
-        worktree_path=None,
-        updated_at=modified_at,
+        verification_evidence=(),
+        updated_at=replaced_at,
     )
 
 
-def start_implementation(
-    state: WorkflowState,
+def record_worktree(
+    ledger: WorkflowLedger,
     *,
     worktree_path: str,
-    started_at: datetime,
-) -> WorkflowState:
-    """Start implementation only after approval in a distinct local worktree."""
-    if (
-        state.status is WorkflowStatus.RUNNING
-        and state.current_stage is WorkflowStage.IMPLEMENT
-        and state.worktree_path == worktree_path
-    ):
-        return state
-    if state.status is not WorkflowStatus.APPROVED:
-        raise InvalidTransitionError("implementation requires approval")
-    _require_not_before(state, started_at)
-    if not isinstance(worktree_path, str) or not Path(worktree_path).is_absolute():
-        raise InvalidWorkflowError("worktree path must be an absolute local path")
-    if Path(worktree_path) == Path(state.target_repository):
-        raise InvalidWorkflowError("worktree path must differ from target repository")
-    return replace(
-        state,
-        status=WorkflowStatus.RUNNING,
-        worktree_path=worktree_path,
-        updated_at=started_at,
-    )
-
-
-def record_verification(
-    state: WorkflowState,
-    *,
-    command: str,
-    exit_code: int,
-    output_reference: str,
     recorded_at: datetime,
-) -> WorkflowState:
-    """Record real verification evidence and block on failure."""
-    evidence = VerificationEvidence(
-        command=command,
-        exit_code=exit_code,
-        output_reference=output_reference,
-        recorded_at=recorded_at,
-    )
-    if evidence in state.verification_evidence:
-        return state
-    _require_state(
-        state,
-        status=WorkflowStatus.RUNNING,
-        stage=WorkflowStage.VERIFY,
-        recorded_at=recorded_at,
-    )
-    evidence_rows = (*state.verification_evidence, evidence)
-    if exit_code != 0:
-        return replace(
-            state,
-            verification_evidence=evidence_rows,
-            status=WorkflowStatus.BLOCKED,
-            updated_at=recorded_at,
-            failure_reason=f"verification failed with exit code {exit_code}",
+) -> WorkflowLedger:
+    """Record one Wingstaff-owned worktree after exact plan approval."""
+    if ledger.worktree_path == worktree_path and ledger.worktree_owned:
+        return ledger
+    if ledger.worktree_path is not None:
+        raise PolicyViolationError("workflow already owns a different worktree")
+    _require_approval(ledger)
+    _require_not_before(ledger, recorded_at)
+    path = Path(worktree_path)
+    if not path.is_absolute() or path == Path(ledger.target_repository):
+        raise PolicyViolationError(
+            "worktree path must be an absolute local path distinct from the target repository"
         )
     return replace(
-        state,
-        verification_evidence=evidence_rows,
-        current_stage=WorkflowStage.REVIEW,
+        ledger,
+        worktree_path=worktree_path,
+        worktree_owned=True,
         updated_at=recorded_at,
     )
 
 
-def fail_workflow(
-    state: WorkflowState,
+def release_worktree(
+    ledger: WorkflowLedger,
     *,
-    reason: str,
-    failed_at: datetime,
-) -> WorkflowState:
-    """Record a terminal runtime failure."""
-    if state.status is WorkflowStatus.FAILED and state.failure_reason == reason:
-        return state
-    _require_nonterminal(state)
-    _require_not_before(state, failed_at)
+    released_at: datetime,
+) -> WorkflowLedger:
+    """Clear ownership after the validated worktree has been removed."""
+    if ledger.worktree_path is None and not ledger.worktree_owned:
+        return ledger
+    _require_not_before(ledger, released_at)
     return replace(
-        state,
-        status=WorkflowStatus.FAILED,
-        failure_reason=reason,
-        updated_at=failed_at,
+        ledger,
+        worktree_path=None,
+        worktree_owned=False,
+        updated_at=released_at,
     )
 
 
-def cancel_workflow(
-    state: WorkflowState,
+def record_verification(
+    ledger: WorkflowLedger,
     *,
-    reason: str,
-    cancelled_at: datetime,
-) -> WorkflowState:
-    """Record terminal operator cancellation."""
-    if state.status is WorkflowStatus.CANCELLED and state.failure_reason == reason:
-        return state
-    _require_nonterminal(state)
-    _require_not_before(state, cancelled_at)
-    return replace(
-        state,
-        status=WorkflowStatus.CANCELLED,
-        failure_reason=reason,
-        updated_at=cancelled_at,
-    )
-
-
-def _require_state(
-    state: WorkflowState,
-    *,
-    status: WorkflowStatus,
-    stage: WorkflowStage,
+    command: str,
+    exit_code: int,
+    output_reference: str,
+    output_digest: str,
     recorded_at: datetime,
-) -> None:
-    if state.status is not status or state.current_stage is not stage:
-        raise InvalidTransitionError(
-            f"transition requires {status.value}/{stage.value}; "
-            f"workflow is {state.status.value}/{state.current_stage.value}"
-        )
-    if recorded_at < state.updated_at:
-        raise InvalidTransitionError(
-            f"recorded_at cannot be before updated_at {state.updated_at.isoformat()}"
-        )
+) -> WorkflowLedger:
+    """Record verification evidence without mirroring the Kanban card status."""
+    _require_approval(ledger)
+    _require_worktree(ledger)
+    _require_artifact(ledger, WorkflowStage.IMPLEMENT)
+    evidence = VerificationEvidence(
+        command=command,
+        exit_code=exit_code,
+        output_reference=output_reference,
+        output_digest=output_digest,
+        plan_revision=ledger.plan_revision,
+        recorded_at=recorded_at,
+    )
+    if evidence in ledger.verification_evidence:
+        return ledger
+    _require_not_before(ledger, recorded_at)
+    return replace(
+        ledger,
+        verification_evidence=(*ledger.verification_evidence, evidence),
+        updated_at=recorded_at,
+    )
 
 
-def _require_nonterminal(state: WorkflowState) -> None:
-    if state.status in {
-        WorkflowStatus.BLOCKED,
-        WorkflowStatus.FAILED,
-        WorkflowStatus.COMPLETED,
-        WorkflowStatus.CANCELLED,
-    }:
-        raise InvalidTransitionError(f"workflow is terminal: {state.status.value}")
+def _card_revision(ledger: WorkflowLedger, stage: WorkflowStage) -> int:
+    if stage in {WorkflowStage.DEFINE, WorkflowStage.PLAN}:
+        return 0
+    return ledger.plan_revision
 
 
-def _require_not_before(state: WorkflowState, recorded_at: datetime) -> None:
-    if recorded_at < state.updated_at:
-        raise InvalidTransitionError(
-            f"recorded_at cannot be before updated_at {state.updated_at.isoformat()}"
+def _require_approval(ledger: WorkflowLedger) -> None:
+    if ledger.approval is None:
+        raise PolicyViolationError("operation requires exact approval of the current plan")
+
+
+def _require_worktree(ledger: WorkflowLedger) -> None:
+    if ledger.worktree_path is None or not ledger.worktree_owned:
+        raise PolicyViolationError("operation requires a Wingstaff-owned worktree")
+
+
+def _require_artifact(ledger: WorkflowLedger, stage: WorkflowStage) -> None:
+    if ledger.artifact_for(stage) is None:
+        raise PolicyViolationError(f"operation requires the {stage.value} artifact")
+
+
+def _require_successful_verification(ledger: WorkflowLedger) -> None:
+    evidence = ledger.verification_evidence
+    if not evidence or evidence[-1].exit_code != 0:
+        raise PolicyViolationError("operation requires successful verification evidence")
+
+
+def _require_not_before(ledger: WorkflowLedger, recorded_at: datetime) -> None:
+    if recorded_at < ledger.updated_at:
+        raise PolicyViolationError(
+            f"recorded_at cannot be before updated_at {ledger.updated_at.isoformat()}"
         )

@@ -5,18 +5,17 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from wingstaff.errors import InvalidTransitionError, InvalidWorkflowError
-from wingstaff.state import DeliveryMode, WorkflowStage, WorkflowState, WorkflowStatus
+from wingstaff.errors import PolicyViolationError
+from wingstaff.state import SkillDigest, WorkflowLedger, WorkflowStage
 from wingstaff.workflow import (
     approve_plan,
-    cancel_workflow,
-    fail_workflow,
-    modify_plan,
     new_workflow,
     record_artifact,
+    record_card,
     record_verification,
-    start_implementation,
-    validate_target,
+    record_worktree,
+    release_worktree,
+    replace_plan,
 )
 
 NOW = datetime(2026, 7, 10, 12, 0, tzinfo=UTC)
@@ -24,383 +23,251 @@ TARGET = "/tmp/wingstaff-target"
 WORKTREE = "/tmp/wingstaff-worktrees/workflow-1"
 
 
-def make_draft() -> WorkflowState:
+def make_ledger() -> WorkflowLedger:
     return new_workflow(
         workflow_id="workflow-1",
+        board_slug="wingstaff-test",
         target_repository=TARGET,
+        baseline_commit="abcdef123456",
         requested_goal="Fix the deliberately failing test",
         pack_name="addyosmani",
-        pack_source_revision="0123456789abcdef",
+        pack_source_revision="source@0123456789abcdef",
+        skill_digests=(SkillDigest(name="interview-me", digest="digest-1"),),
         created_at=NOW,
     )
 
 
-def make_awaiting_approval() -> WorkflowState:
-    state = validate_target(
-        make_draft(),
-        target_is_clean=True,
-        baseline_commit="abcdef123456",
-        validated_at=NOW + timedelta(minutes=1),
-    )
-    state = record_artifact(
-        state,
+def make_planned() -> WorkflowLedger:
+    ledger = record_artifact(
+        make_ledger(),
         stage=WorkflowStage.DEFINE,
         path="artifacts/define.md",
         digest="define-v1",
-        recorded_at=NOW + timedelta(minutes=2),
+        recorded_at=NOW + timedelta(minutes=1),
     )
     return record_artifact(
-        state,
+        ledger,
         stage=WorkflowStage.PLAN,
         path="artifacts/plan.md",
         digest="plan-v1",
-        recorded_at=NOW + timedelta(minutes=3),
+        recorded_at=NOW + timedelta(minutes=2),
     )
 
 
-def test_new_workflow_has_fixed_local_delivery_contract() -> None:
-    state = make_draft()
+def make_implementing() -> WorkflowLedger:
+    ledger = approve_plan(
+        make_planned(),
+        plan_digest="plan-v1",
+        decided_at=NOW + timedelta(minutes=3),
+    )
+    return record_worktree(
+        ledger,
+        worktree_path=WORKTREE,
+        recorded_at=NOW + timedelta(minutes=4),
+    )
 
-    assert state.status is WorkflowStatus.DRAFT
-    assert state.current_stage is WorkflowStage.DEFINE
-    assert state.target_repository == TARGET
-    assert state.delivery_mode is DeliveryMode.REVIEWED_DIFF_ONLY
-    assert state.created_at == state.updated_at == NOW
+
+def test_new_ledger_contains_policy_facts_but_no_operational_status() -> None:
+    ledger = make_ledger()
+    payload = ledger.to_dict()
+
+    assert ledger.board_slug == "wingstaff-test"
+    assert ledger.baseline_commit == "abcdef123456"
+    assert ledger.plan_revision == 0
+    assert ledger.committed is ledger.pushed is False
+    assert ledger.created_at == ledger.updated_at == NOW
+    assert {"status", "current_stage", "failure_reason"}.isdisjoint(payload)
 
 
 @pytest.mark.parametrize(
     "target",
     ["owner/repository", "https://example.invalid/repository.git", "git@example.invalid:repo.git"],
 )
-def test_new_workflow_rejects_nonlocal_or_noncanonical_targets(target: str) -> None:
-    with pytest.raises(InvalidWorkflowError, match="absolute local path"):
-        new_workflow(
-            workflow_id="workflow-1",
-            target_repository=target,
-            requested_goal="goal",
-            pack_name="addyosmani",
-            pack_source_revision="revision",
-            created_at=NOW,
-        )
+def test_new_ledger_rejects_nonlocal_targets(target: str) -> None:
+    with pytest.raises(PolicyViolationError, match="absolute local path"):
+        replace(make_ledger(), target_repository=target)
 
 
-def test_dirty_target_blocks_forward_progress() -> None:
-    state = validate_target(
-        make_draft(),
-        target_is_clean=False,
-        baseline_commit=None,
-        validated_at=NOW + timedelta(minutes=1),
+def test_serialization_round_trip_preserves_complete_ledger() -> None:
+    ledger = record_card(
+        make_planned(),
+        stage=WorkflowStage.APPROVAL,
+        task_id="t_approval",
+        idempotency_key="wingstaff:workflow-1:0:approval",
+        recorded_at=NOW + timedelta(minutes=3),
     )
 
-    assert state.status is WorkflowStatus.BLOCKED
-    assert state.target_is_clean is False
-    assert state.failure_reason == "target repository is dirty"
-    with pytest.raises(InvalidTransitionError):
-        record_artifact(
-            state,
-            stage=WorkflowStage.DEFINE,
-            path="artifacts/define.md",
-            digest="define-v1",
-            recorded_at=NOW + timedelta(minutes=2),
-        )
-    # BLOCKED is terminal; a blocked workflow cannot be cancelled. The operator
-    # must create a new workflow to retry against the now-cleaned target.
+    assert WorkflowLedger.from_dict(ledger.to_dict()) == ledger
 
 
-def test_happy_path_cannot_skip_gate_and_completes_with_reviewed_diff() -> None:
-    state = make_awaiting_approval()
-
-    with pytest.raises(InvalidTransitionError, match="approval"):
-        start_implementation(
-            state,
-            worktree_path=WORKTREE,
-            started_at=NOW + timedelta(minutes=4),
+def test_approval_is_exact_and_plan_replacement_invalidates_it() -> None:
+    planned = make_planned()
+    with pytest.raises(PolicyViolationError, match="current plan digest"):
+        approve_plan(
+            planned,
+            plan_digest="stale-plan",
+            decided_at=NOW + timedelta(minutes=3),
         )
 
-    state = approve_plan(
-        state,
+    approved = approve_plan(
+        planned,
         plan_digest="plan-v1",
-        decided_at=NOW + timedelta(minutes=4),
+        decided_at=NOW + timedelta(minutes=3),
     )
-    state = start_implementation(
-        state,
-        worktree_path=WORKTREE,
-        started_at=NOW + timedelta(minutes=5),
+    replacement = replace_plan(
+        approved,
+        path="artifacts/plan-v2.md",
+        digest="plan-v2",
+        replaced_at=NOW + timedelta(minutes=4),
     )
-    state = record_artifact(
-        state,
+
+    assert replacement.plan_revision == 1
+    assert replacement.current_plan_digest == "plan-v2"
+    assert replacement.approval is None
+    assert replacement.verification_evidence == ()
+
+
+def test_card_mapping_is_idempotent_and_rejects_conflicts() -> None:
+    planned = make_planned()
+    recorded = record_card(
+        planned,
+        stage=WorkflowStage.APPROVAL,
+        task_id="t_approval",
+        idempotency_key="wingstaff:workflow-1:0:approval",
+        recorded_at=NOW + timedelta(minutes=3),
+    )
+    assert (
+        record_card(
+            recorded,
+            stage=WorkflowStage.APPROVAL,
+            task_id="t_approval",
+            idempotency_key="wingstaff:workflow-1:0:approval",
+            recorded_at=NOW + timedelta(minutes=3),
+        )
+        is recorded
+    )
+    with pytest.raises(PolicyViolationError, match="different Kanban card"):
+        record_card(
+            recorded,
+            stage=WorkflowStage.APPROVAL,
+            task_id="t_other",
+            idempotency_key="wingstaff:workflow-1:0:approval",
+            recorded_at=NOW + timedelta(minutes=4),
+        )
+    with pytest.raises(PolicyViolationError, match="idempotency key"):
+        record_card(
+            planned,
+            stage=WorkflowStage.APPROVAL,
+            task_id="t_bad",
+            idempotency_key="wingstaff:workflow-1:approval",
+            recorded_at=NOW + timedelta(minutes=3),
+        )
+
+
+def test_post_gate_facts_require_approval_and_owned_worktree() -> None:
+    with pytest.raises(PolicyViolationError, match="approval"):
+        record_worktree(
+            make_planned(),
+            worktree_path=WORKTREE,
+            recorded_at=NOW + timedelta(minutes=3),
+        )
+
+    implementing = make_implementing()
+    with pytest.raises(PolicyViolationError, match="implement artifact"):
+        record_verification(
+            implementing,
+            command="pytest",
+            exit_code=0,
+            output_reference="artifacts/pytest.txt",
+            output_digest="verify-v1",
+            recorded_at=NOW + timedelta(minutes=5),
+        )
+
+
+def test_verification_evidence_does_not_create_a_blocked_status() -> None:
+    ledger = record_artifact(
+        make_implementing(),
         stage=WorkflowStage.IMPLEMENT,
         path="artifacts/implementation.diff",
         digest="diff-v1",
+        recorded_at=NOW + timedelta(minutes=5),
+    )
+    failed = record_verification(
+        ledger,
+        command="pytest",
+        exit_code=1,
+        output_reference="artifacts/pytest-1.txt",
+        output_digest="verify-failed",
         recorded_at=NOW + timedelta(minutes=6),
     )
-    state = record_verification(
-        state,
+
+    assert failed.verification_evidence[-1].exit_code == 1
+    assert "status" not in failed.to_dict()
+    with pytest.raises(PolicyViolationError, match="successful verification"):
+        record_artifact(
+            failed,
+            stage=WorkflowStage.REVIEW,
+            path="artifacts/review.md",
+            digest="review-v1",
+            recorded_at=NOW + timedelta(minutes=7),
+        )
+
+    passed = record_verification(
+        failed,
         command="pytest",
         exit_code=0,
-        output_reference="artifacts/pytest.txt",
+        output_reference="artifacts/pytest-2.txt",
+        output_digest="verify-passed",
         recorded_at=NOW + timedelta(minutes=7),
     )
-    state = record_artifact(
-        state,
+    reviewed = record_artifact(
+        passed,
         stage=WorkflowStage.REVIEW,
         path="artifacts/review.md",
         digest="review-v1",
         recorded_at=NOW + timedelta(minutes=8),
     )
-    state = record_artifact(
-        state,
+    delivered = record_artifact(
+        reviewed,
         stage=WorkflowStage.DELIVER,
-        path="artifacts/delivery.md",
+        path="artifacts/delivery.json",
         digest="delivery-v1",
         recorded_at=NOW + timedelta(minutes=9),
     )
 
-    assert state.status is WorkflowStatus.COMPLETED
-    assert state.current_stage is WorkflowStage.DELIVER
-    assert state.delivery_mode is DeliveryMode.REVIEWED_DIFF_ONLY
-    assert [artifact.stage for artifact in state.artifacts] == [
-        WorkflowStage.DEFINE,
-        WorkflowStage.PLAN,
-        WorkflowStage.IMPLEMENT,
-        WorkflowStage.REVIEW,
-        WorkflowStage.DELIVER,
-    ]
-    assert state.verification_evidence[0].exit_code == 0
+    assert delivered.committed is delivered.pushed is False
 
 
-def test_approval_must_match_current_plan_and_is_invalidated_by_modification() -> None:
-    state = make_awaiting_approval()
-
-    with pytest.raises(InvalidTransitionError, match="current plan digest"):
-        approve_plan(
-            state,
-            plan_digest="stale-plan",
-            decided_at=NOW + timedelta(minutes=4),
-        )
-
-    approved = approve_plan(
-        state,
-        plan_digest="plan-v1",
-        decided_at=NOW + timedelta(minutes=4),
-    )
-    modified = modify_plan(
-        approved,
-        path="artifacts/plan.md",
-        digest="plan-v2",
-        modified_at=NOW + timedelta(minutes=5),
+def test_worktree_release_clears_only_ownership_facts() -> None:
+    ledger = make_implementing()
+    released = release_worktree(
+        ledger,
+        released_at=NOW + timedelta(minutes=5),
     )
 
-    assert modified.status is WorkflowStatus.AWAITING_APPROVAL
-    assert modified.current_stage is WorkflowStage.PLAN
-    assert modified.approval is None
-    assert modified.artifact_for(WorkflowStage.PLAN).digest == "plan-v2"
+    assert released.worktree_path is None
+    assert released.worktree_owned is False
+    assert released.approval == ledger.approval
 
 
-def test_implementation_requires_fresh_absolute_worktree() -> None:
-    state = approve_plan(
-        make_awaiting_approval(),
-        plan_digest="plan-v1",
-        decided_at=NOW + timedelta(minutes=4),
-    )
-
-    for path in (TARGET, "relative-worktree"):
-        with pytest.raises(InvalidWorkflowError, match="worktree"):
-            start_implementation(
-                state,
-                worktree_path=path,
-                started_at=NOW + timedelta(minutes=5),
-            )
-
-
-def test_failed_verification_blocks_completion() -> None:
-    state = approve_plan(
-        make_awaiting_approval(),
-        plan_digest="plan-v1",
-        decided_at=NOW + timedelta(minutes=4),
-    )
-    state = start_implementation(
-        state,
-        worktree_path=WORKTREE,
-        started_at=NOW + timedelta(minutes=5),
-    )
-    state = record_artifact(
-        state,
-        stage=WorkflowStage.IMPLEMENT,
-        path="artifacts/implementation.diff",
-        digest="diff-v1",
-        recorded_at=NOW + timedelta(minutes=6),
-    )
-    state = record_verification(
-        state,
-        command="pytest",
-        exit_code=1,
-        output_reference="artifacts/pytest.txt",
-        recorded_at=NOW + timedelta(minutes=7),
-    )
-
-    assert state.status is WorkflowStatus.BLOCKED
-    assert state.failure_reason == "verification failed with exit code 1"
-    with pytest.raises(InvalidTransitionError):
+def test_timestamps_are_timezone_aware_and_monotonic() -> None:
+    with pytest.raises(PolicyViolationError, match="timezone-aware"):
+        replace(make_ledger(), updated_at=datetime(2026, 7, 10, 12, 1))
+    with pytest.raises(PolicyViolationError, match="before created_at"):
+        replace(make_ledger(), updated_at=NOW - timedelta(seconds=1))
+    with pytest.raises(PolicyViolationError, match="before updated_at"):
         record_artifact(
-            state,
-            stage=WorkflowStage.REVIEW,
-            path="artifacts/review.md",
-            digest="review-v1",
-            recorded_at=NOW + timedelta(minutes=8),
+            make_planned(),
+            stage=WorkflowStage.IMPLEMENT,
+            path="artifacts/implementation.diff",
+            digest="diff-v1",
+            recorded_at=NOW,
         )
 
 
-def test_repeated_completed_transitions_are_idempotent() -> None:
-    draft = make_draft()
-    validated = validate_target(
-        draft,
-        target_is_clean=True,
-        baseline_commit="abcdef123456",
-        validated_at=NOW + timedelta(minutes=1),
-    )
-    assert (
-        validate_target(
-            validated,
-            target_is_clean=True,
-            baseline_commit="abcdef123456",
-            validated_at=NOW + timedelta(minutes=1),
-        )
-        is validated
-    )
+def test_deserialization_rejects_operational_status_payload() -> None:
+    raw = make_ledger().to_dict()
+    raw["status"] = "running"
 
-    defined = record_artifact(
-        validated,
-        stage=WorkflowStage.DEFINE,
-        path="artifacts/define.md",
-        digest="define-v1",
-        recorded_at=NOW + timedelta(minutes=2),
-    )
-    assert (
-        record_artifact(
-            defined,
-            stage=WorkflowStage.DEFINE,
-            path="artifacts/define.md",
-            digest="define-v1",
-            recorded_at=NOW + timedelta(minutes=2),
-        )
-        is defined
-    )
-
-
-def test_invalid_transition_and_guessed_artifact_are_rejected() -> None:
-    with pytest.raises(InvalidTransitionError):
-        approve_plan(make_draft(), plan_digest="plan-v1", decided_at=NOW)
-
-    state = validate_target(
-        make_draft(),
-        target_is_clean=True,
-        baseline_commit="abcdef123456",
-        validated_at=NOW + timedelta(minutes=1),
-    )
-    with pytest.raises(InvalidWorkflowError, match="artifact path"):
-        record_artifact(
-            state,
-            stage=WorkflowStage.DEFINE,
-            path="",
-            digest="define-v1",
-            recorded_at=NOW + timedelta(minutes=2),
-        )
-
-
-def test_terminal_transitions_and_serialization_round_trip() -> None:
-    cancelled = cancel_workflow(
-        make_draft(),
-        reason="operator cancelled",
-        cancelled_at=NOW + timedelta(minutes=1),
-    )
-    assert cancel_workflow(
-        cancelled,
-        reason="operator cancelled",
-        cancelled_at=NOW + timedelta(minutes=1),
-    ) is cancelled
-    with pytest.raises(InvalidTransitionError):
-        fail_workflow(
-            cancelled,
-            reason="late failure",
-            failed_at=NOW + timedelta(minutes=2),
-        )
-
-    failed = fail_workflow(
-        make_draft(),
-        reason="pack validation failed",
-        failed_at=NOW + timedelta(minutes=1),
-    )
-    assert failed.status is WorkflowStatus.FAILED
-
-    state = make_awaiting_approval()
-    restored = WorkflowState.from_dict(state.to_dict())
-    assert restored == state
-
-
-def test_state_rejects_naive_or_reversed_timestamps() -> None:
-    with pytest.raises(InvalidWorkflowError, match="timezone-aware"):
-        replace(make_draft(), updated_at=datetime(2026, 7, 10, 12, 1))
-    with pytest.raises(InvalidWorkflowError, match="before created_at"):
-        replace(make_draft(), updated_at=NOW - timedelta(seconds=1))
-
-    validated = validate_target(
-        make_draft(),
-        target_is_clean=True,
-        baseline_commit="abcdef123456",
-        validated_at=NOW + timedelta(minutes=2),
-    )
-    with pytest.raises(InvalidTransitionError, match="before updated_at"):
-        record_artifact(
-            validated,
-            stage=WorkflowStage.DEFINE,
-            path="artifacts/define.md",
-            digest="define-v1",
-            recorded_at=NOW + timedelta(minutes=1),
-        )
-
-    awaiting = make_awaiting_approval()
-    with pytest.raises(InvalidTransitionError, match="before updated_at"):
-        approve_plan(
-            awaiting,
-            plan_digest="plan-v1",
-            decided_at=NOW + timedelta(minutes=2),
-        )
-    with pytest.raises(InvalidTransitionError, match="before updated_at"):
-        modify_plan(
-            awaiting,
-            path="artifacts/plan.md",
-            digest="plan-v2",
-            modified_at=NOW + timedelta(minutes=2),
-        )
-
-    approved = approve_plan(
-        awaiting,
-        plan_digest="plan-v1",
-        decided_at=NOW + timedelta(minutes=4),
-    )
-    with pytest.raises(InvalidTransitionError, match="before updated_at"):
-        start_implementation(
-            approved,
-            worktree_path=WORKTREE,
-            started_at=NOW + timedelta(minutes=3),
-        )
-
-    for transition in (
-        lambda: fail_workflow(
-            make_draft(), reason="failed", failed_at=NOW - timedelta(seconds=1)
-        ),
-        lambda: cancel_workflow(
-            make_draft(), reason="cancelled", cancelled_at=NOW - timedelta(seconds=1)
-        ),
-    ):
-        with pytest.raises(InvalidTransitionError, match="before updated_at"):
-            transition()
-
-
-def test_deserialization_rejects_unknown_status() -> None:
-    raw = make_draft().to_dict()
-    raw["status"] = "unknown"
-
-    with pytest.raises(InvalidWorkflowError, match="invalid serialized workflow"):
-        WorkflowState.from_dict(raw)
+    with pytest.raises(PolicyViolationError, match="unknown serialized"):
+        WorkflowLedger.from_dict(raw)

@@ -10,7 +10,6 @@ from .packs import __version__
 
 def register(ctx) -> None:
     """Register Wingstaff tools and bundled, namespaced skills with Hermes."""
-    tools.configure_context(ctx)
     ctx.register_cli_command(
         name="wingstaff",
         help="Operate Wingstaff workflows and workflow packs",
@@ -22,9 +21,7 @@ def register(ctx) -> None:
         "wingstaff_pack_info": tools.pack_info,
         "wingstaff_start": tools.start,
         "wingstaff_status": tools.status,
-        "wingstaff_validate": tools.validate,
         "wingstaff_approve": tools.approve,
-        "wingstaff_modify": tools.modify,
         "wingstaff_cancel": tools.cancel,
         "wingstaff_submit_artifact": tools.submit_artifact,
         "wingstaff_prepare_implementation": tools.prepare_implementation,

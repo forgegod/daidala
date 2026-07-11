@@ -105,7 +105,9 @@ Project-wide durable preferences (style, workflow, conventions) live in user mem
 
 - **Agent harness protected by tirith.sh.** Reading passwords or access tokens is prohibited. Extract variables from `.env` / config files without relaying their values; use environment variables by importing them for Bash execution. `***` in output is a tirith redaction marker, not a literal value — never "fix" it to a variable ref.
 - Prefer one vertical slice that runs over broad scaffolding that does not.
-- Keep deterministic state transitions and validation in Python; keep judgment in skills or host-owned structured LLM calls.
+- Keep deterministic policy checks and validation in Python; keep operational
+  lifecycle state in Hermes Kanban and judgment in skills or host-owned
+  structured LLM calls.
 - External skills are referenced by fully qualified install target and validated by exact name.
 - Plugin tool handlers accept `args: dict, **kwargs` and always return a JSON string.
 - Runtime files belong under a Hermes-resolved home/profile path; never hard-code `~/.hermes`.

@@ -15,6 +15,7 @@ from wingstaff.skills import (
     SkillInventoryError,
     content_registry_from_digests,
     inventory_from_names,
+    pack_skill_digests,
     require_pack_skills,
     required_skills,
 )
@@ -28,6 +29,15 @@ def test_required_skills_are_exact_deduplicated_and_lifecycle_ordered() -> None:
     assert requirements[0].name == "interview-me"
     assert requirements[-1].name == "deprecation-and-migration"
     assert [skill.name for skill in requirements].count("test-driven-development") == 1
+
+
+def test_pack_skill_digests_include_bundled_and_external_skills() -> None:
+    external = pack_skill_digests(load_pack("addyosmani"))
+    bundled = pack_skill_digests(load_pack("aidlc"))
+
+    assert len(external) == 20
+    assert [name for name, _ in bundled] == ["aidlc-adapter"]
+    assert len(bundled[0][1]) == 64
 
 
 def test_missing_exact_name_reports_actionable_install_target() -> None:
@@ -120,6 +130,7 @@ def test_missing_skill_blocks_tool_start_without_creating_state(
         tools.start(
             {
                 "target_repository": str(tmp_path / "target"),
+                "board_slug": "wingstaff-test",
                 "goal": "must stop before draft creation",
             }
         )
@@ -128,34 +139,4 @@ def test_missing_skill_blocks_tool_start_without_creating_state(
     assert result["success"] is False
     assert result["error"] == "MissingSkillsError"
     assert "addyosmani/agent-skills/skills/interview-me" in result["message"]
-    assert service.store.list_active() == ()
-
-
-def test_validation_rechecks_inventory_after_draft_creation(tmp_path: Path) -> None:
-    pack = load_pack("addyosmani")
-    names = {skill.name for skill in required_skills(pack)}
-
-    @dataclass
-    class MutableInventory:
-        names: set[str]
-
-        def installed_names(self) -> frozenset[str]:
-            return frozenset(self.names)
-
-    inventory = MutableInventory(names)
-    service = WorkflowService(
-        WorkflowStore(tmp_path / "data"),
-        skill_inventory=inventory,
-        skill_content_registry=content_registry_from_digests(
-            {skill.name: skill.content_digest for skill in required_skills(pack)}
-        ),
-        id_factory=lambda: "workflow-1",
-    )
-    target = tmp_path / "target"
-    state = service.start(target_repository=str(target), goal="recheck inventory")
-    inventory.names.remove("interview-me")
-
-    with pytest.raises(MissingSkillsError):
-        service.validate(state.workflow_id)
-
-    assert service.status(state.workflow_id) == state
+    assert service.store.list_all() == ()

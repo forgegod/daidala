@@ -179,7 +179,7 @@ that capability generically.
 | Plugin declarations | `plugin.yaml`, `pyproject.toml` | `tests/test_installation.py`; live directory and entry-point probes |
 | Registration | `wingstaff/__init__.py` | `tests/test_plugin.py` fake-context assertions |
 | Tool schema and JSON boundary | `wingstaff/schemas.py`, `wingstaff/tools.py` | `tests/test_plugin.py` |
-| Policy ledger and persistence | This contract; target `wingstaff/state.py`, `wingstaff/store.py` | Pending Phase 2 migration |
+| Policy ledger and persistence | `wingstaff/state.py`, `wingstaff/workflow.py`, `wingstaff/store.py` | State, policy, persistence, and restart tests |
 | Kanban graph and execution isolation | This contract; target `wingstaff/service.py`, `wingstaff/kanban.py`, `wingstaff/execution.py` | Pending Phases 3–4 migration |
 | Worktree cleanup and rollback | `wingstaff/service.py`, `wingstaff/execution.py` | Cross-pack delivery and cancellation tests |
 | Pack schema and invariants | `wingstaff/packs.py` | `tests/test_packs.py` |

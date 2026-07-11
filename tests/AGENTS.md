@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Prove the deterministic pack and workflow models, durable persistence, strict
+Prove the deterministic pack and policy-ledger models, durable persistence, strict
 tool boundaries, Hermes plugin registration contract, and packaged-resource
 completeness without touching a real Hermes profile.
 
@@ -10,7 +10,7 @@ completeness without touching a real Hermes profile.
 
 - Unit tests for pack loading and validation.
 - Fake-context tests for plugin tool and skill registration.
-- Temporary-repository tests for lifecycle services and JSON tool handlers.
+- Temporary-repository tests for policy services and JSON tool handlers.
 - Fake-inventory tests for exact external-skill prerequisites and host errors.
 - Fake command/registry tests for dry-run installation, pinned revisions, content digests, post-apply verification, and refused recursive installation.
 - Fake host-dispatch tests for approval-gated, restart-safe, idempotent Kanban mapping.
@@ -28,7 +28,7 @@ completeness without touching a real Hermes profile.
 
 ## Work Guidance
 
-- Every new state transition requires positive, invalid-transition, and persistence tests.
+- Every new policy operation requires positive, policy-violation, and persistence tests.
 - Every new packaged resource requires a wheel-content assertion.
 
 ## Verification

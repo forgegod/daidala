@@ -1,13 +1,9 @@
-"""Workflow-state validation and transition errors."""
+"""Wingstaff policy-ledger errors."""
 
 
 class WorkflowError(ValueError):
-    """Base class for deterministic workflow contract failures."""
+    """Base class for deterministic Wingstaff policy failures."""
 
 
-class InvalidWorkflowError(WorkflowError):
-    """Raised when workflow data violates a state invariant."""
-
-
-class InvalidTransitionError(WorkflowError):
-    """Raised when an event is invalid for the current workflow state."""
+class PolicyViolationError(WorkflowError):
+    """Raised when policy-ledger data or an update violates an invariant."""

@@ -8,8 +8,8 @@ repository safety, artifact integrity, and evidence-backed uncommitted delivery.
 
 | Document or surface | Status | Grounded by |
 |---|---|---|
-| [Architecture](01-architecture.md) | Kanban-native authority contract defined; runtime migration pending | Phase 0 host probe, runtime modules, Hermes plugin and Kanban docs |
-| [Policy ledger and Kanban state](02-workflow-state.md) | Contract defined; runtime migration pending | Active implementation plan and existing policy primitives |
+| [Architecture](01-architecture.md) | Policy ledger implemented; full Kanban graph migration pending | Runtime modules, Phase 0 host probe, Hermes plugin and Kanban docs |
+| [Policy ledger and Kanban state](02-workflow-state.md) | Policy ledger implemented; combined Kanban status pending | `wingstaff/state.py`, `wingstaff/store.py`, policy and persistence tests |
 | [Pack reference](03-pack-reference.md) | Schema v1 external and bundled skill references implemented | `wingstaff/packs.py`, bundled pack YAML, pack tests |
 | [Authoring packs](04-authoring-packs.md) | Implemented schema-v1 authoring path | Pack loader, bundled pack, pack tests |
 | [Lifecycle stages](05-lifecycle-stages.md) | Full Kanban graph contract defined; runtime migration pending | Active implementation plan and Phase 0 capability probe |

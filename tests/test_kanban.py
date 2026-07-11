@@ -1,161 +1,118 @@
 from __future__ import annotations
 
 import json
-import subprocess
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 
 import pytest
 
 from wingstaff.kanban import KanbanCoordinator, KanbanError
 from wingstaff.packs import load_pack
-from wingstaff.service import ServiceError, WorkflowService
-from wingstaff.skills import (
-    content_registry_from_digests,
-    inventory_from_names,
-    required_skills,
+from wingstaff.state import SkillDigest, WorkflowStage
+from wingstaff.workflow import (
+    approve_plan,
+    new_workflow,
+    record_artifact,
+    record_worktree,
 )
-from wingstaff.state import WorkflowStage, WorkflowStatus
-from wingstaff.store import WorkflowStore
 
 NOW = datetime(2026, 7, 10, 14, 0, tzinfo=UTC)
 
 
-class TickClock:
-    def __init__(self) -> None:
-        self.tick = 0
-
-    def __call__(self) -> datetime:
-        self.tick += 1
-        return NOW + timedelta(minutes=self.tick)
-
-
-class FakeKanbanHost:
-    def __init__(self, *, fail_once: bool = False) -> None:
-        self.fail_once = fail_once
-        self.calls: list[tuple[str, dict[str, object]]] = []
-        self.tasks: dict[str, str] = {}
-
-    def dispatch_tool(self, name: str, args: dict[str, object]) -> str:
-        self.calls.append((name, args))
-        if self.fail_once:
-            self.fail_once = False
-            return json.dumps({"ok": False, "error": "interrupted"})
-        key = str(args["idempotency_key"])
-        task_id = self.tasks.setdefault(key, f"t_{len(self.tasks) + 1:012x}")
-        return json.dumps({"ok": True, "task_id": task_id, "status": "ready"})
-
-
-@pytest.fixture
-def target_repository(tmp_path: Path) -> Path:
-    target = tmp_path / "target"
-    target.mkdir()
-    (target / "app.py").write_text("VALUE = 1\n", encoding="utf-8")
-    subprocess.run(["git", "init", "-q", str(target)], check=True)
-    subprocess.run(["git", "-C", str(target), "add", "."], check=True)
-    subprocess.run(
-        [
-            "git",
-            "-C",
-            str(target),
-            "-c",
-            "user.name=Wingstaff Tests",
-            "-c",
-            "user.email=wingstaff@example.invalid",
-            "commit",
-            "-qm",
-            "fixture",
-        ],
-        check=True,
+def make_approved_worktree():
+    ledger = new_workflow(
+        workflow_id="workflow-1",
+        board_slug="wingstaff-test",
+        target_repository="/tmp/wingstaff-target",
+        baseline_commit="deadbeef",
+        requested_goal="Change VALUE to 2",
+        pack_name="addyosmani",
+        pack_source_revision="source@revision",
+        skill_digests=(SkillDigest(name="interview-me", digest="digest-1"),),
+        created_at=NOW,
     )
-    return target.resolve()
-
-
-def make_service(data_root: Path, host: FakeKanbanHost) -> WorkflowService:
-    pack = load_pack("addyosmani")
-    skills = required_skills(pack)
-    return WorkflowService(
-        WorkflowStore(data_root),
-        clock=TickClock(),
-        skill_inventory=inventory_from_names(skill.name for skill in skills),
-        skill_content_registry=content_registry_from_digests(
-            {skill.name: skill.content_digest for skill in skills}
-        ),
-        kanban=KanbanCoordinator(host.dispatch_tool),
+    ledger = record_artifact(
+        ledger,
+        stage=WorkflowStage.DEFINE,
+        path="artifacts/define.md",
+        digest="define-v1",
+        recorded_at=NOW + timedelta(minutes=1),
+    )
+    ledger = record_artifact(
+        ledger,
+        stage=WorkflowStage.PLAN,
+        path="artifacts/plan.md",
+        digest="plan-v1",
+        recorded_at=NOW + timedelta(minutes=2),
+    )
+    ledger = approve_plan(
+        ledger,
+        plan_digest="plan-v1",
+        decided_at=NOW + timedelta(minutes=3),
+    )
+    return record_worktree(
+        ledger,
+        worktree_path="/tmp/wingstaff-worktrees/workflow-1",
+        recorded_at=NOW + timedelta(minutes=4),
     )
 
 
-def prepare_approved(
-    service: WorkflowService, target: Path, workflow_id: str
-) -> tuple[str, str]:
-    service.start(
-        target_repository=str(target), goal="Change VALUE to 2", workflow_id=workflow_id
+def test_implementation_adapter_uses_policy_facts_not_mirrored_status() -> None:
+    calls: list[tuple[str, dict[str, object]]] = []
+
+    def dispatch(name: str, args: dict[str, object]) -> str:
+        calls.append((name, args))
+        return json.dumps({"ok": True, "task_id": "t_impl", "status": "ready"})
+
+    task = KanbanCoordinator(dispatch).ensure_implementation_task(
+        make_approved_worktree(),
+        load_pack("addyosmani"),
+        assignee="engineer",
     )
-    service.validate(workflow_id)
-    service.submit_artifact(
-        workflow_id, stage=WorkflowStage.DEFINE, content="# Definition\n"
-    )
-    planned = service.submit_artifact(
-        workflow_id, stage=WorkflowStage.PLAN, content="# Plan\n"
-    )
-    plan = planned.artifact_for(WorkflowStage.PLAN)
-    assert plan is not None
-    service.approve(workflow_id, plan.digest)
-    return workflow_id, plan.digest
+
+    assert task.task_id == "t_impl"
+    assert task.status == "ready"
+    name, args = calls[0]
+    assert name == "kanban_create"
+    assert args["idempotency_key"] == "wingstaff:workflow-1:0:implement"
+    assert args["workspace_path"] == "/tmp/wingstaff-worktrees/workflow-1"
+    assert "Hermes Kanban remains authoritative" in str(args["body"])
 
 
-def test_implementation_card_is_never_created_before_approval(
-    tmp_path: Path, target_repository: Path
+def test_implementation_adapter_requires_approval_and_owned_worktree() -> None:
+    ledger = make_approved_worktree()
+    unowned = ledger.__class__.from_dict(
+        {
+            **ledger.to_dict(),
+            "worktree_path": None,
+            "worktree_owned": False,
+        }
+    )
+
+    with pytest.raises(KanbanError, match="approved Wingstaff-owned worktree"):
+        KanbanCoordinator(lambda name, args: "{}").ensure_implementation_task(
+            unowned,
+            load_pack("addyosmani"),
+            assignee="engineer",
+        )
+
+
+@pytest.mark.parametrize(
+    ("payload", "message"),
+    [
+        ("not-json", "invalid JSON"),
+        (json.dumps({"ok": False, "error": "interrupted"}), "interrupted"),
+        (json.dumps({"ok": True, "status": "ready"}), "omitted task_id"),
+    ],
+)
+def test_implementation_adapter_fails_closed_on_invalid_host_output(
+    payload: str,
+    message: str,
 ) -> None:
-    host = FakeKanbanHost()
-    service = make_service(tmp_path / "data", host)
-    state = service.start(
-        target_repository=str(target_repository),
-        goal="Change VALUE to 2",
-        workflow_id="not-approved",
-    )
+    coordinator = KanbanCoordinator(lambda name, args: payload)
 
-    with pytest.raises(ServiceError, match="approved"):
-        service.prepare_implementation(state.workflow_id, assignee="engineer")
-
-    assert host.calls == []
-
-
-def test_restart_reuses_idempotent_card_and_persistent_worktree(
-    tmp_path: Path, target_repository: Path
-) -> None:
-    host = FakeKanbanHost(fail_once=True)
-    data_root = tmp_path / "data"
-    service = make_service(data_root, host)
-    workflow_id, _ = prepare_approved(service, target_repository, "restart-safe")
-
-    with pytest.raises(KanbanError, match="interrupted"):
-        service.prepare_implementation(workflow_id, assignee="engineer")
-
-    persisted = service.status(workflow_id)
-    assert persisted.status is WorkflowStatus.RUNNING
-    assert persisted.current_stage is WorkflowStage.IMPLEMENT
-    assert persisted.worktree_path is not None
-
-    restarted = make_service(data_root, host)
-    resumed = restarted.prepare_implementation(workflow_id, assignee="engineer")
-    repeated = restarted.prepare_implementation(workflow_id, assignee="engineer")
-
-    assert resumed.worktree_path == repeated.worktree_path == persisted.worktree_path
-    assert len(host.calls) == 3
-    assert len(host.tasks) == 1
-    assert {call[1]["idempotency_key"] for call in host.calls} == {
-        "wingstaff:restart-safe:implement"
-    }
-    _, args = host.calls[-1]
-    assert args["assignee"] == "engineer"
-    assert args["workspace_kind"] == "worktree"
-    assert args["workspace_path"] == persisted.worktree_path
-    assert args["skills"] == [
-        "incremental-implementation",
-        "test-driven-development",
-        "source-driven-development",
-        "doubt-driven-development",
-    ]
-    assert "Wingstaff workflow: restart-safe" in str(args["body"])
-    assert "Stage: implement" in str(args["body"])
+    with pytest.raises(KanbanError, match=message):
+        coordinator.ensure_implementation_task(
+            make_approved_worktree(),
+            load_pack("addyosmani"),
+            assignee="engineer",
+        )

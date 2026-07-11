@@ -7,325 +7,217 @@ from pathlib import Path
 
 import pytest
 
-from wingstaff.state import (
-    DeliveryMode,
-    WorkflowStage,
-    WorkflowState,
-    WorkflowStatus,
-)
+from wingstaff.state import SkillDigest, WorkflowLedger, WorkflowStage
 from wingstaff.store import StoreError, WorkflowStore
-from wingstaff.workflow import (
-    approve_plan,
-    new_workflow,
-    record_artifact,
-    record_verification,
-    start_implementation,
-    validate_target,
-)
+from wingstaff.workflow import approve_plan, new_workflow, record_artifact
 
 NOW = datetime(2026, 7, 10, 12, 0, tzinfo=UTC)
 TARGET = "/tmp/wingstaff-store-target"
-WORKTREE = "/tmp/wingstaff-store-worktrees/workflow-1"
 
 
-def make_draft() -> WorkflowState:
+def make_ledger(workflow_id: str = "workflow-1") -> WorkflowLedger:
     return new_workflow(
-        workflow_id="workflow-1",
+        workflow_id=workflow_id,
+        board_slug="wingstaff-test",
         target_repository=TARGET,
+        baseline_commit="deadbeef",
         requested_goal="Fix the failing test",
         pack_name="addyosmani",
-        pack_source_revision="abcdef",
+        pack_source_revision="source@abcdef",
+        skill_digests=(SkillDigest(name="interview-me", digest="digest-1"),),
         created_at=NOW,
     )
 
 
-def make_awaiting_approval() -> WorkflowState:
-    state = validate_target(
-        make_draft(),
-        target_is_clean=True,
-        baseline_commit="deadbeef",
-        validated_at=NOW + timedelta(minutes=1),
-    )
-    state = record_artifact(
-        state,
+def make_planned() -> WorkflowLedger:
+    ledger = record_artifact(
+        make_ledger(),
         stage=WorkflowStage.DEFINE,
         path="artifacts/define.md",
         digest="define-v1",
-        recorded_at=NOW + timedelta(minutes=2),
+        recorded_at=NOW + timedelta(minutes=1),
     )
     return record_artifact(
-        state,
+        ledger,
         stage=WorkflowStage.PLAN,
         path="artifacts/plan.md",
         digest="plan-v1",
-        recorded_at=NOW + timedelta(minutes=3),
+        recorded_at=NOW + timedelta(minutes=2),
     )
 
 
 @pytest.fixture
 def data_root(tmp_path: Path) -> Path:
-    root = tmp_path / "wingstaff-data"
-    root.mkdir()
-    return root
+    return tmp_path / "wingstaff-data"
 
 
-def test_store_directory_is_created_and_db_file_lives_under_it(tmp_path: Path) -> None:
-    nested = tmp_path / "missing" / "deeper"
-    store = WorkflowStore(nested)
-
-    assert nested.is_dir()
-    assert store.db_path == nested / "workflows.sqlite3"
-    assert store.db_path.is_file()
-
-
-def test_create_get_update_round_trip_preserves_state(data_root: Path) -> None:
-    store = WorkflowStore(data_root)
-    state = make_draft()
-    store.create(state)
-
-    fetched = store.get("workflow-1")
-    assert fetched == state
-    assert store.list_active() == (state,)
-
-    approved = approve_plan(
-        make_awaiting_approval(),
-        plan_digest="plan-v1",
-        decided_at=NOW + timedelta(minutes=4),
-    )
-    store.update(approved)
-
-    refreshed = store.get("workflow-1")
-    assert refreshed.status is WorkflowStatus.APPROVED
-    assert refreshed.approval is not None
-    assert refreshed.approval.plan_digest == "plan-v1"
-    assert refreshed.created_at == NOW
-
-
-def test_create_rejects_duplicate_workflow_id(data_root: Path) -> None:
-    store = WorkflowStore(data_root)
-    store.create(make_draft())
-
-    with pytest.raises(StoreError, match="already exists"):
-        store.create(make_draft())
-
-
-def test_update_unknown_workflow_is_an_error(data_root: Path) -> None:
+def test_store_creates_fresh_policy_ledger_schema(data_root: Path) -> None:
     store = WorkflowStore(data_root)
 
-    with pytest.raises(StoreError, match="unknown workflow"):
-        store.update(make_draft())
-
-
-def test_get_unknown_workflow_is_an_error(data_root: Path) -> None:
-    store = WorkflowStore(data_root)
-
-    with pytest.raises(StoreError, match="unknown workflow"):
-        store.get("missing")
-
-
-def test_upsert_inserts_when_missing_and_preserves_created_at(data_root: Path) -> None:
-    store = WorkflowStore(data_root)
-    store.upsert(make_draft())
-
-    later = make_awaiting_approval()
-    store.upsert(later)
-
-    fetched = store.get("workflow-1")
-    assert fetched == later
-    assert fetched.created_at == NOW
-
-
-def test_restart_recovers_state_from_existing_db(tmp_path: Path) -> None:
-    root = tmp_path / "wingstaff-data"
-
-    first = WorkflowStore(root)
-    completed = make_awaiting_approval()
-    completed = approve_plan(
-        completed,
-        plan_digest="plan-v1",
-        decided_at=NOW + timedelta(minutes=4),
-    )
-    completed = start_implementation(
-        completed,
-        worktree_path=WORKTREE,
-        started_at=NOW + timedelta(minutes=4),
-    )
-    completed = record_artifact(
-        completed,
-        stage=WorkflowStage.IMPLEMENT,
-        path="artifacts/implementation.diff",
-        digest="diff-v1",
-        recorded_at=NOW + timedelta(minutes=5),
-    )
-    completed = record_verification(
-        completed,
-        command="pytest",
-        exit_code=0,
-        output_reference="artifacts/pytest.txt",
-        recorded_at=NOW + timedelta(minutes=6),
-    )
-    first.create(completed)
-
-    second = WorkflowStore(root)
-    recovered = second.get("workflow-1")
-
-    assert recovered.status is WorkflowStatus.RUNNING
-    assert recovered.current_stage is WorkflowStage.REVIEW
-    assert recovered.target_is_clean is True
-    assert recovered.baseline_commit == "deadbeef"
-    assert recovered.worktree_path == WORKTREE
-    assert recovered.delivery_mode is DeliveryMode.REVIEWED_DIFF_ONLY
-    assert recovered.verification_evidence[0].exit_code == 0
-
-
-def test_concurrent_duplicate_transitions_only_persist_once(
-    data_root: Path, tmp_path: Path
-) -> None:
-    store = WorkflowStore(data_root)
-    initial = make_awaiting_approval()
-    store.create(initial)
-
-    # Two processes observe the same workflow at the same updated_at. The
-    # first one wins the update; the second is rejected because its
-    # ``expected_updated_at`` no longer matches the stored value. The
-    # approving digest is the same on both sides — that is the race this
-    # guard exists to prevent.
-    a = WorkflowStore(data_root)
-    b = WorkflowStore(data_root)
-    observed_a = a.get_with_token("workflow-1")
-    observed_b = b.get_with_token("workflow-1")
-    assert observed_a.updated_at == observed_b.updated_at
-
-    approved_a = approve_plan(
-        observed_a.state,
-        plan_digest="plan-v1",
-        decided_at=NOW + timedelta(minutes=4),
-    )
-    a.update(approved_a, expected_updated_at=observed_a.updated_at)
-
-    approved_b = approve_plan(
-        observed_b.state,
-        plan_digest="plan-v1",
-        decided_at=NOW + timedelta(minutes=5),
-    )
-    with pytest.raises(StoreError, match="modified concurrently"):
-        b.update(approved_b, expected_updated_at=observed_b.updated_at)
-
-    a_state = a.get("workflow-1")
-    assert a_state.status is WorkflowStatus.APPROVED
-    assert a_state.approval is not None
-    assert a_state.approval.plan_digest == "plan-v1"
-
-
-def test_schema_migration_from_empty_db_creates_required_tables(
-    data_root: Path,
-) -> None:
-    WorkflowStore(data_root)
-
-    with sqlite3.connect(data_root / "workflows.sqlite3") as connection:
+    assert store.db_path == data_root / "policy-ledger.sqlite3"
+    with sqlite3.connect(store.db_path) as connection:
         tables = {
             row[0]
             for row in connection.execute(
                 "SELECT name FROM sqlite_master WHERE type = 'table'"
             ).fetchall()
         }
-    assert {"schema_meta", "workflows"}.issubset(tables)
+        columns = {
+            row[1]
+            for row in connection.execute("PRAGMA table_info(policy_ledgers)").fetchall()
+        }
+
+    assert tables == {"schema_meta", "policy_ledgers"}
+    assert "status" not in columns
+    assert "current_stage" not in columns
+    assert not (data_root / "workflows.sqlite3").exists()
 
 
-def test_corrupt_state_row_raises_store_error(data_root: Path) -> None:
+def test_create_get_update_and_list_round_trip(data_root: Path) -> None:
     store = WorkflowStore(data_root)
+    ledger = make_ledger()
+    store.create(ledger)
+
+    assert store.get("workflow-1") == ledger
+    assert store.list_all() == (ledger,)
+
+    planned = make_planned()
+    store.update(planned)
+    assert store.get("workflow-1") == planned
+
+
+def test_duplicate_unknown_and_corrupt_rows_fail_closed(data_root: Path) -> None:
+    store = WorkflowStore(data_root)
+    store.create(make_ledger())
+
+    with pytest.raises(StoreError, match="already exists"):
+        store.create(make_ledger())
+    with pytest.raises(StoreError, match="unknown workflow"):
+        store.get("missing")
+    with pytest.raises(StoreError, match="unknown workflow"):
+        store.update(make_ledger("missing"))
+
     with sqlite3.connect(store.db_path) as connection:
         connection.execute(
             """
-            INSERT INTO workflows(
-                workflow_id, status, pack_name, created_at, updated_at, state_json
+            INSERT INTO policy_ledgers(
+                workflow_id, board_slug, pack_name, created_at, updated_at, ledger_json
             ) VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 "workflow-bad",
-                WorkflowStatus.DRAFT.value,
+                "wingstaff-test",
                 "addyosmani",
                 NOW.isoformat(),
                 NOW.isoformat(),
                 "not-json",
             ),
         )
-
     with pytest.raises(StoreError, match="not valid JSON"):
         store.get("workflow-bad")
 
 
-def test_data_root_resolution_prefers_explicit_argument(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    from wingstaff import locations
-
-    sentinel = tmp_path / "explicit"
-    monkeypatch.setenv(locations.ENV_OVERRIDE, str(tmp_path / "from-env"))
-
-    assert locations.resolve_data_root(explicit=sentinel) == sentinel.resolve()
-
-
-def test_data_root_resolution_prefers_hermes_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    from wingstaff import locations
-
-    monkeypatch.setenv(locations.ENV_OVERRIDE, "/tmp/hermes-profile-home")
-
-    root = locations.resolve_data_root()
-    assert root == Path("/tmp/hermes-profile-home").resolve()
-
-
-def test_data_root_resolution_uses_context_data_dir(tmp_path: Path) -> None:
-    from wingstaff import locations
-
-    class _Context:
-        data_dir = tmp_path / "from-context"
-
-    assert locations.resolve_data_root(context=_Context()) == (tmp_path / "from-context").resolve()
-
-
-def test_data_root_resolution_refuses_to_guess(monkeypatch: pytest.MonkeyPatch) -> None:
-    from wingstaff import locations
-
-    monkeypatch.delenv(locations.ENV_OVERRIDE, raising=False)
-
-    import sys
-    monkeypatch.setitem(sys.modules, "hermes_cli.config", None)
-    monkeypatch.setitem(sys.modules, "hermes_cli", None)
-
-    with pytest.raises(locations.DataRootError, match="HERMES_HOME"):
-        locations.resolve_data_root()
-
-
-def test_concurrent_workers_dont_corrupt_store(data_root: Path) -> None:
-    store = WorkflowStore(data_root)
-    states = tuple(
-        new_workflow(
-            workflow_id=f"workflow-{index}",
-            target_repository=TARGET,
-            requested_goal="goal",
-            pack_name="addyosmani",
-            pack_source_revision="rev",
-            created_at=NOW,
-        )
-        for index in range(8)
+def test_restart_recovers_policy_facts_without_operational_status(data_root: Path) -> None:
+    first = WorkflowStore(data_root)
+    approved = approve_plan(
+        make_planned(),
+        plan_digest="plan-v1",
+        decided_at=NOW + timedelta(minutes=3),
     )
+    first.create(approved)
 
+    recovered = WorkflowStore(data_root).get("workflow-1")
+
+    assert recovered == approved
+    assert recovered.approval is not None
+    assert recovered.board_slug == "wingstaff-test"
+    assert "status" not in recovered.to_dict()
+
+
+def test_optimistic_concurrency_rejects_second_writer(data_root: Path) -> None:
+    store = WorkflowStore(data_root)
+    store.create(make_planned())
+    a = WorkflowStore(data_root)
+    b = WorkflowStore(data_root)
+    observed_a = a.get_with_token("workflow-1")
+    observed_b = b.get_with_token("workflow-1")
+
+    approved_a = approve_plan(
+        observed_a.ledger,
+        plan_digest="plan-v1",
+        decided_at=NOW + timedelta(minutes=3),
+    )
+    a.update(approved_a, expected_updated_at=observed_a.updated_at)
+
+    approved_b = approve_plan(
+        observed_b.ledger,
+        plan_digest="plan-v1",
+        decided_at=NOW + timedelta(minutes=4),
+    )
+    with pytest.raises(StoreError, match="modified concurrently"):
+        b.update(approved_b, expected_updated_at=observed_b.updated_at)
+
+
+def test_upsert_preserves_original_creation_time(data_root: Path) -> None:
+    store = WorkflowStore(data_root)
+    store.upsert(make_ledger())
+    later = make_planned()
+    store.upsert(later)
+
+    assert store.get("workflow-1").created_at == NOW
+
+
+def test_schema_version_mismatch_is_rejected(data_root: Path) -> None:
+    data_root.mkdir(parents=True)
+    database = data_root / "policy-ledger.sqlite3"
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            "CREATE TABLE schema_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)"
+        )
+        connection.execute(
+            "INSERT INTO schema_meta(key, value) VALUES ('schema_version', '99')"
+        )
+
+    with pytest.raises(StoreError, match="unsupported"):
+        WorkflowStore(data_root)
+
+
+def test_concurrent_creates_do_not_corrupt_store(data_root: Path) -> None:
+    store = WorkflowStore(data_root)
+    ledgers = tuple(make_ledger(f"workflow-{index}") for index in range(8))
     errors: list[Exception] = []
 
-    def worker(state: WorkflowState) -> None:
+    def worker(ledger: WorkflowLedger) -> None:
         try:
-            store.create(state)
+            store.create(ledger)
         except Exception as error:  # noqa: BLE001 - test thread boundary
             errors.append(error)
 
-    threads = [threading.Thread(target=worker, args=(state,)) for state in states]
+    threads = [threading.Thread(target=worker, args=(ledger,)) for ledger in ledgers]
     for thread in threads:
         thread.start()
     for thread in threads:
         thread.join()
 
     assert errors == []
-    assert {state.workflow_id for state in store.list_active()} == {
-        state.workflow_id for state in states
+    assert {ledger.workflow_id for ledger in store.list_all()} == {
+        ledger.workflow_id for ledger in ledgers
     }
+
+
+def test_data_root_resolution_still_prefers_explicit_context_and_env(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from wingstaff import locations
+
+    explicit = tmp_path / "explicit"
+    monkeypatch.setenv(locations.ENV_OVERRIDE, str(tmp_path / "from-env"))
+    assert locations.resolve_data_root(explicit=explicit) == explicit.resolve()
+
+    class _Context:
+        data_dir = tmp_path / "from-context"
+
+    assert locations.resolve_data_root(context=_Context()) == (
+        tmp_path / "from-context"
+    ).resolve()

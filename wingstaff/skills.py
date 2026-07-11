@@ -8,6 +8,8 @@ import json
 import re
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
+from importlib.resources import files
+from importlib.resources.abc import Traversable
 from pathlib import Path
 from typing import Protocol
 
@@ -167,6 +169,31 @@ def required_skills(pack: WorkflowPack) -> tuple[SkillRef, ...]:
     return tuple(ordered)
 
 
+def pack_skill_digests(pack: WorkflowPack) -> tuple[tuple[str, str], ...]:
+    """Return exact external and bundled skill digests in lifecycle order."""
+    ordered: list[tuple[str, str]] = []
+    observed: dict[str, str] = {}
+    bundled_root = files(__package__).joinpath("skills")
+    for stage in pack.stages:
+        for skill in stage.skills:
+            digest = skill.content_digest
+            if skill.bundled is not None:
+                digest = hash_resource_directory(bundled_root.joinpath(skill.bundled))
+            if digest is None:
+                raise SkillRevisionError(
+                    f"skill {skill.name!r} has no deterministic content digest"
+                )
+            previous = observed.get(skill.name)
+            if previous is None:
+                observed[skill.name] = digest
+                ordered.append((skill.name, digest))
+            elif previous != digest:
+                raise SkillRevisionError(
+                    f"skill {skill.name!r} has conflicting content digests"
+                )
+    return tuple(ordered)
+
+
 def require_pack_skills(
     pack: WorkflowPack,
     inventory: SkillInventory,
@@ -258,16 +285,32 @@ def plan_pack_install(
 
 def hash_skill_directory(directory: Path) -> str:
     """Hash relative paths and bytes for one complete skill directory."""
+    return hash_resource_directory(directory)
+
+
+def hash_resource_directory(directory: Traversable) -> str:
+    """Hash relative paths and bytes for a filesystem or packaged directory."""
     digest = hashlib.sha256()
-    for path in sorted(directory.rglob("*")):
-        if not path.is_file():
-            continue
-        relative = path.relative_to(directory).as_posix()
+    for relative, path in _walk_resource_files(directory):
         digest.update(relative.encode("utf-8"))
         digest.update(b"\0")
         digest.update(path.read_bytes())
         digest.update(b"\0")
     return digest.hexdigest()
+
+
+def _walk_resource_files(
+    directory: Traversable,
+    prefix: str = "",
+) -> tuple[tuple[str, Traversable], ...]:
+    rows: list[tuple[str, Traversable]] = []
+    for child in sorted(directory.iterdir(), key=lambda item: item.name):
+        relative = f"{prefix}/{child.name}" if prefix else child.name
+        if child.is_file():
+            rows.append((relative, child))
+        elif child.is_dir():
+            rows.extend(_walk_resource_files(child, relative))
+    return tuple(rows)
 
 
 def version_satisfies(version: str, constraint: str) -> bool:

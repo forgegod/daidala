@@ -16,7 +16,7 @@ class FakeState:
     workflow_id: str = "wf-1"
 
     def to_dict(self) -> dict[str, str]:
-        return {"workflow_id": self.workflow_id, "status": "running"}
+        return {"workflow_id": self.workflow_id, "board_slug": "wingstaff-test"}
 
 
 @dataclass
@@ -32,9 +32,6 @@ class FakeService:
 
     def start(self, **kwargs: Any) -> FakeState:
         return self._call("start", **kwargs)
-
-    def validate(self, workflow_id: str) -> FakeState:
-        return self._call("validate", workflow_id)
 
     def status(self, workflow_id: str) -> FakeState:
         return self._call("status", workflow_id)
@@ -59,7 +56,15 @@ def _factory(service: FakeService) -> cli.ServiceFactory:
 @pytest.mark.parametrize(
     "argv",
     [
-        ["start", "/repo", "Implement feature", "--workflow-id", "wf-1"],
+        [
+            "start",
+            "/repo",
+            "Implement feature",
+            "--board",
+            "wingstaff-test",
+            "--workflow-id",
+            "wf-1",
+        ],
         ["status", "wf-1"],
         ["approve", "wf-1", "a" * 64],
         ["cancel", "wf-1", "operator requested cancellation"],
@@ -80,7 +85,7 @@ def test_standalone_and_hermes_surfaces_make_equivalent_service_calls(
     assert host.calls == standalone.calls
     assert json.loads(host_output) == json.loads(standalone_output)
     if argv[0] == "start":
-        assert [call[0] for call in host.calls] == ["start", "validate"]
+        assert [call[0] for call in host.calls] == ["start"]
 
 
 def test_init_is_dry_run_by_default(tmp_path: Path, monkeypatch, capsys) -> None:

@@ -5,8 +5,8 @@ deterministic policy-ledger record per workflow. Judgment stays in Hermes and
 pack skills; Python owns identity, provenance, plan approval, repository safety,
 artifact integrity, and optimistic concurrency.
 
-This document is the approved migration contract. The current runtime model is
-not the authority for new work; Phase 2 replaces it with this ledger.
+The policy and artifact ledger is implemented. The full linked Kanban graph and
+combined status view remain unavailable until the host adapter is replaced.
 
 ## Identity and baseline
 
@@ -100,9 +100,9 @@ Runtime SQLite files and policy-ledger records are never repository artifacts.
 ## Source of truth
 
 - Contract: this document and the active Kanban-native implementation plan
-- Target ledger model: `wingstaff/state.py`
-- Target policy transitions: `wingstaff/workflow.py`
-- Target persistence: `wingstaff/store.py`
-- Target coordination: `wingstaff/service.py`
-- Verification after migration: `tests/test_workflow.py`, `tests/test_store.py`,
+- Ledger model: `wingstaff/state.py`
+- Policy operations: `wingstaff/workflow.py`
+- Persistence: `wingstaff/store.py`
+- Coordination: `wingstaff/service.py`
+- Verification: `tests/test_workflow.py`, `tests/test_store.py`,
   `tests/test_execution.py`
