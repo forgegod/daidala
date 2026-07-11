@@ -227,7 +227,7 @@ def test_cli_kanban_dispatch_translates_public_create_and_show_commands() -> Non
                 "parents": [],
                 "workspace_path": "/repo",
                 "idempotency_key": "wingstaff:wf-1:0:define",
-                "skills": ["wingstaff:orchestrate", "aidlc-adapter"],
+                "skills": ["wingstaff:orchestrate", "wingstaff:aidlc-adapter"],
             },
         )
     )
@@ -259,7 +259,7 @@ def test_cli_kanban_dispatch_translates_public_create_and_show_commands() -> Non
         "--skill",
         "wingstaff:orchestrate",
         "--skill",
-        "aidlc-adapter",
+        "wingstaff:aidlc-adapter",
         "--json",
     )
     assert commands[1] == (

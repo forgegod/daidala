@@ -99,11 +99,12 @@ flowchart LR
     WORKTREE --> REVIEW
     WORKTREE --> DELIVER
 
-    CLI["Standalone wingstaff diagnostics process"] --> VALIDATE["Validate bundled pack and exit"]
+    CLI["Native or standalone operator command"] -->|"documented hermes kanban subprocesses"| KB
 ```
 
-The standalone `wingstaff` executable is package diagnostics, not the operator
-orchestration surface and not a long-running process.
+Native `hermes wingstaff` is the canonical operator surface. The standalone
+`wingstaff` executable shares its parser and handlers for diagnostics and smoke
+tests. Neither is a long-running orchestration process.
 
 ## Deterministic mechanism and model judgment
 
@@ -140,7 +141,7 @@ state and lifecycle tools enforce one policy consistently:
 - bind one human approval to the complete plan artifact digest;
 - invalidate approval whenever that plan changes.
 
-These controls are executable and covered by the Phase 5 fixture. The
+These controls are executable and covered by the cross-pack fixtures. The
 support-status table remains authoritative for later capabilities.
 
 ## Plugin and package entry points
@@ -180,7 +181,7 @@ that capability generically.
 | Registration | `wingstaff/__init__.py` | `tests/test_plugin.py` fake-context assertions |
 | Tool schema and JSON boundary | `wingstaff/schemas.py`, `wingstaff/tools.py` | `tests/test_plugin.py` |
 | Policy ledger and persistence | `wingstaff/state.py`, `wingstaff/workflow.py`, `wingstaff/store.py` | State, policy, persistence, and restart tests |
-| Kanban graph and execution isolation | `wingstaff/service.py`, `wingstaff/kanban.py`, `wingstaff/execution.py` | Fake-host graph tests and isolated Hermes restart probe; worker handoffs remain Phase 4 |
+| Kanban graph and execution isolation | `wingstaff/service.py`, `wingstaff/kanban.py`, `wingstaff/execution.py` | Fake-host graph/recovery tests and isolated Hermes lifecycle probes |
 | Worktree cleanup and rollback | `wingstaff/service.py`, `wingstaff/execution.py` | Cross-pack delivery and cancellation tests |
 | Pack schema and invariants | `wingstaff/packs.py` | `tests/test_packs.py` |
 | Addy Osmani mapping | `wingstaff/packs/addyosmani.yaml` | Pack load and CLI validation |

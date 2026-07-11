@@ -81,6 +81,16 @@ define -> plan -> implement -> verify -> review -> deliver
 The human gate is metadata between `plan` and `implement`, not a separate
 stage.
 
+At graph creation, every executable stage becomes one Hermes Kanban card pinned
+with `wingstaff:orchestrate` plus the exact skills declared for that stage. The
+approval card is Wingstaff policy infrastructure and carries no worker skills.
+Profiles, card links, workspaces, and `wingstaff.handoff/v1` metadata are generic
+runtime contracts rather than pack fields.
+
+External card skills use their exact `name`. A `bundled` skill is loaded through
+the plugin namespace as `wingstaff:<name>`; for example, the AI-DLC worker card
+pins `wingstaff:aidlc-adapter`.
+
 ## Runtime model
 
 Successful validation produces frozen dataclasses:

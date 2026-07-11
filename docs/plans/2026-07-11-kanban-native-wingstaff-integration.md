@@ -23,7 +23,7 @@ be in progress.
 | 3 — build the Kanban graph adapter | Done | Preserve the explicit board/profile map, approval-gated graph, strict host parsing, and live read-only status. |
 | 4 — adapt workers, artifacts, and recovery | Done | Preserve card-pinned worker instructions, structured handoffs, same-card recovery, and immutable retry evidence. |
 | 5 — simplify the CLI and operator experience | Done | Preserve public Kanban CLI translation, one default profile with explicit overrides, and combined diagnostics. |
-| 6 — rewrite product and integration documentation | Todo | Start only after Phase 5 is pushed. |
+| 6 — rewrite product and integration documentation | Done | Preserve the user-first starting path, Kanban authority split, explicit trigger model, and source-grounded runtime claims. |
 | 7 — end-to-end and release verification | Todo | Start only after Phase 6 is pushed. |
 
 ## Goal
@@ -705,6 +705,12 @@ workflow state as a product feature after the refactor.
   sections to describe only the Kanban-native architecture; remove obsolete
   lifecycle and authority statements rather than preserving a decision trail.
 
+Runtime-claim reconciliation found one prerequisite defect: bundled pack skills
+were pinned to worker cards without the plugin namespace even though Hermes
+loads plugin skills as `plugin:skill`. Phase 6 therefore qualifies bundled card
+skills as `wingstaff:<name>` and retains unqualified exact names only for
+external profile skills; tests and pack documentation lock that distinction.
+
 ### Documentation acceptance criteria
 
 A reader must be able to answer, from README.md alone:
@@ -738,6 +744,17 @@ python scripts/check_md_links.py .
 Audit every runtime claim against source, tests, and current official Hermes
 documentation. Mermaid diagrams must show Wingstaff inside Hermes and must not
 show a competing board, daemon, or dashboard.
+
+Gate: GREEN — the root README answers the product, prerequisite, trigger,
+dispatcher, cron, routing, authority, approval, evidence, and support questions;
+`docs/00-getting-started.md` provides the matching executable native-CLI path.
+The numbered documentation and bootstrap roadmap were reconciled against the
+Kanban-native runtime and official Hermes v0.18.2 command surfaces. The audit
+also corrected bundled worker skill pins to their required plugin-qualified
+names; an isolated AI-DLC start produced two cards with
+`wingstaff:orchestrate` and `wingstaff:aidlc-adapter`. Markdown links passed for
+23 files; Lefthook, 128 tests, Ruff, both pack validations, package build, Twine,
+release-content audit, and diff checks passed.
 
 ### Commit boundary
 

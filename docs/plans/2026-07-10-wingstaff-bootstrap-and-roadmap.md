@@ -221,8 +221,9 @@ pack-neutral lifecycle rather than by the old triage scaffold.
 |---|---|---|
 | `docs/README.md` | Entry point, reading order, lifecycle diagram, support-status table, and symptom-to-document routing. | Phase 0B |
 | `docs/01-architecture.md` | Plugin/skill/pack boundaries; deterministic engine vs. model judgment; why there is no Wingstaff server; component and process diagrams. | Phase 0B, reconciled every runtime phase |
-| `docs/02-workflow-state.md` | Workflow identity, statuses, transitions, artifact references, plan-digest approval, idempotency, and recovery. | Phase 2 |
-| `docs/03-pack-reference.md` | Complete workflow-pack schema: source, revision, stages, skills, artifacts, gate, verification, and transitions. | Phase 0B for schema v1; extend with Phase 6 |
+| `docs/00-getting-started.md` | Executable first-workflow path, gateway prerequisite, explicit start, digest approval, observation, and recovery. | Kanban-native documentation phase |
+| `docs/02-workflow-state.md` | Workflow identity, policy facts, card references, artifact evidence, plan-digest approval, idempotency, and recovery. | Phase 2 |
+| `docs/03-pack-reference.md` | Complete workflow-pack schema: source, revision, stages, skills, gate, and generic Kanban card mapping. | Phase 0B, reconciled with Kanban-native execution |
 | `docs/04-authoring-packs.md` | How to map a new skill set without adding pack-specific branches to the engine; validation and fixture requirements. | Phase 0B |
 | `docs/05-lifecycle-stages.md` | Define, plan, gate, implement, verify, review, and deliver contracts, inputs, outputs, and failure semantics. | Phase 5 |
 | `docs/06-security.md` | Trust boundaries, plugin opt-in, untrusted repositories, worktree isolation, secrets, command approval, human gate, and supply-chain rules. | Phase 0B, hardened in Phase 10 |

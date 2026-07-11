@@ -30,7 +30,10 @@ def test_every_executable_card_pins_worker_contract_and_exact_pack_skills(
 
     assert KanbanGraphAdapter._stage_skills(pack, stage) == [
         "wingstaff:orchestrate",
-        *(skill.name for skill in selected.skills),
+        *(
+            f"wingstaff:{skill.name}" if skill.bundled else skill.name
+            for skill in selected.skills
+        ),
     ]
 
 

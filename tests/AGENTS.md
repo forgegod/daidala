@@ -15,7 +15,8 @@ completeness without touching a real Hermes profile.
 - Fake command/registry tests for dry-run installation, pinned revisions, content digests, post-apply verification, and refused recursive installation.
 - Fake host-dispatch tests for approval-gated, restart-safe, idempotent Kanban mapping.
 - Bundled worker-contract tests for stage tool mapping, structured handoffs,
-  blocking, retries, and immutable post-capture scope.
+  external-versus-plugin-qualified skill names, blocking, retries, and immutable
+  post-capture scope.
 - Shared-parser and fake-command tests proving native Hermes and standalone CLI
   service calls, public Kanban command translation, JSON, and exit codes remain
   equivalent.

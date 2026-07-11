@@ -2,7 +2,9 @@
 
 Pack adapters map external skill sets onto Wingstaff's pack-neutral lifecycle.
 The engine validates common mechanics only; skill selection and sequencing live
-in bundled pack YAML.
+in bundled pack YAML. Both adapters expand into the same approval-gated Kanban
+graph and `wingstaff.handoff/v1` worker contract; only the pinned stage skills
+and their judgment differ.
 
 ## Implemented adapters
 
@@ -29,8 +31,8 @@ first lifecycle position.
 Every install target is fully qualified as
 `addyosmani/agent-skills/skills/<exact-name>`. A similar name does not satisfy
 the requirement. Missing requirements block workflow creation and list their
-install targets. Phase 6 dry-runs missing-skill installation by default and
-requires exact complete-directory digests before workflow start.
+install targets. Pack installation dry-runs missing-skill mutations by default
+and requires exact complete-directory digests before workflow start.
 
 ## Adapter and engine boundary
 
@@ -52,6 +54,8 @@ Stable AI-DLC v1.0.1 is MIT-0 licensed and distributes a core workflow plus
 rule-detail directories for coding harnesses. It does not distribute Agent
 Skills. Wingstaff therefore packages one attributed `aidlc-adapter` skill and
 references it through the generic `bundled` provider field in every stage.
+Worker cards load it by its Hermes plugin-qualified name,
+`wingstaff:aidlc-adapter`.
 
 | Wingstaff stage | AI-DLC concept and artifact intent |
 |---|---|

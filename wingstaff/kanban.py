@@ -225,7 +225,13 @@ class KanbanGraphAdapter:
         if stage is WorkflowStage.APPROVAL:
             return []
         selected = next(row for row in pack.stages if row.id == stage.value)
-        return ["wingstaff:orchestrate", *(skill.name for skill in selected.skills)]
+        return [
+            "wingstaff:orchestrate",
+            *(
+                f"wingstaff:{skill.name}" if skill.bundled else skill.name
+                for skill in selected.skills
+            ),
+        ]
 
     def _tool_json(self, name: str, args: dict[str, object]) -> dict[str, object]:
         try:

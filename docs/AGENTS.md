@@ -7,6 +7,7 @@ Own current architecture documentation, the numbered reading set, and executable
 ## Ownership
 
 - `README.md` is the only reading-order, support-status, and symptom-routing index.
+- `00-getting-started.md` owns the executable first-run operator walkthrough.
 - `01-architecture.md` owns process and component boundaries.
 - `02-workflow-state.md` owns the Wingstaff policy ledger, Hermes Kanban state
   authority, and transition-ownership contract.

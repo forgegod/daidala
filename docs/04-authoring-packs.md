@@ -12,6 +12,11 @@ pre-implementation gate, one pinned GitHub source revision, and complete skill
 directory digests. Do not encode different mechanics in magic names or
 pack-specific branches.
 
+The engine maps every stage row to one Kanban card. Pack skills are pinned to
+that card alongside the bundled worker contract; parent links, profile
+assignment, blocking, structured handoffs, and worktree ownership stay generic.
+Do not encode card lifecycle mechanics inside a pack.
+
 ## Add a pack
 
 1. Choose a lowercase, filename-safe pack slug.
