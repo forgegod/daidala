@@ -13,7 +13,7 @@
 
 - Phase 0: Done — baseline verification passed.
 - Phase 1: Done — stale normative and provenance claims reconciled.
-- Phase 2: Todo.
+- Phase 2: Done — activation and revision gates exposed.
 - Phase 3: Todo.
 - Phase 4: Awaiting a separate structural decision.
 

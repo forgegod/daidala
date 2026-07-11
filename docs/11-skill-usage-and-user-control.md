@@ -206,6 +206,13 @@ arrives through the Kanban thread; a retry records a new manifest linked by
 that superseding manifest before submitting evidence. Prior artifacts remain
 unchanged for audit.
 
+Activation is authorized by dispatcher-owned worker identity, not by model input.
+`wingstaff_record_skill_activation` reads `HERMES_KANBAN_BOARD` and
+`HERMES_KANBAN_TASK` from the worker environment; both must match the workflow
+ledger's board and current stage card. Calls outside that matching Kanban worker
+fail closed. Model-supplied workflow or stage fields, and generic tool-call
+context, do not grant card authority.
+
 ### `pre_llm_call` remains advisory only
 
 Hermes supports shell hooks and Python plugin callbacks on `pre_llm_call`. A

@@ -10,11 +10,17 @@ standalone operator-command paths are implemented.
 
 ## Stage contract
 
+Every executable stage requires a current, finalized, unblocked skill activation
+manifest before Wingstaff records its durable handoff. Approval is the only
+non-executable card and has no activation manifest. Replacing a plan increments
+the revision, clears approval, and requires a new matching approval before
+post-gate work can proceed.
+
 | Card | Input | Durable handoff | Hermes result |
 |---|---|---|---|
 | Define | Goal, pack, exact skills, clean baseline | `define.md` path and digest | Complete or block |
 | Plan | Definition handoff | `plan.md` path and digest | Complete or block |
-| Approval | Current plan digest | Approval actor, time, and digest | Remain blocked until Wingstaff approval; then complete |
+| Approval | Current plan revision and digest | Approval actor, time, revision, and digest | Remain blocked until Wingstaff approval; then complete |
 | Implement | Approved revision and absolute owned worktree | Captured diff and changed-path manifest | Complete or block |
 | Verify | Immutable implementation scope and exact commands | Commands, exit codes, and output references | Complete or block |
 | Review | Captured diff and passing evidence | Review artifact and decision | Complete or block |
