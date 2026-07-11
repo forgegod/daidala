@@ -15,6 +15,8 @@ Own the canonical Wingstaff identity, deterministic generator, review renders, a
 ## Local Contracts
 
 - Keep the winged-staff mark and gold `#ffc72c` / amber `#f9a23a` palette.
+- Render amber only through clipped copies of the mark and wordmark geometry. Do not draw an amber background bridge through transparent gaps.
+- Position the mark slightly below the fixed wordmark band so gold remains visible beneath the amber overlay at the glyph's bottom edge, matching the Irigate and Talaria layering rule.
 - Use the bundled font through generated SVG paths. Do not depend on system fonts or silently substitute fonts.
 - Keep the logo and mark backgrounds transparent.
 - Keep the social card's human-approval message and no-second-orchestration-server boundary visible.
