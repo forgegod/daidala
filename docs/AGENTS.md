@@ -25,6 +25,11 @@ Own current architecture documentation, the numbered reading set, and executable
 - `11-skill-usage-and-user-control.md` owns the design contract for card-scoped
   candidate loading, persisted activation, cross-stage handoff, and user
   selection boundaries.
+- `12-market-overview.md` owns source-backed evaluation of candidate workflow
+  packs, interoperability standards, optional integrations, and adjacent
+  products.
+- `13-autonomous-triggering.md` owns the how-to contract for admitting external
+  work through Hermes cron and webhooks without weakening Wingstaff approval.
 - `plans/` contains self-contained plans for future implementation sessions.
 
 ## Local Contracts

@@ -24,7 +24,9 @@ architecture references.
 | [Pack adapters](09-pack-adapters.md) | Addyosmani and AI-DLC mappings and activation modes implemented | Pack YAML, bundled adapter, and cross-pack execution tests |
 | [Autonomous development use cases](10-autonomous-development-use-cases.md) | Current use cases, activation handoffs, user controls, tutorial ideas, and unsupported opportunities documented | Runtime contracts plus external agent-development research |
 | [Skill usage and user control](11-skill-usage-and-user-control.md) | Candidate loading, persisted activation, structured handoff, and user-selection boundaries documented | Pack, policy ledger, worker contract, and cross-pack tests |
-| Cron and target commit/push | Not part of Wingstaff runtime | Cron may be an external trigger; delivery records both flags as false |
+| [Workflow ecosystem market overview](12-market-overview.md) | Current projects evaluated as packs, interoperability layers, optional tools, or product references | Upstream documentation, local Matt Pocock Skills checkout, and Wingstaff pack contracts |
+| [Autonomous triggering](13-autonomous-triggering.md) | Hermes cron/webhook composition documented but not exercised end to end; implementation still requires exact-digest approval | Observed Hermes v0.18.2 CLI plus Wingstaff start CLI and tool schemas |
+| Target commit/push | Not part of Wingstaff runtime | Delivery records both flags as false |
 
 “Implemented” means present in this repository. Compatibility claims are limited
 to the host version and discovery paths in the
@@ -73,6 +75,8 @@ carry that manifest's digest and active skill names.
 9. [Hermes integration](08-hermes-integration.md) — inspect verified host behavior.
 10. [Autonomous development use cases](10-autonomous-development-use-cases.md) — choose suitable work, steer skills, and assess current limitations.
 11. [Skill usage and user control](11-skill-usage-and-user-control.md) — understand how packs become card skills and which controls remain with the user.
+12. [Workflow ecosystem market overview](12-market-overview.md) — compare candidate skill sets, workflow standards, design systems, and adjacent products.
+13. [Autonomous triggering](13-autonomous-triggering.md) — admit GitHub, Linear, Jira, or scheduled work without adding a Wingstaff scheduler or bypassing approval.
 
 ## Find the right document
 
@@ -89,6 +93,8 @@ carry that manifest's digest and active skill names.
 | How do packs change stage workers without engine branches? | [Authoring packs](04-authoring-packs.md) |
 | Which autonomous-development tasks fit, how do skills hand off, and where can I intervene? | [Autonomous development use cases](10-autonomous-development-use-cases.md) |
 | What does “using” a pack skill mean, and can I select or override stage skills? | [Skill usage and user control](11-skill-usage-and-user-control.md) |
+| Which external projects could become Wingstaff packs, and why do others not fit? | [Workflow ecosystem market overview](12-market-overview.md) |
+| How can GitHub issues, Actions failures, Linear tickets, Jira tickets, or cron start a workflow? | [Autonomous triggering](13-autonomous-triggering.md) |
 
 ## Verification
 
