@@ -32,11 +32,19 @@ the current row's gate and commit succeed.
 | 2. Constraint model | Done | Add strict YAML parsing, canonicalization, immutable artifacts, provenance, and state identities. | Focused model/parser tests plus the repository gate. |
 | 3. Persistence and transitions | Done | Persist append-only constraint revisions and implement deterministic idempotent recording and invalidation. | Store/workflow/execution tests plus the repository gate. |
 | 4. Card and worker enforcement | Done | Project applicable policy onto cards and reject stale cards, workers, activation, handoffs, and evidence. | Kanban/worker/execution tests plus the repository gate. |
-| 4A. Enforcement closure | In progress | Add the omitted board and constraint-revision identities, exclude the non-executable approval card from policy projection, and enforce current-card identity at every evidence boundary before Phase 5. | Kanban/service/execution/worker-contract regressions plus the repository gate. |
+| 4A. Enforcement closure | Done | Add the omitted board and constraint-revision identities, exclude the non-executable approval card from policy projection, and enforce current-card identity at every evidence boundary before Phase 5. | Kanban/service/execution/worker-contract regressions plus the repository gate. |
 | 5. Approval and graph replacement | Todo | Bind approval to plan and constraint identity; durably invalidate and recreate stale workflow work. | Workflow/service/Kanban recovery tests plus the repository gate. |
 | 6. Tool and CLI surfaces | Todo | Expose explicit start, replacement, status, skill-source, and file-source inputs through shared service paths. | Tool/plugin/CLI parity tests plus the repository gate. |
 | 7. Documentation and host verification | Todo | Reconcile numbered docs, architecture, integration guidance, operator surfaces, and supported-host evidence. | Full repository gate and isolated supported-host probes. |
 | 8. Release compatibility regression | Todo | Turn the Phase 1 host findings into durable architecture documentation and a repeatable Hermes compatibility probe that gates Wingstaff releases and intentional host-version changes, not every push. | Script tests, an isolated supported-host run, release-workflow trigger assertions, and the repository gate. |
+
+Phase 4A verdict: GREEN. Card references persist named-board and complete
+constraint identity, approval cards carry no executable policy projection, and
+definition, plan, implementation, verification, review, and delivery evidence
+reject absent, wrong-board, wrong-card, stale, or wrongly assigned worker
+contexts. The repository gate passed with 174 tests, Ruff, both pack validators,
+sdist/wheel build, Twine, release-content validation, Markdown links, Lefthook,
+and clean diff checks.
 
 Phase 4 verdict: GREEN. Policy-aware card identity, bounded global and phase
 projection, live worker-card validation, stale activation rejection, and the

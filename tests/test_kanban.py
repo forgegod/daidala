@@ -13,6 +13,7 @@ from wingstaff.packs import load_pack
 from wingstaff.state import (
     ActivationManifestReference,
     ActivationReferenceState,
+    CardReference,
     SkillDigest,
     StageProfile,
     WorkflowConstraintsIdentity,
@@ -259,6 +260,36 @@ def test_card_projects_current_global_and_phase_constraints_with_identity() -> N
     assert "- Never commit or push." in body
     assert "- Critical findings block delivery." in body
     assert constraints.digest in str(args["idempotency_key"])
+
+
+def test_card_reference_persists_board_and_complete_constraint_identity() -> None:
+    ledger, _constraints = with_constraints(make_ledger())
+    recorded = record_host_card(ledger, WorkflowStage.DEFINE, "t_define", 2)
+    card = recorded.card_for(WorkflowStage.DEFINE)
+
+    assert card is not None
+    assert card.board_slug == ledger.board_slug
+    assert card.constraints_revision == 1
+    assert card.constraints_digest == ledger.current_constraints_digest
+    assert CardReference.from_dict(card.to_dict()) == card
+
+
+def test_approval_card_excludes_non_executable_constraint_projection() -> None:
+    host = FakeHost()
+    ledger, constraints = with_constraints(make_approved_worktree())
+
+    card = KanbanGraphAdapter(host.dispatch).ensure_card(
+        ledger,
+        load_pack("addyosmani"),
+        stage=WorkflowStage.APPROVAL,
+        constraints=constraints,
+    )
+
+    args = host.cards[card.task_id]["args"]
+    assert isinstance(args, dict)
+    body = str(args["body"])
+    assert "Workflow constraints" not in body
+    assert "Never commit or push" not in body
 
 
 def test_card_rejects_missing_current_constraint_content() -> None:

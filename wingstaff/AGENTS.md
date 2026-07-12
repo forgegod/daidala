@@ -102,12 +102,15 @@ fails locally rather than in production.
   skills use the `wingstaff:<name>` namespace required by Hermes skill loading.
 - Card IDs and idempotency keys are persisted as policy facts; live card status is read from Kanban and never mirrored.
 - Card references and skill-activation manifests bind the current policy revision
-  and constraint digest. Card bodies include the immutable artifact identity,
+  and constraint digest. Card references also persist the named board and
+  constraint revision. Executable card bodies include the immutable artifact identity,
   every global constraint, and only the current executable stage's constraints;
-  oversized bodies fail instead of truncating policy.
+  approval cards receive no constraint projection, and oversized bodies fail
+  instead of truncating policy.
 - Worker activation validates the current board, current policy-bound card, and
-  live assignee before methodology or evidence. A constraint revision makes prior
-  cards and activation manifests historical without deleting them.
+  live assignee before methodology or evidence. Every worker evidence operation
+  repeats that current-card check. A constraint revision makes prior cards and
+  activation manifests historical without deleting them.
 - The policy store uses one fresh schema and does not inspect or migrate the
   unreleased workflow-state database.
 - The engine never substitutes guessed data when a model, skill, or verifier fails.

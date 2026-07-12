@@ -124,7 +124,9 @@ def record_card(
         plan_revision=revision,
         task_id=task_id,
         idempotency_key=idempotency_key,
+        board_slug=ledger.board_slug,
         policy_revision=ledger.policy_revision,
+        constraints_revision=ledger.current_constraints_revision,
         constraints_digest=ledger.current_constraints_digest,
     )
     existing = next(
@@ -133,7 +135,10 @@ def record_card(
             for row in ledger.card_references
             if row.stage is stage
             and row.plan_revision == revision
+            and row.board_slug == ledger.board_slug
             and row.policy_revision == ledger.policy_revision
+            and row.constraints_revision == ledger.current_constraints_revision
+            and row.constraints_digest == ledger.current_constraints_digest
         ),
         None,
     )

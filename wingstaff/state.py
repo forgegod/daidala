@@ -610,12 +610,21 @@ class CardReference:
     plan_revision: int
     task_id: str
     idempotency_key: str
+    board_slug: str = ""
     policy_revision: int = 0
+    constraints_revision: int | None = None
     constraints_digest: str | None = None
 
     def __post_init__(self) -> None:
         _require_revision(self.plan_revision)
+        _require_text(self.board_slug, "card board slug")
         _require_revision(self.policy_revision)
+        if self.constraints_revision is not None:
+            _require_positive_revision(self.constraints_revision, "card constraint revision")
+        if (self.constraints_revision is None) != (self.constraints_digest is None):
+            raise PolicyViolationError(
+                "card constraint revision and digest must both be present or absent"
+            )
         if self.constraints_digest is not None:
             _require_digest(self.constraints_digest, "card constraint digest")
         _require_text(self.task_id, "Kanban task ID")
@@ -625,7 +634,9 @@ class CardReference:
         return {
             "stage": self.stage.value,
             "plan_revision": self.plan_revision,
+            "board_slug": self.board_slug,
             "policy_revision": self.policy_revision,
+            "constraints_revision": self.constraints_revision,
             "constraints_digest": self.constraints_digest,
             "task_id": self.task_id,
             "idempotency_key": self.idempotency_key,
@@ -638,7 +649,9 @@ class CardReference:
             plan_revision=raw["plan_revision"],
             task_id=raw["task_id"],
             idempotency_key=raw["idempotency_key"],
+            board_slug=raw["board_slug"],
             policy_revision=raw["policy_revision"],
+            constraints_revision=raw["constraints_revision"],
             constraints_digest=raw["constraints_digest"],
         )
 
@@ -807,6 +820,11 @@ class WorkflowLedger:
         current = self.current_constraints
         return current.identity.digest if current else None
 
+    @property
+    def current_constraints_revision(self) -> int | None:
+        current = self.current_constraints
+        return current.identity.constraints_revision if current else None
+
     def artifact_for(self, stage: WorkflowStage) -> ArtifactReference | None:
         revision = 0 if stage is WorkflowStage.DEFINE else self.plan_revision
         return next(
@@ -826,7 +844,9 @@ class WorkflowLedger:
                 for card in self.card_references
                 if card.stage is stage
                 and card.plan_revision == revision
+                and card.board_slug == self.board_slug
                 and card.policy_revision == self.policy_revision
+                and card.constraints_revision == self.current_constraints_revision
                 and card.constraints_digest == self.current_constraints_digest
             ),
             None,

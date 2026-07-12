@@ -233,30 +233,28 @@ class KanbanGraphAdapter:
             lines.append(f"Plan digest: {ledger.current_plan_digest}")
         if ledger.worktree_path:
             lines.append(f"Persistent worktree: {ledger.worktree_path}")
-        current = ledger.current_constraints
-        lines.extend(
-            [
-                "--- Workflow constraints ---",
-                "Constraint revision: "
-                f"{current.identity.constraints_revision if current else 'none'}",
-                f"Constraint digest: {current.identity.digest if current else 'none'}",
-                f"Constraint artifact: {current.path if current else 'none'}",
-            ]
-        )
-        if constraints is not None:
-            applicable = (
-                constraints.global_constraints
-                if stage is WorkflowStage.APPROVAL
-                else constraints.constraints_for(stage)
+        if stage is not WorkflowStage.APPROVAL:
+            current = ledger.current_constraints
+            lines.extend(
+                [
+                    "--- Workflow constraints ---",
+                    "Constraint revision: "
+                    f"{current.identity.constraints_revision if current else 'none'}",
+                    f"Constraint digest: {current.identity.digest if current else 'none'}",
+                    f"Constraint artifact: {current.path if current else 'none'}",
+                ]
             )
-            lines.extend(f"- {constraint}" for constraint in applicable)
-        lines.extend(
-            [
-                "Block if a constraint conflicts with requested work or prescribes "
-                "methodology/capabilities.",
-                "--- End workflow constraints ---",
-            ]
-        )
+            if constraints is not None:
+                lines.extend(
+                    f"- {constraint}" for constraint in constraints.constraints_for(stage)
+                )
+            lines.extend(
+                [
+                    "Block if a constraint conflicts with requested work or prescribes "
+                    "methodology/capabilities.",
+                    "--- End workflow constraints ---",
+                ]
+            )
         lines.append("Use Wingstaff policy/evidence tools; Hermes Kanban owns lifecycle state.")
         body = "\n".join(lines)
         if len(body) > self.MAX_CARD_BODY_CHARS:

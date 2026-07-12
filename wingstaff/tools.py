@@ -160,6 +160,7 @@ def submit_artifact(args: dict[str, Any], **kwargs: Any) -> str:
             str(values["workflow_id"]),
             stage=WorkflowStage(str(values["stage"])),
             content=str(values["content"]),
+            **_worker_context(),
         ),
     )
 
@@ -185,7 +186,7 @@ def capture_implementation(args: dict[str, Any], **kwargs: Any) -> str:
         allowed={"workflow_id"},
         required={"workflow_id"},
         operation=lambda service, values: service.capture_implementation(
-            str(values["workflow_id"])
+            str(values["workflow_id"]), **_worker_context()
         ),
     )
 
@@ -202,6 +203,7 @@ def record_verification(args: dict[str, Any], **kwargs: Any) -> str:
             command=str(values["command"]),
             exit_code=values["exit_code"],
             output=str(values["output"]),
+            **_worker_context(),
         ),
     )
 
@@ -242,8 +244,18 @@ def deliver(args: dict[str, Any], **kwargs: Any) -> str:
         args,
         allowed={"workflow_id"},
         required={"workflow_id"},
-        operation=lambda service, values: service.deliver(str(values["workflow_id"])),
+        operation=lambda service, values: service.deliver(
+            str(values["workflow_id"]), **_worker_context()
+        ),
     )
+
+
+def _worker_context() -> dict[str, str]:
+    board_slug = os.environ.get("HERMES_KANBAN_BOARD")
+    task_id = os.environ.get("HERMES_KANBAN_TASK")
+    if not board_slug or not board_slug.strip() or not task_id or not task_id.strip():
+        raise ValueError("evidence operation requires Hermes Kanban worker context")
+    return {"board_slug": board_slug, "task_id": task_id}
 
 
 def _service_handler(

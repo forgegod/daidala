@@ -12,7 +12,7 @@ from wingstaff.errors import PolicyViolationError
 from wingstaff.execution import ExecutionError, ExecutionWorkspace
 from wingstaff.kanban import KanbanGraphAdapter
 from wingstaff.packs import SkillActivationMode, load_pack
-from wingstaff.service import WorkflowService
+from wingstaff.service import ServiceError, WorkflowService
 from wingstaff.skills import (
     content_registry_from_digests,
     inventory_from_names,
@@ -51,6 +51,38 @@ class TickClock:
 
 class FixtureWorkflowService(WorkflowService):
     fixture_pack_name: str
+
+    def _current_context(self, workflow_id: str, stage: WorkflowStage) -> dict[str, str]:
+        ledger = self.status(workflow_id)
+        card = ledger.card_for(stage)
+        assert card is not None
+        return {"board_slug": ledger.board_slug, "task_id": card.task_id}
+
+    def submit_artifact(self, workflow_id: str, *, stage: WorkflowStage, **kwargs):
+        return super().submit_artifact(
+            workflow_id, stage=stage, **self._current_context(workflow_id, stage), **kwargs
+        )
+
+    def capture_implementation(self, workflow_id: str, **kwargs):
+        return super().capture_implementation(
+            workflow_id,
+            **self._current_context(workflow_id, WorkflowStage.IMPLEMENT),
+            **kwargs,
+        )
+
+    def record_verification(self, workflow_id: str, **kwargs):
+        return super().record_verification(
+            workflow_id,
+            **self._current_context(workflow_id, WorkflowStage.VERIFY),
+            **kwargs,
+        )
+
+    def deliver(self, workflow_id: str, **kwargs):
+        return super().deliver(
+            workflow_id,
+            **self._current_context(workflow_id, WorkflowStage.DELIVER),
+            **kwargs,
+        )
 
 
 def record_stage_activation(
@@ -405,6 +437,42 @@ def test_blocked_activation_denies_stage_evidence_without_completion_handoff(
     card = service.status(ledger.workflow_id).card_for(WorkflowStage.DEFINE)
     assert card is not None
     assert "completion_metadata" not in fake_kanban_host.cards[card.task_id]
+
+
+def test_evidence_rejects_wrong_board_and_stale_card_context(
+    service: FixtureWorkflowService,
+    target_repository: Path,
+) -> None:
+    ledger = service.start(
+        board_slug="wingstaff-test",
+        target_repository=str(target_repository),
+        goal="Reject stale worker evidence",
+        stage_profiles=STAGE_PROFILES,
+        pack_name=service.fixture_pack_name,
+        workflow_id="workflow-stale-evidence",
+    )
+    record_stage_activation(service, ledger.workflow_id, WorkflowStage.DEFINE)
+    card = ledger.card_for(WorkflowStage.DEFINE)
+    assert card is not None
+
+    with pytest.raises(ServiceError, match="board"):
+        WorkflowService.submit_artifact(
+            service,
+            ledger.workflow_id,
+            stage=WorkflowStage.DEFINE,
+            content="# Definition\n",
+            board_slug="wrong-board",
+            task_id=card.task_id,
+        )
+    with pytest.raises(ServiceError, match="task"):
+        WorkflowService.submit_artifact(
+            service,
+            ledger.workflow_id,
+            stage=WorkflowStage.DEFINE,
+            content="# Definition\n",
+            board_slug=ledger.board_slug,
+            task_id="stale-card",
+        )
 
 
 def test_cancel_rolls_back_owned_implementation_worktree(

@@ -93,6 +93,15 @@ def call(handler, args: object) -> dict:
     return json.loads(raw)
 
 
+def worker_context(
+    service: WorkflowService, workflow_id: str, stage: WorkflowStage
+) -> dict[str, str]:
+    ledger = service.status(workflow_id)
+    card = ledger.card_for(stage)
+    assert card is not None
+    return {"board_slug": ledger.board_slug, "task_id": card.task_id}
+
+
 def seed_planned(service: WorkflowService, target: Path) -> str:
     ledger = service.start(
         board_slug="wingstaff-test",
@@ -106,12 +115,14 @@ def seed_planned(service: WorkflowService, target: Path) -> str:
         ledger.workflow_id,
         stage=WorkflowStage.DEFINE,
         content="# Definition\n",
+        **worker_context(service, ledger.workflow_id, WorkflowStage.DEFINE),
     )
     record_activation(service, ledger.workflow_id, WorkflowStage.PLAN)
     ledger = service.submit_artifact(
         ledger.workflow_id,
         stage=WorkflowStage.PLAN,
         content="# Plan\n",
+        **worker_context(service, ledger.workflow_id, WorkflowStage.PLAN),
     )
     return ledger.workflow_id
 
@@ -210,12 +221,14 @@ def test_start_restart_and_approval_create_one_idempotent_graph(
         second.workflow_id,
         stage=WorkflowStage.DEFINE,
         content="# Definition\n",
+        **worker_context(service, second.workflow_id, WorkflowStage.DEFINE),
     )
     record_activation(service, second.workflow_id, WorkflowStage.PLAN)
     planned = service.submit_artifact(
         second.workflow_id,
         stage=WorkflowStage.PLAN,
         content="# Plan\n",
+        **worker_context(service, second.workflow_id, WorkflowStage.PLAN),
     )
     plan = planned.artifact_for(WorkflowStage.PLAN)
     assert plan is not None

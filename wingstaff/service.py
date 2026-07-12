@@ -214,6 +214,8 @@ class WorkflowService:
         *,
         stage: WorkflowStage,
         content: str,
+        board_slug: str,
+        task_id: str,
     ) -> WorkflowLedger:
         """Store and record a model-produced definition, plan, or review."""
         if not isinstance(content, str) or not content.strip():
@@ -221,6 +223,9 @@ class WorkflowService:
         if stage not in {WorkflowStage.DEFINE, WorkflowStage.PLAN, WorkflowStage.REVIEW}:
             raise ServiceError(f"stage {stage.value!r} cannot be submitted as text")
         observed = self.store.get_with_token(workflow_id)
+        self._require_current_card_context(
+            observed.ledger, stage, board_slug=board_slug, task_id=task_id
+        )
         _require_stage_activation(observed.ledger, stage)
         filename = {
             WorkflowStage.DEFINE: "define.md",
@@ -261,10 +266,15 @@ class WorkflowService:
         )
         return self.store.update(updated, expected_updated_at=observed.updated_at)
 
-    def capture_implementation(self, workflow_id: str) -> WorkflowLedger:
+    def capture_implementation(
+        self, workflow_id: str, *, board_slug: str, task_id: str
+    ) -> WorkflowLedger:
         """Capture the immutable pre-verification diff and changed-path scope."""
         observed = self.store.get_with_token(workflow_id)
         ledger = observed.ledger
+        self._require_current_card_context(
+            ledger, WorkflowStage.IMPLEMENT, board_slug=board_slug, task_id=task_id
+        )
         _require_stage_activation(ledger, WorkflowStage.IMPLEMENT)
         existing = ledger.artifact_for(WorkflowStage.IMPLEMENT)
         if existing is not None:
@@ -299,9 +309,17 @@ class WorkflowService:
         command: str,
         exit_code: int,
         output: str,
+        board_slug: str,
+        task_id: str,
     ) -> WorkflowLedger:
         """Persist actual command output and structured verification evidence."""
         observed = self.store.get_with_token(workflow_id)
+        self._require_current_card_context(
+            observed.ledger,
+            WorkflowStage.VERIFY,
+            board_slug=board_slug,
+            task_id=task_id,
+        )
         _require_stage_activation(observed.ledger, WorkflowStage.VERIFY)
         output_digest = hashlib.sha256(output.encode("utf-8")).hexdigest()
         artifact = self._workspace.write_artifact(
@@ -428,10 +446,13 @@ class WorkflowService:
             finalized = self.store.update(finalized, expected_updated_at=observed.updated_at)
         return finalized.activation_manifests[-1], finalized
 
-    def deliver(self, workflow_id: str) -> WorkflowLedger:
+    def deliver(self, workflow_id: str, *, board_slug: str, task_id: str) -> WorkflowLedger:
         """Record reviewed evidence and remove the worktree without commit or push."""
         observed = self.store.get_with_token(workflow_id)
         ledger = observed.ledger
+        self._require_current_card_context(
+            ledger, WorkflowStage.DELIVER, board_slug=board_slug, task_id=task_id
+        )
         _require_stage_activation(ledger, WorkflowStage.DELIVER)
         delivery = ledger.artifact_for(WorkflowStage.DELIVER)
         if delivery is None:
@@ -575,6 +596,23 @@ class WorkflowService:
         if self._kanban is None:
             raise ServiceError("Kanban host dispatch is unavailable")
         return self._kanban
+
+    def _require_current_card_context(
+        self,
+        ledger: WorkflowLedger,
+        stage: WorkflowStage,
+        *,
+        board_slug: str,
+        task_id: str,
+    ) -> None:
+        if board_slug != ledger.board_slug:
+            raise ServiceError("Kanban board does not match the workflow")
+        card = ledger.card_for(stage)
+        if card is None or task_id != card.task_id:
+            raise ServiceError("Kanban task does not match the current stage card")
+        live = self._require_kanban().show_card(ledger, stage)
+        if live.assignee != ledger.profile_for(stage):
+            raise ServiceError("Kanban task assignee does not match the current stage profile")
 
 
 def _activation_manifest(
