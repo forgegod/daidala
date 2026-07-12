@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from .errors import WorkflowError
-from .state import ActivationManifest
+from .state import ActivationManifest, WorkflowConstraintsArtifact
 
 _WORKFLOW_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
@@ -101,6 +101,40 @@ class ExecutionWorkspace:
             f"-{manifest.sequence}.json"
         )
         return str(self._workflow_root(workflow_id) / "artifacts" / filename)
+
+    def write_constraints_artifact(
+        self, workflow_id: str, artifact: WorkflowConstraintsArtifact
+    ) -> StoredArtifact:
+        """Create and read back one immutable workflow constraint artifact."""
+        if workflow_id != artifact.workflow_id:
+            raise ExecutionError("constraint artifact workflow ID does not match artifact root")
+        filename = f"workflow-constraints-{artifact.identity.constraints_revision}.json"
+        directory = self._workflow_root(workflow_id) / "artifacts" / "constraints"
+        directory.mkdir(parents=True, exist_ok=True)
+        path = directory / filename
+        try:
+            with path.open("xb") as stream:
+                stream.write(artifact.canonical_bytes())
+        except FileExistsError as error:
+            raise ExecutionError(f"workflow artifact already exists: {filename!r}") from error
+        except OSError as error:
+            raise ExecutionError(f"cannot create workflow artifact {filename!r}") from error
+        if self.read_constraints_artifact(workflow_id, str(path)) != artifact:
+            raise ExecutionError("constraint artifact read-back verification failed")
+        return StoredArtifact(path=str(path), digest=artifact.identity.digest)
+
+    def read_constraints_artifact(
+        self, workflow_id: str, path: str
+    ) -> WorkflowConstraintsArtifact:
+        artifact_path = Path(path).resolve()
+        expected = (self._workflow_root(workflow_id) / "artifacts" / "constraints").resolve()
+        if artifact_path.parent != expected:
+            raise ExecutionError("constraint artifact path is outside its workflow root")
+        try:
+            payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            raise ExecutionError("cannot read constraint artifact") from error
+        return WorkflowConstraintsArtifact.from_dict(payload)
 
     def read_activation_manifest(self, workflow_id: str, path: str) -> ActivationManifest:
         """Read one activation manifest only from its Wingstaff-owned artifact root."""

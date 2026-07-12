@@ -30,12 +30,18 @@ the current row's gate and commit succeed.
 |---|---|---|---|
 | 1. Host feasibility and bounds | Done | Prove exact installed-skill resolution, public Kanban lifecycle operations, and the worker-context body limit against an isolated Hermes v0.18.2 home. | Isolated host probes plus the repository gate. |
 | 2. Constraint model | Done | Add strict YAML parsing, canonicalization, immutable artifacts, provenance, and state identities. | Focused model/parser tests plus the repository gate. |
-| 3. Persistence and transitions | In progress | Persist append-only constraint revisions and implement deterministic idempotent recording and invalidation. | Store/workflow/execution tests plus the repository gate. |
+| 3. Persistence and transitions | Done | Persist append-only constraint revisions and implement deterministic idempotent recording and invalidation. | Store/workflow/execution tests plus the repository gate. |
 | 4. Card and worker enforcement | Todo | Project applicable policy onto cards and reject stale cards, workers, activation, handoffs, and evidence. | Kanban/worker/execution tests plus the repository gate. |
 | 5. Approval and graph replacement | Todo | Bind approval to plan and constraint identity; durably invalidate and recreate stale workflow work. | Workflow/service/Kanban recovery tests plus the repository gate. |
 | 6. Tool and CLI surfaces | Todo | Expose explicit start, replacement, status, skill-source, and file-source inputs through shared service paths. | Tool/plugin/CLI parity tests plus the repository gate. |
 | 7. Documentation and host verification | Todo | Reconcile numbered docs, architecture, integration guidance, operator surfaces, and supported-host evidence. | Full repository gate and isolated supported-host probes. |
 | 8. Release compatibility regression | Todo | Turn the Phase 1 host findings into durable architecture documentation and a repeatable Hermes compatibility probe that gates Wingstaff releases and intentional host-version changes, not every push. | Script tests, an isolated supported-host run, release-workflow trigger assertions, and the repository gate. |
+
+Phase 3 verdict: GREEN. Append-only ledger identity, compare-and-swap recording,
+approval invalidation, exclusive artifact creation, and read-back verification
+passed 63 focused tests; the repository gate passed with 167 tests, Ruff, both
+pack validators, sdist/wheel build, Twine, release-content validation, Markdown
+links, Lefthook, and clean diff checks.
 
 Phase 2 verdict: GREEN. Strict parser/model coverage passed with 61 focused
 tests; the repository gate passed with 165 tests, Ruff, both pack validators,

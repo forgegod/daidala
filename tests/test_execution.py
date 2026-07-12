@@ -23,6 +23,8 @@ from wingstaff.state import (
     ActivationDecision,
     ActivationManifest,
     ActivationManifestReference,
+    WorkflowConstraintsArtifact,
+    WorkflowConstraintsIdentity,
     WorkflowStage,
 )
 from wingstaff.store import WorkflowStore
@@ -674,3 +676,24 @@ def test_activation_artifact_creation_is_canonical_and_exclusive(tmp_path: Path)
     with pytest.raises(ExecutionError, match="already exists"):
         workspace.write_activation_manifest("workflow-activation", manifest)
     assert Path(stored.path).read_bytes() == manifest.canonical_bytes()
+
+
+def test_constraint_artifact_creation_is_exclusive_and_verified(tmp_path: Path) -> None:
+    from wingstaff.constraints import parse_workflow_constraints
+
+    constraints = parse_workflow_constraints(
+        "schema: wingstaff.workflow-constraints/v1\nglobal: [Never commit.]\n"
+    )
+    artifact = WorkflowConstraintsArtifact(
+        "wingstaff.workflow-constraints-artifact/v1",
+        "workflow-constraints",
+        WorkflowConstraintsIdentity(1, 1, constraints.digest),
+        constraints.canonical_bytes().decode(),
+    )
+    workspace = ExecutionWorkspace(tmp_path / "data")
+    stored = workspace.write_constraints_artifact("workflow-constraints", artifact)
+
+    assert stored.digest == constraints.digest
+    assert workspace.read_constraints_artifact("workflow-constraints", stored.path) == artifact
+    with pytest.raises(ExecutionError, match="already exists"):
+        workspace.write_constraints_artifact("workflow-constraints", artifact)

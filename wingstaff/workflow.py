@@ -19,6 +19,8 @@ from .state import (
     SkillDigest,
     StageProfile,
     VerificationEvidence,
+    WorkflowConstraintsArtifact,
+    WorkflowConstraintsReference,
     WorkflowLedger,
     WorkflowStage,
 )
@@ -50,6 +52,51 @@ def new_workflow(
         stage_profiles=stage_profiles,
         created_at=created_at,
         updated_at=created_at,
+    )
+
+
+def record_constraints(
+    ledger: WorkflowLedger,
+    *,
+    artifact: WorkflowConstraintsArtifact,
+    path: str,
+    expected_current_digest: str | None,
+    recorded_at: datetime,
+) -> WorkflowLedger:
+    """Append one immutable constraint revision or return an identical current one."""
+    current = ledger.current_constraints
+    current_digest = current.identity.digest if current else None
+    if expected_current_digest != current_digest:
+        raise PolicyViolationError("expected current constraint digest does not match")
+    if artifact.workflow_id != ledger.workflow_id:
+        raise PolicyViolationError("constraint artifact workflow ID does not match the ledger")
+    if current_digest == artifact.identity.digest:
+        if current is None:
+            raise PolicyViolationError("constraint identity is inconsistent with the ledger")
+        if current.path != path or current.source != artifact.source:
+            raise PolicyViolationError("constraint retry does not match its existing reference")
+        return ledger
+    revision = len(ledger.constraint_references) + 1
+    if artifact.identity.constraints_revision != revision:
+        raise PolicyViolationError(f"constraint revision must be {revision}")
+    if artifact.identity.policy_revision != ledger.policy_revision + 1:
+        raise PolicyViolationError(
+            f"constraint policy revision must be {ledger.policy_revision + 1}"
+        )
+    _require_not_before(ledger, recorded_at)
+    reference = WorkflowConstraintsReference(
+        identity=artifact.identity,
+        path=path,
+        recorded_at=recorded_at,
+        source=artifact.source,
+    )
+    return replace(
+        ledger,
+        policy_revision=artifact.identity.policy_revision,
+        constraint_references=(*ledger.constraint_references, reference),
+        approval=None,
+        verification_evidence=(),
+        updated_at=recorded_at,
     )
 
 

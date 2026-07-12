@@ -16,6 +16,8 @@ from wingstaff.state import (
     ActivationReferenceState,
     SkillDigest,
     StageProfile,
+    WorkflowConstraintsArtifact,
+    WorkflowConstraintsIdentity,
     WorkflowLedger,
     WorkflowStage,
 )
@@ -24,6 +26,7 @@ from wingstaff.workflow import (
     new_workflow,
     record_artifact,
     record_card,
+    record_constraints,
     record_skill_activation,
     record_verification,
     record_worktree,
@@ -220,6 +223,47 @@ def test_serialization_round_trip_preserves_complete_ledger() -> None:
     )
 
     assert WorkflowLedger.from_dict(ledger.to_dict()) == ledger
+
+
+def test_constraint_recording_is_idempotent_and_invalidates_approval() -> None:
+    from wingstaff.constraints import parse_workflow_constraints
+
+    constraints = parse_workflow_constraints(
+        "schema: wingstaff.workflow-constraints/v1\nglobal: [Never commit.]\n"
+    )
+    artifact = WorkflowConstraintsArtifact(
+        "wingstaff.workflow-constraints-artifact/v1",
+        "workflow-1",
+        WorkflowConstraintsIdentity(1, 1, constraints.digest),
+        constraints.canonical_bytes().decode(),
+    )
+    approved = approve_plan(
+        make_planned(), plan_digest="plan-v1", decided_at=NOW + timedelta(minutes=3)
+    )
+    recorded = record_constraints(
+        approved,
+        artifact=artifact,
+        path="/tmp/constraints-1.json",
+        expected_current_digest=None,
+        recorded_at=NOW + timedelta(minutes=4),
+    )
+    assert recorded.policy_revision == 1
+    assert recorded.approval is None
+    assert record_constraints(
+        recorded,
+        artifact=artifact,
+        path="/tmp/constraints-1.json",
+        expected_current_digest=constraints.digest,
+        recorded_at=NOW + timedelta(minutes=5),
+    ) is recorded
+    with pytest.raises(PolicyViolationError, match="expected current"):
+        record_constraints(
+            recorded,
+            artifact=artifact,
+            path="/tmp/constraints-1.json",
+            expected_current_digest=None,
+            recorded_at=NOW + timedelta(minutes=5),
+        )
 
 
 def test_approval_is_exact_and_plan_replacement_invalidates_it() -> None:

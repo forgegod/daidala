@@ -628,6 +628,8 @@ class WorkflowLedger:
     stage_profiles: tuple[StageProfile, ...]
     created_at: datetime
     updated_at: datetime
+    policy_revision: int = 0
+    constraint_references: tuple[WorkflowConstraintsReference, ...] = ()
     plan_revision: int = 0
     card_references: tuple[CardReference, ...] = ()
     worktree_path: str | None = None
@@ -653,10 +655,33 @@ class WorkflowLedger:
         _require_aware(self.created_at, "created_at")
         _require_aware(self.updated_at, "updated_at")
         _require_revision(self.plan_revision)
+        _require_revision(self.policy_revision)
         if self.updated_at < self.created_at:
             raise PolicyViolationError("updated_at cannot be before created_at")
         if self.committed or self.pushed:
             raise PolicyViolationError("Wingstaff delivery cannot commit or push")
+
+        if self.constraint_references:
+            expected_revisions = list(range(1, len(self.constraint_references) + 1))
+            constraint_revisions = [
+                row.identity.constraints_revision for row in self.constraint_references
+            ]
+            policy_revisions = [
+                row.identity.policy_revision for row in self.constraint_references
+            ]
+            if constraint_revisions != expected_revisions:
+                raise PolicyViolationError("constraint references must have contiguous revisions")
+            if policy_revisions != expected_revisions:
+                raise PolicyViolationError("constraint policy revisions must be contiguous")
+            if self.policy_revision != policy_revisions[-1]:
+                raise PolicyViolationError(
+                    "policy revision must match the current constraint reference"
+                )
+            paths = [row.path for row in self.constraint_references]
+            if len(paths) != len(set(paths)):
+                raise PolicyViolationError("constraint references must use immutable paths")
+        elif self.policy_revision != 0:
+            raise PolicyViolationError("policy revision requires a constraint reference")
 
         skill_names = [skill.name for skill in self.skill_digests]
         if not skill_names:
@@ -744,6 +769,10 @@ class WorkflowLedger:
         plan = self.artifact_for(WorkflowStage.PLAN)
         return plan.digest if plan else None
 
+    @property
+    def current_constraints(self) -> WorkflowConstraintsReference | None:
+        return self.constraint_references[-1] if self.constraint_references else None
+
     def artifact_for(self, stage: WorkflowStage) -> ArtifactReference | None:
         revision = 0 if stage is WorkflowStage.DEFINE else self.plan_revision
         return next(
@@ -799,6 +828,10 @@ class WorkflowLedger:
             "stage_profiles": [row.to_dict() for row in self.stage_profiles],
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
+            "policy_revision": self.policy_revision,
+            "constraint_references": [
+                row.to_dict() for row in self.constraint_references
+            ],
             "plan_revision": self.plan_revision,
             "card_references": [row.to_dict() for row in self.card_references],
             "worktree_path": self.worktree_path,
@@ -830,6 +863,8 @@ class WorkflowLedger:
                 "stage_profiles",
                 "created_at",
                 "updated_at",
+                "policy_revision",
+                "constraint_references",
                 "plan_revision",
                 "card_references",
                 "worktree_path",
@@ -862,6 +897,11 @@ class WorkflowLedger:
                 ),
                 created_at=datetime.fromisoformat(raw["created_at"]),
                 updated_at=datetime.fromisoformat(raw["updated_at"]),
+                policy_revision=raw.get("policy_revision", 0),
+                constraint_references=tuple(
+                    WorkflowConstraintsReference.from_dict(row)
+                    for row in raw.get("constraint_references", [])
+                ),
                 plan_revision=raw["plan_revision"],
                 card_references=tuple(
                     CardReference.from_dict(row) for row in raw["card_references"]
