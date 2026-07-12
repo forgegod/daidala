@@ -17,6 +17,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `store.py` | SQLite-backed policy-ledger persistence with optimistic concurrency. |
 | `service.py` | Repository preflight, approval-gated graph, artifact, worktree, and ledger coordination. |
 | `skills.py` | Exact installed-skill inventory, content-digest verification, and mutation-free install planning. |
+| `constraints.py` | Strict workflow-constraint YAML parsing, canonicalization, bounds, and digest identity. |
 | `execution.py` | Profile-local artifacts, detached worktrees, and diff capture. |
 | `kanban.py` | Public host-boundary adapter for the idempotent, approval-gated Hermes card graph. |
 | `schemas.py` | Tool schemas exposed to the model. |

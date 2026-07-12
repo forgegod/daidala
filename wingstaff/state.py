@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from dataclasses import dataclass
@@ -347,6 +348,174 @@ class ArtifactReference:
             digest=raw["digest"],
             recorded_at=datetime.fromisoformat(raw["recorded_at"]),
         )
+
+
+@dataclass(frozen=True)
+class ConstraintSourceProvenance:
+    name: str
+    digest: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.name, str) or not _SKILL_NAME.fullmatch(self.name):
+            raise PolicyViolationError("constraint source name must be a canonical skill slug")
+        _require_digest(self.digest, "constraint source digest")
+
+    def to_dict(self) -> dict[str, str]:
+        return {"name": self.name, "digest": self.digest}
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> ConstraintSourceProvenance:
+        _require_exact_fields(raw, {"name", "digest"}, "constraint source provenance")
+        return cls(name=raw["name"], digest=raw["digest"])
+
+
+@dataclass(frozen=True)
+class WorkflowConstraintsIdentity:
+    policy_revision: int
+    constraints_revision: int
+    digest: str
+
+    def __post_init__(self) -> None:
+        _require_positive_revision(self.policy_revision, "policy revision")
+        _require_positive_revision(self.constraints_revision, "constraint revision")
+        _require_digest(self.digest, "constraint digest")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "policy_revision": self.policy_revision,
+            "constraints_revision": self.constraints_revision,
+            "digest": self.digest,
+        }
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> WorkflowConstraintsIdentity:
+        _require_exact_fields(
+            raw,
+            {"policy_revision", "constraints_revision", "digest"},
+            "workflow constraint identity",
+        )
+        return cls(**raw)
+
+
+@dataclass(frozen=True)
+class WorkflowConstraintsArtifact:
+    schema: str
+    workflow_id: str
+    identity: WorkflowConstraintsIdentity
+    canonical_content: str
+    source: ConstraintSourceProvenance | None = None
+
+    def __post_init__(self) -> None:
+        if self.schema != "wingstaff.workflow-constraints-artifact/v1":
+            raise PolicyViolationError(
+                "constraint artifact schema must be "
+                "'wingstaff.workflow-constraints-artifact/v1'"
+            )
+        _require_text(self.workflow_id, "constraint artifact workflow ID")
+        if not isinstance(self.identity, WorkflowConstraintsIdentity):
+            raise PolicyViolationError("constraint artifact identity is invalid")
+        _require_text(self.canonical_content, "canonical constraint content")
+        try:
+            parsed = json.loads(self.canonical_content)
+        except json.JSONDecodeError as error:
+            raise PolicyViolationError("canonical constraint content must be valid JSON") from error
+        from .constraints import WorkflowConstraints
+
+        constraints = WorkflowConstraints.from_dict(parsed)
+        if self.canonical_content.encode("utf-8") != constraints.canonical_bytes():
+            raise PolicyViolationError("constraint artifact content must be canonical JSON")
+        content_digest = hashlib.sha256(self.canonical_content.encode("utf-8")).hexdigest()
+        if self.identity.digest != content_digest:
+            raise PolicyViolationError(
+                "constraint artifact digest does not match canonical content"
+            )
+        if self.source is not None and not isinstance(self.source, ConstraintSourceProvenance):
+            raise PolicyViolationError("constraint artifact source provenance is invalid")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema": self.schema,
+            "workflow_id": self.workflow_id,
+            "identity": self.identity.to_dict(),
+            "canonical_content": self.canonical_content,
+            "source": self.source.to_dict() if self.source else None,
+        }
+
+    def canonical_bytes(self) -> bytes:
+        return json.dumps(
+            self.to_dict(), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> WorkflowConstraintsArtifact:
+        _require_exact_fields(
+            raw,
+            {"schema", "workflow_id", "identity", "canonical_content", "source"},
+            "workflow constraint artifact",
+        )
+        try:
+            return cls(
+                schema=raw["schema"],
+                workflow_id=raw["workflow_id"],
+                identity=WorkflowConstraintsIdentity.from_dict(raw["identity"]),
+                canonical_content=raw["canonical_content"],
+                source=(
+                    ConstraintSourceProvenance.from_dict(raw["source"])
+                    if raw["source"] is not None
+                    else None
+                ),
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            if isinstance(error, PolicyViolationError):
+                raise
+            raise PolicyViolationError(f"invalid constraint artifact: {error}") from error
+
+
+@dataclass(frozen=True)
+class WorkflowConstraintsReference:
+    identity: WorkflowConstraintsIdentity
+    path: str
+    recorded_at: datetime
+    source: ConstraintSourceProvenance | None = None
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.identity, WorkflowConstraintsIdentity):
+            raise PolicyViolationError("constraint reference identity is invalid")
+        _require_text(self.path, "constraint artifact path")
+        _require_aware(self.recorded_at, "constraint recorded_at")
+        if self.source is not None and not isinstance(self.source, ConstraintSourceProvenance):
+            raise PolicyViolationError("constraint reference source provenance is invalid")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "identity": self.identity.to_dict(),
+            "path": self.path,
+            "recorded_at": self.recorded_at.isoformat(),
+            "source": self.source.to_dict() if self.source else None,
+        }
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> WorkflowConstraintsReference:
+        _require_exact_fields(
+            raw,
+            {"identity", "path", "recorded_at", "source"},
+            "workflow constraint reference",
+        )
+        try:
+            return cls(
+                identity=WorkflowConstraintsIdentity.from_dict(raw["identity"]),
+                path=raw["path"],
+                recorded_at=datetime.fromisoformat(raw["recorded_at"]),
+                source=(
+                    ConstraintSourceProvenance.from_dict(raw["source"])
+                    if raw["source"] is not None
+                    else None
+                ),
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            if isinstance(error, PolicyViolationError):
+                raise
+            raise PolicyViolationError(f"invalid constraint reference: {error}") from error
 
 
 @dataclass(frozen=True)
@@ -772,6 +941,11 @@ def _applicable_rank(decision: ActivationDecision) -> int:
 def _require_revision(value: int) -> None:
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
         raise PolicyViolationError("plan revision must be a non-negative integer")
+
+
+def _require_positive_revision(value: int, label: str) -> None:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise PolicyViolationError(f"{label} must be a positive integer")
 
 
 def _require_aware(value: datetime, label: str) -> None:

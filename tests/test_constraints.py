@@ -1,0 +1,194 @@
+from __future__ import annotations
+
+import json
+from dataclasses import FrozenInstanceError
+from datetime import UTC, datetime
+
+import pytest
+
+from wingstaff.constraints import parse_workflow_constraints
+from wingstaff.errors import PolicyViolationError
+from wingstaff.state import (
+    ConstraintSourceProvenance,
+    WorkflowConstraintsArtifact,
+    WorkflowConstraintsIdentity,
+    WorkflowConstraintsReference,
+    WorkflowStage,
+)
+
+NOW = datetime(2026, 7, 12, 12, 0, tzinfo=UTC)
+VALID = """\
+schema: wingstaff.workflow-constraints/v1
+global:
+  - Never commit or push.
+  - "Do not add dependencies without approval."
+phases:
+  review:
+    - Unresolved critical findings block delivery.
+  deliver:
+    - |-
+      Documentation must match changed contracts.
+      Describe required operator action.
+"""
+
+
+def test_plain_quoted_literal_and_folded_scalars_canonicalize() -> None:
+    constraints = parse_workflow_constraints(
+        """\
+schema: wingstaff.workflow-constraints/v1
+global:
+  - Plain policy.
+  - "Quoted policy."
+  - |-
+    First line.
+    Second line.
+phases:
+  verify:
+    - >-
+      Folded policy
+      stays one line.
+"""
+    )
+
+    assert constraints.global_constraints == (
+        "Plain policy.",
+        "Quoted policy.",
+        "First line.\nSecond line.",
+    )
+    assert constraints.constraints_for(WorkflowStage.VERIFY) == (
+        *constraints.global_constraints,
+        "Folded policy stays one line.",
+    )
+    assert constraints.canonical_bytes().decode() == (
+        '{"global":["Plain policy.","Quoted policy.",'
+        '"First line.\\nSecond line."],"phases":{"verify":'
+        '["Folded policy stays one line."]},'
+        '"schema":"wingstaff.workflow-constraints/v1"}'
+    )
+
+
+def test_mapping_and_scalar_style_do_not_change_identity() -> None:
+    first = parse_workflow_constraints(VALID)
+    second = parse_workflow_constraints(
+        """\
+phases:
+  deliver: ["Documentation must match changed contracts.\\nDescribe required operator action."]
+  review: [Unresolved critical findings block delivery.]
+global: [Never commit or push., Do not add dependencies without approval.]
+schema: wingstaff.workflow-constraints/v1
+"""
+    )
+
+    assert second == first
+    assert second.digest == first.digest
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        (
+            "schema: wingstaff.workflow-constraints/v1\n"
+            "global: [ok]\nglobal: [again]\n",
+            "duplicate key",
+        ),
+        ("schema: wingstaff.workflow-constraints/v1\nglobal: &rows [ok]\n", "anchors"),
+        ("schema: wingstaff.workflow-constraints/v1\nglobal: [!!str ok]\n", "tags"),
+        ("schema: wingstaff.workflow-constraints/v1\nglobal: [ok]\nextra: true\n", "unknown"),
+        ("schema: wrong\nglobal: [ok]\n", "schema"),
+        ("schema: wingstaff.workflow-constraints/v1\nglobal: []\n", "1-16"),
+        ("schema: wingstaff.workflow-constraints/v1\nglobal: [true]\n", "non-empty strings"),
+        (
+            "schema: wingstaff.workflow-constraints/v1\nglobal: [ok]\nphases:\n  approval: [no]\n",
+            "not an executable",
+        ),
+        (
+            "schema: wingstaff.workflow-constraints/v1\nglobal: [ok]\nphases:\n  build: [no]\n",
+            "unknown constraint phase",
+        ),
+    ],
+)
+def test_invalid_yaml_structures_fail_closed(content: str, message: str) -> None:
+    with pytest.raises(PolicyViolationError, match=message):
+        parse_workflow_constraints(content)
+
+
+def test_alias_merge_and_control_characters_fail_closed() -> None:
+    with pytest.raises(PolicyViolationError, match="anchors, aliases"):
+        parse_workflow_constraints(
+            "schema: wingstaff.workflow-constraints/v1\n"
+            "global: &rows [ok]\n"
+            "phases: {review: *rows}\n"
+        )
+    with pytest.raises(PolicyViolationError, match="control characters"):
+        parse_workflow_constraints(
+            "schema: wingstaff.workflow-constraints/v1\nglobal: [bad\x07value]\n"
+        )
+
+
+def test_item_and_canonical_utf8_bounds_fail_closed() -> None:
+    oversized_item = "é" * 513
+    with pytest.raises(PolicyViolationError, match="1024 UTF-8 bytes"):
+        parse_workflow_constraints(
+            f"schema: wingstaff.workflow-constraints/v1\nglobal: [{oversized_item!r}]\n"
+        )
+
+    rows = "\n".join(f"  - {'x' * 250}{index}" for index in range(16))
+    with pytest.raises(PolicyViolationError, match="4096 UTF-8 bytes"):
+        parse_workflow_constraints(
+            f"schema: wingstaff.workflow-constraints/v1\nglobal:\n{rows}\n"
+        )
+
+
+def test_artifact_identity_provenance_and_reference_are_strict_and_immutable() -> None:
+    constraints = parse_workflow_constraints(VALID)
+    identity = WorkflowConstraintsIdentity(
+        policy_revision=1,
+        constraints_revision=1,
+        digest=constraints.digest,
+    )
+    source = ConstraintSourceProvenance(name="release-policy", digest="a" * 64)
+    artifact = WorkflowConstraintsArtifact(
+        schema="wingstaff.workflow-constraints-artifact/v1",
+        workflow_id="workflow-1",
+        identity=identity,
+        canonical_content=constraints.canonical_bytes().decode(),
+        source=source,
+    )
+    reference = WorkflowConstraintsReference(
+        identity=identity,
+        path="artifacts/constraints/1.json",
+        recorded_at=NOW,
+        source=source,
+    )
+
+    assert WorkflowConstraintsArtifact.from_dict(artifact.to_dict()) == artifact
+    assert WorkflowConstraintsReference.from_dict(reference.to_dict()) == reference
+    assert artifact.canonical_bytes().startswith(b'{"canonical_content":')
+    with pytest.raises(FrozenInstanceError):
+        artifact.workflow_id = "changed"  # type: ignore[misc]
+
+
+def test_artifact_rejects_noncanonical_or_mismatched_content() -> None:
+    constraints = parse_workflow_constraints(VALID)
+    identity = WorkflowConstraintsIdentity(1, 1, constraints.digest)
+
+    with pytest.raises(PolicyViolationError, match="canonical JSON"):
+        WorkflowConstraintsArtifact(
+            "wingstaff.workflow-constraints-artifact/v1",
+            "workflow-1",
+            identity,
+            json.dumps(constraints.to_dict(), ensure_ascii=False),
+        )
+    with pytest.raises(PolicyViolationError, match="digest does not match"):
+        WorkflowConstraintsArtifact(
+            "wingstaff.workflow-constraints-artifact/v1",
+            "workflow-1",
+            WorkflowConstraintsIdentity(1, 1, "b" * 64),
+            constraints.canonical_bytes().decode(),
+        )
+
+
+@pytest.mark.parametrize("revision", [0, -1, True])
+def test_constraint_identity_requires_positive_integer_revisions(revision: object) -> None:
+    with pytest.raises(PolicyViolationError, match="positive integer"):
+        WorkflowConstraintsIdentity(revision, 1, "a" * 64)  # type: ignore[arg-type]
