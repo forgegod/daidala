@@ -22,6 +22,9 @@ completeness without touching a real Hermes profile.
   post-capture scope.
 - Bundled setup-skill tests pin the current start schema, explicit confirmation
   boundary, and dashboard-independent request parity.
+- Dashboard read-model tests keep router registration host-isolated and prove the
+  finite recommendation vocabulary, exact approval identity, and absence of
+  persisted live-card status.
 - Shared-parser and fake-command tests proving native Hermes and standalone CLI
   service calls, public Kanban command translation, JSON, and exit codes remain
   equivalent.

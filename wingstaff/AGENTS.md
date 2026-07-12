@@ -24,6 +24,8 @@ workflow-pack adapters, and bundled orchestration skills.
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
 | `packs.py` | Pack loading and deterministic validation. |
 | `cli.py` | Shared `hermes wingstaff` and standalone operator command tree, lifecycle dispatch, pack operations, and subprocess mutation boundary. |
+| `dashboard_backend.py` | Profile-safe dashboard read model, live Kanban snapshots through the public CLI boundary, and non-mutating constraint previews. |
+| `recommendations.py` | Pure finite pending-decision and next-action derivation from ledger facts and live Kanban snapshots. |
 | `packs/` | Skill-set-specific lifecycle mappings. |
 | `skills/` | Namespaced read-only orchestration and guided-setup skills bundled with the plugin. |
 
@@ -51,6 +53,8 @@ workflow-pack adapters, and bundled orchestration skills.
   one fenced `yaml` constraint document after frontmatter.
 - Hermes Kanban owns every operational status; Wingstaff persists no mirrored
   ready, running, blocked, done, or archived field.
+- Dashboard reads live Kanban state through documented `hermes kanban` commands;
+  unavailable host state is labeled and never replaced by cached status.
 - Agent-facing Kanban integration uses `ctx.dispatch_tool`; native and standalone
   CLI handlers translate the same narrow adapter boundary into documented
   `hermes kanban` subprocess commands. Wingstaff never imports or writes Hermes'

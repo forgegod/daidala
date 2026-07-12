@@ -452,6 +452,11 @@ def _bundled_pack_names() -> list[str]:
 
 
 def _default_service(*, command_runner: CommandRunner | None = None) -> WorkflowService:
+    return build_cli_service(command_runner=command_runner)
+
+
+def build_cli_service(*, command_runner: CommandRunner | None = None) -> WorkflowService:
+    """Build a profile-safe service over documented ``hermes kanban`` commands."""
     data_root = resolve_data_root()
     registry = ProfileSkillContentRegistry(data_root / "skills")
     runner = command_runner or _run_command
