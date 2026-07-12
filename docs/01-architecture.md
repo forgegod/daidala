@@ -157,6 +157,20 @@ Workers terminate through `kanban_complete` or `kanban_block`; Wingstaff records
 artifact digests, approval, verification evidence, and delivery scope without
 declaring a second operational status.
 
+## Release host compatibility
+
+Hermes v0.18.2 preserves worker task bodies through 8,192 characters and visibly
+truncates larger bodies. Wingstaff therefore limits canonical constraints to
+4,096 UTF-8 bytes and rejects a fully rendered card body over 8,192 characters;
+it never silently truncates policy content.
+
+`scripts/probe_hermes_compatibility.py` makes this a release contract rather than
+a one-time observation. It checks exact Hermes semantic, build, and upstream
+identity, exact policy-skill hashing, public Kanban lifecycle operations, and
+both sides of the worker-context boundary in an isolated `HERMES_HOME`. Ordinary
+pushes and pull requests use fast regressions; version tags and explicit release
+dispatches run the live probe after tests and packaging pass.
+
 ## First-release execution policy
 
 The first executable release is constrained to local target repositories. Its

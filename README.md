@@ -135,6 +135,8 @@ Start with the [documentation index](docs/README.md). Runtime claims and
 compatibility evidence are recorded in the
 [Hermes integration guide](docs/08-hermes-integration.md); development commands
 and repository verification live in [AGENTS.md](AGENTS.md).
+Release maintainers run `python scripts/probe_hermes_compatibility.py`; the
+release workflow enforces it for version tags and explicit manual dispatches.
 
 ```bash
 python -m venv .venv

@@ -60,3 +60,24 @@ jobs:
           /tmp/wingstaff-release/bin/wingstaff packs validate addyosmani
           /tmp/wingstaff-release/bin/wingstaff packs validate aidlc
           /tmp/wingstaff-release/bin/pip-audit --local
+
+  hermes-compatibility:
+    name: Supported Hermes compatibility
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    needs: [test, package]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install pinned Hermes and Wingstaff
+        run: |
+          git clone https://github.com/NousResearch/hermes-agent.git /tmp/hermes-agent
+          git -C /tmp/hermes-agent checkout 4281151ae859241351ba14d8c7682dc67ff4c126
+          python -m pip install --upgrade pip
+          python -m pip install -e /tmp/hermes-agent
+          python -m pip install -e .
+      - name: Probe supported Hermes boundary
+        run: python scripts/probe_hermes_compatibility.py

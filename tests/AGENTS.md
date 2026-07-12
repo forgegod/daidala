@@ -28,6 +28,10 @@ completeness without touching a real Hermes profile.
   and leave activation-gated structured handoff history across all executable
   cards.
 - Subprocess tests for dependency-free repository verification scripts.
+- `test_hermes_compatibility_probe.py` validates host-output parsing, boundary
+  drift failures, and isolated-home cleanup through subprocesses.
+- `test_release_workflow.py` keeps the live probe release-only and pinned to the
+  documented supported Hermes upstream revision.
 - Release-content regressions for forbidden runtime paths and secret signatures.
 - Build/install smoke tests for directory entry points, wheel resources, and Hermes entry-point metadata.
 

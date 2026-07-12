@@ -81,8 +81,25 @@ operator's configured Hermes home.
 Hermes v0.18.2 profile creation is not fully `HERMES_HOME`-isolated: it creates a
 launcher under `~/.local/bin`. The exploratory launcher was removed immediately,
 and the successful probe used the host-visible `default` assignee instead. The
-repeatable release probe must not call `hermes profile create`; it should use an
-already discoverable assignee or exercise Kanban without assignment.
+repeatable release probe therefore does not call `hermes profile create` and
+exercises Kanban without assignment.
+
+Run it from a Wingstaff checkout with the supported `hermes` executable on
+`PATH`:
+
+```bash
+python scripts/probe_hermes_compatibility.py
+```
+
+Success returns one JSON object with exact host identity, policy-skill digest,
+public operations, and observed 8,192/8,300 worker-context boundaries. Failure is
+non-zero and names the missing or changed contract. Temporary homes are removed
+on both paths unless `--keep-temp` is explicitly selected for diagnosis.
+`.github/workflows/release.yml` installs Hermes at full revision
+`4281151ae859241351ba14d8c7682dc67ff4c126` and runs
+the probe only for `v*` tags or explicit `workflow_dispatch`, after normal test
+and package jobs pass. Ordinary branch pushes and pull requests do not pay the
+live-host cost.
 
 ## Operator CLI registration
 

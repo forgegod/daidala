@@ -1,7 +1,7 @@
 # Workflow constraints implementation plan
 
-> Status: approved for phase-gated execution. Phases 1 through 7 are complete;
-> release-compatibility work remains.
+> Status: complete. All approved implementation and release-compatibility phases
+> passed their gates and have committed checkpoints.
 >
 > For the implementing agent: read `/AGENTS.md`, `docs/AGENTS.md`,
 > `wingstaff/AGENTS.md`, `tests/AGENTS.md`, this plan, and
@@ -36,7 +36,18 @@ the current row's gate and commit succeed.
 | 5. Approval and graph replacement | Done | Bind approval to plan and constraint identity; durably invalidate and recreate stale workflow work. | Workflow/service/Kanban recovery tests plus the repository gate. |
 | 6. Tool and CLI surfaces | Done | Expose explicit start, replacement, status, skill-source, and file-source inputs through shared service paths. | Tool/plugin/CLI parity tests plus the repository gate. |
 | 7. Documentation and host verification | Done | Reconcile numbered docs, architecture, integration guidance, operator surfaces, and supported-host evidence. | Full repository gate and isolated supported-host probes. |
-| 8. Release compatibility regression | Todo | Turn the Phase 1 host findings into durable architecture documentation and a repeatable Hermes compatibility probe that gates Wingstaff releases and intentional host-version changes, not every push. | Script tests, an isolated supported-host run, release-workflow trigger assertions, and the repository gate. |
+| 8. Release compatibility regression | Done | Turn the Phase 1 host findings into durable architecture documentation and a repeatable Hermes compatibility probe that gates Wingstaff releases and intentional host-version changes, not every push. | Script tests, an isolated supported-host run, release-workflow trigger assertions, and the repository gate. |
+
+Phase 8 verdict: GREEN. The dependency-free probe now verifies exact Hermes
+identity, Wingstaff policy-skill discovery and hashing, public named-board
+lifecycle operations, cleanup, and the 8,192/8,300 worker-context boundary in an
+isolated home without profile creation. Subprocess regressions fail on malformed
+or changed host output and boundary drift. The release workflow pins the full
+Hermes revision and runs the live probe only for version tags or explicit
+dispatch after tests and packaging pass. The live supported-host probe and the
+repository gate passed with 191 tests, Lefthook, Ruff, both pack validators,
+sdist/wheel build, Twine, release-content validation, Markdown links, workflow
+YAML parsing, and clean diff checks.
 
 Phase 7 verdict: GREEN. Numbered docs now describe the implemented topology,
 authority, cardinality, lifecycle, operator surfaces, and policy-skill security
