@@ -25,6 +25,7 @@ Phase 2 endpoints (all read-only):
 
 from __future__ import annotations
 
+import subprocess
 from collections.abc import Callable
 from functools import lru_cache
 from typing import Any
@@ -38,6 +39,14 @@ from wingstaff.dashboard_backend import (
     UnknownWorkflowError,
 )
 from wingstaff.service import WorkflowService
+from wingstaff.setup_wizard import (
+    SetupRequest,
+    SetupWizardError,
+    confirmed_start,
+    create_board,
+    list_boards,
+    list_profiles,
+)
 
 router = APIRouter()
 
@@ -168,6 +177,57 @@ def constraint_preview(request: Request) -> dict[str, Any]:
         )
     except UnknownWorkflowError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
+
+
+@router.get("/wizard/inventory")
+def wizard_inventory() -> dict[str, Any]:
+    """List existing boards, profiles, and supported workflow packs."""
+    try:
+        return {
+            "boards": list_boards(_run_command),
+            "profiles": list_profiles(_run_command),
+            "packs": ["addyosmani", "aidlc"],
+        }
+    except SetupWizardError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+
+
+@router.post("/wizard/boards")
+def wizard_create_board(payload: dict[str, Any]) -> dict[str, Any]:
+    """Create one explicitly requested board through the public Hermes CLI."""
+    try:
+        create_board(
+            _run_command,
+            slug=str(payload.get("slug", "")),
+            name=_optional_str(payload.get("name")),
+        )
+    except SetupWizardError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return {"created": True, "slug": payload["slug"]}
+
+
+@router.post("/wizard/preview")
+def wizard_preview(payload: dict[str, Any]) -> dict[str, Any]:
+    """Validate and display the exact start request without mutating."""
+    try:
+        return SetupRequest.from_payload(payload).preview()
+    except SetupWizardError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@router.post("/wizard/start")
+def wizard_start(payload: dict[str, Any]) -> dict[str, Any]:
+    """Invoke the existing service path after explicit confirmation."""
+    try:
+        ledger = confirmed_start(payload, service_factory().start)
+    except SetupWizardError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return {"workflow": ledger.to_dict()}
+
+
+def _run_command(command: tuple[str, ...]) -> tuple[int, str]:
+    completed = subprocess.run(command, check=False, capture_output=True, text=True)
+    return completed.returncode, completed.stdout or completed.stderr
 
 
 def _read_json_body(request: Request) -> dict[str, Any]:

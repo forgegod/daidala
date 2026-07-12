@@ -70,15 +70,16 @@ def test_bundle_uses_documented_sdk_registration() -> None:
     assert "buildDecisionCount" in source
 
 
-def test_bundle_is_strictly_read_only() -> None:
+def test_read_model_stays_read_only_and_setup_writes_are_scoped() -> None:
     source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
 
-    # Every fetch must be GET, credentials same-origin, and JSON-only.
     assert 'method: "GET"' in source
     assert 'credentials: "same-origin"' in source
     assert 'Accept: "application/json"' in source
     assert 'Authorization: "Bearer " + window.__HERMES_SESSION_TOKEN__' in source
-    assert "method: \"POST\"" not in source
+    assert 'method: "POST"' in source
+    assert 'API_BASE + "/wizard/preview"' in source
+    assert 'API_BASE + "/wizard/start"' in source
     assert "method: \"PUT\"" not in source
     assert "method: \"DELETE\"" not in source
     assert "method: \"PATCH\"" not in source
@@ -101,9 +102,10 @@ def test_bundle_exposes_manual_refresh() -> None:
 
     assert '"Refresh"' in source or ">Refresh<" in source
     assert "onClick" in source
-    # Refresh must be wired to the polling helpers, not to any write call.
     assert "Refresh" in source
-    assert "method: \"POST\"" not in source
+    assert "refreshAll" in source
+    assert '"Preview mutations"' in source
+    assert '"Start workflow"' in source
 
 
 def test_bundle_renders_every_phase_three_state() -> None:
@@ -167,7 +169,7 @@ def test_stylesheet_uses_host_theme_tokens() -> None:
 def test_stylesheet_collapses_on_narrow_layouts() -> None:
     source = (DASHBOARD / "dist" / "style.css").read_text(encoding="utf-8")
 
-    assert "@media (max-width: 40rem)" in source
+    assert "@media (max-width: 64rem)" in source
 
 
 def test_stylesheet_does_not_reference_external_assets() -> None:

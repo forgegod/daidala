@@ -269,11 +269,52 @@
   color: var(--ws-accent);
 }
 
-@media (max-width: 40rem) {
+.ws-setup {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ws-gap);
+  padding: var(--ws-padding);
+  border: var(--ws-border);
+  border-radius: var(--ws-radius);
+}
+
+.ws-setup h2,
+.ws-setup-preview,
+.ws-setup-confirm,
+.ws-setup [role="status"] {
+  grid-column: 1 / -1;
+}
+
+.ws-setup-field {
+  display: grid;
+  gap: 0.25rem;
+  color: var(--ws-muted);
+}
+
+.ws-setup-field input,
+.ws-setup button {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: var(--ws-border);
+  border-radius: var(--ws-radius);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+  color: var(--text-primary, inherit);
+}
+
+.ws-setup-preview {
+  overflow: auto;
+  max-height: 16rem;
+  padding: 0.75rem;
+}
+
+@media (max-width: 64rem) {
   .ws-root {
     padding: 0.75rem;
   }
-  .ws-workflows {
+  .ws-workflows,
+  .ws-setup {
     grid-template-columns: 1fr;
   }
   .ws-workflow-identity {

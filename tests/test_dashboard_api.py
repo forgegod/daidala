@@ -58,6 +58,10 @@ def test_router_exports_all_phase_two_routes() -> None:
         "decisions",
         "recommendations",
         "constraint_preview",
+        "wizard_inventory",
+        "wizard_create_board",
+        "wizard_preview",
+        "wizard_start",
     ):
         assert callable(getattr(api, name))
 

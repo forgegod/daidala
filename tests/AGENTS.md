@@ -26,8 +26,10 @@ completeness without touching a real Hermes profile.
   finite recommendation vocabulary, exact approval identity, and absence of
   persisted live-card status.
 - Dashboard asset tests pin the supported tab and slot, authenticated read-only
-  requests, visibility-aware polling, required empty/error/progress states, and
-  narrow host-theme styling.
+  polling, confirmation-gated setup writes, required empty/error/progress states,
+  and narrow host-theme styling.
+- Setup wizard tests prove preview/decline non-mutation, exact start delegation,
+  request validation, and narrowly scoped Hermes inventory commands.
 - Shared-parser and fake-command tests proving native Hermes and standalone CLI
   service calls, public Kanban command translation, JSON, and exit codes remain
   equivalent.
