@@ -20,6 +20,8 @@ completeness without touching a real Hermes profile.
 - Bundled worker-contract tests for stage tool mapping, structured handoffs,
   external-versus-plugin-qualified skill names, blocking, retries, and immutable
   post-capture scope.
+- Bundled setup-skill tests pin the current start schema, explicit confirmation
+  boundary, and dashboard-independent request parity.
 - Shared-parser and fake-command tests proving native Hermes and standalone CLI
   service calls, public Kanban command translation, JSON, and exit codes remain
   equivalent.

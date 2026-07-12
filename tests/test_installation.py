@@ -105,6 +105,7 @@ def test_wheel_contains_plugin_resources_and_module_entrypoint(tmp_path: Path) -
         assert "wingstaff/skills/aidlc-adapter/SKILL.md" in names
         assert "wingstaff/skills/aidlc-adapter/references/LICENSE-AIDLC.txt" in names
         assert "wingstaff/skills/orchestrate/SKILL.md" in names
+        assert "wingstaff/skills/setup/SKILL.md" in names
         assert not any(
             ".env" in Path(name).parts
             or ".hermes" in Path(name).parts

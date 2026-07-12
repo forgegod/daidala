@@ -4,6 +4,11 @@ This walkthrough starts one Wingstaff workflow from the native Hermes CLI and
 follows it through the digest-bound approval gate. Wingstaff creates the graph;
 the Hermes gateway's Kanban dispatcher executes ready cards.
 
+For guided onboarding, load `wingstaff:setup`. It checks the same prerequisites,
+previews the exact `wingstaff_start` request, and requires explicit confirmation
+before mutation. The skill works without the web dashboard; `/wingstaff` is an
+optional visual path when the dashboard extension is installed.
+
 ## 1. Check the prerequisites
 
 Use Hermes Agent v0.18.2, the only verified host version. The target must be a

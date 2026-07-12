@@ -25,7 +25,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `packs.py` | Pack loading and deterministic validation. |
 | `cli.py` | Shared `hermes wingstaff` and standalone operator command tree, lifecycle dispatch, pack operations, and subprocess mutation boundary. |
 | `packs/` | Skill-set-specific lifecycle mappings. |
-| `skills/` | Namespaced read-only skills bundled with the plugin. |
+| `skills/` | Namespaced read-only orchestration and guided-setup skills bundled with the plugin. |
 
 ## Local Contracts
 
@@ -136,6 +136,9 @@ fails locally rather than in production.
 
 - Add mechanism to Python and subject-matter mappings to `packs/*.yaml`.
 - Register bundled skills with `ctx.register_skill`; do not copy them into the user's mutable skill store.
+- `wingstaff:setup` remains dashboard-independent, previews the exact
+  `schemas.py::START` request, and requires explicit confirmation before any
+  setup mutation or workflow start.
 - Keep third-party attribution and license text beside derived bundled adapters.
 - Use `importlib.resources` so wheel and Git installations behave consistently.
 

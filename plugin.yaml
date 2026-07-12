@@ -16,3 +16,4 @@ provides_tools:
   - wingstaff_deliver
 provides_skills:
   - orchestrate
+  - setup

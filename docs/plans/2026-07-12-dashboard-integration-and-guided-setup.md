@@ -179,7 +179,7 @@ unstarted until the current phase gate passes.
 | Phase | Status | Scope | Gate |
 |---|---|---|---|
 | 0. Supported-host feasibility | Done | Prove dashboard discovery, packaged assets, UI registration, backend route mounting, profile-path resolution, and documented Kanban operations against an isolated pinned Hermes host. | `195 passed in 12.45s`; live probe and browser assertions passed. |
-| 1. Official setup skill | Todo | Add and register `wingstaff:setup`, preserving the current start schema and human confirmation boundary. | Fresh-process skill load, contract tests, and focused docs checks. |
+| 1. Official setup skill | Done | Add and register `wingstaff:setup`, preserving the current start schema and human confirmation boundary. | `198 passed in 16.24s`; fresh-process `wingstaff:setup` load passed. |
 | 2. Dashboard read model | Todo | Add profile-safe read-only backend routes and pure pending-decision/recommendation derivation. | Router and recommendation tests prove no mutation or mirrored status. |
 | 3. Read-only dashboard UI | Todo | Add the Wingstaff tab, workflow/progress cards, decisions view, and a pending-decision slot. | Isolated dashboard load, browser console clean, screenshot review, and API tests. |
 | 4. Setup wizard and board simplification | Todo | Add prerequisite checks, visual board/profile/pack selection, lifecycle preview, explicit confirmation, and start. | Isolated first-run flow creates exactly one initial graph through public operations. |
