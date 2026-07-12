@@ -12,6 +12,9 @@ Own dependency-free development and repository verification utilities.
 - `probe_hermes_compatibility.py` creates an isolated `HERMES_HOME` and verifies
   the pinned release host's exact identity, policy-skill digest boundary, public
   Kanban lifecycle, and worker-context body limits.
+- `probe_hermes_dashboard_compatibility.py` proves the pinned release host's
+  dashboard extension surface (manifest discovery, static asset serving, plugin
+  API mount with auth gating) against an isolated profile.
 
 ## Local Contracts
 

@@ -1,7 +1,7 @@
 # Dashboard integration and guided setup plan
 
-> Status: approved on 2026-07-12; execution has not started. Phase 0 requires a
-> separate explicit start instruction.
+> Status: execution in progress. Phase 0 completed on 2026-07-12; Phase 1
+> requires a separate explicit start instruction.
 >
 > For the implementing agent: read `/AGENTS.md`, `docs/AGENTS.md`,
 > `wingstaff/AGENTS.md`, `tests/AGENTS.md`, this plan, the current official Hermes
@@ -178,7 +178,7 @@ unstarted until the current phase gate passes.
 
 | Phase | Status | Scope | Gate |
 |---|---|---|---|
-| 0. Supported-host feasibility | Todo | Prove dashboard discovery, packaged assets, UI registration, backend route mounting, profile-path resolution, and documented Kanban operations against an isolated pinned Hermes host. | Isolated host probe plus repository gate. |
+| 0. Supported-host feasibility | Done | Prove dashboard discovery, packaged assets, UI registration, backend route mounting, profile-path resolution, and documented Kanban operations against an isolated pinned Hermes host. | `195 passed in 12.45s`; live probe and browser assertions passed. |
 | 1. Official setup skill | Todo | Add and register `wingstaff:setup`, preserving the current start schema and human confirmation boundary. | Fresh-process skill load, contract tests, and focused docs checks. |
 | 2. Dashboard read model | Todo | Add profile-safe read-only backend routes and pure pending-decision/recommendation derivation. | Router and recommendation tests prove no mutation or mirrored status. |
 | 3. Read-only dashboard UI | Todo | Add the Wingstaff tab, workflow/progress cards, decisions view, and a pending-decision slot. | Isolated dashboard load, browser console clean, screenshot review, and API tests. |
@@ -242,6 +242,39 @@ track indefinitely deferred.
 
 Stop if the pinned Hermes host lacks the documented dashboard extension boundary.
 Amend and reapprove the plan before raising the supported baseline.
+
+### Phase 0 decision
+
+Hermes Agent v0.18.2 (build `2026.7.7.2`, upstream `4281151a`) provides the
+required dashboard extension boundary with plugin SDK `1.1.0`. An isolated live
+host discovered a user plugin from
+`$HERMES_HOME/plugins/wingstaff/dashboard/manifest.json`, served its manifest,
+IIFE, and stylesheet, registered `/wingstaff`, rendered a `sessions:top` slot,
+and mounted an auth-gated FastAPI router. Browser automation confirmed the tab,
+page, slot, and SDK global with no console error.
+
+Two expected shapes were not available. The documented page-slot catalogue has
+no `kanban:top` slot, so Wingstaff will use `sessions:top` for the compact pending-
+decision augmentation and retain its normal `/wingstaff` tab. A pip entry point
+does not materialize dashboard files into the profile plugin directory, so the
+single installation contract is to package the assets and extend Wingstaff's
+existing dry-run/apply setup operation to materialize the `dashboard/` subtree
+under the active profile's plugin directory. Import-time copying and a second
+dashboard distribution remain prohibited.
+
+The dashboard process does not provide a durable agent-process
+`configure_host(dispatch_tool)` binding to backend route modules. Dashboard
+adapters will therefore use documented subprocess boundaries: `hermes kanban`
+for board inventory, board creation, and live card operations, and `hermes
+profile list` for profile inventory. The live pinned host proved board listing
+as JSON and public board creation through `hermes kanban boards`; profile list
+is a documented human-readable CLI surface and requires a strict parser with
+malformed-output tests before Phase 2. No private import or database access is
+authorized.
+
+The executable probe is `scripts/probe_hermes_dashboard_compatibility.py`.
+Repository tests verify host-identity, discovery, asset, auth, drift, and cleanup
+contracts; browser integration remains the final UI gate in Phases 3–5.
 
 ## Phase 1 — official `wingstaff:setup` skill
 
