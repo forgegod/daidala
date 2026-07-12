@@ -20,6 +20,34 @@ workflow-scoped constraint artifact. The documentation must make authority,
 cardinality, dispatch, and lifecycle ownership explicit rather than implying a
 parent-child hierarchy that Hermes does not provide.
 
+## Execution phases
+
+The user approved this plan for phase-gated execution on 2026-07-12. Execute
+exactly one row per committed checkpoint; a later row remains unstarted until
+the current row's gate and commit succeed.
+
+| Phase | Status | Scope | Gate |
+|---|---|---|---|
+| 1. Host feasibility and bounds | Done | Prove exact installed-skill resolution, public Kanban lifecycle operations, and the worker-context body limit against an isolated Hermes v0.18.2 home. | Isolated host probes plus the repository gate. |
+| 2. Constraint model | Todo | Add strict YAML parsing, canonicalization, immutable artifacts, provenance, and state identities. | Focused model/parser tests plus the repository gate. |
+| 3. Persistence and transitions | Todo | Persist append-only constraint revisions and implement deterministic idempotent recording and invalidation. | Store/workflow/execution tests plus the repository gate. |
+| 4. Card and worker enforcement | Todo | Project applicable policy onto cards and reject stale cards, workers, activation, handoffs, and evidence. | Kanban/worker/execution tests plus the repository gate. |
+| 5. Approval and graph replacement | Todo | Bind approval to plan and constraint identity; durably invalidate and recreate stale workflow work. | Workflow/service/Kanban recovery tests plus the repository gate. |
+| 6. Tool and CLI surfaces | Todo | Expose explicit start, replacement, status, skill-source, and file-source inputs through shared service paths. | Tool/plugin/CLI parity tests plus the repository gate. |
+| 7. Documentation and host verification | Todo | Reconcile numbered docs, architecture, integration guidance, operator surfaces, and supported-host evidence. | Full repository gate and isolated supported-host probes. |
+
+Phase 1 verdict: GREEN on Hermes Agent v0.18.2 (2026.7.7.2), upstream
+`4281151a`. In isolated `HERMES_HOME` directories, exact skill inventory found
+only `policy-probe`, deterministic directory hashing returned one digest, and a
+missing exact name returned no match. Public named-board create, show, comment,
+parent-link, complete, and archive operations succeeded. Worker context retained
+task bodies of 7,900 and 8,192 characters intact and visibly truncated an
+8,300-character body. The implementation therefore caps canonical constraint
+content at 4,096 UTF-8 bytes and rejects any fully rendered card body over 8,192
+characters; it never truncates policy content. The smaller canonical-content
+budget reserves space for Wingstaff card identity, goal, pack, plan, worktree,
+and worker instructions and remains safe for multibyte constraint text.
+
 ## Scope and authority
 
 Constraints belong to one workflow. The workflow selects one named Hermes board,
@@ -132,7 +160,12 @@ Contract:
   computed over its UTF-8 bytes;
 - list order and scalar content after YAML parsing are meaningful; scalar style,
   indentation, and mapping-key order are not;
-- bounds fit full card projection without truncation.
+- `global` and each phase list contain at most 16 items;
+- each parsed constraint contains 1–1,024 UTF-8 bytes after normalization;
+- canonical constraint content contains at most 4,096 UTF-8 bytes;
+- the fully rendered card body contains at most 8,192 characters, matching the
+  supported Hermes v0.18.2 worker-context boundary proven in Phase 1;
+- oversized canonical content or card projection is rejected, never truncated.
 
 The artifact is immutable and workflow-owned. Its reference records revision,
 path, digest, and recording time. Revisions are contiguous and append-only.

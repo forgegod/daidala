@@ -111,11 +111,19 @@ list only for that phase. Valid phase keys are `define`, `plan`, `implement`,
 
 The implementation must reject unknown fields, duplicate keys, aliases, merge
 keys, custom tags, non-string values, control characters, and oversized content.
-It canonicalizes the validated model as normalized JSON and computes SHA-256 over
-the canonical UTF-8 bytes. List order and the parsed scalar content are
-meaningful; scalar style, indentation, and mapping order are not. Exact limits
-remain subject to the plan's host card-body probe. Oversized content is rejected
-rather than truncated.
+Global and per-phase lists contain at most 16 constraints. Each parsed constraint
+contains 1–1,024 UTF-8 bytes after normalization, and canonical constraint
+content contains at most 4,096 UTF-8 bytes. It canonicalizes the validated model
+as normalized JSON and computes SHA-256 over the canonical UTF-8 bytes. List
+order and the parsed scalar content are meaningful; scalar style, indentation,
+and mapping order are not.
+
+The supported Hermes v0.18.2 host preserves a task body through 8,192 characters
+in worker context and visibly truncates larger bodies. Wingstaff therefore also
+rejects any fully rendered card body over 8,192 characters. The smaller
+canonical-content limit leaves room for workflow identity, goal, pack, plan,
+worktree, and worker instructions and remains safe for multibyte text. Oversized
+content is rejected rather than truncated.
 
 ## Persistence and projection
 
