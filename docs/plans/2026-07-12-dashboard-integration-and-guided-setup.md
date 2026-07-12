@@ -1,6 +1,6 @@
 # Dashboard integration and guided setup plan
 
-> Status: execution in progress. Phases 0–2 completed on 2026-07-12; Phase 3
+> Status: execution in progress. Phases 0–3 completed on 2026-07-12; Phase 4
 > remains unstarted.
 >
 > For the implementing agent: read `/AGENTS.md`, `docs/AGENTS.md`,
@@ -181,7 +181,7 @@ unstarted until the current phase gate passes.
 | 0. Supported-host feasibility | Done | Prove dashboard discovery, packaged assets, UI registration, backend route mounting, profile-path resolution, and documented Kanban operations against an isolated pinned Hermes host. | `195 passed in 12.45s`; live probe and browser assertions passed. |
 | 1. Official setup skill | Done | Add and register `wingstaff:setup`, preserving the current start schema and human confirmation boundary. | `198 passed in 16.24s`; fresh-process `wingstaff:setup` load passed. |
 | 2. Dashboard read model | Done | Add profile-safe read-only backend routes and pure pending-decision/recommendation derivation. | `204 passed in 15.33s`; focused router/recommendation tests and Ruff passed. |
-| 3. Read-only dashboard UI | Todo | Add the Wingstaff tab, workflow/progress cards, decisions view, and a pending-decision slot. | Isolated dashboard load, browser console clean, screenshot review, and API tests. |
+| 3. Read-only dashboard UI | Done | Add the Wingstaff tab, workflow/progress cards, decisions view, and a pending-decision slot. | Isolated Hermes v0.18.2 desktop/narrow browser states and `sessions:top` slot passed; dashboard tests passed. |
 | 4. Setup wizard and board simplification | Todo | Add prerequisite checks, visual board/profile/pack selection, lifecycle preview, explicit confirmation, and start. | Isolated first-run flow creates exactly one initial graph through public operations. |
 | 5. Constraint preview and replacement | Todo | Add full YAML editor, canonical preview, digest and impact display, compare-and-swap replacement, and renewed-approval guidance. | Preview identity equals service identity; invalid and stale replacements fail closed. |
 | 6. Theme, docs, packaging, and release gate | Todo | Add optional theme, package assets, operator docs, compatibility checks, and release verification. | Full repository and supported-host gates pass. |
@@ -409,6 +409,17 @@ An isolated real dashboard discovers and renders the plugin. Browser console and
 network logs contain no load errors. Screenshots verify progress, no-workflow,
 pending-approval, blocked-card, and host-unavailable states. No write endpoint is
 called.
+
+### Phase 3 decision
+
+The dependency-free IIFE registers `/wingstaff` and `sessions:top` through SDK
+1.1.0, authenticates scoped GET requests with the dashboard session token, and
+polls every five seconds only while visible. Browser execution against isolated
+Hermes v0.18.2 verified desktop and 390-pixel layouts, no-workflow, pending
+approval, blocked card, host-unavailable, and an exact two-decision slot count.
+The browser gate exposed and fixed missing Bearer authentication, incorrect
+host-unavailable interpretation, low-contrast fallback colors, and workflow-
+count substitution in the decision slot.
 
 ## Phase 4 — setup wizard and board simplification
 

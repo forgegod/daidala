@@ -135,6 +135,7 @@ falling back to targeted file tools.
 | Child | Owns | Read when editing… |
 |---|---|---|
 | [`assets/AGENTS.md`](assets/AGENTS.md) | Brand source, generated visual assets, and bundled font licensing. | Logos, social cards, asset generation, or brand narrative. |
+| [`dashboard/AGENTS.md`](dashboard/AGENTS.md) | Optional Hermes dashboard manifest, backend router, browser assets, and UI contracts. | Dashboard routes, registration, JavaScript, CSS, or browser verification. |
 | [`docs/AGENTS.md`](docs/AGENTS.md) | Architecture and implementation plans. | Plans, decisions, roadmap, or operator documentation. |
 | [`scripts/AGENTS.md`](scripts/AGENTS.md) | Dependency-free development and repository verification utilities. | Verification scripts or durable development automation. |
 | [`tests/AGENTS.md`](tests/AGENTS.md) | Unit, package, and plugin-contract verification. | Tests or fixtures. |

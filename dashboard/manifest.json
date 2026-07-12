@@ -1,0 +1,15 @@
+{
+  "name": "wingstaff",
+  "label": "Wingstaff",
+  "version": "0.1.0",
+  "tab": {
+    "path": "/wingstaff",
+    "position": "after:kanban"
+  },
+  "slots": [
+    "sessions:top"
+  ],
+  "entry": "dist/index.js",
+  "css": "dist/style.css",
+  "api": "plugin_api.py"
+}

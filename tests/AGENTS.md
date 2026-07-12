@@ -25,6 +25,9 @@ completeness without touching a real Hermes profile.
 - Dashboard read-model tests keep router registration host-isolated and prove the
   finite recommendation vocabulary, exact approval identity, and absence of
   persisted live-card status.
+- Dashboard asset tests pin the supported tab and slot, authenticated read-only
+  requests, visibility-aware polling, required empty/error/progress states, and
+  narrow host-theme styling.
 - Shared-parser and fake-command tests proving native Hermes and standalone CLI
   service calls, public Kanban command translation, JSON, and exit codes remain
   equivalent.

@@ -1,0 +1,286 @@
+/*
+ * Wingstaff dashboard UI styles — Phase 3 read-only surface.
+ *
+ * The stylesheet is dependency-free and uses the host dashboard's
+ * --text-primary, --surface-raised, and related theme tokens so the UI
+ * inherits the built-in light/dark themes. Layouts collapse to a single
+ * column below 40rem so the panel remains usable on narrow viewports.
+ */
+
+:root {
+  --ws-gap: 0.75rem;
+  --ws-padding: 1rem;
+  --ws-radius: 0.5rem;
+  --ws-border: 1px solid var(--border-subtle, rgba(148, 163, 160, 0.28));
+  --ws-accent: var(--accent-primary, #4a7bff);
+  --ws-error: var(--text-error, #b3261e);
+  --ws-warning: var(--text-warning, #b7651e);
+  --ws-ok: var(--text-success, #2e7d32);
+  --ws-muted: var(--text-muted, var(--text-secondary, #94a3a0));
+}
+
+.ws-root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ws-gap);
+  padding: var(--ws-padding);
+  color: var(--text-primary, inherit);
+  background: var(--surface-base, transparent);
+}
+
+.ws-root-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ws-gap);
+}
+
+.ws-root-header h1 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.ws-root-subtitle {
+  flex: 1 1 auto;
+  margin: 0;
+  color: var(--ws-muted);
+}
+
+.ws-refresh {
+  appearance: none;
+  border: var(--ws-border);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+  color: var(--text-primary, inherit);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--ws-radius);
+  cursor: pointer;
+  font: inherit;
+}
+
+.ws-refresh:hover,
+.ws-refresh:focus-visible {
+  outline: 2px solid var(--ws-accent);
+  outline-offset: 2px;
+}
+
+.ws-banner {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--ws-radius);
+}
+
+.ws-banner-error {
+  background: var(--surface-raised, rgba(179, 38, 30, 0.12));
+  color: var(--ws-error);
+}
+
+.ws-state {
+  margin: 0;
+  padding: var(--ws-padding);
+  border: var(--ws-border);
+  border-radius: var(--ws-radius);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+}
+
+.ws-state-loading {
+  color: var(--ws-muted);
+}
+
+.ws-state-unavailable {
+  color: var(--ws-error);
+}
+
+.ws-state-empty {
+  color: var(--ws-muted);
+}
+
+.ws-workflows {
+  display: grid;
+  gap: var(--ws-gap);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+}
+
+.ws-workflow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: var(--ws-padding);
+  border: var(--ws-border);
+  border-radius: var(--ws-radius);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+}
+
+.ws-workflow-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ws-gap);
+  flex-wrap: wrap;
+}
+
+.ws-workflow-title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.ws-workflow-meta {
+  margin: 0;
+  color: var(--ws-muted);
+  font-size: 0.85rem;
+}
+
+.ws-workflow-goal {
+  margin: 0;
+}
+
+.ws-workflow-identity {
+  display: grid;
+  gap: 0.25rem 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  margin: 0;
+}
+
+.ws-workflow-identity dt {
+  font-size: 0.75rem;
+  color: var(--ws-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ws-workflow-identity dd {
+  margin: 0;
+  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", monospace);
+  font-size: 0.85rem;
+  word-break: break-all;
+}
+
+.ws-workflow-digest {
+  font-size: 0.7rem;
+}
+
+.ws-workflow-section-title {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ws-muted);
+}
+
+.ws-workflow-cards,
+.ws-workflow-decisions {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ws-card {
+  display: grid;
+  grid-template-columns: minmax(4rem, auto) minmax(4rem, auto) 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.35rem 0.5rem;
+  border: var(--ws-border);
+  border-radius: var(--ws-radius);
+  font-size: 0.85rem;
+}
+
+.ws-card.is-blocked {
+  border-color: var(--ws-error);
+  color: var(--ws-error);
+}
+
+.ws-card.is-done {
+  border-color: var(--ws-ok);
+}
+
+.ws-card.is-ready {
+  border-color: var(--ws-accent);
+}
+
+.ws-card-stage {
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: var(--ws-muted);
+}
+
+.ws-card-status {
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+}
+
+.ws-card-assignee {
+  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", monospace);
+}
+
+.ws-card-reason {
+  grid-column: 1 / -1;
+  color: var(--ws-warning);
+  font-size: 0.8rem;
+}
+
+.ws-decision {
+  display: grid;
+  grid-template-columns: minmax(8rem, auto) 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.35rem 0.5rem;
+  border: var(--ws-border);
+  border-radius: var(--ws-radius);
+  font-size: 0.85rem;
+}
+
+.ws-decision-kind {
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: var(--ws-accent);
+}
+
+.ws-decision-rationale {
+  color: var(--text-primary, inherit);
+}
+
+.ws-decision-card {
+  grid-column: 1 / -1;
+  color: var(--ws-muted);
+  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", monospace);
+  font-size: 0.75rem;
+}
+
+.ws-workflow-loading,
+.ws-workflow-unavailable,
+.ws-workflow-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ws-muted);
+}
+
+.ws-workflow-unavailable {
+  color: var(--ws-error);
+}
+
+.ws-slot {
+  font-size: 0.85rem;
+  color: var(--ws-accent);
+}
+
+@media (max-width: 40rem) {
+  .ws-root {
+    padding: 0.75rem;
+  }
+  .ws-workflows {
+    grid-template-columns: 1fr;
+  }
+  .ws-workflow-identity {
+    grid-template-columns: 1fr 1fr;
+  }
+  .ws-card,
+  .ws-decision {
+    grid-template-columns: 1fr;
+  }
+}

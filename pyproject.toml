@@ -36,10 +36,11 @@ wingstaff = "wingstaff.cli:main"
 wingstaff = "wingstaff"
 
 [tool.setuptools.packages.find]
-include = ["wingstaff*"]
+include = ["wingstaff*", "dashboard*"]
 
 [tool.setuptools.package-data]
 wingstaff = ["packs/*.yaml", "skills/*/SKILL.md", "skills/*/references/*"]
+dashboard = ["manifest.json", "dist/index.js", "dist/style.css"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
