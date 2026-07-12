@@ -104,6 +104,11 @@ Runtime SQLite files and policy-ledger records are never repository artifacts.
 
 ## Source of truth
 
+Dashboard responses are snapshots only. Wingstaff's ledger owns policy identity,
+Hermes Kanban owns live status, and the browser owns neither. Setup and constraint
+forms must submit an exact typed request; explicit confirmation and current
+digests are revalidated server-side before mutation.
+
 - Contract: this document
 - Ledger model: `wingstaff/state.py`
 - Policy operations: `wingstaff/workflow.py`

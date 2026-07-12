@@ -33,9 +33,10 @@ Hermes profile, and lets the gateway's existing Kanban dispatcher run ready
 cards. Wingstaff's SQLite data is only a policy and artifact ledger; Hermes
 Kanban remains lifecycle truth.
 
-Wingstaff adds no MCP server, HTTP daemon, dashboard, scheduler, model client,
-or nested `hermes chat` process. Normal Hermes Kanban CLI, dashboard, `/kanban`,
-and gateway operations remain the progress and recovery surfaces.
+Wingstaff adds no MCP server, HTTP daemon, dashboard server, scheduler, model
+client, or nested `hermes chat` process. Its optional `/wingstaff` extension runs
+inside the existing Hermes dashboard; normal Kanban CLI, `/kanban`, and gateway
+operations remain available for progress and recovery.
 
 ```mermaid
 flowchart LR
@@ -120,8 +121,8 @@ instead of asking Hermes goal decomposition to choose an orchestrator profile.
 ## Support and limits
 
 - Supported host: Hermes Agent v0.18.2 on one local/single-host installation.
-- Supported entry points: native `hermes wingstaff`, standalone diagnostics, and
-  agent-facing plugin tools.
+- Supported entry points: native `hermes wingstaff`, standalone diagnostics,
+  agent-facing plugin tools, and the optional Hermes dashboard extension.
 - Packs: Addyosmani `agent-skills` and the bundled AI-DLC v1.0.1 adapter.
 - Unattended runtime: the existing Hermes gateway Kanban dispatcher only.
 - Delivery never commits, pushes, deploys, or publishes without separate
@@ -135,8 +136,8 @@ Start with the [documentation index](docs/README.md). Runtime claims and
 compatibility evidence are recorded in the
 [Hermes integration guide](docs/08-hermes-integration.md); development commands
 and repository verification live in [AGENTS.md](AGENTS.md).
-Release maintainers run `python scripts/probe_hermes_compatibility.py`; the
-release workflow enforces it for version tags and explicit manual dispatches.
+Release maintainers run both compatibility probes in `scripts/`; the release
+workflow enforces them for version tags and explicit manual dispatches.
 
 ```bash
 python -m venv .venv

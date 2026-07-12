@@ -98,6 +98,13 @@ phases:
       any required operator action.
 ```
 
+The optional `/wingstaff` editor displays the complete current canonical YAML,
+revision, digest, provenance, and server limits. Preview uses the same parser and
+digest identity as the service and never mutates. Formatting-only edits are a
+no-op. Semantic replacement requires the displayed current digest and explicit
+confirmation that approval, worktree, evidence eligibility, and current cards
+will be invalidated before a fresh define/plan graph is created.
+
 Each constraint is a YAML string. Plain and quoted scalars are accepted for short
 constraints. Literal block scalars (`|-`) preserve line breaks; folded block
 scalars (`>-`) apply YAML's folding rules. The example uses plain scalars for

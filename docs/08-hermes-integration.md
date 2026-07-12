@@ -30,6 +30,13 @@ All verified discovery paths register exactly:
 - skills `wingstaff:orchestrate` and `wingstaff:aidlc-adapter`;
 - operator command family `hermes wingstaff`.
 
+The optional dashboard package registers `/wingstaff`, the `sessions:top` slot,
+authenticated backend routes, and SDK `1.1.0` assets. Hermes v0.18.2 exposes no
+`kanban:top` extension slot. Workflow polling is read-only; setup and constraint
+writes are narrowly typed and confirmation-gated. Python entry points do not
+materialize dashboard assets, so installation must retain the packaged
+`dashboard/` subtree alongside the plugin manifest.
+
 The root directory entry point must import the bundled package relatively.
 The Python entry point must resolve to the `wingstaff` module, not directly to
 `wingstaff:register`, because Hermes loads the entry point and then looks for a
@@ -89,6 +96,7 @@ Run it from a Wingstaff checkout with the supported `hermes` executable on
 
 ```bash
 python scripts/probe_hermes_compatibility.py
+python scripts/probe_hermes_dashboard_compatibility.py
 ```
 
 Success returns one JSON object with exact host identity, policy-skill digest,

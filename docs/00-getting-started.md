@@ -9,6 +9,11 @@ previews the exact `wingstaff_start` request, and requires explicit confirmation
 before mutation. The skill works without the web dashboard; `/wingstaff` is an
 optional visual path when the dashboard extension is installed.
 
+In `/wingstaff`, enter the existing board, absolute repository path, and goal,
+then select **Preview mutations**. Review the exact request before checking the
+confirmation box; **Start workflow** remains disabled until confirmation.
+Repeating the confirmed request reuses the same workflow and Kanban graph.
+
 ## 1. Check the prerequisites
 
 Use Hermes Agent v0.18.2, the only verified host version. The target must be a

@@ -1,7 +1,7 @@
 # Dashboard integration and guided setup plan
 
-> Status: execution in progress. Phases 0–5 completed on 2026-07-12; Phase 6
-> remains unstarted.
+> Status: completed on 2026-07-12. All phases passed their repository,
+> supported-host, packaging, and browser gates.
 >
 > For the implementing agent: read `/AGENTS.md`, `docs/AGENTS.md`,
 > `wingstaff/AGENTS.md`, `tests/AGENTS.md`, this plan, the current official Hermes
@@ -184,7 +184,7 @@ unstarted until the current phase gate passes.
 | 3. Read-only dashboard UI | Done | Add the Wingstaff tab, workflow/progress cards, decisions view, and a pending-decision slot. | Isolated Hermes v0.18.2 desktop/narrow browser states and `sessions:top` slot passed; dashboard tests passed. |
 | 4. Setup wizard and board simplification | Done | Add prerequisite checks, visual board/profile/pack selection, lifecycle preview, explicit confirmation, and start. | Isolated browser preview/confirmation passed; one scoped start request and the existing idempotent-graph test passed. |
 | 5. Constraint preview and replacement | Done | Add full YAML editor, canonical preview, digest and impact display, compare-and-swap replacement, and renewed-approval guidance. | Connected-browser semantic/no-op/stale previews and confirmed replacement passed; focused policy tests passed. |
-| 6. Theme, docs, packaging, and release gate | Todo | Add optional theme, package assets, operator docs, compatibility checks, and release verification. | Full repository and supported-host gates pass. |
+| 6. Theme, docs, packaging, and release gate | Done | Keep host-theme styling, package assets, update operator docs, and run compatibility/release verification. | Full repository, wheel, Hermes v0.18.2, SDK 1.1.0, and connected-browser gates passed. |
 
 ## Phase 0 — supported-host feasibility
 

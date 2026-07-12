@@ -55,8 +55,9 @@ flowchart LR
 ```
 
 Wingstaff creates the graph explicitly. The existing gateway's Kanban dispatcher
-runs ready cards; Wingstaff adds no scheduler, daemon, dashboard, or polling
-loop. Generic Kanban unblock is interaction, not plan authorization.
+runs ready cards; Wingstaff adds no scheduler, daemon, dashboard server, or
+polling loop. `/wingstaff` is an optional extension of the existing Hermes
+dashboard. Generic Kanban unblock is interaction, not plan authorization.
 
 Every executable card loads the complete exact pack-stage candidate set. After
 `kanban_show`, its worker must persist a finalized, unblocked activation manifest

@@ -112,6 +112,11 @@ ledger remains available for diagnostics.
 
 ## Recovery
 
+The optional `/wingstaff` view labels unavailable Kanban state instead of using a
+cached status. Use **Refresh** after restoring the gateway or host CLI. Setup and
+constraint previews are safe to repeat; confirmed starts are idempotent, while a
+stale constraint digest must be previewed again before replacement.
+
 Hermes Kanban owns retry and recovery:
 
 1. Inspect the named board and card with `hermes kanban --board <slug> show <id>`.

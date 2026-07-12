@@ -110,6 +110,11 @@ flowchart LR
 
 ## Process boundary
 
+The optional dashboard is a Hermes-owned extension, not another process. Hermes
+serves the packaged manifest, browser assets, and authenticated router inside its
+existing dashboard process. The router delegates deterministic policy to the
+same `WorkflowService`; Hermes Kanban CLI operations remain the host boundary.
+
 ```mermaid
 flowchart LR
     START["Wingstaff validates pack, profiles, and clean baseline"] --> DEFINE["define card"]
