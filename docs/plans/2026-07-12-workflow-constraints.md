@@ -30,7 +30,7 @@ the current row's gate and commit succeed.
 |---|---|---|---|
 | 1. Host feasibility and bounds | Done | Prove exact installed-skill resolution, public Kanban lifecycle operations, and the worker-context body limit against an isolated Hermes v0.18.2 home. | Isolated host probes plus the repository gate. |
 | 2. Constraint model | Done | Add strict YAML parsing, canonicalization, immutable artifacts, provenance, and state identities. | Focused model/parser tests plus the repository gate. |
-| 3. Persistence and transitions | Todo | Persist append-only constraint revisions and implement deterministic idempotent recording and invalidation. | Store/workflow/execution tests plus the repository gate. |
+| 3. Persistence and transitions | In progress | Persist append-only constraint revisions and implement deterministic idempotent recording and invalidation. | Store/workflow/execution tests plus the repository gate. |
 | 4. Card and worker enforcement | Todo | Project applicable policy onto cards and reject stale cards, workers, activation, handoffs, and evidence. | Kanban/worker/execution tests plus the repository gate. |
 | 5. Approval and graph replacement | Todo | Bind approval to plan and constraint identity; durably invalidate and recreate stale workflow work. | Workflow/service/Kanban recovery tests plus the repository gate. |
 | 6. Tool and CLI surfaces | Todo | Expose explicit start, replacement, status, skill-source, and file-source inputs through shared service paths. | Tool/plugin/CLI parity tests plus the repository gate. |
