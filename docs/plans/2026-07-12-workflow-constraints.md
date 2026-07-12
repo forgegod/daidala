@@ -1,7 +1,7 @@
 # Workflow constraints implementation plan
 
-> Status: proposed. No runtime or user-facing behavior is implemented or
-> approved.
+> Status: approved for phase-gated execution. Phase 1 is complete; no runtime
+> or user-facing workflow-constraint behavior is implemented yet.
 >
 > For the implementing agent: read `/AGENTS.md`, `docs/AGENTS.md`,
 > `wingstaff/AGENTS.md`, `tests/AGENTS.md`, this plan, and
@@ -35,6 +35,7 @@ the current row's gate and commit succeed.
 | 5. Approval and graph replacement | Todo | Bind approval to plan and constraint identity; durably invalidate and recreate stale workflow work. | Workflow/service/Kanban recovery tests plus the repository gate. |
 | 6. Tool and CLI surfaces | Todo | Expose explicit start, replacement, status, skill-source, and file-source inputs through shared service paths. | Tool/plugin/CLI parity tests plus the repository gate. |
 | 7. Documentation and host verification | Todo | Reconcile numbered docs, architecture, integration guidance, operator surfaces, and supported-host evidence. | Full repository gate and isolated supported-host probes. |
+| 8. Release compatibility regression | Todo | Turn the Phase 1 host findings into durable architecture documentation and a repeatable Hermes compatibility probe that gates Wingstaff releases and intentional host-version changes, not every push. | Script tests, an isolated supported-host run, release-workflow trigger assertions, and the repository gate. |
 
 Phase 1 verdict: GREEN on Hermes Agent v0.18.2 (2026.7.7.2), upstream
 `4281151a`. In isolated `HERMES_HOME` directories, exact skill inventory found
@@ -357,6 +358,40 @@ An isolated supported Hermes profile and named board must prove:
 
 No fallback may use private Hermes imports, direct Kanban database access,
 digest-only card projection, a daemon, an MCP server, or nested `hermes chat`.
+
+## Release compatibility regression
+
+After the feature and operator documentation are complete, make the Phase 1 host
+findings durable rather than leaving them only in this plan:
+
+1. Document the 8,192-character worker-context body boundary, the 4,096-byte
+   canonical constraint budget, exact policy-skill discovery, and public Kanban
+   lifecycle dependency in `docs/01-architecture.md` and
+   `docs/08-hermes-integration.md`. Keep the architecture document focused on
+   why Wingstaff rejects oversize projections; keep observed host versions and
+   probe evidence in the integration document.
+2. Add a dependency-free script under `scripts/` that creates an isolated
+   `HERMES_HOME`, installs a synthetic exact policy skill, verifies its exact
+   inventory name and deterministic Wingstaff directory digest, exercises a
+   named-board create/show/comment/link/complete/archive lifecycle, and proves
+   that 8,192-character bodies remain intact while larger bodies are visibly
+   truncated. The script must never inspect or mutate the active profile.
+3. Add subprocess regression tests under `tests/` for successful probe parsing,
+   changed or missing host output, boundary drift, cleanup, and actionable
+   failure messages. Do not mock Wingstaff's canonicalization or digest code.
+4. Integrate the live compatibility probe into `.github/workflows/release.yml`
+   as a release-only job. It runs for version tags and explicit
+   `workflow_dispatch`, and may run when the declared supported Hermes version
+   changes. It must not run for every branch push or pull request. Fast unit and
+   packaging checks remain eligible for normal CI.
+5. Require a green probe before changing the supported Hermes baseline or
+   publishing a Wingstaff release. Record the exact Hermes semantic version,
+   build version, and upstream revision in `docs/08-hermes-integration.md`; any
+   changed boundary blocks release until code, limits, tests, and documentation
+   are reconciled.
+
+The probe is compatibility evidence, not a runtime dependency. Wingstaff still
+uses only public plugin, skill, and Kanban boundaries in production.
 
 ## Verification
 
