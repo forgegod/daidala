@@ -26,6 +26,7 @@ Phase 2 endpoints (all read-only):
 from __future__ import annotations
 
 from collections.abc import Callable
+from functools import lru_cache
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
@@ -44,6 +45,7 @@ router = APIRouter()
 ServiceFactory = Callable[[], WorkflowService]
 
 
+@lru_cache(maxsize=1)
 def _default_service() -> WorkflowService:
     backend = DashboardBackend.from_default_profile()
     return backend.service

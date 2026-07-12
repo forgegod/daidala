@@ -71,3 +71,23 @@ def test_router_source_has_only_read_routes_and_nonmutating_preview() -> None:
     assert "sqlite3" not in source
     assert "kanban.db" not in source
     assert "DashboardBackend" in source
+
+
+def test_default_service_is_process_cached_to_avoid_concurrent_store_initialization() -> None:
+    api = load_api()
+    service = object()
+    calls = 0
+
+    class Backend:
+        @classmethod
+        def from_default_profile(cls):
+            nonlocal calls
+            calls += 1
+            return types.SimpleNamespace(service=service)
+
+    api.__dict__["DashboardBackend"] = Backend
+    api._default_service.cache_clear()
+
+    assert api._default_service() is service
+    assert api._default_service() is service
+    assert calls == 1
