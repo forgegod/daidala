@@ -1,6 +1,7 @@
 # Dashboard integration and guided setup plan
 
-> Status: proposed. No implementation starts until the user approves this plan.
+> Status: approved on 2026-07-12; execution has not started. Phase 0 requires a
+> separate explicit start instruction.
 >
 > For the implementing agent: read `/AGENTS.md`, `docs/AGENTS.md`,
 > `wingstaff/AGENTS.md`, `tests/AGENTS.md`, this plan, the current official Hermes
@@ -540,6 +541,98 @@ requires it, and then pin and audit the build dependency without shipping React.
 - LLM-generated recommendations or automatic approval;
 - backward-compatible alternate setup schemas.
 
+## Future ideas — deferred, not authorized for execution
+
+The following ideas are recorded for future planning only. They are not part of
+Phases 0–6, create no current acceptance criteria, and must not be implemented as
+incidental extensions of the dashboard or setup skill. Each requires a separate
+source-backed plan, approval gate, and committed execution phases.
+
+### Visual pack authoring
+
+Allow an operator to define a new workflow pack by selecting lifecycle stages,
+mapping exact external or bundled skills, declaring required or conditional
+activation, and previewing the resulting card graph. The editor would emit a
+normal pack artifact and run the existing deterministic pack validator; it must
+not add pack-specific branches to the engine or invent skill content.
+
+This is deferred because pack authoring changes a supply-chain and methodology
+contract, not merely setup presentation. A future plan must specify provenance,
+licensing, exact source revisions and digests, validation errors, storage,
+distribution, and how an authored pack becomes available to other profiles.
+
+### Pack source installation and revision management
+
+Extend the setup skill and dashboard to discover, preview, install, check, and
+update external pack sources through the existing dry-run-by-default mutation
+boundary. The user would see every source, revision, skill, digest, and intended
+filesystem mutation before applying it.
+
+This is deferred until a separate plan proves a safe public installation path for
+arbitrary sources. It must preserve exact-name matching, pinned revisions,
+complete-directory digests, supported-Hermes bounds, post-apply verification,
+and the rule that active workflows never update implicitly.
+
+### Bundled pack-adapter development
+
+Provide a guided developer workflow for adding a new adapter to the Wingstaff
+distribution, including source and license audit, stage mapping, bundled skill
+resources where justified, pack-neutral fixtures, release-content checks, and
+cross-pack verification. This is a repository development workflow, not an
+end-user dashboard mutation; the dashboard may eventually generate a reviewed
+proposal but must not rewrite its installed package.
+
+### Board and workflow templates
+
+Allow users to save a reusable, non-secret template containing a board naming
+pattern, selected existing pack, default profile plus stage overrides, and either
+validated constraint content or an exact policy-skill reference. Instantiating a
+template would still show a complete preview and require confirmation before
+board creation or `wingstaff_start`.
+
+A future plan must define template scope and ownership explicitly. Constraints
+remain workflow-scoped after materialization, packs remain independently
+selected, and a template must not turn either into board-global policy.
+
+### Clone a prior workflow setup
+
+Offer “start similar workflow” from an existing workflow by copying only
+operator-selectable setup inputs: board choice, pack, stage-profile map, and
+constraint source or materialized content. Never copy approval, plan artifacts,
+card IDs, worktrees, activation manifests, evidence, or live status. The clone
+must receive a new stable workflow ID, fresh baseline, fresh graph, and fresh
+human approval.
+
+### Multi-workflow overview and batch admission
+
+Add portfolio views that group workflows by board, repository, pack, pending
+decision, or profile lane. A later batch-admission flow could preview several
+independent starts, but each workflow must retain its own validation result,
+constraint identity, confirmation, graph, and approval gate. Partial failure must
+not create ambiguous shared state or roll back unrelated successful workflows.
+
+### Broader environment remediation
+
+The setup skill may eventually guide explicit creation of dedicated Hermes
+profiles, toolset configuration, gateway installation, and external skill setup.
+Credential values must remain outside model and dashboard responses, every
+mutation must be previewed, and Hermes' native setup/configuration surfaces remain
+the authority. Automatic credential entry and silent profile creation remain
+prohibited unless a future security review establishes a narrower safe contract.
+
+### Explicitly excluded future directions
+
+Do not reopen the following as convenience features without first changing the
+project architecture through a separately approved decision:
+
+- a standalone Wingstaff dashboard, daemon, scheduler, MCP server, or second
+  Kanban/state store;
+- LLM-generated operational status, recommendations, approvals, constraints, or
+  pack definitions presented as deterministic facts;
+- direct Kanban database access, private Hermes imports, or arbitrary shell
+  execution from dashboard requests;
+- automatic commit, push, deployment, merge, or pull-request creation.
+
 ## Acceptance criteria
 
 - `wingstaff:setup` is officially bundled, versioned, loadable, and usable without
@@ -575,7 +668,9 @@ Stop implementation and ask the user when:
 
 ## Approval checkpoint
 
-No implementation starts until the user explicitly approves this plan. After
-approval, execute one phase at a time with a committed checkpoint. Phase 0 may
-change the proposed file layout and minimum supported Hermes version; any such
-change must be written into this plan and approved before Phase 1 begins.
+The user approved this plan's recommendations on 2026-07-12. That approval does
+not start Phase 0 and does not authorize any item under **Future ideas**. Begin
+Phase 0 only after a separate explicit start instruction, then execute one phase
+at a time with a committed checkpoint. Phase 0 may change the proposed file
+layout and minimum supported Hermes version; any such change must be written into
+this plan and approved before Phase 1 begins.
