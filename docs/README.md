@@ -26,6 +26,7 @@ architecture references.
 | [Skill usage and user control](11-skill-usage-and-user-control.md) | Candidate loading, persisted activation, structured handoff, and user-selection boundaries documented | Pack, policy ledger, worker contract, and cross-pack tests |
 | [Workflow ecosystem market overview](12-market-overview.md) | Current projects evaluated as packs, interoperability layers, optional tools, or product references | Upstream documentation, local Matt Pocock Skills checkout, and Wingstaff pack contracts |
 | [Autonomous triggering](13-autonomous-triggering.md) | Hermes cron/webhook composition documented but not exercised end to end; implementation still requires exact-digest approval | Observed Hermes v0.18.2 CLI plus Wingstaff start CLI and tool schemas |
+| [Workflow constraints](14-workflow-constraints.md) | Proposed; workflow-scoped policy invariants, approval binding, and skill-backed reusable sources are specified | [Implementation plan](plans/2026-07-12-workflow-constraints.md) |
 | Target commit/push | Not part of Wingstaff runtime | Delivery records both flags as false |
 
 “Implemented” means present in this repository. Compatibility claims are limited
@@ -95,6 +96,7 @@ carry that manifest's digest and active skill names.
 | What does “using” a pack skill mean, and can I select or override stage skills? | [Skill usage and user control](11-skill-usage-and-user-control.md) |
 | Which external projects could become Wingstaff packs, and why do others not fit? | [Workflow ecosystem market overview](12-market-overview.md) |
 | How can GitHub issues, Actions failures, Linear tickets, Jira tickets, or cron start a workflow? | [Autonomous triggering](13-autonomous-triggering.md) |
+| How can one workflow enforce durable policy without creating another skill layer? | [Workflow constraints](14-workflow-constraints.md#policy-is-not-methodology) |
 
 ## Verification
 
