@@ -70,7 +70,7 @@ class ExecutionWorkspace:
             raise ExecutionError("activation manifest workflow ID does not match artifact root")
         filename = (
             f"skill-activation-{manifest.stage.value}-r{manifest.plan_revision}"
-            f"-{manifest.sequence}.json"
+            f"-p{manifest.policy_revision}-{manifest.sequence}.json"
         )
         directory = self._workflow_root(workflow_id) / "artifacts"
         directory.mkdir(parents=True, exist_ok=True)
@@ -98,7 +98,7 @@ class ExecutionWorkspace:
             raise ExecutionError("activation manifest workflow ID does not match artifact root")
         filename = (
             f"skill-activation-{manifest.stage.value}-r{manifest.plan_revision}"
-            f"-{manifest.sequence}.json"
+            f"-p{manifest.policy_revision}-{manifest.sequence}.json"
         )
         return str(self._workflow_root(workflow_id) / "artifacts" / filename)
 
@@ -122,6 +122,15 @@ class ExecutionWorkspace:
         if self.read_constraints_artifact(workflow_id, str(path)) != artifact:
             raise ExecutionError("constraint artifact read-back verification failed")
         return StoredArtifact(path=str(path), digest=artifact.identity.digest)
+
+    def constraints_artifact_path(self, workflow_id: str, revision: int) -> str:
+        """Return the deterministic path for one immutable constraint revision."""
+        return str(
+            self._workflow_root(workflow_id)
+            / "artifacts"
+            / "constraints"
+            / f"workflow-constraints-{revision}.json"
+        )
 
     def read_constraints_artifact(
         self, workflow_id: str, path: str

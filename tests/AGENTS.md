@@ -48,6 +48,9 @@ completeness without touching a real Hermes profile.
 - The shared worker-evidence validator has wrong-board and stale-card regression coverage.
 - Constraint revisions must prove prior cards and activation manifests are stale
   while their immutable history remains serialized.
+- Constraint replacement coverage must prove exact approval binding, durable
+  invalidation before host mutation, owned-worktree cleanup, obsolete-card
+  archival, fresh define/plan creation, idempotent retry, and cross-pack behavior.
 - Every new packaged resource requires a wheel-content assertion.
 
 ## Verification

@@ -129,6 +129,24 @@ phases:
         ledger,
         policy_revision=1,
         constraint_references=(reference,),
+        artifacts=tuple(replace(row, policy_revision=1) for row in ledger.artifacts),
+        approval=(
+            replace(
+                ledger.approval,
+                constraints_revision=1,
+                constraints_digest=constraints.digest,
+            )
+            if ledger.approval is not None
+            else None
+        ),
+        activation_manifests=tuple(
+            replace(
+                row,
+                policy_revision=1,
+                constraints_digest=constraints.digest,
+            )
+            for row in ledger.activation_manifests
+        ),
         updated_at=reference.recorded_at,
     ), constraints
 

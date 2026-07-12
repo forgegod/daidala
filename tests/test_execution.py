@@ -10,7 +10,7 @@ import pytest
 
 from wingstaff.errors import PolicyViolationError
 from wingstaff.execution import ExecutionError, ExecutionWorkspace
-from wingstaff.kanban import KanbanGraphAdapter
+from wingstaff.kanban import KanbanError, KanbanGraphAdapter
 from wingstaff.packs import SkillActivationMode, load_pack
 from wingstaff.service import ServiceError, WorkflowService
 from wingstaff.skills import (
@@ -496,6 +496,115 @@ def test_cancel_rolls_back_owned_implementation_worktree(
     assert "return 1" in (target_repository / "calculator.py").read_text(encoding="utf-8")
 
 
+def test_constraint_replacement_invalidates_and_recreates_graph_recoverably(
+    service: FixtureWorkflowService,
+    target_repository: Path,
+    fake_kanban_host,
+) -> None:
+    workflow_id, plan_digest = prepare_planned_workflow(
+        service, target_repository, "workflow-policy-replacement"
+    )
+    approved = service.approve(workflow_id, plan_digest)
+    old_cards = {card.task_id for card in approved.card_references}
+    old_artifacts = approved.artifacts
+    assert approved.worktree_path is not None
+    old_worktree = Path(approved.worktree_path)
+
+    content = (
+        "schema: wingstaff.workflow-constraints/v1\n"
+        "global:\n"
+        "  - Never commit or push.\n"
+    )
+    replaced = service.replace_constraints(
+        workflow_id,
+        content=content,
+        expected_current_digest=None,
+    )
+
+    assert replaced.policy_revision == 1
+    assert replaced.current_constraints_revision == 1
+    assert replaced.approval is None
+    assert replaced.worktree_path is None
+    assert not old_worktree.exists()
+    assert replaced.artifacts == old_artifacts
+    assert replaced.artifact_for(WorkflowStage.DEFINE) is None
+    assert replaced.artifact_for(WorkflowStage.PLAN) is None
+    assert old_cards.issubset(set(fake_kanban_host.archived))
+    define_card = replaced.card_for(WorkflowStage.DEFINE)
+    plan_card = replaced.card_for(WorkflowStage.PLAN)
+    assert define_card is not None and define_card.task_id not in old_cards
+    assert plan_card is not None and plan_card.task_id not in old_cards
+
+    digest = replaced.current_constraints_digest
+    retried = service.replace_constraints(
+        workflow_id,
+        content=content,
+        expected_current_digest=digest,
+    )
+    assert retried.constraint_references == replaced.constraint_references
+    assert retried.card_references == replaced.card_references
+
+    record_stage_activation(service, workflow_id, WorkflowStage.DEFINE)
+    service.submit_artifact(
+        workflow_id,
+        stage=WorkflowStage.DEFINE,
+        content="# Revised definition\n",
+    )
+    record_stage_activation(service, workflow_id, WorkflowStage.PLAN)
+    planned = service.submit_artifact(
+        workflow_id,
+        stage=WorkflowStage.PLAN,
+        content="# Revised plan\n",
+    )
+    plan = planned.artifact_for(WorkflowStage.PLAN)
+    assert plan is not None
+    reapproved = service.approve(workflow_id, plan.digest)
+    assert reapproved.approval is not None
+    assert reapproved.approval.constraints_revision == 1
+    assert reapproved.approval.constraints_digest == digest
+
+
+def test_constraint_replacement_persists_invalidation_before_failed_archival(
+    service: FixtureWorkflowService,
+    target_repository: Path,
+    fake_kanban_host,
+) -> None:
+    workflow_id, plan_digest = prepare_planned_workflow(
+        service, target_repository, "workflow-policy-archive-recovery"
+    )
+    approved = service.approve(workflow_id, plan_digest)
+    assert approved.approval is not None
+
+    def fail_archive(name: str, args: dict[str, object]) -> str:
+        if name == "terminal" and " archive " in str(args["command"]):
+            return json.dumps({"exit_code": 1, "output": "interrupted"})
+        return fake_kanban_host.dispatch(name, args)
+
+    service._kanban = KanbanGraphAdapter(fail_archive)
+    content = "schema: wingstaff.workflow-constraints/v1\nglobal: [Never push.]\n"
+    with pytest.raises(KanbanError, match="exit code 1"):
+        service.replace_constraints(
+            workflow_id,
+            content=content,
+            expected_current_digest=None,
+        )
+
+    interrupted = service.status(workflow_id)
+    assert interrupted.policy_revision == 1
+    assert interrupted.approval is None
+    assert interrupted.worktree_owned is True
+
+    service._kanban = KanbanGraphAdapter(fake_kanban_host.dispatch)
+    recovered = service.replace_constraints(
+        workflow_id,
+        content=content,
+        expected_current_digest=interrupted.current_constraints_digest,
+    )
+    assert recovered.worktree_owned is False
+    assert recovered.card_for(WorkflowStage.DEFINE) is not None
+    assert recovered.card_for(WorkflowStage.PLAN) is not None
+
+
 def test_failed_verification_blocks_delivery(
     service: FixtureWorkflowService,
     target_repository: Path,
@@ -739,7 +848,7 @@ def test_activation_artifact_creation_is_canonical_and_exclusive(tmp_path: Path)
         workspace.write_activation_manifest("different-workflow", manifest)
     stored = workspace.write_activation_manifest("workflow-activation", manifest)
 
-    assert Path(stored.path).name == "skill-activation-define-r0-1.json"
+    assert Path(stored.path).name == "skill-activation-define-r0-p0-1.json"
     assert Path(stored.path).read_bytes() == manifest.canonical_bytes()
     with pytest.raises(ExecutionError, match="already exists"):
         workspace.write_activation_manifest("workflow-activation", manifest)

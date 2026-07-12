@@ -342,9 +342,11 @@ class ArtifactReference:
     path: str
     digest: str
     recorded_at: datetime
+    policy_revision: int = 0
 
     def __post_init__(self) -> None:
         _require_revision(self.plan_revision)
+        _require_revision(self.policy_revision)
         _require_text(self.path, "artifact path")
         _require_text(self.digest, "artifact digest")
         _require_aware(self.recorded_at, "artifact recorded_at")
@@ -356,6 +358,7 @@ class ArtifactReference:
             "path": self.path,
             "digest": self.digest,
             "recorded_at": self.recorded_at.isoformat(),
+            "policy_revision": self.policy_revision,
         }
 
     @classmethod
@@ -366,6 +369,7 @@ class ArtifactReference:
             path=raw["path"],
             digest=raw["digest"],
             recorded_at=datetime.fromisoformat(raw["recorded_at"]),
+            policy_revision=raw.get("policy_revision", 0),
         )
 
 
@@ -542,10 +546,22 @@ class ApprovalRecord:
     plan_digest: str
     plan_revision: int
     decided_at: datetime
+    constraints_revision: int | None = None
+    constraints_digest: str | None = None
 
     def __post_init__(self) -> None:
         _require_text(self.plan_digest, "approved plan digest")
         _require_revision(self.plan_revision)
+        if (self.constraints_revision is None) != (self.constraints_digest is None):
+            raise PolicyViolationError(
+                "approved constraint revision and digest must both be present or absent"
+            )
+        if self.constraints_revision is not None:
+            _require_positive_revision(
+                self.constraints_revision, "approved constraint revision"
+            )
+        if self.constraints_digest is not None:
+            _require_digest(self.constraints_digest, "approved constraint digest")
         _require_aware(self.decided_at, "approval decided_at")
 
     def to_dict(self) -> dict[str, Any]:
@@ -553,6 +569,8 @@ class ApprovalRecord:
             "plan_digest": self.plan_digest,
             "plan_revision": self.plan_revision,
             "decided_at": self.decided_at.isoformat(),
+            "constraints_revision": self.constraints_revision,
+            "constraints_digest": self.constraints_digest,
         }
 
     @classmethod
@@ -561,6 +579,8 @@ class ApprovalRecord:
             plan_digest=raw["plan_digest"],
             plan_revision=raw["plan_revision"],
             decided_at=datetime.fromisoformat(raw["decided_at"]),
+            constraints_revision=raw.get("constraints_revision"),
+            constraints_digest=raw.get("constraints_digest"),
         )
 
 
@@ -750,7 +770,9 @@ class WorkflowLedger:
         if len(idempotency_keys) != len(set(idempotency_keys)):
             raise PolicyViolationError("workflow cannot reuse a Kanban idempotency key")
 
-        artifact_keys = [(row.stage, row.plan_revision) for row in self.artifacts]
+        artifact_keys = [
+            (row.stage, row.plan_revision, row.policy_revision) for row in self.artifacts
+        ]
         if len(artifact_keys) != len(set(artifact_keys)):
             raise PolicyViolationError("workflow cannot contain duplicate stage artifacts")
 
@@ -770,6 +792,8 @@ class WorkflowLedger:
                 plan is None
                 or self.approval.plan_digest != plan.digest
                 or self.approval.plan_revision != self.plan_revision
+                or self.approval.constraints_revision != self.current_constraints_revision
+                or self.approval.constraints_digest != self.current_constraints_digest
             ):
                 raise PolicyViolationError(
                     "approval must match the current plan revision and digest"
@@ -782,7 +806,8 @@ class WorkflowLedger:
                 )
 
         activation_groups: dict[
-            tuple[WorkflowStage, int], list[ActivationManifestReference]
+            tuple[WorkflowStage, int, int, str | None],
+            list[ActivationManifestReference],
         ] = {}
         for reference in self.activation_manifests:
             if reference.plan_revision > self.plan_revision or (
@@ -791,7 +816,13 @@ class WorkflowLedger:
             ):
                 raise PolicyViolationError("activation reference has an invalid stage revision")
             activation_groups.setdefault(
-                (reference.stage, reference.plan_revision), []
+                (
+                    reference.stage,
+                    reference.plan_revision,
+                    reference.policy_revision,
+                    reference.constraints_digest,
+                ),
+                [],
             ).append(reference)
         digests = [reference.digest for reference in self.activation_manifests]
         if len(digests) != len(set(digests)):
@@ -832,6 +863,7 @@ class WorkflowLedger:
                 artifact
                 for artifact in self.artifacts
                 if artifact.stage is stage and artifact.plan_revision == revision
+                and artifact.policy_revision == self.policy_revision
             ),
             None,
         )

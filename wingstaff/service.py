@@ -11,7 +11,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
-from .constraints import WorkflowConstraints
+from .constraints import WorkflowConstraints, parse_workflow_constraints
 from .errors import WorkflowError
 from .execution import ExecutionError, ExecutionWorkspace
 from .kanban import KanbanCardStatus, KanbanGraphAdapter
@@ -31,8 +31,11 @@ from .state import (
     ActivationManifest,
     ActivationManifestReference,
     ActivationReferenceState,
+    ConstraintSourceProvenance,
     SkillDigest,
     StageProfile,
+    WorkflowConstraintsArtifact,
+    WorkflowConstraintsIdentity,
     WorkflowLedger,
     WorkflowStage,
 )
@@ -40,9 +43,11 @@ from .store import StoreError, WorkflowStore
 from .workflow import (
     _require_stage_activation,
     approve_plan,
+    invalidate_approval,
     new_workflow,
     record_artifact,
     record_card,
+    record_constraints,
     record_skill_activation,
     record_verification,
     record_worktree,
@@ -166,6 +171,13 @@ class WorkflowService:
         """Record a new plan revision and invalidate approval."""
         observed = self.store.get_with_token(workflow_id)
         previous = observed.ledger
+        invalidated = invalidate_approval(previous, invalidated_at=self._clock())
+        if invalidated is not previous:
+            previous = self.store.update(
+                invalidated,
+                expected_updated_at=observed.updated_at,
+            )
+            observed = self.store.get_with_token(workflow_id)
         obsolete = set(WorkflowStage) - {WorkflowStage.DEFINE, WorkflowStage.PLAN}
         self._require_kanban().archive(
             previous,
@@ -191,6 +203,72 @@ class WorkflowService:
         )
         updated = self.store.update(updated, expected_updated_at=observed.updated_at)
         return self._ensure_approval_card(updated, load_pack(updated.pack_name))
+
+    def replace_constraints(
+        self,
+        workflow_id: str,
+        *,
+        content: str,
+        expected_current_digest: str | None,
+        source: ConstraintSourceProvenance | None = None,
+    ) -> WorkflowLedger:
+        """Materialize new policy, invalidate stale work, and recreate define/plan."""
+        constraints = parse_workflow_constraints(content)
+        observed = self.store.get_with_token(workflow_id)
+        ledger = observed.ledger
+        current_digest = ledger.current_constraints_digest
+        if expected_current_digest != current_digest:
+            raise ServiceError("expected current constraint digest does not match")
+
+        if constraints.digest != current_digest:
+            identity = WorkflowConstraintsIdentity(
+                policy_revision=ledger.policy_revision + 1,
+                constraints_revision=len(ledger.constraint_references) + 1,
+                digest=constraints.digest,
+            )
+            artifact = WorkflowConstraintsArtifact(
+                schema="wingstaff.workflow-constraints-artifact/v1",
+                workflow_id=workflow_id,
+                identity=identity,
+                canonical_content=constraints.canonical_bytes().decode("utf-8"),
+                source=source,
+            )
+            path = self._workspace.constraints_artifact_path(
+                workflow_id, identity.constraints_revision
+            )
+            try:
+                stored = self._workspace.write_constraints_artifact(workflow_id, artifact)
+            except ExecutionError as error:
+                if "already exists" not in str(error):
+                    raise
+                if self._workspace.read_constraints_artifact(workflow_id, path) != artifact:
+                    raise ServiceError("existing constraint artifact content conflicts") from error
+            else:
+                if stored.path != path or stored.digest != constraints.digest:
+                    raise ServiceError("stored constraint artifact does not match its identity")
+            ledger = record_constraints(
+                ledger,
+                artifact=artifact,
+                path=path,
+                expected_current_digest=expected_current_digest,
+                recorded_at=self._clock(),
+            )
+            ledger = self.store.update(ledger, expected_updated_at=observed.updated_at)
+
+        self._require_kanban().archive(
+            ledger,
+            "constraint revision replaced",
+            before_policy_revision=ledger.policy_revision,
+        )
+        if ledger.worktree_owned and ledger.worktree_path is not None:
+            self._workspace.remove_worktree(
+                ledger.target_repository,
+                ledger.worktree_path,
+            )
+            observed = self.store.get_with_token(workflow_id)
+            ledger = release_worktree(observed.ledger, released_at=self._clock())
+            ledger = self.store.update(ledger, expected_updated_at=observed.updated_at)
+        return self._ensure_initial_graph(ledger, load_pack(ledger.pack_name))
 
     def cancel(self, workflow_id: str, reason: str) -> WorkflowLedger:
         """Remove a Wingstaff-owned worktree; Kanban owns cancellation state."""

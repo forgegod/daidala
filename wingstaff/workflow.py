@@ -186,6 +186,7 @@ def record_artifact(
         path=path,
         digest=digest,
         recorded_at=recorded_at,
+        policy_revision=ledger.policy_revision,
     )
     existing = ledger.artifact_for(stage)
     if existing == candidate:
@@ -223,11 +224,15 @@ def approve_plan(
         plan_digest=plan_digest,
         plan_revision=ledger.plan_revision,
         decided_at=decided_at,
+        constraints_revision=ledger.current_constraints_revision,
+        constraints_digest=ledger.current_constraints_digest,
     )
     if (
         ledger.approval is not None
         and ledger.approval.plan_digest == plan_digest
         and ledger.approval.plan_revision == ledger.plan_revision
+        and ledger.approval.constraints_revision == ledger.current_constraints_revision
+        and ledger.approval.constraints_digest == ledger.current_constraints_digest
     ):
         return ledger
     plan = ledger.artifact_for(WorkflowStage.PLAN)
@@ -237,6 +242,23 @@ def approve_plan(
         raise PolicyViolationError("current plan revision already has a different approval")
     _require_not_before(ledger, decided_at)
     return replace(ledger, approval=candidate, updated_at=decided_at)
+
+
+def invalidate_approval(
+    ledger: WorkflowLedger,
+    *,
+    invalidated_at: datetime,
+) -> WorkflowLedger:
+    """Durably clear approval and current verification before host cleanup."""
+    if ledger.approval is None and not ledger.verification_evidence:
+        return ledger
+    _require_not_before(ledger, invalidated_at)
+    return replace(
+        ledger,
+        approval=None,
+        verification_evidence=(),
+        updated_at=invalidated_at,
+    )
 
 
 def replace_plan(
@@ -262,6 +284,7 @@ def replace_plan(
         path=path,
         digest=digest,
         recorded_at=replaced_at,
+        policy_revision=ledger.policy_revision,
     )
     return replace(
         ledger,
@@ -373,7 +396,10 @@ def record_skill_activation(
     references = [
         reference
         for reference in ledger.activation_manifests
-        if reference.stage is manifest.stage and reference.plan_revision == revision
+        if reference.stage is manifest.stage
+        and reference.plan_revision == revision
+        and reference.policy_revision == ledger.policy_revision
+        and reference.constraints_digest == ledger.current_constraints_digest
     ]
     latest = references[-1] if references else None
 

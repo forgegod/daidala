@@ -111,6 +111,13 @@ fails locally rather than in production.
   live assignee before methodology or evidence. Every worker evidence operation
   repeats that current-card check. A constraint revision makes prior cards and
   activation manifests historical without deleting them.
+- Approval binds the exact current plan revision/digest and constraint
+  revision/digest pair, including explicit null constraint identity. Constraint
+  replacement persists invalidation before host cleanup, retains historical
+  artifacts, removes only an owned worktree, archives obsolete cards, and
+  recreates a fresh define-to-plan graph under the new policy revision.
+- Stage artifacts and activation chains are policy-revision scoped so regenerated
+  definition and plan evidence cannot resolve to a historical policy revision.
 - The policy store uses one fresh schema and does not inspect or migrate the
   unreleased workflow-state database.
 - The engine never substitutes guessed data when a model, skill, or verifier fails.

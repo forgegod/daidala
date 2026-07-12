@@ -148,6 +148,8 @@ class KanbanGraphAdapter:
                     "stage": WorkflowStage.APPROVAL.value,
                     "plan_revision": ledger.plan_revision,
                     "plan_digest": ledger.approval.plan_digest,
+                    "constraints_revision": ledger.approval.constraints_revision,
+                    "constraints_digest": ledger.approval.constraints_digest,
                 },
                 "board": ledger.board_slug,
             },
@@ -192,11 +194,14 @@ class KanbanGraphAdapter:
         reason: str,
         *,
         stages: set[WorkflowStage] | None = None,
+        before_policy_revision: int | None = None,
     ) -> None:
         cards = tuple(
             card
             for card in ledger.card_references
             if stages is None or card.stage in stages
+            if before_policy_revision is None
+            or card.policy_revision < before_policy_revision
         )
         if not cards:
             return
