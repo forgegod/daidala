@@ -4,9 +4,9 @@
 
 Wingstaff is a general Hermes plugin plus bundled resources. Hermes owns the
 agent process, model access, tool registry, skill loading, gateway, delegation,
-Kanban lifecycle, and cron facilities. Wingstaff adds workflow packs, exact
-skill provenance, plan-digest approval, repository safety, and evidence
-integrity on top of those host facilities.
+Kanban lifecycle, and cron facilities. Wingstaff adds workflow packs, exact skill
+provenance, workflow-scoped constraint artifacts, plan-and-constraint approval,
+repository safety, and evidence integrity on top of those host facilities.
 
 Wingstaff is not an MCP server, HTTP service, dashboard service, model provider,
 message gateway, scheduler, or nested `hermes chat` launcher.
@@ -52,10 +52,12 @@ flowchart TB
     TARGET["Local Git target + detached worktree"]
     DATA["Hermes profile data root"]
     EXT["External skill repositories<br>pinned revision + skill digests"]
+    POLICY["Exact installed policy skill<br>or explicit constraint content"]
     EXEC --> TARGET
     STATE --> DATA
     EXEC --> DATA
     YAML -."source URL and install-target strings".-> EXT
+    POLICY -->|"verified source + canonical snapshot"| SERVICE
 ```
 
 Wingstaff has no autonomous execution loop, scheduler, model client, or second
@@ -72,13 +74,39 @@ state machine.
 | Board, card status, dependencies, assignment, claims, retries, comments, and run history | Hermes Kanban |
 | User-visible progress and recovery | Hermes Kanban CLI, slash command, dashboard, and gateway |
 | Pack selection, stage skills, provenance, and compatibility | Wingstaff |
+| Workflow constraint identity, immutable policy artifact, projection, and replacement | Wingstaff |
 | Repository baseline, owned worktree, and immutable implementation scope | Wingstaff |
-| Plan digest, exact approval, artifact digests, and verification evidence | Wingstaff policy ledger |
+| Plan-and-constraint tuple approval, artifact digests, and verification evidence | Wingstaff policy ledger |
 | Target commit or push | Unavailable without separate authorization |
 
 No operational transition requires bidirectional status synchronization.
 Wingstaff reads Hermes status when presenting a combined view and applies only
 Wingstaff-owned policy checks before creating or releasing cards.
+
+## Workflow constraint topology
+
+The topology is composition, not a Hermes parent-child hierarchy:
+
+```mermaid
+flowchart LR
+    HP["Hermes profile"] -->|"runs assigned workers"| WL["Worker lane"]
+    WL -->|"claims cards"| KB["Named Hermes Kanban board"]
+    KB -->|"hosts cards for many workflows"| WF["Wingstaff workflow ledger"]
+    WF -->|"selects exactly one pack"| PK["Workflow pack"]
+    WF -->|"references zero or one current revision"| CA["Immutable constraint artifact"]
+    PS["Exact policy skill or explicit content"] -->|"materialized once"| CA
+```
+
+- One Hermes profile may run workers for many boards and workflows.
+- One named board may host cards from many Wingstaff workflows.
+- Each Wingstaff workflow selects exactly one board and one pack.
+- Each workflow has zero or one current constraint identity and retains every
+  historical constraint artifact append-only.
+- A reusable policy skill may source many workflows, but it grants no worker
+  activation and owns no lifecycle state. Wingstaff verifies and snapshots it;
+  later workflow execution reads the immutable workflow artifact.
+- Hermes dispatch owns card claims and worker runs. Wingstaff owns policy
+  identity, card eligibility, approval binding, and artifact integrity.
 
 ## Process boundary
 

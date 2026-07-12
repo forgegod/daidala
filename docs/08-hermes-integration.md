@@ -1,7 +1,7 @@
 # Hermes integration
 
 Wingstaff 0.1.0 has been exercised against Hermes Agent v0.18.2
-(`2026.7.7.2`, upstream `7acaff5e`) on Python 3.11.15. The proof used fresh
+(`2026.7.7.2`, upstream `4281151a`) on Python 3.11.15. The proof used fresh
 `HERMES_HOME` directories and did not read or modify the active Hermes profile.
 
 This document records observed behavior. The current Hermes
@@ -22,11 +22,11 @@ release:
 All verified discovery paths register exactly:
 
 - tool `wingstaff_pack_info`;
-- tools `wingstaff_start`, `wingstaff_status`, `wingstaff_approve`, and
-  `wingstaff_cancel`;
+- tools `wingstaff_start`, `wingstaff_status`, `wingstaff_replace_constraints`,
+  `wingstaff_approve`, and `wingstaff_cancel`;
 - tools `wingstaff_submit_artifact`, `wingstaff_prepare_implementation`,
-  `wingstaff_capture_implementation`, `wingstaff_record_verification`, and
-  `wingstaff_deliver`;
+  `wingstaff_capture_implementation`, `wingstaff_record_skill_activation`,
+  `wingstaff_record_verification`, and `wingstaff_deliver`;
 - skills `wingstaff:orchestrate` and `wingstaff:aidlc-adapter`;
 - operator command family `hermes wingstaff`.
 
@@ -54,6 +54,35 @@ Hermes process using the same `HERMES_HOME` must expose
 skill content.
 
 Wingstaff does not override built-in tools.
+
+## Workflow-constraint host verification
+
+Phase 7 repeated the constraint integration against a fresh isolated
+`HERMES_HOME` on the supported host. The probe:
+
+- loaded the directory plugin with exactly 12 registered tools and no plugin
+  error;
+- created an isolated named board and clean local Git target;
+- resolved one exact `policy-probe` skill, verified its complete-directory
+  digest, and materialized its sole fenced YAML document;
+- started an AI-DLC workflow through `hermes wingstaff`, producing two cards
+  whose bodies contained full constraint text but no policy-skill activation;
+- removed the installed source and successfully read the self-contained
+  materialized workflow;
+- replaced constraints from an explicit UTF-8 file, preserving the historical
+  sourced artifact while creating policy revision 2 and distinct define/plan
+  card IDs and idempotency keys;
+- rejected evidence submitted with the archived definition card identity.
+
+No gateway, model, active profile, private Hermes import, or direct Kanban
+database access was used. The probe root was temporary and isolated from the
+operator's configured Hermes home.
+
+Hermes v0.18.2 profile creation is not fully `HERMES_HOME`-isolated: it creates a
+launcher under `~/.local/bin`. The exploratory launcher was removed immediately,
+and the successful probe used the host-visible `default` assignee instead. The
+repeatable release probe must not call `hermes profile create`; it should use an
+already discoverable assignee or exercise Kanban without assignment.
 
 ## Operator CLI registration
 
@@ -135,7 +164,7 @@ Hermes process to confirm that the plugin was enabled without errors, registered
 
 | Hermes host | Directory plugin | Python entry point | Public Git install | Native CLI | Kanban restart/idempotency | Status |
 |---|---|---|---|---|---|---|
-| v0.18.2 (`2026.7.7.2`, `7acaff5e`) | Passed | Passed | Passed | Passed | Passed | Supported |
+| v0.18.2 (`2026.7.7.2`, `4281151a`) | Passed | Passed | Passed | Passed | Passed | Supported |
 | Other versions | Not probed | Not probed | Not probed | Not probed | Not probed | Unsupported until the full matrix passes |
 
 - Hermes v0.18.2 is the only verified host version.

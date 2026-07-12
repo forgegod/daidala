@@ -30,7 +30,7 @@ Own current architecture documentation, the numbered reading set, and executable
   products.
 - `13-autonomous-triggering.md` owns the how-to contract for admitting external
   work through Hermes cron and webhooks without weakening Wingstaff approval.
-- `14-workflow-constraints.md` owns the proposed workflow-scoped policy artifact,
+- `14-workflow-constraints.md` owns the implemented workflow-scoped policy artifact,
   the policy-versus-methodology boundary, and skill-backed reusable sources.
 - `plans/` contains self-contained plans for future implementation sessions.
 

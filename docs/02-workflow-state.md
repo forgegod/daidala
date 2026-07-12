@@ -19,6 +19,8 @@ A workflow records:
 - the clean target baseline commit;
 - selected board slug and expanded stage-to-profile mapping;
 - deterministic stage-to-card IDs and idempotency keys;
+- policy revision plus the current nullable constraint revision/digest and source
+  provenance;
 - creation and last-update timestamps.
 
 `wingstaff_start` validates every exact pack skill, every resolved profile, the
@@ -36,6 +38,7 @@ it never mirrors those statuses into its ledger.
 |---|---|
 | Card readiness, running, blocking, completion, retry, and archive state | Hermes Kanban |
 | Current approved plan digest and approval actor/time | Wingstaff ledger |
+| Current and historical constraint revisions, digests, artifacts, and source provenance | Wingstaff ledger |
 | Baseline, worktree ownership, and immutable changed-path manifest | Wingstaff ledger |
 | Worker summaries, comments, run outcomes, and retry history | Hermes Kanban |
 | Artifact bytes, digests, and exact verification evidence | Wingstaff artifact store and ledger |
@@ -65,12 +68,13 @@ authorized graph. Hermes parent links own readiness promotion.
 | Definition begins or succeeds | `claimed`, then `completed` | `wingstaff.handoff/v1` definition artifact reference and digest validate |
 | Plan becomes runnable or succeeds | `promoted`, `claimed`, then `completed` | Definition digest matches; plan artifact reference and digest validate |
 | Human gate appears | `created` with blocked status and `plan` parent | Current plan digest is persisted before creation |
-| Approval succeeds | `completed` on the approval card | Supplied digest exactly matches the current plan and approval is recorded first |
+| Approval succeeds | `completed` on the approval card | Supplied digest matches the current plan and approval binds the current nullable constraint identity before host mutation |
 | Post-gate graph appears | `created` for `implement`, `verify`, `review`, and `deliver` | Approval, baseline, plan revision, profiles, exact skills, and worktree all validate |
 | Stage succeeds | `completed` | Handoff schema, plan revision, stage artifact, and evidence digest validate |
 | Stage needs intervention | `blocked` or `dependency_wait` | Structured comment names the current workflow, revision, evidence, and required decision |
 | Operator resumes work | `unblocked` | No approval is inferred; later Wingstaff evidence calls still validate the current revision |
 | Plan is replaced | `archived` on obsolete post-gate cards | Approval is cleared and plan revision increments before any new graph |
+| Constraints are replaced | `archived` on obsolete cards | Policy revision and immutable constraint artifact become durable before owned-worktree cleanup and fresh define/plan creation |
 | Workflow is cancelled | `archived` on nonterminal cards | Only Wingstaff-owned worktree and policy references may be cleaned |
 
 `created`, `promoted`, `claimed`, `completed`, `blocked`, `dependency_wait`,

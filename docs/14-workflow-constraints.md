@@ -1,16 +1,15 @@
 # 14 — Workflow constraints
 
-> Status: proposed. The artifact and interfaces described here are design
-> contracts, not implemented behavior.
+> Status: implemented. The artifact and interfaces described here are enforced
+> by the policy ledger, service, tool, and CLI boundaries.
 
 Workflow constraints give one Wingstaff workflow durable user-defined policy
 that applies across definition, planning, implementation, verification, review,
 and delivery. They complement the initial goal: the goal says what to accomplish;
 constraints state what must remain true while accomplishing it.
 
-The implementation plan is
+The phase-gated implementation record is
 [`plans/2026-07-12-workflow-constraints.md`](plans/2026-07-12-workflow-constraints.md).
-No implementation starts before explicit approval of that plan.
 
 ## Scope
 
@@ -177,7 +176,10 @@ explicitly.
 Reusable constraint sources use exact installed Hermes policy skills for
 distribution and reuse. Wingstaff:
 
-- validates a policy-only source format;
+- requires standard YAML frontmatter followed by exactly one fenced `yaml`
+  constraint document and rejects any other body prose or fence;
+- verifies the caller-supplied SHA-256 digest of the complete installed skill
+  directory before reading `SKILL.md`;
 - snapshots canonical constraint content into the workflow artifact;
 - records source name and digest as provenance;
 - keeps that source outside pack methodology activation and ranking;
@@ -232,6 +234,3 @@ Wingstaff approval.
   `wingstaff/cli.py`
 - Verification: workflow, store, tool, CLI, Kanban, worker-contract, and execution
   tests under `tests/`
-
-Until those sources and real-host probes exist, this document remains a proposed
-contract and must not be cited as implemented behavior.

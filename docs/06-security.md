@@ -50,6 +50,10 @@ verification in the Wingstaff-owned detached worktree.
 - Policy facts, artifacts, approval, worktrees, captured diffs, verification
   evidence, and delivery manifests are durable under the resolved profile data
   root; operational card state remains in Hermes Kanban.
+- Workflow constraints are strict policy data, not executable configuration.
+  Exact policy-skill sources require a caller-supplied complete-directory digest
+  and one fenced YAML document; Wingstaff snapshots canonical content so later
+  source removal or drift cannot rewrite historical policy.
 - Skill activation decisions are immutable JSON artifacts. Only finalized,
   unblocked references authorize stage evidence; pending or blocked references
   fail closed.

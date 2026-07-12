@@ -1,7 +1,7 @@
 # Workflow constraints implementation plan
 
-> Status: approved for phase-gated execution. Phases 1 through 6 are complete;
-> documentation, host verification, and release-compatibility work remains.
+> Status: approved for phase-gated execution. Phases 1 through 7 are complete;
+> release-compatibility work remains.
 >
 > For the implementing agent: read `/AGENTS.md`, `docs/AGENTS.md`,
 > `wingstaff/AGENTS.md`, `tests/AGENTS.md`, this plan, and
@@ -35,8 +35,17 @@ the current row's gate and commit succeed.
 | 4A. Enforcement closure | Done | Add the omitted board and constraint-revision identities, exclude the non-executable approval card from policy projection, and enforce current-card identity at every evidence boundary before Phase 5. | Kanban/service/execution/worker-contract regressions plus the repository gate. |
 | 5. Approval and graph replacement | Done | Bind approval to plan and constraint identity; durably invalidate and recreate stale workflow work. | Workflow/service/Kanban recovery tests plus the repository gate. |
 | 6. Tool and CLI surfaces | Done | Expose explicit start, replacement, status, skill-source, and file-source inputs through shared service paths. | Tool/plugin/CLI parity tests plus the repository gate. |
-| 7. Documentation and host verification | Todo | Reconcile numbered docs, architecture, integration guidance, operator surfaces, and supported-host evidence. | Full repository gate and isolated supported-host probes. |
+| 7. Documentation and host verification | Done | Reconcile numbered docs, architecture, integration guidance, operator surfaces, and supported-host evidence. | Full repository gate and isolated supported-host probes. |
 | 8. Release compatibility regression | Todo | Turn the Phase 1 host findings into durable architecture documentation and a repeatable Hermes compatibility probe that gates Wingstaff releases and intentional host-version changes, not every push. | Script tests, an isolated supported-host run, release-workflow trigger assertions, and the repository gate. |
+
+Phase 7 verdict: GREEN. Numbered docs now describe the implemented topology,
+authority, cardinality, lifecycle, operator surfaces, and policy-skill security
+boundary. An isolated Hermes v0.18.2 profile loaded 12 tools, materialized a
+digest-verified policy skill, projected full constraints without activation
+leakage, remained operational after source removal, replaced policy with distinct
+cards and keys, and rejected stale-card evidence. The repository gate passed with
+186 tests, Lefthook, Ruff, both pack validators, sdist/wheel build, Twine,
+release-content validation, Markdown links, and clean diff checks.
 
 Phase 6 verdict: GREEN. Start and replacement now share explicit inline, UTF-8
 file, and exact installed policy-skill service paths; policy skills require a
@@ -358,14 +367,14 @@ Implementation ownership:
 
 `wingstaff_start` accepts at most one constraint source:
 
-- inline `constraints` content; or
-- `constraints_skill` with mandatory `expected_constraints_skill_digest`.
+- inline `constraints_content`; or
+- `constraints_skill` with mandatory `constraints_skill_digest`.
 
 The CLI accepts explicit, mutually exclusive selectors:
 
 - `--constraints-file PATH`;
 - `--constraints-skill NAME` with
-  `--expected-constraints-skill-digest DIGEST`.
+  `--constraints-skill-digest DIGEST`.
 
 No interface infers a path or skill name from arbitrary text.
 
