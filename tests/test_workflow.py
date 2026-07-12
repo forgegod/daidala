@@ -218,7 +218,7 @@ def test_serialization_round_trip_preserves_complete_ledger() -> None:
         make_planned(),
         stage=WorkflowStage.APPROVAL,
         task_id="t_approval",
-        idempotency_key="wingstaff:workflow-1:0:approval",
+        idempotency_key="wingstaff:workflow-1:0:0:none:approval",
         recorded_at=NOW + timedelta(minutes=3),
     )
 
@@ -249,6 +249,8 @@ def test_constraint_recording_is_idempotent_and_invalidates_approval() -> None:
     )
     assert recorded.policy_revision == 1
     assert recorded.approval is None
+    assert recorded.activation_for(WorkflowStage.DEFINE) is None
+    assert recorded.activation_for(WorkflowStage.PLAN) is None
     assert record_constraints(
         recorded,
         artifact=artifact,
@@ -299,7 +301,7 @@ def test_card_mapping_is_idempotent_and_rejects_conflicts() -> None:
         planned,
         stage=WorkflowStage.APPROVAL,
         task_id="t_approval",
-        idempotency_key="wingstaff:workflow-1:0:approval",
+        idempotency_key="wingstaff:workflow-1:0:0:none:approval",
         recorded_at=NOW + timedelta(minutes=3),
     )
     assert (
@@ -307,7 +309,7 @@ def test_card_mapping_is_idempotent_and_rejects_conflicts() -> None:
             recorded,
             stage=WorkflowStage.APPROVAL,
             task_id="t_approval",
-            idempotency_key="wingstaff:workflow-1:0:approval",
+            idempotency_key="wingstaff:workflow-1:0:0:none:approval",
             recorded_at=NOW + timedelta(minutes=3),
         )
         is recorded
@@ -317,7 +319,7 @@ def test_card_mapping_is_idempotent_and_rejects_conflicts() -> None:
             recorded,
             stage=WorkflowStage.APPROVAL,
             task_id="t_other",
-            idempotency_key="wingstaff:workflow-1:0:approval",
+            idempotency_key="wingstaff:workflow-1:0:0:none:approval",
             recorded_at=NOW + timedelta(minutes=4),
         )
     with pytest.raises(PolicyViolationError, match="idempotency key"):
@@ -484,7 +486,7 @@ def test_activation_manifest_is_strict_canonical_and_round_trips() -> None:
     manifest = activation_manifest()
 
     assert ActivationManifest.from_dict(manifest.to_dict()) == manifest
-    assert manifest.canonical_bytes().startswith(b'{"decisions":')
+    assert manifest.canonical_bytes().startswith(b'{"constraints_digest":')
     raw = manifest.to_dict()
     raw["unknown"] = True
     with pytest.raises(PolicyViolationError, match="fields are invalid"):

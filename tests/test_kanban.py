@@ -7,6 +7,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
+from wingstaff.constraints import parse_workflow_constraints
 from wingstaff.kanban import KanbanError, KanbanGraphAdapter
 from wingstaff.packs import load_pack
 from wingstaff.state import (
@@ -14,6 +15,8 @@ from wingstaff.state import (
     ActivationReferenceState,
     SkillDigest,
     StageProfile,
+    WorkflowConstraintsIdentity,
+    WorkflowConstraintsReference,
     WorkflowStage,
 )
 from wingstaff.workflow import (
@@ -102,6 +105,33 @@ def make_ledger():
     )
 
 
+def with_constraints(ledger):
+    constraints = parse_workflow_constraints(
+        """schema: wingstaff.workflow-constraints/v1
+global:
+  - Never commit or push.
+phases:
+  review:
+    - Critical findings block delivery.
+"""
+    )
+    reference = WorkflowConstraintsReference(
+        identity=WorkflowConstraintsIdentity(
+            policy_revision=1,
+            constraints_revision=1,
+            digest=constraints.digest,
+        ),
+        path="/tmp/constraints/workflow-constraints-1.json",
+        recorded_at=ledger.updated_at + timedelta(seconds=1),
+    )
+    return replace(
+        ledger,
+        policy_revision=1,
+        constraint_references=(reference,),
+        updated_at=reference.recorded_at,
+    ), constraints
+
+
 def with_activation(ledger, stage: WorkflowStage):
     return replace(
         ledger,
@@ -151,11 +181,15 @@ def make_approved_worktree():
 
 def record_host_card(ledger, stage: WorkflowStage, task_id: str, minute: int):
     revision = 0 if stage in {WorkflowStage.DEFINE, WorkflowStage.PLAN} else ledger.plan_revision
+    constraint_key = ledger.current_constraints_digest or "none"
     return record_card(
         ledger,
         stage=stage,
         task_id=task_id,
-        idempotency_key=f"wingstaff:{ledger.workflow_id}:{revision}:{stage.value}",
+        idempotency_key=(
+            f"wingstaff:{ledger.workflow_id}:{revision}:{ledger.policy_revision}:"
+            f"{constraint_key}:{stage.value}"
+        ),
         recorded_at=NOW + timedelta(minutes=minute),
     )
 
@@ -188,7 +222,10 @@ def test_initial_graph_pins_board_profiles_skills_and_parent() -> None:
         ),
     ]
     assert plan_args["parents"] == [define.task_id]
-    assert plan_args["idempotency_key"] == "wingstaff:workflow-1:0:plan"
+    assert plan_args["idempotency_key"] == "wingstaff:workflow-1:0:0:none:plan"
+    assert "Policy revision: 0" in str(define_args["body"])
+    assert "Constraint revision: none" in str(define_args["body"])
+    assert "Constraint digest: none" in str(define_args["body"])
 
 
 def test_restart_reuses_idempotent_cards() -> None:
@@ -201,6 +238,47 @@ def test_restart_reuses_idempotent_cards() -> None:
 
     assert first.task_id == second.task_id
     assert len(host.cards) == 1
+
+
+def test_card_projects_current_global_and_phase_constraints_with_identity() -> None:
+    host = FakeHost()
+    ledger, constraints = with_constraints(make_approved_worktree())
+
+    card = KanbanGraphAdapter(host.dispatch).ensure_card(
+        ledger,
+        load_pack("addyosmani"),
+        stage=WorkflowStage.REVIEW,
+        constraints=constraints,
+    )
+
+    args = host.cards[card.task_id]["args"]
+    body = str(args["body"])
+    assert "Policy revision: 1" in body
+    assert "Constraint revision: 1" in body
+    assert f"Constraint digest: {constraints.digest}" in body
+    assert "- Never commit or push." in body
+    assert "- Critical findings block delivery." in body
+    assert constraints.digest in str(args["idempotency_key"])
+
+
+def test_card_rejects_missing_current_constraint_content() -> None:
+    ledger, _constraints = with_constraints(make_ledger())
+
+    with pytest.raises(KanbanError, match="do not match"):
+        KanbanGraphAdapter(FakeHost().dispatch).ensure_card(
+            ledger,
+            load_pack("addyosmani"),
+            stage=WorkflowStage.DEFINE,
+        )
+
+
+def test_card_rejects_oversized_rendered_body_instead_of_truncating() -> None:
+    ledger = replace(make_ledger(), requested_goal="x" * 8192)
+
+    with pytest.raises(KanbanError, match="at most 8192"):
+        KanbanGraphAdapter(FakeHost().dispatch).ensure_card(
+            ledger, load_pack("addyosmani"), stage=WorkflowStage.DEFINE
+        )
 
 
 def test_unknown_assignee_stops_before_card_creation() -> None:

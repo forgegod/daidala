@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import subprocess
 from collections.abc import Callable
 from dataclasses import replace
@@ -10,6 +11,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
+from .constraints import WorkflowConstraints
 from .errors import WorkflowError
 from .execution import ExecutionError, ExecutionWorkspace
 from .kanban import KanbanCardStatus, KanbanGraphAdapter
@@ -360,6 +362,9 @@ class WorkflowService:
             raise ServiceError("Kanban board does not match the workflow")
         if card is None or task_id != card.task_id:
             raise ServiceError("Kanban task does not match the current stage card")
+        live = self._require_kanban().show_card(ledger, stage)
+        if live.assignee != ledger.profile_for(stage):
+            raise ServiceError("Kanban task assignee does not match the current stage profile")
         pack = load_pack(ledger.pack_name)
         manifest = _activation_manifest(
             ledger,
@@ -373,6 +378,8 @@ class WorkflowService:
             for row in ledger.activation_manifests
             if row.stage is stage
             and row.plan_revision == ledger.activation_revision_for(stage)
+            and row.policy_revision == ledger.policy_revision
+            and row.constraints_digest == ledger.current_constraints_digest
         ]
         latest = references[-1] if references else None
         if latest is not None and latest.state is ActivationReferenceState.FINALIZED:
@@ -528,24 +535,35 @@ class WorkflowService:
         *,
         parents: tuple[str, ...] = (),
     ) -> WorkflowLedger:
+        constraints = None
+        current = ledger.current_constraints
+        if current is not None:
+            artifact = self._workspace.read_constraints_artifact(
+                ledger.workflow_id, current.path
+            )
+            constraints = WorkflowConstraints.from_dict(
+                json.loads(artifact.canonical_content)
+            )
         task = self._require_kanban().ensure_card(
             ledger,
             pack,
             stage=stage,
             parents=parents,
+            constraints=constraints,
         )
         revision = (
             0
             if stage in {WorkflowStage.DEFINE, WorkflowStage.PLAN}
             else ledger.plan_revision
         )
+        constraint_key = ledger.current_constraints_digest or "none"
         updated = record_card(
             ledger,
             stage=stage,
             task_id=task.task_id,
             idempotency_key=(
-                f"wingstaff:{ledger.workflow_id}:"
-                f"{revision}:{stage.value}"
+                f"wingstaff:{ledger.workflow_id}:{revision}:"
+                f"{ledger.policy_revision}:{constraint_key}:{stage.value}"
             ),
             recorded_at=self._clock(),
         )
@@ -612,7 +630,10 @@ def _activation_manifest(
     references = [
         row
         for row in ledger.activation_manifests
-        if row.stage is stage and row.plan_revision == ledger.activation_revision_for(stage)
+        if row.stage is stage
+        and row.plan_revision == ledger.activation_revision_for(stage)
+        and row.policy_revision == ledger.policy_revision
+        and row.constraints_digest == ledger.current_constraints_digest
     ]
     sequence = references[-1].sequence if references else 1
     return ActivationManifest(
@@ -625,6 +646,8 @@ def _activation_manifest(
         sequence=sequence,
         supersedes_digest=supersedes_digest,
         decisions=enriched,
+        policy_revision=ledger.policy_revision,
+        constraints_digest=ledger.current_constraints_digest,
     )
 
 

@@ -14,6 +14,8 @@ completeness without touching a real Hermes profile.
 - Fake-inventory tests for exact external-skill prerequisites and host errors.
 - Fake command/registry tests for dry-run installation, pinned revisions, content digests, post-apply verification, and refused recursive installation.
 - Fake host-dispatch tests for approval-gated, restart-safe, idempotent Kanban mapping.
+- Constraint-card tests prove policy-aware idempotency, global and phase-specific
+  projection, explicit null identity, and fail-closed missing content.
 - Bundled worker-contract tests for stage tool mapping, structured handoffs,
   external-versus-plugin-qualified skill names, blocking, retries, and immutable
   post-capture scope.
@@ -42,6 +44,8 @@ completeness without touching a real Hermes profile.
   manifests.
 - Activation tool tests set real Kanban worker environment context and prove
   absent, wrong-board, wrong-card, matching-card, and unrelated handler `task_id` behavior.
+- Constraint revisions must prove prior cards and activation manifests are stale
+  while their immutable history remains serialized.
 - Every new packaged resource requires a wheel-content assertion.
 
 ## Verification

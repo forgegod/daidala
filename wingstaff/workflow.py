@@ -110,7 +110,11 @@ def record_card(
 ) -> WorkflowLedger:
     """Record one host-owned Kanban card without copying its status."""
     revision = _card_revision(ledger, stage)
-    expected_key = f"wingstaff:{ledger.workflow_id}:{revision}:{stage.value}"
+    constraint_key = ledger.current_constraints_digest or "none"
+    expected_key = (
+        f"wingstaff:{ledger.workflow_id}:{revision}:{ledger.policy_revision}:"
+        f"{constraint_key}:{stage.value}"
+    )
     if idempotency_key != expected_key:
         raise PolicyViolationError(
             f"Kanban idempotency key must be {expected_key!r}"
@@ -120,12 +124,16 @@ def record_card(
         plan_revision=revision,
         task_id=task_id,
         idempotency_key=idempotency_key,
+        policy_revision=ledger.policy_revision,
+        constraints_digest=ledger.current_constraints_digest,
     )
     existing = next(
         (
             row
             for row in ledger.card_references
-            if row.stage is stage and row.plan_revision == revision
+            if row.stage is stage
+            and row.plan_revision == revision
+            and row.policy_revision == ledger.policy_revision
         ),
         None,
     )
@@ -403,6 +411,8 @@ def record_skill_activation(
         state=ActivationReferenceState.PENDING,
         blocked=manifest.blocked,
         supersedes_digest=manifest.supersedes_digest,
+        policy_revision=manifest.policy_revision,
+        constraints_digest=manifest.constraints_digest,
     )
     return replace(
         ledger,
@@ -420,6 +430,11 @@ def _validate_activation_manifest(
         raise PolicyViolationError("activation workflow ID does not match the ledger")
     if manifest.plan_revision != ledger.activation_revision_for(manifest.stage):
         raise PolicyViolationError("activation plan revision does not match the stage")
+    if (
+        manifest.policy_revision != ledger.policy_revision
+        or manifest.constraints_digest != ledger.current_constraints_digest
+    ):
+        raise PolicyViolationError("activation constraint identity does not match the ledger")
     if manifest.pack != ledger.pack_name or manifest.pack != pack.name:
         raise PolicyViolationError("activation pack does not match the ledger")
     if (

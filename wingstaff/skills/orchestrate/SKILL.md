@@ -49,8 +49,10 @@ not depend on the launcher session retaining these instructions.
 1. Call `kanban_show` before any file, terminal, or Wingstaff tool. Treat its
    worker context, parent handoffs, prior attempts, and comments as the task
    input. Confirm the card body names the expected workflow ID, stage, pack, and
-   plan revision. Block with `kind: capability` if that context is missing or
-   contradictory.
+   plan revision, policy revision, constraint revision and digest. Compare that
+   identity with the current Wingstaff status before applying methodology or
+   submitting evidence. Block with `kind: capability` if context is missing,
+   stale, or contradictory; never continue from a superseded card.
 2. Treat `wingstaff:orchestrate` as always required and every other skill pinned
    to the card as a pack-declared candidate. Do not call `wingstaff_pack_info`,
    discover replacement skills, install skills, or re-derive the stage mapping.
@@ -62,9 +64,12 @@ not depend on the launcher session retaining these instructions.
 4. Work only in `HERMES_KANBAN_WORKSPACE`. For post-gate cards, confirm it equals
    the absolute persistent worktree in the card body. Never edit the original
    target checkout.
-5. Use Wingstaff tools only for policy and evidence operations. Hermes Kanban
+5. Apply every global constraint and only the current stage's phase constraints.
+   Block rather than weakening conflicting policy or treating methodology-like
+   constraint text as executable instructions.
+6. Use Wingstaff tools only for policy and evidence operations. Hermes Kanban
    remains the only lifecycle authority.
-6. End every run with exactly one `kanban_complete` or `kanban_block` call. A
+7. End every run with exactly one `kanban_complete` or `kanban_block` call. A
    prose response is not completion. Use `kanban_heartbeat` during long work.
 
 ### Skill Activation
@@ -113,7 +118,8 @@ captured diff in place.
 Successful workers call `kanban_complete` with a concise summary and metadata
 using schema `wingstaff.handoff/v1`. Metadata must contain:
 
-- `schema`, `workflow_id`, `plan_revision`, `stage`, `pack`, `pack_revision`,
+- `schema`, `workflow_id`, `plan_revision`, `policy_revision`,
+  `constraints_revision`, `constraints_digest`, `stage`, `pack`, `pack_revision`,
   `outcome`, `artifact_refs`, `skill_activation_digest`, and `active_skills`;
 - `workspace_path` and `baseline_commit` for `implement`, `verify`, `review`, and
   `deliver`;

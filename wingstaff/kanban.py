@@ -7,6 +7,7 @@ import shlex
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 
+from .constraints import WorkflowConstraints
 from .packs import WorkflowPack
 from .state import WorkflowLedger, WorkflowStage
 
@@ -46,6 +47,8 @@ class KanbanGraphAdapter:
 
     dispatch_tool: ToolDispatcher
 
+    MAX_CARD_BODY_CHARS = 8192
+
     def validate_assignees(self, board_slug: str, profiles: Sequence[str]) -> None:
         command = (
             f"hermes kanban --board {shlex.quote(board_slug)} assignees --json"
@@ -72,7 +75,10 @@ class KanbanGraphAdapter:
         *,
         stage: WorkflowStage,
         parents: Sequence[str] = (),
+        constraints: WorkflowConstraints | None = None,
     ) -> KanbanTask:
+        if (ledger.current_constraints is None) != (constraints is None):
+            raise KanbanError("card constraints do not match the current workflow identity")
         if stage in {
             WorkflowStage.IMPLEMENT,
             WorkflowStage.VERIFY,
@@ -89,11 +95,15 @@ class KanbanGraphAdapter:
             if stage in {WorkflowStage.DEFINE, WorkflowStage.PLAN}
             else ledger.plan_revision
         )
-        idempotency_key = f"wingstaff:{ledger.workflow_id}:{revision}:{stage.value}"
+        constraint_key = ledger.current_constraints_digest or "none"
+        idempotency_key = (
+            f"wingstaff:{ledger.workflow_id}:{revision}:{ledger.policy_revision}:"
+            f"{constraint_key}:{stage.value}"
+        )
         args: dict[str, object] = {
             "title": f"wingstaff {ledger.workflow_id}: {stage.value}",
             "assignee": ledger.profile_for(stage),
-            "body": self._card_body(ledger, stage),
+            "body": self._card_body(ledger, stage, constraints),
             "parents": list(parents),
             "idempotency_key": idempotency_key,
             "skills": self._stage_skills(pack, stage),
@@ -204,11 +214,17 @@ class KanbanGraphAdapter:
             f"hermes kanban --board {shlex.quote(ledger.board_slug)} archive {ids}"
         )
 
-    def _card_body(self, ledger: WorkflowLedger, stage: WorkflowStage) -> str:
+    def _card_body(
+        self,
+        ledger: WorkflowLedger,
+        stage: WorkflowStage,
+        constraints: WorkflowConstraints | None,
+    ) -> str:
         lines = [
             f"Wingstaff workflow: {ledger.workflow_id}",
             f"Stage: {stage.value}",
             f"Plan revision: {ledger.plan_revision}",
+            f"Policy revision: {ledger.policy_revision}",
             f"Pack: {ledger.pack_name}",
             f"Pack revision: {ledger.pack_source_revision}",
             f"Goal: {ledger.requested_goal}",
@@ -217,8 +233,37 @@ class KanbanGraphAdapter:
             lines.append(f"Plan digest: {ledger.current_plan_digest}")
         if ledger.worktree_path:
             lines.append(f"Persistent worktree: {ledger.worktree_path}")
+        current = ledger.current_constraints
+        lines.extend(
+            [
+                "--- Workflow constraints ---",
+                "Constraint revision: "
+                f"{current.identity.constraints_revision if current else 'none'}",
+                f"Constraint digest: {current.identity.digest if current else 'none'}",
+                f"Constraint artifact: {current.path if current else 'none'}",
+            ]
+        )
+        if constraints is not None:
+            applicable = (
+                constraints.global_constraints
+                if stage is WorkflowStage.APPROVAL
+                else constraints.constraints_for(stage)
+            )
+            lines.extend(f"- {constraint}" for constraint in applicable)
+        lines.extend(
+            [
+                "Block if a constraint conflicts with requested work or prescribes "
+                "methodology/capabilities.",
+                "--- End workflow constraints ---",
+            ]
+        )
         lines.append("Use Wingstaff policy/evidence tools; Hermes Kanban owns lifecycle state.")
-        return "\n".join(lines)
+        body = "\n".join(lines)
+        if len(body) > self.MAX_CARD_BODY_CHARS:
+            raise KanbanError(
+                f"rendered Kanban card body must be at most {self.MAX_CARD_BODY_CHARS} characters"
+            )
+        return body
 
     @staticmethod
     def _stage_skills(pack: WorkflowPack, stage: WorkflowStage) -> list[str]:

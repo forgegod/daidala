@@ -132,6 +132,8 @@ class ActivationManifest:
     sequence: int
     supersedes_digest: str | None
     decisions: tuple[ActivationDecision, ...]
+    policy_revision: int = 0
+    constraints_digest: str | None = None
 
     def __post_init__(self) -> None:
         if self.schema != _ACTIVATION_SCHEMA:
@@ -140,6 +142,9 @@ class ActivationManifest:
         if not isinstance(self.stage, WorkflowStage) or self.stage is WorkflowStage.APPROVAL:
             raise PolicyViolationError("approval has no skill activation manifest")
         _require_revision(self.plan_revision)
+        _require_revision(self.policy_revision)
+        if self.constraints_digest is not None:
+            _require_digest(self.constraints_digest, "activation constraint digest")
         _require_text(self.pack, "activation pack")
         if not isinstance(self.pack_source_revision, str) or not _REVISION.fullmatch(
             self.pack_source_revision
@@ -176,6 +181,8 @@ class ActivationManifest:
             "workflow_id": self.workflow_id,
             "stage": self.stage.value,
             "plan_revision": self.plan_revision,
+            "policy_revision": self.policy_revision,
+            "constraints_digest": self.constraints_digest,
             "pack": self.pack,
             "pack_source_revision": self.pack_source_revision,
             "sequence": self.sequence,
@@ -195,6 +202,7 @@ class ActivationManifest:
             {
                 "schema", "workflow_id", "stage", "plan_revision", "pack",
                 "pack_source_revision", "sequence", "supersedes_digest", "decisions",
+                "policy_revision", "constraints_digest",
             },
             "activation manifest",
         )
@@ -209,6 +217,8 @@ class ActivationManifest:
                 sequence=raw["sequence"],
                 supersedes_digest=raw["supersedes_digest"],
                 decisions=tuple(ActivationDecision.from_dict(row) for row in raw["decisions"]),
+                policy_revision=raw["policy_revision"],
+                constraints_digest=raw["constraints_digest"],
             )
         except (KeyError, TypeError, ValueError) as error:
             raise PolicyViolationError(f"invalid activation manifest: {error}") from error
@@ -224,6 +234,8 @@ class ActivationManifestReference:
     state: ActivationReferenceState
     blocked: bool
     supersedes_digest: str | None
+    policy_revision: int = 0
+    constraints_digest: str | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.stage, WorkflowStage) or self.stage is WorkflowStage.APPROVAL:
@@ -231,6 +243,9 @@ class ActivationManifestReference:
         if not isinstance(self.state, ActivationReferenceState):
             raise PolicyViolationError("activation reference state must be pending or finalized")
         _require_revision(self.plan_revision)
+        _require_revision(self.policy_revision)
+        if self.constraints_digest is not None:
+            _require_digest(self.constraints_digest, "activation constraint digest")
         if (
             isinstance(self.sequence, bool)
             or not isinstance(self.sequence, int)
@@ -248,6 +263,8 @@ class ActivationManifestReference:
         return {
             "stage": self.stage.value,
             "plan_revision": self.plan_revision,
+            "policy_revision": self.policy_revision,
+            "constraints_digest": self.constraints_digest,
             "sequence": self.sequence,
             "path": self.path,
             "digest": self.digest,
@@ -262,7 +279,7 @@ class ActivationManifestReference:
             raw,
             {
                 "stage", "plan_revision", "sequence", "path", "digest", "state",
-                "blocked", "supersedes_digest",
+                "blocked", "supersedes_digest", "policy_revision", "constraints_digest",
             },
             "activation reference",
         )
@@ -276,6 +293,8 @@ class ActivationManifestReference:
                 state=ActivationReferenceState(raw["state"]),
                 blocked=raw["blocked"],
                 supersedes_digest=raw["supersedes_digest"],
+                policy_revision=raw["policy_revision"],
+                constraints_digest=raw["constraints_digest"],
             )
         except (KeyError, TypeError, ValueError) as error:
             raise PolicyViolationError(f"invalid activation reference: {error}") from error
@@ -591,9 +610,14 @@ class CardReference:
     plan_revision: int
     task_id: str
     idempotency_key: str
+    policy_revision: int = 0
+    constraints_digest: str | None = None
 
     def __post_init__(self) -> None:
         _require_revision(self.plan_revision)
+        _require_revision(self.policy_revision)
+        if self.constraints_digest is not None:
+            _require_digest(self.constraints_digest, "card constraint digest")
         _require_text(self.task_id, "Kanban task ID")
         _require_text(self.idempotency_key, "Kanban idempotency key")
 
@@ -601,6 +625,8 @@ class CardReference:
         return {
             "stage": self.stage.value,
             "plan_revision": self.plan_revision,
+            "policy_revision": self.policy_revision,
+            "constraints_digest": self.constraints_digest,
             "task_id": self.task_id,
             "idempotency_key": self.idempotency_key,
         }
@@ -612,6 +638,8 @@ class CardReference:
             plan_revision=raw["plan_revision"],
             task_id=raw["task_id"],
             idempotency_key=raw["idempotency_key"],
+            policy_revision=raw["policy_revision"],
+            constraints_digest=raw["constraints_digest"],
         )
 
 
@@ -697,7 +725,8 @@ class WorkflowLedger:
             raise PolicyViolationError("workflow requires exactly one profile per executable stage")
 
         card_keys = [
-            (card.stage, card.plan_revision) for card in self.card_references
+            (card.stage, card.plan_revision, card.policy_revision)
+            for card in self.card_references
         ]
         if len(card_keys) != len(set(card_keys)):
             raise PolicyViolationError("workflow cannot contain duplicate stage card references")
@@ -773,6 +802,11 @@ class WorkflowLedger:
     def current_constraints(self) -> WorkflowConstraintsReference | None:
         return self.constraint_references[-1] if self.constraint_references else None
 
+    @property
+    def current_constraints_digest(self) -> str | None:
+        current = self.current_constraints
+        return current.identity.digest if current else None
+
     def artifact_for(self, stage: WorkflowStage) -> ArtifactReference | None:
         revision = 0 if stage is WorkflowStage.DEFINE else self.plan_revision
         return next(
@@ -790,7 +824,10 @@ class WorkflowLedger:
             (
                 card
                 for card in self.card_references
-                if card.stage is stage and card.plan_revision == revision
+                if card.stage is stage
+                and card.plan_revision == revision
+                and card.policy_revision == self.policy_revision
+                and card.constraints_digest == self.current_constraints_digest
             ),
             None,
         )
@@ -809,7 +846,10 @@ class WorkflowLedger:
         references = [
             reference
             for reference in self.activation_manifests
-            if reference.stage is stage and reference.plan_revision == revision
+            if reference.stage is stage
+            and reference.plan_revision == revision
+            and reference.policy_revision == self.policy_revision
+            and reference.constraints_digest == self.current_constraints_digest
         ]
         if not references or references[-1].state is not ActivationReferenceState.FINALIZED:
             return None

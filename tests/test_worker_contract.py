@@ -82,6 +82,11 @@ def test_worker_contract_requires_kanban_handoff_and_recovery_protocol() -> None
         "`transient` only for genuinely flaky host failures",
         "approval from a generic unblock",
         "exactly one `kanban_complete` or `kanban_block` call",
+        "policy revision, constraint revision and digest",
+        "current Wingstaff status before applying methodology",
+        "never continue from a superseded card",
+        "Apply every global constraint and only the current stage's phase constraints",
+        "`constraints_revision`, `constraints_digest`",
     )
     for statement in required:
         assert statement in instructions
