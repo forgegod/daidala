@@ -9,6 +9,7 @@ import shlex
 import subprocess
 from collections.abc import Callable
 from importlib import resources
+from pathlib import Path
 from typing import NoReturn, cast
 
 from .kanban import KanbanGraphAdapter
@@ -59,11 +60,20 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     )
     start.add_argument("--pack", default="addyosmani")
     start.add_argument("--workflow-id", required=True)
+    _add_constraint_source_arguments(start)
 
     status = sub.add_parser(
         "status", help="Show Wingstaff policy facts and live Kanban card status"
     )
     status.add_argument("workflow_id")
+
+    replace_constraints = sub.add_parser(
+        "replace-constraints",
+        help="Replace workflow constraints from a file or exact installed policy skill",
+    )
+    replace_constraints.add_argument("workflow_id")
+    replace_constraints.add_argument("expected_current_digest", nargs="?", default=None)
+    _add_constraint_source_arguments(replace_constraints, required=True)
 
     approve = sub.add_parser("approve", help="Approve the exact current plan digest")
     approve.add_argument("workflow_id")
@@ -104,6 +114,52 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
         "update-plan", help="Plan controlled changes without mutating installed skills"
     )
     update_plan.add_argument("name")
+
+
+def _add_constraint_source_arguments(
+    parser: argparse.ArgumentParser, *, required: bool = False
+) -> None:
+    source = parser.add_mutually_exclusive_group(required=required)
+    source.add_argument(
+        "--constraints-file",
+        type=Path,
+        help="Read one workflow-constraint YAML document from this UTF-8 file",
+    )
+    source.add_argument(
+        "--constraints-skill",
+        help="Resolve an exact installed policy skill containing one fenced YAML document",
+    )
+    parser.add_argument(
+        "--constraints-skill-digest",
+        help="Expected SHA-256 digest of the complete installed policy-skill directory",
+    )
+
+
+def _constraint_source_values(args: argparse.Namespace) -> dict[str, str | None]:
+    path = getattr(args, "constraints_file", None)
+    skill = getattr(args, "constraints_skill", None)
+    digest = getattr(args, "constraints_skill_digest", None)
+    if path is not None:
+        if digest is not None:
+            raise ValueError("--constraints-skill-digest requires --constraints-skill")
+        try:
+            content = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError) as error:
+            raise ValueError(f"cannot read constraint file: {path}") from error
+        return {
+            "constraints_content": content,
+            "constraints_skill": None,
+            "constraints_skill_digest": None,
+        }
+    if skill is not None and digest is None:
+        raise ValueError("--constraints-skill requires --constraints-skill-digest")
+    if skill is None and digest is not None:
+        raise ValueError("--constraints-skill-digest requires --constraints-skill")
+    return {
+        "constraints_content": None,
+        "constraints_skill": skill,
+        "constraints_skill_digest": digest,
+    }
 
 
 def build_parser(*, prog: str = "wingstaff") -> argparse.ArgumentParser:
@@ -165,7 +221,7 @@ def run_command(
                 command_runner=command_runner,
                 operation="doctor",
             )
-        if args.command in {"start", "status", "approve", "cancel"}:
+        if args.command in {"start", "status", "replace-constraints", "approve", "cancel"}:
             selected_factory = service_factory or (
                 lambda: _default_service(command_runner=command_runner)
             )
@@ -220,6 +276,7 @@ def _run_lifecycle(args: argparse.Namespace, service_factory: ServiceFactory) ->
             stage_profiles=_parse_stage_profiles(args.profile, args.stage_profile),
             pack_name=args.pack,
             workflow_id=args.workflow_id,
+            **_constraint_source_values(args),
         )
 
     elif args.command == "status":
@@ -235,6 +292,15 @@ def _run_lifecycle(args: argparse.Namespace, service_factory: ServiceFactory) ->
             }
         )
         return 0
+    elif args.command == "replace-constraints":
+        source = _constraint_source_values(args)
+        state = service.replace_constraint_input(
+            args.workflow_id,
+            expected_current_digest=args.expected_current_digest,
+            content=source["constraints_content"],
+            skill_name=source["constraints_skill"],
+            skill_digest=source["constraints_skill_digest"],
+        )
     elif args.command == "approve":
         state = service.approve(args.workflow_id, plan_digest=args.plan_digest)
     else:

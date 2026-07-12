@@ -83,6 +83,9 @@ def start(args: dict[str, Any], **kwargs: Any) -> str:
             "stage_profiles",
             "pack",
             "workflow_id",
+            "constraints_content",
+            "constraints_skill",
+            "constraints_skill_digest",
         },
         required={
             "board_slug",
@@ -98,7 +101,39 @@ def start(args: dict[str, Any], **kwargs: Any) -> str:
             stage_profiles=values["stage_profiles"],
             pack_name=str(values.get("pack") or "addyosmani"),
             workflow_id=str(values["workflow_id"]),
+            constraints_content=values.get("constraints_content"),
+            constraints_skill=values.get("constraints_skill"),
+            constraints_skill_digest=values.get("constraints_skill_digest"),
         ),
+    )
+
+
+def replace_constraints(args: dict[str, Any], **kwargs: Any) -> str:
+    """Replace constraints from explicit content or an exact installed policy skill."""
+    del kwargs
+
+    def operation(service: WorkflowService, values: dict[str, Any]):
+        if "expected_current_digest" not in values:
+            raise ValueError("missing required arguments: expected_current_digest")
+        return service.replace_constraint_input(
+            str(values["workflow_id"]),
+            expected_current_digest=values["expected_current_digest"],
+            content=values.get("constraints_content"),
+            skill_name=values.get("constraints_skill"),
+            skill_digest=values.get("constraints_skill_digest"),
+        )
+
+    return _service_handler(
+        args,
+        allowed={
+            "workflow_id",
+            "expected_current_digest",
+            "constraints_content",
+            "constraints_skill",
+            "constraints_skill_digest",
+        },
+        required={"workflow_id"},
+        operation=operation,
     )
 
 

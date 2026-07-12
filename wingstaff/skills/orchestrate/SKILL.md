@@ -30,9 +30,12 @@ not depend on the launcher session retaining these instructions.
    Kanban board, an explicit stable workflow ID, and a complete mapping from
    every executable stage to an existing Hermes profile.
 2. Call `wingstaff_start` with that board, workflow ID, stage-profile mapping,
-   absolute local repository path, and explicit goal. Start validates the clean
-   repository baseline, exact skills, and profiles before it creates the linked
-   definition and plan cards. Stop on any validation or host error.
+   absolute local repository path, explicit goal, and any operator-selected
+   `constraints_content` or exact `constraints_skill` plus
+   `constraints_skill_digest`. Never infer a policy source. Start validates the
+   clean repository baseline, exact skills, policy source, and profiles before
+   it creates the linked definition and plan cards. Stop on any validation or
+   host error.
 3. Stop launching. Hermes Kanban dispatches `define` and promotes the linked
    cards as their parents complete. Use `wingstaff_status` and normal Kanban
    surfaces to inspect or resume; do not execute stage work in the launcher.

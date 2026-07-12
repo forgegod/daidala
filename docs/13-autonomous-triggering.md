@@ -108,7 +108,9 @@ into a bounded development goal.
 
 Cron sessions are fresh sessions with no memory of the chat that created them.
 The prompt must therefore contain the complete admission policy and every
-`wingstaff_start` argument:
+`wingstaff_start` argument. When the workflow is constrained, include either
+explicit `constraints_content` or the exact `constraints_skill` and
+`constraints_skill_digest`; never ask the agent to infer a policy source:
 
 ```bash
 hermes cron create "every 15m" \

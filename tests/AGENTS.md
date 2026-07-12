@@ -51,6 +51,9 @@ completeness without touching a real Hermes profile.
 - Constraint replacement coverage must prove exact approval binding, durable
   invalidation before host mutation, owned-worktree cleanup, obsolete-card
   archival, fresh define/plan creation, idempotent retry, and cross-pack behavior.
+- Tool and CLI constraint-source coverage must prove inline/file parity, exact
+  skill-directory digest verification, strict single-fence extraction, and
+  identical standalone/native service dispatch.
 - Every new packaged resource requires a wheel-content assertion.
 
 ## Verification

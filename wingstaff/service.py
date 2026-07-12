@@ -11,7 +11,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
-from .constraints import WorkflowConstraints, parse_workflow_constraints
+from .constraints import (
+    WorkflowConstraints,
+    extract_policy_skill_constraints,
+    parse_workflow_constraints,
+)
 from .errors import WorkflowError
 from .execution import ExecutionError, ExecutionWorkspace
 from .kanban import KanbanCardStatus, KanbanGraphAdapter
@@ -92,11 +96,19 @@ class WorkflowService:
         stage_profiles: dict[str, str],
         pack_name: str = "addyosmani",
         workflow_id: str | None = None,
+        constraints_content: str | None = None,
+        constraints_skill: str | None = None,
+        constraints_skill_digest: str | None = None,
     ) -> WorkflowLedger:
         """Validate inputs and create or resume the initial Kanban graph."""
         pack = load_pack(pack_name)
         require_pack_skills(pack, self._skill_inventory)
         require_pack_skill_revisions(pack, self._skill_content_registry)
+        constraint_input = self._resolve_constraint_input(
+            content=constraints_content,
+            skill_name=constraints_skill,
+            skill_digest=constraints_skill_digest,
+        )
         kanban = self._require_kanban()
         selected_id = workflow_id or self._id_factory()
         self._workspace.validate_workflow_id(selected_id)
@@ -116,6 +128,12 @@ class WorkflowService:
                 pack_name=pack.name,
                 stage_profiles=profiles,
             )
+            if constraint_input is not None:
+                constraints, source = constraint_input
+                if existing.current_constraints_digest != constraints.digest:
+                    raise ServiceError("restart constraint content does not match")
+                if existing.constraint_references[-1].source != source:
+                    raise ServiceError("restart constraint source does not match")
             return self._ensure_initial_graph(existing, pack)
         target = _canonical_local_path(target_repository)
         baseline, is_clean = _inspect_repository(target)
@@ -137,11 +155,46 @@ class WorkflowService:
             stage_profiles=profiles,
             created_at=self._clock(),
         )
-        return self._ensure_initial_graph(self.store.create(ledger), pack)
+        created = self.store.create(ledger)
+        if constraint_input is None:
+            return self._ensure_initial_graph(created, pack)
+        constraints, source = constraint_input
+        return self.replace_constraints(
+            selected_id,
+            content=constraints.canonical_bytes().decode("utf-8"),
+            expected_current_digest=None,
+            source=source,
+        )
 
     def status(self, workflow_id: str) -> WorkflowLedger:
         """Return Wingstaff policy facts without reading or copying Kanban status."""
         return self.store.get(workflow_id)
+
+    def _resolve_constraint_input(
+        self,
+        *,
+        content: str | None,
+        skill_name: str | None,
+        skill_digest: str | None,
+    ) -> tuple[WorkflowConstraints, ConstraintSourceProvenance | None] | None:
+        if content is not None and skill_name is not None:
+            raise ServiceError("constraint content and constraint skill are mutually exclusive")
+        if skill_digest is not None and skill_name is None:
+            raise ServiceError("constraint skill digest requires a constraint skill")
+        if content is not None:
+            return parse_workflow_constraints(content), None
+        if skill_name is None:
+            return None
+        if skill_digest is None:
+            raise ServiceError("constraint skill requires its installed directory digest")
+        observed_digest = self._skill_content_registry.content_digest(skill_name)
+        if observed_digest != skill_digest:
+            raise ServiceError("constraint skill digest does not match installed content")
+        markdown = self._skill_content_registry.skill_markdown(skill_name)
+        if markdown is None:
+            raise ServiceError(f"constraint skill is not installed: {skill_name!r}")
+        constraints = parse_workflow_constraints(extract_policy_skill_constraints(markdown))
+        return constraints, ConstraintSourceProvenance(skill_name, skill_digest)
 
     def combined_status(self, workflow_id: str) -> tuple[KanbanCardStatus, ...]:
         """Read live card status without persisting it in Wingstaff."""
@@ -269,6 +322,31 @@ class WorkflowService:
             ledger = release_worktree(observed.ledger, released_at=self._clock())
             ledger = self.store.update(ledger, expected_updated_at=observed.updated_at)
         return self._ensure_initial_graph(ledger, load_pack(ledger.pack_name))
+
+    def replace_constraint_input(
+        self,
+        workflow_id: str,
+        *,
+        expected_current_digest: str | None,
+        content: str | None = None,
+        skill_name: str | None = None,
+        skill_digest: str | None = None,
+    ) -> WorkflowLedger:
+        """Resolve one explicit source and replace the current constraint revision."""
+        resolved = self._resolve_constraint_input(
+            content=content,
+            skill_name=skill_name,
+            skill_digest=skill_digest,
+        )
+        if resolved is None:
+            raise ServiceError("constraint replacement requires content or a constraint skill")
+        constraints, source = resolved
+        return self.replace_constraints(
+            workflow_id,
+            content=constraints.canonical_bytes().decode("utf-8"),
+            expected_current_digest=expected_current_digest,
+            source=source,
+        )
 
     def cancel(self, workflow_id: str, reason: str) -> WorkflowLedger:
         """Remove a Wingstaff-owned worktree; Kanban owns cancellation state."""

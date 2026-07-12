@@ -48,6 +48,8 @@ class SkillContentRegistry(Protocol):
 
     def content_digest(self, name: str) -> str | None: ...
 
+    def skill_markdown(self, name: str) -> str | None: ...
+
 
 @dataclass(frozen=True)
 class HermesSkillInventory:
@@ -91,12 +93,25 @@ class ProfileSkillContentRegistry:
         return frozenset(path.parent.name for path in self.skills_root.rglob("SKILL.md"))
 
     def content_digest(self, name: str) -> str | None:
-        candidates = tuple(self.skills_root.rglob(f"{name}/SKILL.md"))
+        candidates = self._candidates(name)
         if not candidates:
             return None
-        if len(candidates) != 1:
-            raise SkillRevisionError(f"multiple installed directories provide {name!r}")
         return hash_skill_directory(candidates[0].parent)
+
+    def skill_markdown(self, name: str) -> str | None:
+        candidates = self._candidates(name)
+        if not candidates:
+            return None
+        try:
+            return candidates[0].read_text(encoding="utf-8")
+        except OSError as error:
+            raise SkillRevisionError(f"cannot read installed skill {name!r}") from error
+
+    def _candidates(self, name: str) -> tuple[Path, ...]:
+        candidates = tuple(self.skills_root.rglob(f"{name}/SKILL.md"))
+        if len(candidates) > 1:
+            raise SkillRevisionError(f"multiple installed directories provide {name!r}")
+        return candidates
 
 
 @dataclass(frozen=True)
@@ -349,6 +364,10 @@ def content_registry_from_digests(
     class _Registry:
         def content_digest(self, name: str) -> str | None:
             return installed.get(name)
+
+        def skill_markdown(self, name: str) -> str | None:
+            del name
+            return None
 
     return _Registry()
 

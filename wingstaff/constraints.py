@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import unicodedata
 from dataclasses import dataclass
 from typing import Any
@@ -168,6 +169,28 @@ def parse_workflow_constraints(content: str) -> WorkflowConstraints:
     except yaml.YAMLError as error:
         raise PolicyViolationError(f"invalid constraint YAML: {error}") from error
     return WorkflowConstraints.from_dict(raw)
+
+
+def extract_policy_skill_constraints(markdown: str) -> str:
+    """Extract the sole fenced YAML policy document from an installed SKILL.md."""
+    if not isinstance(markdown, str) or not markdown.startswith("---\n"):
+        raise PolicyViolationError("policy skill requires YAML frontmatter")
+    frontmatter_end = markdown.find("\n---\n", 4)
+    if frontmatter_end < 0:
+        raise PolicyViolationError("policy skill frontmatter is not terminated")
+    body = markdown[frontmatter_end + 5 :].strip()
+    if body.count("```") != 2:
+        raise PolicyViolationError(
+            "policy skill body must contain exactly one fenced yaml document"
+        )
+    match = re.fullmatch(r"```yaml\n(?P<content>.+)\n```", body, flags=re.DOTALL)
+    if match is None:
+        raise PolicyViolationError(
+            "policy skill body must contain exactly one fenced yaml document"
+        )
+    content = match.group("content")
+    parse_workflow_constraints(content)
+    return content
 
 
 def _as_constraint_tuple(value: Any, label: str) -> tuple[str, ...]:

@@ -37,7 +37,9 @@ def test_profile_registry_hashes_complete_skill_directory(tmp_path: Path) -> Non
 
     assert registry.installed_names() == frozenset({"idea-refine"})
     assert registry.content_digest("idea-refine") == hash_skill_directory(skill)
+    assert registry.skill_markdown("idea-refine") == "skill\n"
     assert registry.content_digest("missing") is None
+    assert registry.skill_markdown("missing") is None
 
 
 def test_install_plan_blocks_source_content_host_and_recursive_drift() -> None:

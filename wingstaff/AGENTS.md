@@ -46,6 +46,9 @@ workflow-pack adapters, and bundled orchestration skills.
 - External packs pin a Git source revision, bounded Hermes version, and complete-directory digest per required skill.
 - Standalone CLI inventory comes from the profile skill directory; it never imports Hermes runtime internals.
 - Native and standalone operator commands share one parser and dispatch layer; setup and external installation remain dry-run by default.
+- Constraint file and exact policy-skill inputs converge on the shared service
+  path. Policy skills require a verified complete-directory digest and exactly
+  one fenced `yaml` constraint document after frontmatter.
 - Hermes Kanban owns every operational status; Wingstaff persists no mirrored
   ready, running, blocked, done, or archived field.
 - Agent-facing Kanban integration uses `ctx.dispatch_tool`; native and standalone
@@ -66,9 +69,13 @@ the same names. `schemas.py::START` defines the JSON schema the model sees;
 
 - Tool parameters: `board_slug`, `target_repository`, `goal`, `stage_profiles`
   (object keyed by stage with values `define`, `plan`, `implement`, `verify`,
-  `review`, `deliver`), `pack` (default `addyosmani`), `workflow_id`.
+  `review`, `deliver`), `pack` (default `addyosmani`), `workflow_id`, and the
+  mutually exclusive `constraints_content` or `constraints_skill` plus
+  `constraints_skill_digest` source.
 - CLI flags: positional `target_repository` and `goal`; `--board`, `--pack`,
-  `--default-profile`, repeated `--stage-profile STAGE=PROFILE`, `--workflow-id`.
+  `--default-profile`, repeated `--stage-profile STAGE=PROFILE`, `--workflow-id`,
+  and mutually exclusive `--constraints-file` or `--constraints-skill` with
+  `--constraints-skill-digest`.
 - `--default-profile` fills every executable stage whose per-stage override
   is omitted, so a prompt may list only the stages that differ from the
   default. Operators reading a snippet must not interpret missing

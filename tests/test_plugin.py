@@ -36,6 +36,7 @@ def test_register_exposes_tool_and_namespaced_skill_source() -> None:
         "wingstaff_pack_info",
         "wingstaff_start",
         "wingstaff_status",
+        "wingstaff_replace_constraints",
         "wingstaff_approve",
         "wingstaff_cancel",
         "wingstaff_submit_artifact",

@@ -281,6 +281,42 @@ def test_start_rejects_dirty_target_without_persisting_status(
     assert service.store.list_all() == ()
 
 
+def test_tool_start_and_replacement_use_explicit_constraint_content(
+    service: WorkflowService,
+    target_repository: Path,
+) -> None:
+    first = "schema: wingstaff.workflow-constraints/v1\nglobal: [Never push.]\n"
+    started = call(
+        tools.start,
+        {
+            "board_slug": "wingstaff-test",
+            "target_repository": str(target_repository),
+            "goal": "Constrained workflow",
+            "stage_profiles": STAGE_PROFILES,
+            "workflow_id": "workflow-constraints",
+            "constraints_content": first,
+        },
+    )
+
+    assert started["success"] is True
+    current = started["workflow"]["constraint_references"][-1]["identity"]["digest"]
+    replaced = call(
+        tools.replace_constraints,
+        {
+            "workflow_id": "workflow-constraints",
+            "expected_current_digest": current,
+            "constraints_content": (
+                "schema: wingstaff.workflow-constraints/v1\n"
+                "global: [Never push., Preserve audit history.]\n"
+            ),
+        },
+    )
+
+    assert replaced["success"] is True
+    assert replaced["workflow"]["policy_revision"] == 2
+    assert replaced["workflow"]["constraint_references"][-1]["identity"]["digest"] != current
+
+
 def test_approve_binds_exact_digest_and_service_replacement_invalidates_it(
     service: WorkflowService,
     target_repository: Path,
@@ -607,6 +643,7 @@ def test_public_schemas_have_no_removed_lifecycle_aliases() -> None:
         "wingstaff_pack_info",
         "wingstaff_start",
         "wingstaff_status",
+        "wingstaff_replace_constraints",
         "wingstaff_approve",
         "wingstaff_cancel",
         "wingstaff_submit_artifact",

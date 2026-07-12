@@ -50,6 +50,9 @@ START = {
             },
             "pack": {"type": "string", "default": "addyosmani"},
             "workflow_id": {"type": "string"},
+            "constraints_content": {"type": "string"},
+            "constraints_skill": {"type": "string"},
+            "constraints_skill_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         },
         "required": [
             "board_slug",
@@ -58,6 +61,29 @@ START = {
             "stage_profiles",
             "workflow_id",
         ],
+        "additionalProperties": False,
+    },
+}
+
+REPLACE_CONSTRAINTS = {
+    "name": "wingstaff_replace_constraints",
+    "description": "Replace workflow constraints from explicit content or an exact policy skill.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "workflow_id": {"type": "string"},
+            "expected_current_digest": {
+                "type": ["string", "null"],
+                "pattern": "^[0-9a-f]{64}$",
+            },
+            "constraints_content": {"type": "string"},
+            "constraints_skill": {"type": "string"},
+            "constraints_skill_digest": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$",
+            },
+        },
+        "required": ["workflow_id", "expected_current_digest"],
         "additionalProperties": False,
     },
 }
@@ -231,7 +257,7 @@ DELIVER = {
     },
 }
 
-LIFECYCLE_TOOLS = (START, STATUS, APPROVE, CANCEL)
+LIFECYCLE_TOOLS = (START, STATUS, REPLACE_CONSTRAINTS, APPROVE, CANCEL)
 EXECUTION_TOOLS = (
     SUBMIT_ARTIFACT,
     PREPARE_IMPLEMENTATION,

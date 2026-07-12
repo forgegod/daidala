@@ -53,6 +53,9 @@ class FakeService:
     def status(self, workflow_id: str) -> FakeState:
         return self._call("status", workflow_id)
 
+    def replace_constraint_input(self, workflow_id: str, **kwargs: Any) -> FakeState:
+        return self._call("replace_constraint_input", workflow_id, **kwargs)
+
     def approve(self, workflow_id: str, *, plan_digest: str) -> FakeState:
         return self._call("approve", workflow_id, plan_digest=plan_digest)
 
@@ -204,6 +207,58 @@ def test_default_profile_expands_without_stage_overrides(capsys) -> None:
     assert code == 0
     assert set(service.calls[0][2]["stage_profiles"].values()) == {"engineer"}
     assert json.loads(capsys.readouterr().out)["success"] is True
+
+
+def test_constraint_file_start_and_replacement_share_service_paths(tmp_path, capsys) -> None:
+    constraint_file = tmp_path / "constraints.yaml"
+    constraint_file.write_text(
+        "schema: wingstaff.workflow-constraints/v1\nglobal: [Never push.]\n",
+        encoding="utf-8",
+    )
+    service = FakeService()
+
+    start_code = cli.main(
+        [
+            "start", "/repo", "Implement feature", "--board", "wingstaff-test",
+            "--default-profile", "engineer", "--workflow-id", "wf-1",
+            "--constraints-file", str(constraint_file),
+        ],
+        service_factory=_factory(service),
+    )
+    capsys.readouterr()
+    replace_code = cli.run_command(
+        _host_args(
+            ["replace-constraints", "wf-1", "a" * 64,
+             "--constraints-file", str(constraint_file)]
+        ),
+        service_factory=_factory(service),
+    )
+
+    assert start_code == replace_code == 0
+    assert service.calls[0][2]["constraints_content"].startswith("schema:")
+    assert service.calls[1] == (
+        "replace_constraint_input",
+        ("wf-1",),
+        {
+            "expected_current_digest": "a" * 64,
+            "content": constraint_file.read_text(encoding="utf-8"),
+            "skill_name": None,
+            "skill_digest": None,
+        },
+    )
+
+
+def test_constraint_skill_requires_exact_digest_before_service_call(capsys) -> None:
+    service = FakeService()
+
+    code = cli.main(
+        ["replace-constraints", "wf-1", "--constraints-skill", "no-push-policy"],
+        service_factory=_factory(service),
+    )
+
+    assert code == 1
+    assert service.calls == []
+    assert "requires --constraints-skill-digest" in json.loads(capsys.readouterr().out)["message"]
 
 
 def test_cli_kanban_dispatch_translates_public_create_and_show_commands() -> None:

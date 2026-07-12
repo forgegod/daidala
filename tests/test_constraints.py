@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from wingstaff.constraints import parse_workflow_constraints
+from wingstaff.constraints import extract_policy_skill_constraints, parse_workflow_constraints
 from wingstaff.errors import PolicyViolationError
 from wingstaff.state import (
     ConstraintSourceProvenance,
@@ -30,6 +30,38 @@ phases:
       Documentation must match changed contracts.
       Describe required operator action.
 """
+
+
+def test_policy_skill_extracts_only_the_fenced_yaml_document() -> None:
+    markdown = f"""---
+name: no-push-policy
+description: Reusable delivery constraints.
+---
+```yaml
+{VALID.rstrip()}
+```
+"""
+
+    content = extract_policy_skill_constraints(markdown)
+
+    assert content == VALID.rstrip()
+    assert parse_workflow_constraints(content).global_constraints[0] == "Never commit or push."
+
+
+@pytest.mark.parametrize(
+    "body",
+    (
+        VALID,
+        f"Prose before.\n```yaml\n{VALID.rstrip()}\n```",
+        f"```yml\n{VALID.rstrip()}\n```",
+        f"```yaml\n{VALID.rstrip()}\n```\n```yaml\n{VALID.rstrip()}\n```",
+    ),
+)
+def test_policy_skill_rejects_any_body_other_than_one_yaml_fence(body: str) -> None:
+    markdown = f"---\nname: no-push-policy\n---\n{body}\n"
+
+    with pytest.raises(PolicyViolationError, match="exactly one fenced yaml"):
+        extract_policy_skill_constraints(markdown)
 
 
 def test_plain_quoted_literal_and_folded_scalars_canonicalize() -> None:

@@ -22,6 +22,7 @@ def register(ctx) -> None:
         "wingstaff_pack_info": tools.pack_info,
         "wingstaff_start": tools.start,
         "wingstaff_status": tools.status,
+        "wingstaff_replace_constraints": tools.replace_constraints,
         "wingstaff_approve": tools.approve,
         "wingstaff_cancel": tools.cancel,
         "wingstaff_submit_artifact": tools.submit_artifact,

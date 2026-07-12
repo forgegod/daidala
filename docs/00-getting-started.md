@@ -61,6 +61,12 @@ Inputs:
 - `--pack`: `aidlc` for the bundled first-run path or `addyosmani` after its
   external skills pass `packs check`;
 - `--workflow-id`: a stable identifier reused for restart-safe invocation.
+- optional `--constraints-file PATH` or `--constraints-skill NAME` with
+  `--constraints-skill-digest SHA256`: the initial workflow policy source.
+
+Use `hermes wingstaff replace-constraints WORKFLOW_ID EXPECTED_DIGEST` with the
+same file/skill selectors to create a new policy revision. Pass no positional
+digest only when the workflow currently has no constraints.
 
 Do not use `--profile`; Hermes consumes that host-level option before the plugin
 subcommand parser receives it. Override individual stages only when needed:
