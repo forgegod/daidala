@@ -198,6 +198,11 @@ class DashboardBackend:
         return {
             "workflow_id": workflow_id,
             "workflow": _workflow_summary(ledger),
+            "constraints": (
+                _constraint_view_to_dict(view)
+                if (view := self._read_current_constraint_view(ledger)) is not None
+                else None
+            ),
             "kanban": {
                 "available": True,
                 "cards": [snapshot.to_dict() for snapshot in snapshots],
@@ -369,6 +374,35 @@ class DashboardBackend:
             "source_skill": source.name if source else None,
             "source_skill_digest": source.digest if source else None,
             "impact": impact,
+        }
+
+    def replace_constraint_input(
+        self,
+        *,
+        workflow_id: str,
+        expected_current_digest: str | None,
+        constraints_content: str | None,
+        constraints_skill: str | None,
+        constraints_skill_digest: str | None,
+    ) -> dict[str, Any]:
+        """Replace constraints through the existing compare-and-swap service path."""
+        try:
+            ledger = self.service.replace_constraint_input(
+                workflow_id,
+                expected_current_digest=expected_current_digest,
+                content=constraints_content,
+                skill_name=constraints_skill,
+                skill_digest=constraints_skill_digest,
+            )
+        except (ServiceError, StoreError) as error:
+            raise DashboardBackendError(str(error)) from error
+        return {
+            "workflow": _workflow_summary(ledger),
+            "consequences": {
+                "approval_required": ledger.approval is None,
+                "policy_revision": ledger.policy_revision,
+                "constraints_digest": ledger.current_constraints_digest,
+            },
         }
 
     # ---- helpers ------------------------------------------------------

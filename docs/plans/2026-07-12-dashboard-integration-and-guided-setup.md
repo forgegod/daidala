@@ -1,6 +1,6 @@
 # Dashboard integration and guided setup plan
 
-> Status: execution in progress. Phases 0–4 completed on 2026-07-12; Phase 5
+> Status: execution in progress. Phases 0–5 completed on 2026-07-12; Phase 6
 > remains unstarted.
 >
 > For the implementing agent: read `/AGENTS.md`, `docs/AGENTS.md`,
@@ -183,7 +183,7 @@ unstarted until the current phase gate passes.
 | 2. Dashboard read model | Done | Add profile-safe read-only backend routes and pure pending-decision/recommendation derivation. | `204 passed in 15.33s`; focused router/recommendation tests and Ruff passed. |
 | 3. Read-only dashboard UI | Done | Add the Wingstaff tab, workflow/progress cards, decisions view, and a pending-decision slot. | Isolated Hermes v0.18.2 desktop/narrow browser states and `sessions:top` slot passed; dashboard tests passed. |
 | 4. Setup wizard and board simplification | Done | Add prerequisite checks, visual board/profile/pack selection, lifecycle preview, explicit confirmation, and start. | Isolated browser preview/confirmation passed; one scoped start request and the existing idempotent-graph test passed. |
-| 5. Constraint preview and replacement | Todo | Add full YAML editor, canonical preview, digest and impact display, compare-and-swap replacement, and renewed-approval guidance. | Preview identity equals service identity; invalid and stale replacements fail closed. |
+| 5. Constraint preview and replacement | Done | Add full YAML editor, canonical preview, digest and impact display, compare-and-swap replacement, and renewed-approval guidance. | Connected-browser semantic/no-op/stale previews and confirmed replacement passed; focused policy tests passed. |
 | 6. Theme, docs, packaging, and release gate | Todo | Add optional theme, package assets, operator docs, compatibility checks, and release verification. | Full repository and supported-host gates pass. |
 
 ## Phase 0 — supported-host feasibility

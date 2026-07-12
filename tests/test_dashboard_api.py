@@ -58,6 +58,7 @@ def test_router_exports_all_phase_two_routes() -> None:
         "decisions",
         "recommendations",
         "constraint_preview",
+        "constraint_replace",
         "wizard_inventory",
         "wizard_create_board",
         "wizard_preview",
@@ -75,6 +76,8 @@ def test_router_source_has_only_read_routes_and_nonmutating_preview() -> None:
     assert "sqlite3" not in source
     assert "kanban.db" not in source
     assert "DashboardBackend" in source
+    assert '@router.post("/constraints/replace")' in source
+    assert 'payload.get("confirm") is not True' in source
 
 
 def test_default_service_is_process_cached_to_avoid_concurrent_store_initialization() -> None:

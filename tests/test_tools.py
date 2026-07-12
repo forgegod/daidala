@@ -300,6 +300,16 @@ def test_tool_start_and_replacement_use_explicit_constraint_content(
 
     assert started["success"] is True
     current = started["workflow"]["constraint_references"][-1]["identity"]["digest"]
+    no_change = service.replace_constraint_input(
+        "workflow-constraints",
+        expected_current_digest=current,
+        content=(
+            "global:\n  - Never push.\n"
+            "schema: wingstaff.workflow-constraints/v1\n"
+        ),
+    )
+    assert no_change.policy_revision == 1
+    assert len(no_change.constraint_references) == 1
     replaced = call(
         tools.replace_constraints,
         {

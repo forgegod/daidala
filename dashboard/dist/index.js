@@ -309,7 +309,81 @@
                 "ul",
                 { className: "ws-workflow-decisions", "data-testid": "ws-decisions" },
                 decisionsList.map(renderDecisionItem)
-              )
+              ),
+      detail && detail.workflow
+        ? createElement(ConstraintEditor, {
+            workflow: detail.workflow,
+            constraints: detail.constraints
+          })
+        : null
+    );
+  }
+
+  function ConstraintEditor(props) {
+    var initial = props.constraints ? props.constraints.canonical_content : "global:\nphases:\n";
+    var contentState = useState(initial);
+    var content = contentState[0];
+    var setContent = contentState[1];
+    var previewState = useState(null);
+    var preview = previewState[0];
+    var setPreview = previewState[1];
+    var confirmedState = useState(false);
+    var confirmed = confirmedState[0];
+    var setConfirmed = confirmedState[1];
+    var messageState = useState("");
+    var message = messageState[0];
+    var setMessage = messageState[1];
+
+    function payload() {
+      return {
+        workflow_id: props.workflow.workflow_id,
+        expected_current_digest: props.workflow.current_constraints_digest,
+        constraints_content: content
+      };
+    }
+
+    function previewChange() {
+      postJson(API_BASE + "/constraints/preview", payload()).then(function (value) {
+        setPreview(value);
+        setConfirmed(false);
+        setMessage(value.valid ? "Preview ready." : value.errors.join("; "));
+      }).catch(function (error) { setMessage(error.message); });
+    }
+
+    function replaceConstraints() {
+      postJson(API_BASE + "/constraints/replace", Object.assign({}, payload(), { confirm: true }))
+        .then(function () { setMessage("Constraints replaced. Fresh approval is required."); })
+        .catch(function (error) { setMessage(error.message); });
+    }
+
+    return createElement("section", { className: "ws-constraints", "data-testid": "ws-constraints" },
+      createElement("h4", null, "Workflow constraints"),
+      createElement("p", { className: "ws-workflow-meta" },
+        "Revision " + (props.constraints ? props.constraints.revision : "none") +
+        " · digest " + (props.workflow.current_constraints_digest || "none") +
+        " · maximum 4096 canonical UTF-8 bytes"
+      ),
+      createElement("textarea", {
+        value: content,
+        onChange: function (event) { setContent(event.target.value); setPreview(null); setConfirmed(false); },
+        rows: 10,
+        "aria-label": "Complete workflow constraints YAML"
+      }),
+      createElement("button", { type: "button", onClick: previewChange }, "Preview constraint change"),
+      preview ? createElement("pre", null, JSON.stringify(preview, null, 2)) : null,
+      preview && preview.valid && !preview.impact.graph_recreated
+        ? createElement("p", null, "No semantic change; replacement is unnecessary.")
+        : null,
+      preview && preview.valid && preview.impact.graph_recreated
+        ? createElement("label", null,
+            createElement("input", { type: "checkbox", checked: confirmed, onChange: function (event) { setConfirmed(event.target.checked); } }),
+            "I understand approval, worktree, evidence, and cards are invalidated"
+          )
+        : null,
+      preview && preview.valid && preview.impact.graph_recreated
+        ? createElement("button", { type: "button", disabled: !confirmed, onClick: replaceConstraints }, "Replace constraints")
+        : null,
+      message ? createElement("p", { role: "status" }, message) : null
     );
   }
 

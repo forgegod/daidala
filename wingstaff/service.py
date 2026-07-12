@@ -273,6 +273,16 @@ class WorkflowService:
         if expected_current_digest != current_digest:
             raise ServiceError("expected current constraint digest does not match")
 
+        if (
+            constraints.digest == current_digest
+            and not ledger.worktree_owned
+            and all(
+                reference.constraints_digest == current_digest
+                for reference in ledger.card_references
+            )
+        ):
+            return ledger
+
         if constraints.digest != current_digest:
             identity = WorkflowConstraintsIdentity(
                 policy_revision=ledger.policy_revision + 1,

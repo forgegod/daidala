@@ -24,7 +24,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
 | `packs.py` | Pack loading and deterministic validation. |
 | `cli.py` | Shared `hermes wingstaff` and standalone operator command tree, lifecycle dispatch, pack operations, and subprocess mutation boundary. |
-| `dashboard_backend.py` | Profile-safe dashboard read model, live Kanban snapshots through the public CLI boundary, and non-mutating constraint previews. |
+| `dashboard_backend.py` | Profile-safe dashboard read model, live Kanban snapshots, constraint previews, and typed compare-and-swap replacement adapter. |
 | `recommendations.py` | Pure finite pending-decision and next-action derivation from ledger facts and live Kanban snapshots. |
 | `setup_wizard.py` | Typed setup preview, confirmation gate, and documented Hermes board/profile inventory commands. |
 | `packs/` | Skill-set-specific lifecycle mappings. |

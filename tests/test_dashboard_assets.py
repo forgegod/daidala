@@ -106,6 +106,10 @@ def test_bundle_exposes_manual_refresh() -> None:
     assert "refreshAll" in source
     assert '"Preview mutations"' in source
     assert '"Start workflow"' in source
+    assert '"Preview constraint change"' in source
+    assert '"Replace constraints"' in source
+    assert '"No semantic change; replacement is unnecessary."' in source
+    assert "expected_current_digest" in source
 
 
 def test_bundle_renders_every_phase_three_state() -> None:

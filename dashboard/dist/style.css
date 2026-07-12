@@ -309,6 +309,27 @@
   padding: 0.75rem;
 }
 
+.ws-constraints {
+  display: grid;
+  gap: var(--ws-gap);
+  margin-top: var(--ws-gap);
+  padding-top: var(--ws-gap);
+  border-top: var(--ws-border);
+}
+
+.ws-constraints textarea,
+.ws-constraints pre {
+  box-sizing: border-box;
+  width: 100%;
+  overflow: auto;
+  padding: 0.75rem;
+  border: var(--ws-border);
+  border-radius: var(--ws-radius);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+  color: var(--text-primary, inherit);
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+
 @media (max-width: 64rem) {
   .ws-root {
     padding: 0.75rem;

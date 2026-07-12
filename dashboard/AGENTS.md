@@ -15,8 +15,11 @@ Provide the optional Wingstaff extension for the existing Hermes dashboard.
 
 - Register only documented Hermes dashboard SDK surfaces.
 - Browser requests authenticate with the host-provided session token and call only scoped Wingstaff routes.
-- Workflow polling is read-only. Setup may POST only board creation, preview, and confirmed start requests.
+- Workflow polling is read-only. Mutations are limited to board creation,
+  confirmed setup, and compare-and-swap constraint replacement.
 - Preview and declined setup must not mutate; start requires a literal checked confirmation.
+- Constraint preview is non-mutating; replacement requires the displayed current
+  digest and explicit invalidation confirmation.
 - Poll no faster than every five seconds while visible, stop while hidden, and retain manual refresh.
 - Treat API responses as snapshots; never authorize workflow operations from client state.
 

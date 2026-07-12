@@ -30,7 +30,7 @@ from collections.abc import Callable
 from functools import lru_cache
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException
 
 from wingstaff.dashboard_backend import (
     DashboardBackend,
@@ -142,22 +142,8 @@ def recommendations(workflow_id: str) -> dict[str, Any]:
 
 
 @router.post("/constraints/preview")
-def constraint_preview(request: Request) -> dict[str, Any]:
-    """Return validation errors, canonical content, digest, and impact.
-
-    Non-mutating: never touches the ledger, the worktree, the Kanban
-    database, or any host state. Accepts a JSON body with one of
-    ``constraints_content`` or ``constraints_skill`` plus
-    ``constraints_skill_digest``.
-    """
-
-    try:
-        payload = request.json() if hasattr(request, "json") else _read_json_body(request)
-    except ValueError as error:
-        raise HTTPException(status_code=400, detail=str(error)) from error
-    if not isinstance(payload, dict):
-        raise HTTPException(status_code=400, detail="request body must be a JSON object")
-
+def constraint_preview(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return canonical identity and replacement impact without mutating."""
     workflow_id = payload.get("workflow_id")
     if not isinstance(workflow_id, str) or not workflow_id.strip():
         raise HTTPException(status_code=400, detail="workflow_id is required")
@@ -177,6 +163,31 @@ def constraint_preview(request: Request) -> dict[str, Any]:
         )
     except UnknownWorkflowError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
+
+
+@router.post("/constraints/replace")
+def constraint_replace(payload: dict[str, Any]) -> dict[str, Any]:
+    """Replace constraints after compare-and-swap and explicit confirmation."""
+    if payload.get("confirm") is not True:
+        raise HTTPException(status_code=400, detail="explicit confirmation is required")
+    workflow_id = payload.get("workflow_id")
+    if not isinstance(workflow_id, str) or not workflow_id.strip():
+        raise HTTPException(status_code=400, detail="workflow_id is required")
+    backend = DashboardBackend(service_factory=service_factory)
+    try:
+        return backend.replace_constraint_input(
+            workflow_id=workflow_id,
+            expected_current_digest=_optional_str(
+                payload.get("expected_current_digest")
+            ),
+            constraints_content=_optional_str(payload.get("constraints_content")),
+            constraints_skill=_optional_str(payload.get("constraints_skill")),
+            constraints_skill_digest=_optional_str(
+                payload.get("constraints_skill_digest")
+            ),
+        )
+    except DashboardBackendError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
 
 
 @router.get("/wizard/inventory")
@@ -228,15 +239,6 @@ def wizard_start(payload: dict[str, Any]) -> dict[str, Any]:
 def _run_command(command: tuple[str, ...]) -> tuple[int, str]:
     completed = subprocess.run(command, check=False, capture_output=True, text=True)
     return completed.returncode, completed.stdout or completed.stderr
-
-
-def _read_json_body(request: Request) -> dict[str, Any]:
-    import json
-
-    body = request.body()
-    if not body:
-        return {}
-    return json.loads(body.decode("utf-8"))
 
 
 def _optional_str(value: Any) -> str | None:
