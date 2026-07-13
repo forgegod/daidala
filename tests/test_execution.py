@@ -8,17 +8,17 @@ from pathlib import Path
 
 import pytest
 
-from wingstaff.errors import PolicyViolationError
-from wingstaff.execution import ExecutionError, ExecutionWorkspace
-from wingstaff.kanban import KanbanError, KanbanGraphAdapter
-from wingstaff.packs import SkillActivationMode, load_pack
-from wingstaff.service import ServiceError, WorkflowService
-from wingstaff.skills import (
+from daidala.errors import PolicyViolationError
+from daidala.execution import ExecutionError, ExecutionWorkspace
+from daidala.kanban import KanbanError, KanbanGraphAdapter
+from daidala.packs import SkillActivationMode, load_pack
+from daidala.service import ServiceError, WorkflowService
+from daidala.skills import (
     content_registry_from_digests,
     inventory_from_names,
     required_skills,
 )
-from wingstaff.state import (
+from daidala.state import (
     ActivationCategory,
     ActivationDecision,
     ActivationManifest,
@@ -27,7 +27,7 @@ from wingstaff.state import (
     WorkflowConstraintsIdentity,
     WorkflowStage,
 )
-from wingstaff.store import WorkflowStore
+from daidala.store import WorkflowStore
 
 NOW = datetime(2026, 7, 10, 12, 0, tzinfo=UTC)
 STAGE_PROFILES = {
@@ -856,7 +856,7 @@ def test_activation_artifact_creation_is_canonical_and_exclusive(tmp_path: Path)
 
 
 def test_constraint_artifact_creation_is_exclusive_and_verified(tmp_path: Path) -> None:
-    from wingstaff.constraints import parse_workflow_constraints
+    from daidala.constraints import parse_workflow_constraints
 
     constraints = parse_workflow_constraints(
         "schema: wingstaff.workflow-constraints/v1\nglobal: [Never commit.]\n"

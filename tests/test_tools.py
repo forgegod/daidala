@@ -7,18 +7,18 @@ from pathlib import Path
 
 import pytest
 
-from wingstaff import schemas, tools
-from wingstaff.errors import PolicyViolationError
-from wingstaff.kanban import KanbanGraphAdapter
-from wingstaff.packs import load_pack
-from wingstaff.service import WorkflowService
-from wingstaff.skills import (
+from daidala import schemas, tools
+from daidala.errors import PolicyViolationError
+from daidala.kanban import KanbanGraphAdapter
+from daidala.packs import load_pack
+from daidala.service import WorkflowService
+from daidala.skills import (
     content_registry_from_digests,
     inventory_from_names,
     required_skills,
 )
-from wingstaff.state import WorkflowStage
-from wingstaff.store import StoreError, WorkflowStore
+from daidala.state import WorkflowStage
+from daidala.store import StoreError, WorkflowStore
 
 NOW = datetime(2026, 7, 10, 12, 0, tzinfo=UTC)
 STAGE_PROFILES = {
@@ -650,18 +650,18 @@ def test_execution_handlers_keep_json_boundary() -> None:
 
 def test_public_schemas_have_no_removed_lifecycle_aliases() -> None:
     assert {schema["name"] for schema in schemas.ALL_TOOLS} == {
-        "wingstaff_pack_info",
-        "wingstaff_start",
-        "wingstaff_status",
-        "wingstaff_replace_constraints",
-        "wingstaff_approve",
-        "wingstaff_cancel",
-        "wingstaff_submit_artifact",
-        "wingstaff_prepare_implementation",
-        "wingstaff_capture_implementation",
-        "wingstaff_record_skill_activation",
-        "wingstaff_record_verification",
-        "wingstaff_deliver",
+        "daidala_pack_info",
+        "daidala_start",
+        "daidala_status",
+        "daidala_replace_constraints",
+        "daidala_approve",
+        "daidala_cancel",
+        "daidala_submit_artifact",
+        "daidala_prepare_implementation",
+        "daidala_capture_implementation",
+        "daidala_record_skill_activation",
+        "daidala_record_verification",
+        "daidala_deliver",
     }
     for schema in schemas.ALL_TOOLS:
         assert schema["parameters"]["additionalProperties"] is False

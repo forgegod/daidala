@@ -5,20 +5,20 @@ from datetime import UTC, datetime
 
 import pytest
 
-from wingstaff.recommendations import (
+from daidala.recommendations import (
     ACTION_KINDS,
     KanbanSnapshot,
     Recommendation,
     derive_recommendations,
 )
-from wingstaff.state import (
+from daidala.state import (
     ArtifactReference,
     CardReference,
     SkillDigest,
     StageProfile,
     WorkflowStage,
 )
-from wingstaff.workflow import new_workflow
+from daidala.workflow import new_workflow
 
 NOW = datetime(2026, 7, 12, tzinfo=UTC)
 

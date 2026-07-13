@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import wingstaff
-from wingstaff.tools import pack_info
+import yaml
+
+import daidala
+from daidala.tools import pack_info
 
 
 class FakeContext:
@@ -30,23 +32,23 @@ class FakeContext:
 def test_register_exposes_tool_and_namespaced_skill_source() -> None:
     ctx = FakeContext()
 
-    wingstaff.register(ctx)
+    daidala.register(ctx)
 
     assert [tool["name"] for tool in ctx.tools] == [
-        "wingstaff_pack_info",
-        "wingstaff_start",
-        "wingstaff_status",
-        "wingstaff_replace_constraints",
-        "wingstaff_approve",
-        "wingstaff_cancel",
-        "wingstaff_submit_artifact",
-        "wingstaff_prepare_implementation",
-        "wingstaff_capture_implementation",
-        "wingstaff_record_skill_activation",
-        "wingstaff_record_verification",
-        "wingstaff_deliver",
+        "daidala_pack_info",
+        "daidala_start",
+        "daidala_status",
+        "daidala_replace_constraints",
+        "daidala_approve",
+        "daidala_cancel",
+        "daidala_submit_artifact",
+        "daidala_prepare_implementation",
+        "daidala_capture_implementation",
+        "daidala_record_skill_activation",
+        "daidala_record_verification",
+        "daidala_deliver",
     ]
-    assert all(tool["toolset"] == "wingstaff" for tool in ctx.tools)
+    assert all(tool["toolset"] == "daidala" for tool in ctx.tools)
     assert [name for name, _ in ctx.skills] == ["aidlc-adapter", "orchestrate", "setup"]
     assert all(path.name == "SKILL.md" for _, path in ctx.skills)
     orchestrate = next(path for name, path in ctx.skills if name == "orchestrate")
@@ -58,7 +60,17 @@ def test_register_exposes_tool_and_namespaced_skill_source() -> None:
     assert "explicitly confirm that exact preview" in setup_instructions
     assert "dashboard is available" in setup_instructions
     assert len(ctx.cli_commands) == 1
-    assert ctx.cli_commands[0]["name"] == "wingstaff"
+    assert ctx.cli_commands[0]["name"] == "daidala"
+
+
+def test_manifest_tool_inventory_matches_runtime_registration() -> None:
+    ctx = FakeContext()
+    daidala.register(ctx)
+    manifest = yaml.safe_load(
+        (Path(__file__).parents[1] / "plugin.yaml").read_text(encoding="utf-8")
+    )
+
+    assert manifest["provides_tools"] == [tool["name"] for tool in ctx.tools]
 
 
 def test_pack_info_returns_json_string() -> None:

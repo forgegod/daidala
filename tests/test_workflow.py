@@ -6,9 +6,9 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from wingstaff.errors import PolicyViolationError
-from wingstaff.packs import SkillActivationMode, validate_pack
-from wingstaff.state import (
+from daidala.errors import PolicyViolationError
+from daidala.packs import SkillActivationMode, validate_pack
+from daidala.state import (
     ActivationCategory,
     ActivationDecision,
     ActivationManifest,
@@ -21,7 +21,7 @@ from wingstaff.state import (
     WorkflowLedger,
     WorkflowStage,
 )
-from wingstaff.workflow import (
+from daidala.workflow import (
     approve_plan,
     new_workflow,
     record_artifact,
@@ -226,7 +226,7 @@ def test_serialization_round_trip_preserves_complete_ledger() -> None:
 
 
 def test_constraint_recording_is_idempotent_and_invalidates_approval() -> None:
-    from wingstaff.constraints import parse_workflow_constraints
+    from daidala.constraints import parse_workflow_constraints
 
     constraints = parse_workflow_constraints(
         "schema: wingstaff.workflow-constraints/v1\nglobal: [Never commit.]\n"

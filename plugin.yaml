@@ -1,19 +1,19 @@
-name: wingstaff
-version: 0.1.0
-description: Serverless Hermes-native orchestration for autonomous software-development workflows.
+name: daidala
+version: 0.2.0
+description: Hermes-native AI workshop for approval-gated software-development workflows.
 provides_tools:
-  - wingstaff_pack_info
-  - wingstaff_start
-  - wingstaff_status
-  - wingstaff_validate
-  - wingstaff_approve
-  - wingstaff_modify
-  - wingstaff_cancel
-  - wingstaff_submit_artifact
-  - wingstaff_prepare_implementation
-  - wingstaff_capture_implementation
-  - wingstaff_record_verification
-  - wingstaff_deliver
+  - daidala_pack_info
+  - daidala_start
+  - daidala_status
+  - daidala_replace_constraints
+  - daidala_approve
+  - daidala_cancel
+  - daidala_submit_artifact
+  - daidala_prepare_implementation
+  - daidala_capture_implementation
+  - daidala_record_skill_activation
+  - daidala_record_verification
+  - daidala_deliver
 provides_skills:
   - orchestrate
   - setup

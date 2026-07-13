@@ -1,8 +1,8 @@
 """Hermes-visible JSON tool schemas."""
 
 PACK_INFO = {
-    "name": "wingstaff_pack_info",
-    "description": "Load and validate an installed Wingstaff workflow pack.",
+    "name": "daidala_pack_info",
+    "description": "Load and validate an installed Daidala workflow pack.",
     "parameters": {
         "type": "object",
         "properties": {
@@ -17,7 +17,7 @@ PACK_INFO = {
 }
 
 START = {
-    "name": "wingstaff_start",
+    "name": "daidala_start",
     "description": "Create a validated policy ledger for one named Kanban board.",
     "parameters": {
         "type": "object",
@@ -66,7 +66,7 @@ START = {
 }
 
 REPLACE_CONSTRAINTS = {
-    "name": "wingstaff_replace_constraints",
+    "name": "daidala_replace_constraints",
     "description": "Replace workflow constraints from explicit content or an exact policy skill.",
     "parameters": {
         "type": "object",
@@ -89,7 +89,7 @@ REPLACE_CONSTRAINTS = {
 }
 
 STATUS = {
-    "name": "wingstaff_status",
+    "name": "daidala_status",
     "description": "Return policy facts beside live, read-only Kanban card status.",
     "parameters": {
         "type": "object",
@@ -100,7 +100,7 @@ STATUS = {
 }
 
 APPROVE = {
-    "name": "wingstaff_approve",
+    "name": "daidala_approve",
     "description": "Approve the exact current plan digest for implementation.",
     "parameters": {
         "type": "object",
@@ -114,8 +114,8 @@ APPROVE = {
 }
 
 CANCEL = {
-    "name": "wingstaff_cancel",
-    "description": "Clean up Wingstaff-owned worktree state before Kanban archival.",
+    "name": "daidala_cancel",
+    "description": "Clean up Daidala-owned worktree state before Kanban archival.",
     "parameters": {
         "type": "object",
         "properties": {
@@ -128,7 +128,7 @@ CANCEL = {
 }
 
 SUBMIT_ARTIFACT = {
-    "name": "wingstaff_submit_artifact",
+    "name": "daidala_submit_artifact",
     "description": "Store and validate a definition, plan, or review artifact.",
     "parameters": {
         "type": "object",
@@ -143,8 +143,8 @@ SUBMIT_ARTIFACT = {
 }
 
 PREPARE_IMPLEMENTATION = {
-    "name": "wingstaff_prepare_implementation",
-    "description": "Create the exact-approved Wingstaff implementation worktree.",
+    "name": "daidala_prepare_implementation",
+    "description": "Create the exact-approved Daidala implementation worktree.",
     "parameters": {
         "type": "object",
         "properties": {"workflow_id": {"type": "string"}},
@@ -154,7 +154,7 @@ PREPARE_IMPLEMENTATION = {
 }
 
 CAPTURE_IMPLEMENTATION = {
-    "name": "wingstaff_capture_implementation",
+    "name": "daidala_capture_implementation",
     "description": "Capture the implementation worktree diff for verification.",
     "parameters": {
         "type": "object",
@@ -165,7 +165,7 @@ CAPTURE_IMPLEMENTATION = {
 }
 
 RECORD_VERIFICATION = {
-    "name": "wingstaff_record_verification",
+    "name": "daidala_record_verification",
     "description": "Persist command output and structured verification evidence.",
     "parameters": {
         "type": "object",
@@ -181,7 +181,7 @@ RECORD_VERIFICATION = {
 }
 
 RECORD_SKILL_ACTIVATION = {
-    "name": "wingstaff_record_skill_activation",
+    "name": "daidala_record_skill_activation",
     "description": "Validate and persist this stage worker's skill activation decisions.",
     "parameters": {
         "type": "object",
@@ -247,7 +247,7 @@ RECORD_SKILL_ACTIVATION = {
 }
 
 DELIVER = {
-    "name": "wingstaff_deliver",
+    "name": "daidala_deliver",
     "description": "Record reviewed paths and evidence without commit or push.",
     "parameters": {
         "type": "object",

@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from wingstaff.state import (
+from daidala.state import (
     ActivationManifestReference,
     ActivationReferenceState,
     SkillDigest,
@@ -17,8 +17,8 @@ from wingstaff.state import (
     WorkflowLedger,
     WorkflowStage,
 )
-from wingstaff.store import StoreError, WorkflowStore
-from wingstaff.workflow import approve_plan, new_workflow, record_artifact
+from daidala.store import StoreError, WorkflowStore
+from daidala.workflow import approve_plan, new_workflow, record_artifact
 
 NOW = datetime(2026, 7, 10, 12, 0, tzinfo=UTC)
 PROFILES = tuple(
@@ -244,7 +244,7 @@ def test_data_root_resolution_still_prefers_explicit_context_and_env(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    from wingstaff import locations
+    from daidala import locations
 
     explicit = tmp_path / "explicit"
     monkeypatch.setenv(locations.ENV_OVERRIDE, str(tmp_path / "from-env"))

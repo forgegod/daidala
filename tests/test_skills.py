@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from wingstaff import tools
-from wingstaff.packs import load_pack
-from wingstaff.service import WorkflowService
-from wingstaff.skills import (
+from daidala import tools
+from daidala.packs import load_pack
+from daidala.service import WorkflowService
+from daidala.skills import (
     HermesSkillInventory,
     MissingSkillsError,
     SkillInventoryError,
@@ -19,7 +19,7 @@ from wingstaff.skills import (
     require_pack_skills,
     required_skills,
 )
-from wingstaff.store import WorkflowStore
+from daidala.store import WorkflowStore
 
 STAGE_PROFILES = {
     "define": "architect",

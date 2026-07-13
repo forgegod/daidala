@@ -9,7 +9,7 @@ card data is read on demand through the same public
 already uses.
 
 The pure deterministic recommendation logic lives in
-:mod:`wingstaff.recommendations`. The factory below only wires those pure
+:mod:`daidala.recommendations`. The factory below only wires those pure
 projections to FastAPI.
 
 Phase 2 endpoints (all read-only):
@@ -32,14 +32,14 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
-from wingstaff.dashboard_backend import (
+from daidala.dashboard_backend import (
     DashboardBackend,
     DashboardBackendError,
     HostUnavailableError,
     UnknownWorkflowError,
 )
-from wingstaff.service import WorkflowService
-from wingstaff.setup_wizard import (
+from daidala.service import WorkflowService
+from daidala.setup_wizard import (
     SetupRequest,
     SetupWizardError,
     confirmed_start,

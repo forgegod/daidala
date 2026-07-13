@@ -209,7 +209,7 @@ def test_dashboard_assets_are_packaged_with_wheel(tmp_path) -> None:
     )
     assert result.returncode == 0, result.stderr
 
-    wheel = next(tmp_path.glob("wingstaff-*.whl"))
+    wheel = next(tmp_path.glob("daidala-*.whl"))
     with ZipFile(wheel) as archive:
         names = set(archive.namelist())
         assert "dashboard/manifest.json" in names

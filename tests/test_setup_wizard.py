@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from wingstaff.setup_wizard import (
+from daidala.setup_wizard import (
     SetupRequest,
     SetupWizardError,
     confirmed_start,

@@ -7,7 +7,7 @@
 
 - AGENTS.md files are binding work contracts for their subtrees
 - Work products, source materials, instructions, records, assets, and durable docs must stay understandable from the nearest applicable AGENTS.md plus every parent AGENTS.md above it
-- Wingstaff is a Hermes-native plugin plus bundled skills, not a standalone orchestration service.
+- Daidala is a Hermes-native plugin plus bundled skills, not a standalone orchestration service.
 - Do not add an MCP server, HTTP daemon, dashboard server, or nested `hermes chat` subprocess bridge.
 - Use Hermes' existing plugin, delegation, Kanban, cron, gateway, and skill facilities.
 - A human approval gate is mandatory before implementation work starts.
@@ -88,8 +88,8 @@ Project verification:
 lefthook validate
 pytest
 ruff check .
-wingstaff packs validate addyosmani
-wingstaff packs validate aidlc
+daidala packs validate addyosmani
+daidala packs validate aidlc
 python -m build
 python -m twine check dist/*
 python scripts/check_release_contents.py . --wheel dist/*.whl
@@ -139,4 +139,4 @@ falling back to targeted file tools.
 | [`docs/AGENTS.md`](docs/AGENTS.md) | Architecture and implementation plans. | Plans, decisions, roadmap, or operator documentation. |
 | [`scripts/AGENTS.md`](scripts/AGENTS.md) | Dependency-free development and repository verification utilities. | Verification scripts or durable development automation. |
 | [`tests/AGENTS.md`](tests/AGENTS.md) | Unit, package, and plugin-contract verification. | Tests or fixtures. |
-| [`wingstaff/AGENTS.md`](wingstaff/AGENTS.md) | Plugin registration, deterministic engine, pack resources, and bundled skills. | Runtime Python, tool schemas or handlers, packs, or bundled skills. |
+| [`daidala/AGENTS.md`](daidala/AGENTS.md) | Plugin registration, deterministic engine, pack resources, and bundled skills. | Runtime Python, tool schemas or handlers, packs, or bundled skills. |

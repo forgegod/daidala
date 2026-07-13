@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import wingstaff
-from wingstaff.schemas import START
+import daidala
+from daidala.schemas import START
 
 
 def setup_contract() -> str:
-    return (Path(wingstaff.__file__).parent / "skills" / "setup" / "SKILL.md").read_text(
+    return (Path(daidala.__file__).parent / "skills" / "setup" / "SKILL.md").read_text(
         encoding="utf-8"
     )
 

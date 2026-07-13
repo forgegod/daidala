@@ -12,7 +12,7 @@ REPOSITORY = Path(__file__).parents[1]
 
 
 def test_directory_plugin_entrypoint_uses_bundled_package() -> None:
-    module_name = "wingstaff_directory_plugin_test"
+    module_name = "daidala_directory_plugin_test"
     spec = importlib.util.spec_from_file_location(
         module_name,
         REPOSITORY / "__init__.py",
@@ -25,7 +25,7 @@ def test_directory_plugin_entrypoint_uses_bundled_package() -> None:
     sys.modules[module_name] = module
     try:
         spec.loader.exec_module(module)
-        assert module.register.__module__ == f"{module_name}.wingstaff"
+        assert module.register.__module__ == f"{module_name}.daidala"
     finally:
         for loaded_name in list(sys.modules):
             if loaded_name == module_name or loaded_name.startswith(f"{module_name}."):
@@ -35,7 +35,7 @@ def test_directory_plugin_entrypoint_uses_bundled_package() -> None:
 def test_root_entrypoint_can_be_collected_as_a_top_level_module() -> None:
     namespace = runpy.run_path(str(REPOSITORY / "__init__.py"))
 
-    assert namespace["register"].__module__ == "wingstaff"
+    assert namespace["register"].__module__ == "daidala"
 
 
 def test_directory_plugin_entrypoint_loads_in_fresh_isolated_process(
@@ -48,7 +48,7 @@ import pathlib
 import sys
 
 repository = pathlib.Path(sys.argv[1])
-module_name = "wingstaff_isolated_directory_plugin"
+module_name = "daidala_isolated_directory_plugin"
 spec = importlib.util.spec_from_file_location(
     module_name,
     repository / "__init__.py",
@@ -58,8 +58,8 @@ assert spec is not None and spec.loader is not None
 module = importlib.util.module_from_spec(spec)
 sys.modules[module_name] = module
 spec.loader.exec_module(module)
-assert module.register.__module__ == f"{module_name}.wingstaff"
-packs = importlib.import_module(f"{module_name}.wingstaff.packs")
+assert module.register.__module__ == f"{module_name}.daidala"
+packs = importlib.import_module(f"{module_name}.daidala.packs")
 assert packs.load_pack("addyosmani").name == "addyosmani"
 assert packs.load_pack("aidlc").name == "aidlc"
 """
@@ -77,7 +77,7 @@ assert packs.load_pack("aidlc").name == "aidlc"
 def test_pip_entrypoint_loads_plugin_module() -> None:
     project = tomllib.loads((REPOSITORY / "pyproject.toml").read_text(encoding="utf-8"))
 
-    assert project["project"]["entry-points"]["hermes_agent.plugins"]["wingstaff"] == "wingstaff"
+    assert project["project"]["entry-points"]["hermes_agent.plugins"]["daidala"] == "daidala"
 
 
 def test_wheel_contains_plugin_resources_and_module_entrypoint(tmp_path: Path) -> None:
@@ -97,15 +97,15 @@ def test_wheel_contains_plugin_resources_and_module_entrypoint(tmp_path: Path) -
     )
     assert result.returncode == 0, result.stderr
 
-    wheel = next(tmp_path.glob("wingstaff-*.whl"))
+    wheel = next(tmp_path.glob("daidala-*.whl"))
     with ZipFile(wheel) as archive:
         names = set(archive.namelist())
-        assert "wingstaff/packs/addyosmani.yaml" in names
-        assert "wingstaff/packs/aidlc.yaml" in names
-        assert "wingstaff/skills/aidlc-adapter/SKILL.md" in names
-        assert "wingstaff/skills/aidlc-adapter/references/LICENSE-AIDLC.txt" in names
-        assert "wingstaff/skills/orchestrate/SKILL.md" in names
-        assert "wingstaff/skills/setup/SKILL.md" in names
+        assert "daidala/packs/addyosmani.yaml" in names
+        assert "daidala/packs/aidlc.yaml" in names
+        assert "daidala/skills/aidlc-adapter/SKILL.md" in names
+        assert "daidala/skills/aidlc-adapter/references/LICENSE-AIDLC.txt" in names
+        assert "daidala/skills/orchestrate/SKILL.md" in names
+        assert "daidala/skills/setup/SKILL.md" in names
         assert not any(
             ".env" in Path(name).parts
             or ".hermes" in Path(name).parts
@@ -118,5 +118,5 @@ def test_wheel_contains_plugin_resources_and_module_entrypoint(tmp_path: Path) -
         )
         entry_points = archive.read(entry_points_name).decode("utf-8")
 
-    assert "wingstaff = wingstaff\n" in entry_points
-    assert "wingstaff = wingstaff:register" not in entry_points
+    assert "daidala = daidala\n" in entry_points
+    assert "daidala = daidala:register" not in entry_points

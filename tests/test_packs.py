@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from wingstaff.packs import PackError, SkillActivationMode, load_pack, validate_pack
+from daidala.packs import PackError, SkillActivationMode, load_pack, validate_pack
 
 
 def pack_with_skills(skills: list[dict[str, str]]) -> dict[str, object]:

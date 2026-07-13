@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from wingstaff.cli import main
-from wingstaff.packs import load_pack
-from wingstaff.skills import (
+from daidala.cli import main
+from daidala.packs import load_pack
+from daidala.skills import (
     ProfileSkillContentRegistry,
     SkillRevisionError,
     content_registry_from_digests,
@@ -217,6 +217,6 @@ def test_revision_error_is_actionable() -> None:
         SkillRevisionError,
         match="wingstaff packs update-plan addyosmani",
     ):
-        from wingstaff.skills import require_pack_skill_revisions
+        from daidala.skills import require_pack_skill_revisions
 
         require_pack_skill_revisions(pack, registry)

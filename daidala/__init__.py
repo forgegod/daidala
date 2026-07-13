@@ -1,4 +1,4 @@
-"""Wingstaff Hermes plugin registration."""
+"""Daidala Hermes plugin registration."""
 
 from __future__ import annotations
 
@@ -9,33 +9,33 @@ from .packs import __version__
 
 
 def register(ctx) -> None:
-    """Register Wingstaff tools and bundled, namespaced skills with Hermes."""
+    """Register Daidala tools and bundled, namespaced skills with Hermes."""
     tools.configure_host(ctx.dispatch_tool)
     ctx.register_cli_command(
-        name="wingstaff",
-        help="Operate Wingstaff workflows and workflow packs",
+        name="daidala",
+        help="Operate Daidala workflows and workflow packs",
         setup_fn=cli.register_cli,
         handler_fn=cli.dispatch_cli,
         description="Initialize, diagnose, start, inspect, approve, or cancel workflows.",
     )
     handlers = {
-        "wingstaff_pack_info": tools.pack_info,
-        "wingstaff_start": tools.start,
-        "wingstaff_status": tools.status,
-        "wingstaff_replace_constraints": tools.replace_constraints,
-        "wingstaff_approve": tools.approve,
-        "wingstaff_cancel": tools.cancel,
-        "wingstaff_submit_artifact": tools.submit_artifact,
-        "wingstaff_prepare_implementation": tools.prepare_implementation,
-        "wingstaff_capture_implementation": tools.capture_implementation,
-        "wingstaff_record_skill_activation": tools.record_skill_activation,
-        "wingstaff_record_verification": tools.record_verification,
-        "wingstaff_deliver": tools.deliver,
+        "daidala_pack_info": tools.pack_info,
+        "daidala_start": tools.start,
+        "daidala_status": tools.status,
+        "daidala_replace_constraints": tools.replace_constraints,
+        "daidala_approve": tools.approve,
+        "daidala_cancel": tools.cancel,
+        "daidala_submit_artifact": tools.submit_artifact,
+        "daidala_prepare_implementation": tools.prepare_implementation,
+        "daidala_capture_implementation": tools.capture_implementation,
+        "daidala_record_skill_activation": tools.record_skill_activation,
+        "daidala_record_verification": tools.record_verification,
+        "daidala_deliver": tools.deliver,
     }
     for schema in schemas.ALL_TOOLS:
         ctx.register_tool(
             name=schema["name"],
-            toolset="wingstaff",
+            toolset="daidala",
             schema=schema,
             handler=handlers[schema["name"]],
             description=schema["description"],

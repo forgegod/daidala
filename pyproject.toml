@@ -3,9 +3,9 @@ requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "wingstaff"
-version = "0.1.0"
-description = "Hermes-native orchestration for autonomous software-development workflows"
+name = "daidala"
+version = "0.2.0"
+description = "Hermes-native AI workshop for approval-gated software-development workflows"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
@@ -30,16 +30,16 @@ dev = [
 ]
 
 [project.scripts]
-wingstaff = "wingstaff.cli:main"
+daidala = "daidala.cli:main"
 
 [project.entry-points."hermes_agent.plugins"]
-wingstaff = "wingstaff"
+daidala = "daidala"
 
 [tool.setuptools.packages.find]
-include = ["wingstaff*", "dashboard*"]
+include = ["daidala*", "dashboard*"]
 
 [tool.setuptools.package-data]
-wingstaff = ["packs/*.yaml", "skills/*/SKILL.md", "skills/*/references/*"]
+daidala = ["packs/*.yaml", "skills/*/SKILL.md", "skills/*/references/*"]
 dashboard = ["manifest.json", "dist/index.js", "dist/style.css"]
 
 [tool.pytest.ini_options]

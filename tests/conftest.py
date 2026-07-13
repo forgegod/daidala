@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from wingstaff.kanban import KanbanGraphAdapter
+from daidala.kanban import KanbanGraphAdapter
 
 STAGE_PROFILES = {
     "define": "architect",

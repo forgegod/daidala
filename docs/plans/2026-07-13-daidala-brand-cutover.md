@@ -1,6 +1,6 @@
 # Daidala brand cutover implementation plan
 
-> Status: **Approved for phase-gated execution. Phase 0 is complete; Phase 1 is next.**
+> Status: **Approved for phase-gated execution. Phases 0–1 are complete; Phase 2 is next.**
 >
 > This is a hard public rename. Do not add compatibility packages, import shims,
 > CLI aliases, tool aliases, skill aliases, schema fallbacks, or data migration.
@@ -193,6 +193,13 @@ and the Git tree is clean.
 
 ## Phase 1 — Rename the Python distribution, package, and plugin entry points
 
+**Status: Done.** The distribution, package, directory and pip plugin entry
+points, standalone and native commands, 12-tool registration inventory, imports,
+CI paths, and wheel metadata use Daidala. The focused gate passed with 27 tests,
+Ruff, build, Twine, and a wheel-member/entry-point audit; the full phase gate
+passed with 228 tests. A fresh isolated Hermes directory load registered the
+`daidala` plugin with 12 tools and no error.
+
 ### Files
 
 - `wingstaff/` → `daidala/` via `git mv`
@@ -230,6 +237,8 @@ and the Git tree is clean.
    - `daidala_record_skill_activation`
    - `daidala_record_verification`
    - `daidala_deliver`
+   Rename the matching schema names, handler-map keys, and toolset in this phase
+   so the manifest and runtime cannot diverge at the checkpoint.
 7. Rename CI temporary paths and executable invocations to `daidala`.
 8. Replace the ignored build-metadata directory `wingstaff.egg-info` with
    `daidala.egg-info` in the Markdown checker.
@@ -271,9 +280,9 @@ Inspect the wheel and require `daidala/` resources, `daidala-*.dist-info`, the
 
 ### Steps
 
-1. Rename all 12 tool schemas, handler-map keys, worker instructions, toolset
-   registration, tests, prompts, and examples from the old prefix to
-   `daidala_`.
+1. Complete the tool-name cutover in worker instructions, prompts, examples,
+   and remaining tests. The 12 schemas, handler-map keys, toolset registration,
+   manifest, and exact-inventory regression are Phase 1 prerequisites.
 2. Rename plugin-qualified bundled skills to `daidala:orchestrate`,
    `daidala:setup`, and `daidala:aidlc-adapter`; update pack YAML references and
    all card-skill assertions. External skill names remain unchanged.
@@ -294,9 +303,8 @@ Inspect the wheel and require `daidala/` resources, `daidala-*.dist-info`, the
    rewriting them.
 8. Update reusable policy-skill examples and compatibility fixtures to emit only
    the Daidala constraint schema.
-9. Add a regression test that enumerates the registered tools and manifest tools
-   and requires exact equality, preventing the current manifest drift from
-   recurring.
+9. Preserve the Phase 1 regression that enumerates the registered tools and
+   manifest tools and requires exact equality.
 10. Add tests proving old CLI names, tool names, skill namespaces, and schema IDs
     are absent or rejected; do not implement compatibility behavior merely to
     satisfy those tests.

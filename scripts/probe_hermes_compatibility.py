@@ -14,7 +14,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from wingstaff.skills import ProfileSkillContentRegistry, hash_skill_directory
+from daidala.skills import ProfileSkillContentRegistry, hash_skill_directory
 
 SUPPORTED_SEMVER = "0.18.2"
 SUPPORTED_BUILD = "2026.7.7.2"

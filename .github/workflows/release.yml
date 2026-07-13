@@ -32,8 +32,8 @@ jobs:
           python scripts/check_md_links.py .
           ruff check .
           pytest
-          wingstaff packs validate addyosmani
-          wingstaff packs validate aidlc
+          daidala packs validate addyosmani
+          daidala packs validate aidlc
 
   package:
     name: Package and dependency audit
@@ -54,12 +54,12 @@ jobs:
         run: python scripts/check_release_contents.py . --wheel dist/*.whl
       - name: Isolated wheel install and runtime audit
         run: |
-          python -m venv /tmp/wingstaff-release
-          /tmp/wingstaff-release/bin/pip install --upgrade pip
-          /tmp/wingstaff-release/bin/pip install dist/*.whl pip-audit
-          /tmp/wingstaff-release/bin/wingstaff packs validate addyosmani
-          /tmp/wingstaff-release/bin/wingstaff packs validate aidlc
-          /tmp/wingstaff-release/bin/pip-audit --local
+          python -m venv /tmp/daidala-release
+          /tmp/daidala-release/bin/pip install --upgrade pip
+          /tmp/daidala-release/bin/pip install dist/*.whl pip-audit
+          /tmp/daidala-release/bin/daidala packs validate addyosmani
+          /tmp/daidala-release/bin/daidala packs validate aidlc
+          /tmp/daidala-release/bin/pip-audit --local
 
   hermes-compatibility:
     name: Supported Hermes compatibility
@@ -72,7 +72,7 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-      - name: Install pinned Hermes and Wingstaff
+      - name: Install pinned Hermes and Daidala
         run: |
           git clone https://github.com/NousResearch/hermes-agent.git /tmp/hermes-agent
           git -C /tmp/hermes-agent checkout 4281151ae859241351ba14d8c7682dc67ff4c126

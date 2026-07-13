@@ -8,7 +8,7 @@ from typing import Any, cast
 
 import pytest
 
-from wingstaff import cli
+from daidala import cli
 
 PROFILE_ARGS = [
     "--default-profile",

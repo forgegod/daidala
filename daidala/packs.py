@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 
 import yaml
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 _REQUIRED_LIFECYCLE = ("define", "plan", "implement", "verify", "review", "deliver")
 
 

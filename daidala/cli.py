@@ -1,4 +1,4 @@
-"""Shared standalone and Hermes-native Wingstaff operator CLI."""
+"""Shared standalone and Hermes-native Daidala operator CLI."""
 
 from __future__ import annotations
 
@@ -162,7 +162,7 @@ def _constraint_source_values(args: argparse.Namespace) -> dict[str, str | None]
     }
 
 
-def build_parser(*, prog: str = "wingstaff") -> argparse.ArgumentParser:
+def build_parser(*, prog: str = "daidala") -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog=prog)
     register_cli(parser)
     return parser

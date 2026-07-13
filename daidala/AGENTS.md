@@ -1,4 +1,4 @@
-# wingstaff/
+# daidala/
 
 ## Purpose
 
@@ -23,7 +23,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `schemas.py` | Tool schemas exposed to the model. |
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
 | `packs.py` | Pack loading and deterministic validation. |
-| `cli.py` | Shared `hermes wingstaff` and standalone operator command tree, lifecycle dispatch, pack operations, and subprocess mutation boundary. |
+| `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle dispatch, pack operations, and subprocess mutation boundary. |
 | `dashboard_backend.py` | Profile-safe dashboard read model, live Kanban snapshots, constraint previews, and typed compare-and-swap replacement adapter. |
 | `recommendations.py` | Pure finite pending-decision and next-action derivation from ledger facts and live Kanban snapshots. |
 | `setup_wizard.py` | Typed setup preview, confirmation gate, and documented Hermes board/profile inventory commands. |
@@ -66,8 +66,8 @@ workflow-pack adapters, and bundled orchestration skills.
 
 ### Public start surface (single source of truth)
 
-The argument names accepted by `wingstaff_start` and the CLI flags accepted
-by `hermes wingstaff start` are an external contract: cron prompts, webhook
+The argument names accepted by `daidala_start` and the CLI flags accepted
+by `hermes daidala start` are an external contract: cron prompts, webhook
 prompts, agent-driven admission, and operator shell invocations all consume
 the same names. `schemas.py::START` defines the JSON schema the model sees;
 `cli.py::start` defines the CLI flag set. The two are intentionally aligned.
@@ -97,15 +97,15 @@ that no longer match the plugin:
   `--board`, `--default-profile`, and `--stage-profile`.
 - `docs/13-autonomous-triggering.md` — agent prompt bodies that name
   `board`, `pack`, `workflow_id`, target repository, and the full
-  `stage_profiles` mapping; plus a direct `hermes wingstaff start` shell
+  `stage_profiles` mapping; plus a direct `hermes daidala start` shell
   snippet using `--default-profile` with explicit per-stage overrides.
-- `wingstaff/skills/orchestrate/SKILL.md` — instructs the orchestration
-  worker to call `wingstaff_start` with the same argument names.
+- `daidala/skills/orchestrate/SKILL.md` — instructs the orchestration
+  worker to call `daidala_start` with the same argument names.
 
 When `schemas.py::START` or `cli.py::start` changes any of these names,
 update all four locations in the same commit (or commit series). The
-verification gate does not catch doc drift against the live schema; only
-`ruff check wingstaff tests` and `wingstaff packs validate <pack>` run.
+The verification gate does not catch doc drift against the live schema; only
+`ruff check daidala tests` and `daidala packs validate <pack>` run.
 Add a unit test or schema assertion whenever feasible so the next rename
 fails locally rather than in production.
 - Every executable card pins `wingstaff:orchestrate` plus its exact pack-stage
@@ -151,8 +151,8 @@ fails locally rather than in production.
 
 ```bash
 pytest
-ruff check wingstaff tests
-wingstaff packs validate addyosmani
+ruff check daidala tests
+daidala packs validate addyosmani
 ```
 
 ## Child DOX Index

@@ -9,7 +9,7 @@ internals, never writes the Kanban database, never persists operational
 status, and never reads arbitrary filesystem paths.
 
 The pure derivation logic for pending decisions and recommendations lives
-in :mod:`wingstaff.recommendations`. This module wires that logic to the
+in :mod:`daidala.recommendations`. This module wires that logic to the
 service boundary and translates host failures into the dashboard's
 read-only error shape.
 """

@@ -23,7 +23,7 @@ IGNORED_DIRS = {
     "dist",
     "node_modules",
     "site-packages",
-    "wingstaff.egg-info",
+    "daidala.egg-info",
 }
 HEADING_RE = re.compile(r"^ {0,3}(#{1,6})\s+(.+?)\s*$")
 CUSTOM_ID_RE = re.compile(r"\s*\{#([A-Za-z][\w-]*)\}\s*$")

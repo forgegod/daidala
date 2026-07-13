@@ -4,15 +4,15 @@ from pathlib import Path
 
 import pytest
 
-import wingstaff
-from wingstaff.kanban import KanbanGraphAdapter
-from wingstaff.packs import load_pack
-from wingstaff.state import WorkflowStage
+import daidala
+from daidala.kanban import KanbanGraphAdapter
+from daidala.packs import load_pack
+from daidala.state import WorkflowStage
 
 
 def worker_contract() -> str:
     return (
-        Path(wingstaff.__file__).parent / "skills" / "orchestrate" / "SKILL.md"
+        Path(daidala.__file__).parent / "skills" / "orchestrate" / "SKILL.md"
     ).read_text(encoding="utf-8")
 
 

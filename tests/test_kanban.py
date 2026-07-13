@@ -7,10 +7,10 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from wingstaff.constraints import parse_workflow_constraints
-from wingstaff.kanban import KanbanError, KanbanGraphAdapter
-from wingstaff.packs import load_pack
-from wingstaff.state import (
+from daidala.constraints import parse_workflow_constraints
+from daidala.kanban import KanbanError, KanbanGraphAdapter
+from daidala.packs import load_pack
+from daidala.state import (
     ActivationManifestReference,
     ActivationReferenceState,
     CardReference,
@@ -20,7 +20,7 @@ from wingstaff.state import (
     WorkflowConstraintsReference,
     WorkflowStage,
 )
-from wingstaff.workflow import (
+from daidala.workflow import (
     approve_plan,
     new_workflow,
     record_artifact,

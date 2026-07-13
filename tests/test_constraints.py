@@ -6,9 +6,9 @@ from datetime import UTC, datetime
 
 import pytest
 
-from wingstaff.constraints import extract_policy_skill_constraints, parse_workflow_constraints
-from wingstaff.errors import PolicyViolationError
-from wingstaff.state import (
+from daidala.constraints import extract_policy_skill_constraints, parse_workflow_constraints
+from daidala.errors import PolicyViolationError
+from daidala.state import (
     ConstraintSourceProvenance,
     WorkflowConstraintsArtifact,
     WorkflowConstraintsIdentity,
