@@ -31,8 +31,8 @@ The first concrete project is defined in
 | 2 — Controller coordination and adapters | Done | Commits `3d22a84`, `5b375f6`, and regression `3a75a88`; repository coordination, fake-adapter tests, 287 tests, Ruff, Lefthook, Markdown links, both pack validations, package/release checks, DOX, and post-commit graph rebuild passed 2026-07-13. |
 | 3 — Checklist-driven prerequisite diagnosis | Done | Commit `31e043b`; 308 tests, Ruff, Lefthook, Markdown links, both pack validations, build/Twine/release checks, incremental graph updates, and the clean-tree blocked live report passed 2026-07-14. |
 | 4 — Evaluator and comparison | Done | Commit `cba9c52`; complete local fixtures ran in all three modes with isolation-receipt identity, durable baseline ordering, clean teardown, dirty-state quarantine, strict comparison and lesson-reuse evidence, increment/DOX reconciliation, 328 tests, Ruff, Lefthook, Markdown links, both pack validations, build/Twine/release checks, independent review, and incremental graph updates passing 2026-07-14. |
-| 5 — Project onboarding and reconciliation | Todo | Requires manual-cycle and attended-delivery evidence. |
-| 6 — Repository and host gate | Todo | Runs only after preceding phase evidence exists. |
+| 5 — Project onboarding and reconciliation | Blocked | Live prerequisite report `019e7de0` exits `2`: only `SI-REPOSITORY` passes; trusted registration/profile/board, controller packs, GitHub intake/findings/Project evidence, attended notification receipt, evaluator isolation evidence, and active-cycle evidence are absent. The mandatory manual-cycle and attended-delivery gate has not occurred. |
+| 6 — Repository and host gate | Blocked | Phase 5 evidence does not exist; repository/host acceptance must not run. |
 
 Relevant standing documents are
 [Workflow ecosystem market overview](../12-market-overview.md),

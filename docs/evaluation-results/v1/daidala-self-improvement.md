@@ -13,8 +13,15 @@ produced one blocked report:
 only `SI-REPOSITORY` passed because trusted registration, controller plugin,
 board, credential capability records, Project evidence, attended receipt, and
 evaluator receipt do not exist. No setup mutation, GitHub write, container run,
-model call, browser run, cron job, or self-improvement cycle occurred. This
-document is not evidence that the loop works end to end.
+model call, browser run, profile creation, board creation, cron creation, or
+cycle execution occurred.
+
+After the Phase 4 checkpoint, the clean-tree Phase 5 live gate was rerun at
+revision `7068fdf14a01e72f777e7ead0067b2ac3c5545ae`. It again exited `2` with
+only `SI-REPOSITORY` passing. Phases 5 and 6 remain blocked; no onboarding or
+host mutation was attempted.
+
+This document is not evidence that the loop works end to end.
 
 Limits: [`experiment-limits.yaml`](experiment-limits.yaml).
 Protocol: [`../../15-self-improvement.md`](../../15-self-improvement.md).
@@ -92,6 +99,10 @@ and any later promotion remain human decisions.
 - Committed manifest path: `.daidala/project.yaml`.
 - Phase 3 implementation checkpoint: `31e043be49f19a8f69cfb5eb630fb5b1257abc00`.
 - Phase 4 implementation checkpoint: `cba9c52`.
+- The post-Phase-4 live prerequisite report is
+  [`prerequisite-report-019e7de0872f8ec4b840a9d57a5c9fc655165a10043fd372358d8a7ab43f0886.json`](prerequisite-report-019e7de0872f8ec4b840a9d57a5c9fc655165a10043fd372358d8a7ab43f0886.json),
+  exits `2`, and has SHA-256
+  `019e7de0872f8ec4b840a9d57a5c9fc655165a10043fd372358d8a7ab43f0886`.
 - The redacted prerequisite report is
   [`prerequisite-report-d4e1b3a3498507f9f9c069fc16beb4c81d4eb7c65943d82c5bf96f38497bcc3e.json`](prerequisite-report-d4e1b3a3498507f9f9c069fc16beb4c81d4eb7c65943d82c5bf96f38497bcc3e.json),
   exits `2`, has SHA-256
