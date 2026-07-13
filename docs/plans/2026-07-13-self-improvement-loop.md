@@ -27,8 +27,8 @@ The first concrete project is defined in
 
 | Phase | Status | Checkpoint |
 |---|---|---|
-| 1 — Schemas and pure identity | Done | Repository-local schemas, Daidala fixture, stable cases, documentation, focused tests, Ruff, Markdown links, and DOX pass completed 2026-07-13; commit remains separately gated. |
-| 2 — Controller coordination and adapters | Todo | Requires separate Phase 2 and live-setup approval. |
+| 1 — Schemas and pure identity | Done | Commit `78c9732`; repository-local schemas, Daidala fixture, stable cases, documentation, 273 tests, Ruff, Markdown links, package/release checks, DOX, and post-commit graph review passed 2026-07-13. |
+| 2 — Controller coordination and adapters | Todo | Starts after commit `78c9732`; requires separate Phase 2 and live-setup approval. |
 | 3 — Evaluator and comparison | Todo | Requires a completed Phase 2 checkpoint and cycle-specific approval. |
 | 4 — Project onboarding and reconciliation | Todo | Requires manual-cycle and attended-delivery evidence. |
 | 5 — Repository and host gate | Todo | Runs only after preceding phase evidence exists. |

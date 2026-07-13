@@ -78,9 +78,11 @@ and any later promotion remain human decisions.
 - Attended notification target alias is trusted local data and is not recorded here.
 - No delivery receipt, remote finding identity, evaluator result, retained
   increment, or version comparison exists yet.
-- Code-review graph evidence was unavailable during Phase 1 because both rebuild
-  attempts timed out; graph-based comparisons are therefore `incomparable`, not
-  passing.
+- Two pre-commit graph rebuild attempts timed out with zero parsed files. The
+  post-commit hook then built 12 Python files, 165 nodes, 1,291 edges, and 153
+  `TESTED_BY` edges. Impact review found no affected existing flow or downstream
+  file. Symbol-level `tests_for` still missed direct tests, so graph test-gap
+  counts remain observational and cannot replace the 273-test repository gate.
 
 ## Redaction statement
 

@@ -34,8 +34,8 @@ loaded by the controller gateway.
 
 | Phase | Status | Checkpoint |
 |---|---|---|
-| 1 — Daidala fixture and deterministic foundation | Done | Manifest, constraints, issue form, strict models, fake-adapter records, F01-F18 case IDs, result/limits records, technical flow, tests, Ruff, Markdown links, and DOX pass completed 2026-07-13; commit remains separately gated. |
-| 2 — Controller bootstrap and manual evaluation | Todo | Requires separate setup approval and verified attended target. |
+| 1 — Daidala fixture and deterministic foundation | Done | Commit `78c9732`; manifest, constraints, issue form, strict models, fake-adapter records, F01-F18 cases, technical flow, 273 tests, package/release checks, DOX, and post-commit graph review passed 2026-07-13. |
+| 2 — Controller bootstrap and manual evaluation | Todo | Starts after commit `78c9732`; requires separate setup approval and verified attended target. |
 | 3 — Reconciliation, findings, and pack evaluation | Todo | Requires manual-cycle and replay evidence. |
 | 4 — Version-aware re-evaluation | Todo | Candidate Hermes identity is selected here, not invented in Phase 1. |
 | 5 — Repository gate and documentation | Todo | Requires prior live evidence or exact blockers. |
