@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Probe Wingstaff's supported Hermes dashboard extension boundary in isolation."""
+"""Probe Daidala's supported Hermes dashboard extension boundary in isolation."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from typing import Any
 from probe_hermes_compatibility import ProbeError, require_version, run
 
 SDK_VERSION = "1.1.0"
-TAB_PATH = "/wingstaff"
+TAB_PATH = "/daidala"
 SLOT = "sessions:top"
 
 
@@ -32,19 +32,19 @@ def _request(url: str) -> tuple[int, str]:
 
 
 def _write_probe_plugin(home: Path) -> None:
-    dashboard = home / "plugins" / "wingstaff" / "dashboard"
+    dashboard = home / "plugins" / "daidala" / "dashboard"
     (dashboard / "dist").mkdir(parents=True)
     (home / "config.yaml").write_text(
-        "plugins:\n  enabled:\n    - wingstaff\n", encoding="utf-8"
+        "plugins:\n  enabled:\n    - daidala\n", encoding="utf-8"
     )
     (dashboard.parent / "plugin.yaml").write_text(
-        "name: wingstaff\nversion: 0.1.0\ndescription: Dashboard compatibility probe\n",
+        "name: daidala\nversion: 0.2.0\ndescription: Dashboard compatibility probe\n",
         encoding="utf-8",
     )
     manifest = {
-        "name": "wingstaff",
-        "label": "Wingstaff",
-        "version": "0.1.0",
+        "name": "daidala",
+        "label": "Daidala",
+        "version": "0.2.0",
         "tab": {"path": TAB_PATH, "position": "after:kanban"},
         "slots": [SLOT],
         "entry": "dist/index.js",
@@ -55,20 +55,20 @@ def _write_probe_plugin(home: Path) -> None:
     (dashboard / "dist" / "index.js").write_text(
         '(function(){"use strict";const SDK=window.__HERMES_PLUGIN_SDK__;'
         'const React=SDK.React;function Page(){return React.createElement("main",'
-        '{"data-testid":"wingstaff-phase0"},React.createElement("h1",null,'
-        '"Wingstaff Phase 0"));}function Slot(){return React.createElement("div",'
-        '{"data-testid":"wingstaff-slot"},"Wingstaff decisions: 0");}'
-        'window.__HERMES_PLUGINS__.register("wingstaff",Page);'
-        f'window.__HERMES_PLUGINS__.registerSlot("wingstaff","{SLOT}",Slot);}})();',
+        '{"data-testid":"daidala-phase0"},React.createElement("h1",null,'
+        '"Daidala Phase 0"));}function Slot(){return React.createElement("div",'
+        '{"data-testid":"daidala-slot"},"Daidala decisions: 0");}'
+        'window.__HERMES_PLUGINS__.register("daidala",Page);'
+        f'window.__HERMES_PLUGINS__.registerSlot("daidala","{SLOT}",Slot);}})();',
         encoding="utf-8",
     )
     (dashboard / "dist" / "style.css").write_text(
-        '[data-testid="wingstaff-phase0"] { padding: 2rem; }\n', encoding="utf-8"
+        '[data-testid="daidala-phase0"] { padding: 2rem; }\n', encoding="utf-8"
     )
     (dashboard / "plugin_api.py").write_text(
         'from fastapi import APIRouter\nrouter = APIRouter()\n'
         '@router.get("/health")\ndef health():\n'
-        '    return {"success": True, "plugin": "wingstaff"}\n',
+        '    return {"success": True, "plugin": "daidala"}\n',
         encoding="utf-8",
     )
 
@@ -114,16 +114,16 @@ def exercise(root: Path, hermes: str, port: int) -> dict[str, Any]:
 
         status, body = _request(f"{base}/api/dashboard/plugins")
         manifests = json.loads(body)
-        plugin = next((item for item in manifests if item.get("name") == "wingstaff"), None)
+        plugin = next((item for item in manifests if item.get("name") == "daidala"), None)
         if status != 200 or plugin is None:
-            raise ProbeError("dashboard did not discover the Wingstaff manifest")
+            raise ProbeError("dashboard did not discover the Daidala manifest")
         if plugin.get("tab", {}).get("path") != TAB_PATH or plugin.get("slots") != [SLOT]:
-            raise ProbeError("dashboard changed the Wingstaff tab or slot registration")
+            raise ProbeError("dashboard changed the Daidala tab or slot registration")
         for asset in ("manifest.json", "dist/index.js", "dist/style.css"):
-            asset_status, _ = _request(f"{base}/dashboard-plugins/wingstaff/{asset}")
+            asset_status, _ = _request(f"{base}/dashboard-plugins/daidala/{asset}")
             if asset_status != 200:
                 raise ProbeError(f"dashboard asset was not served: {asset}")
-        health_status, _ = _request(f"{base}/api/plugins/wingstaff/health")
+        health_status, _ = _request(f"{base}/api/plugins/daidala/health")
         if health_status != 401:
             raise ProbeError(
                 f"plugin API auth boundary drifted: expected 401, observed {health_status}"
@@ -141,8 +141,8 @@ def exercise(root: Path, hermes: str, port: int) -> dict[str, Any]:
             },
             "browser_assertions": {
                 "sdk_global": f"window.__HERMES_PLUGIN_SDK__.sdkVersion == {SDK_VERSION!r}",
-                "tab_test_id": "wingstaff-phase0",
-                "slot_test_id": "wingstaff-slot",
+                "tab_test_id": "daidala-phase0",
+                "slot_test_id": "daidala-slot",
             },
         }
     finally:
@@ -160,7 +160,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--port", default=9120, type=int, help="Isolated dashboard port")
     parser.add_argument("--keep-temp", action="store_true", help="Keep the isolated probe root")
     args = parser.parse_args(argv)
-    root = Path(tempfile.mkdtemp(prefix="wingstaff-dashboard-compat-"))
+    root = Path(tempfile.mkdtemp(prefix="daidala-dashboard-compat-"))
     try:
         result = exercise(root, args.hermes, args.port)
         if args.keep_temp:

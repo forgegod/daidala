@@ -33,10 +33,10 @@ def test_manifest_registers_proven_host_surfaces() -> None:
     manifest = json.loads((DASHBOARD / "manifest.json").read_text(encoding="utf-8"))
 
     assert manifest == {
-        "name": "wingstaff",
-        "label": "Wingstaff",
-        "version": "0.1.0",
-        "tab": {"path": "/wingstaff", "position": "after:kanban"},
+        "name": "daidala",
+        "label": "Daidala",
+        "version": "0.2.0",
+        "tab": {"path": "/daidala", "position": "after:kanban"},
         "slots": ["sessions:top"],
         "entry": "dist/index.js",
         "css": "dist/style.css",
@@ -64,7 +64,7 @@ def test_bundle_uses_documented_sdk_registration() -> None:
     assert "window.__HERMES_PLUGIN_SDK__" in source
     assert "SDK.React" in source
     # Registration uses the documented constants rather than inline strings.
-    assert "PLUGIN_NAME = \"wingstaff\"" in source
+    assert "PLUGIN_NAME = \"daidala\"" in source
     assert 'register(PLUGIN_NAME, Page)' in source
     assert 'registerSlot(PLUGIN_NAME, "sessions:top", Slot)' in source
     assert "buildDecisionCount" in source
@@ -73,10 +73,10 @@ def test_bundle_uses_documented_sdk_registration() -> None:
 def test_read_model_stays_read_only_and_setup_writes_are_scoped() -> None:
     source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
 
+    assert "SDK.fetchJSON" in source
     assert 'method: "GET"' in source
-    assert 'credentials: "same-origin"' in source
     assert 'Accept: "application/json"' in source
-    assert 'Authorization: "Bearer " + window.__HERMES_SESSION_TOKEN__' in source
+    assert "__HERMES_SESSION_TOKEN__" not in source
     assert 'method: "POST"' in source
     assert 'API_BASE + "/wizard/preview"' in source
     assert 'API_BASE + "/wizard/start"' in source
@@ -117,10 +117,10 @@ def test_bundle_renders_every_phase_three_state() -> None:
 
     required_strings = (
         "Loading workflows",
-        "No Wingstaff workflows",
+        "No Daidala workflows",
         "Live Kanban state unavailable",
         "No pending human decision",
-        "Wingstaff decisions:",
+        "Daidala decisions:",
         "Refresh",
         "Loading card status",
         "Loading decisions",
@@ -144,7 +144,7 @@ def test_bundle_renders_every_phase_three_state() -> None:
 def test_bundle_targets_phase_two_read_endpoints() -> None:
     source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
 
-    assert 'API_BASE = "/api/plugins/wingstaff"' in source
+    assert 'API_BASE = "/api/plugins/daidala"' in source
     assert 'API_BASE + "/health"' in source
     assert 'API_BASE + "/workflows"' in source
     assert 'API_BASE + "/workflows/"' in source
@@ -159,7 +159,7 @@ def test_bundle_handles_unavailable_host_gracefully() -> None:
     assert ".catch(function () {" in source
     assert "return null" in source
     assert "Live Kanban state unavailable" in source
-    assert "ws-state-unavailable" in source or "ws-workflow-unavailable" in source
+    assert "daidala-state-unavailable" in source or "daidala-workflow-unavailable" in source
 
 
 def test_stylesheet_uses_host_theme_tokens() -> None:
@@ -167,7 +167,7 @@ def test_stylesheet_uses_host_theme_tokens() -> None:
 
     assert "var(--text-primary" in source
     assert "var(--surface-raised" in source
-    assert "var(--accent-primary" in source or "var(--ws-accent" in source
+    assert "var(--accent-primary" in source or "var(--daidala-accent" in source
 
 
 def test_stylesheet_collapses_on_narrow_layouts() -> None:

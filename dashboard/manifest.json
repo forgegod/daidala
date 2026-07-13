@@ -1,9 +1,9 @@
 {
-  "name": "wingstaff",
-  "label": "Wingstaff",
-  "version": "0.1.0",
+  "name": "daidala",
+  "label": "Daidala",
+  "version": "0.2.0",
   "tab": {
-    "path": "/wingstaff",
+    "path": "/daidala",
     "position": "after:kanban"
   },
   "slots": [

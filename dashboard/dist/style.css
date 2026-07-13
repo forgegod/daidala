@@ -1,5 +1,5 @@
 /*
- * Wingstaff dashboard UI styles — Phase 3 read-only surface.
+ * Daidala dashboard UI styles — Phase 3 read-only surface.
  *
  * The stylesheet is dependency-free and uses the host dashboard's
  * --text-primary, --surface-raised, and related theme tokens so the UI
@@ -8,166 +8,166 @@
  */
 
 :root {
-  --ws-gap: 0.75rem;
-  --ws-padding: 1rem;
-  --ws-radius: 0.5rem;
-  --ws-border: 1px solid var(--border-subtle, rgba(148, 163, 160, 0.28));
-  --ws-accent: var(--accent-primary, #4a7bff);
-  --ws-error: var(--text-error, #b3261e);
-  --ws-warning: var(--text-warning, #b7651e);
-  --ws-ok: var(--text-success, #2e7d32);
-  --ws-muted: var(--text-muted, var(--text-secondary, #94a3a0));
+  --daidala-gap: 0.75rem;
+  --daidala-padding: 1rem;
+  --daidala-radius: 0.5rem;
+  --daidala-border: 1px solid var(--border-subtle, rgba(148, 163, 160, 0.28));
+  --daidala-accent: var(--accent-primary, #4a7bff);
+  --daidala-error: var(--text-error, #b3261e);
+  --daidala-warning: var(--text-warning, #b7651e);
+  --daidala-ok: var(--text-success, #2e7d32);
+  --daidala-muted: var(--text-muted, var(--text-secondary, #94a3a0));
 }
 
-.ws-root {
+.daidala-root {
   display: flex;
   flex-direction: column;
-  gap: var(--ws-gap);
-  padding: var(--ws-padding);
+  gap: var(--daidala-gap);
+  padding: var(--daidala-padding);
   color: var(--text-primary, inherit);
   background: var(--surface-base, transparent);
 }
 
-.ws-root-header {
+.daidala-root-header {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--ws-gap);
+  gap: var(--daidala-gap);
 }
 
-.ws-root-header h1 {
+.daidala-root-header h1 {
   margin: 0;
   font-size: 1.25rem;
 }
 
-.ws-root-subtitle {
+.daidala-root-subtitle {
   flex: 1 1 auto;
   margin: 0;
-  color: var(--ws-muted);
+  color: var(--daidala-muted);
 }
 
-.ws-refresh {
+.daidala-refresh {
   appearance: none;
-  border: var(--ws-border);
+  border: var(--daidala-border);
   background: var(--surface-raised, rgba(255, 255, 255, 0.04));
   color: var(--text-primary, inherit);
   padding: 0.35rem 0.75rem;
-  border-radius: var(--ws-radius);
+  border-radius: var(--daidala-radius);
   cursor: pointer;
   font: inherit;
 }
 
-.ws-refresh:hover,
-.ws-refresh:focus-visible {
-  outline: 2px solid var(--ws-accent);
+.daidala-refresh:hover,
+.daidala-refresh:focus-visible {
+  outline: 2px solid var(--daidala-accent);
   outline-offset: 2px;
 }
 
-.ws-banner {
+.daidala-banner {
   margin: 0;
   padding: 0.5rem 0.75rem;
-  border-radius: var(--ws-radius);
+  border-radius: var(--daidala-radius);
 }
 
-.ws-banner-error {
+.daidala-banner-error {
   background: var(--surface-raised, rgba(179, 38, 30, 0.12));
-  color: var(--ws-error);
+  color: var(--daidala-error);
 }
 
-.ws-state {
+.daidala-state {
   margin: 0;
-  padding: var(--ws-padding);
-  border: var(--ws-border);
-  border-radius: var(--ws-radius);
+  padding: var(--daidala-padding);
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
   background: var(--surface-raised, rgba(255, 255, 255, 0.04));
 }
 
-.ws-state-loading {
-  color: var(--ws-muted);
+.daidala-state-loading {
+  color: var(--daidala-muted);
 }
 
-.ws-state-unavailable {
-  color: var(--ws-error);
+.daidala-state-unavailable {
+  color: var(--daidala-error);
 }
 
-.ws-state-empty {
-  color: var(--ws-muted);
+.daidala-state-empty {
+  color: var(--daidala-muted);
 }
 
-.ws-workflows {
+.daidala-workflows {
   display: grid;
-  gap: var(--ws-gap);
+  gap: var(--daidala-gap);
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
 }
 
-.ws-workflow {
+.daidala-workflow {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding: var(--ws-padding);
-  border: var(--ws-border);
-  border-radius: var(--ws-radius);
+  padding: var(--daidala-padding);
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
   background: var(--surface-raised, rgba(255, 255, 255, 0.04));
 }
 
-.ws-workflow-header {
+.daidala-workflow-header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--ws-gap);
+  gap: var(--daidala-gap);
   flex-wrap: wrap;
 }
 
-.ws-workflow-title {
+.daidala-workflow-title {
   margin: 0;
   font-size: 1rem;
 }
 
-.ws-workflow-meta {
+.daidala-workflow-meta {
   margin: 0;
-  color: var(--ws-muted);
+  color: var(--daidala-muted);
   font-size: 0.85rem;
 }
 
-.ws-workflow-goal {
+.daidala-workflow-goal {
   margin: 0;
 }
 
-.ws-workflow-identity {
+.daidala-workflow-identity {
   display: grid;
   gap: 0.25rem 0.75rem;
   grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
   margin: 0;
 }
 
-.ws-workflow-identity dt {
+.daidala-workflow-identity dt {
   font-size: 0.75rem;
-  color: var(--ws-muted);
+  color: var(--daidala-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-.ws-workflow-identity dd {
+.daidala-workflow-identity dd {
   margin: 0;
   font-family: var(--font-mono, ui-monospace, "SFMono-Regular", monospace);
   font-size: 0.85rem;
   word-break: break-all;
 }
 
-.ws-workflow-digest {
+.daidala-workflow-digest {
   font-size: 0.7rem;
 }
 
-.ws-workflow-section-title {
+.daidala-workflow-section-title {
   margin: 0.25rem 0 0;
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--ws-muted);
+  color: var(--daidala-muted);
 }
 
-.ws-workflow-cards,
-.ws-workflow-decisions {
+.daidala-workflow-cards,
+.daidala-workflow-decisions {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -176,173 +176,173 @@
   gap: 0.25rem;
 }
 
-.ws-card {
+.daidala-card {
   display: grid;
   grid-template-columns: minmax(4rem, auto) minmax(4rem, auto) 1fr;
   gap: 0.5rem;
   align-items: baseline;
   padding: 0.35rem 0.5rem;
-  border: var(--ws-border);
-  border-radius: var(--ws-radius);
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
   font-size: 0.85rem;
 }
 
-.ws-card.is-blocked {
-  border-color: var(--ws-error);
-  color: var(--ws-error);
+.daidala-card.is-blocked {
+  border-color: var(--daidala-error);
+  color: var(--daidala-error);
 }
 
-.ws-card.is-done {
-  border-color: var(--ws-ok);
+.daidala-card.is-done {
+  border-color: var(--daidala-ok);
 }
 
-.ws-card.is-ready {
-  border-color: var(--ws-accent);
+.daidala-card.is-ready {
+  border-color: var(--daidala-accent);
 }
 
-.ws-card-stage {
+.daidala-card-stage {
   text-transform: uppercase;
   font-size: 0.7rem;
   letter-spacing: 0.05em;
-  color: var(--ws-muted);
+  color: var(--daidala-muted);
 }
 
-.ws-card-status {
+.daidala-card-status {
   text-transform: uppercase;
   font-size: 0.7rem;
   letter-spacing: 0.05em;
 }
 
-.ws-card-assignee {
+.daidala-card-assignee {
   font-family: var(--font-mono, ui-monospace, "SFMono-Regular", monospace);
 }
 
-.ws-card-reason {
+.daidala-card-reason {
   grid-column: 1 / -1;
-  color: var(--ws-warning);
+  color: var(--daidala-warning);
   font-size: 0.8rem;
 }
 
-.ws-decision {
+.daidala-decision {
   display: grid;
   grid-template-columns: minmax(8rem, auto) 1fr;
   gap: 0.5rem;
   align-items: baseline;
   padding: 0.35rem 0.5rem;
-  border: var(--ws-border);
-  border-radius: var(--ws-radius);
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
   font-size: 0.85rem;
 }
 
-.ws-decision-kind {
+.daidala-decision-kind {
   text-transform: uppercase;
   font-size: 0.7rem;
   letter-spacing: 0.05em;
-  color: var(--ws-accent);
+  color: var(--daidala-accent);
 }
 
-.ws-decision-rationale {
+.daidala-decision-rationale {
   color: var(--text-primary, inherit);
 }
 
-.ws-decision-card {
+.daidala-decision-card {
   grid-column: 1 / -1;
-  color: var(--ws-muted);
+  color: var(--daidala-muted);
   font-family: var(--font-mono, ui-monospace, "SFMono-Regular", monospace);
   font-size: 0.75rem;
 }
 
-.ws-workflow-loading,
-.ws-workflow-unavailable,
-.ws-workflow-empty {
+.daidala-workflow-loading,
+.daidala-workflow-unavailable,
+.daidala-workflow-empty {
   margin: 0;
   font-size: 0.85rem;
-  color: var(--ws-muted);
+  color: var(--daidala-muted);
 }
 
-.ws-workflow-unavailable {
-  color: var(--ws-error);
+.daidala-workflow-unavailable {
+  color: var(--daidala-error);
 }
 
-.ws-slot {
+.daidala-slot {
   font-size: 0.85rem;
-  color: var(--ws-accent);
+  color: var(--daidala-accent);
 }
 
-.ws-setup {
+.daidala-setup {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--ws-gap);
-  padding: var(--ws-padding);
-  border: var(--ws-border);
-  border-radius: var(--ws-radius);
+  gap: var(--daidala-gap);
+  padding: var(--daidala-padding);
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
 }
 
-.ws-setup h2,
-.ws-setup-preview,
-.ws-setup-confirm,
-.ws-setup [role="status"] {
+.daidala-setup h2,
+.daidala-setup-preview,
+.daidala-setup-confirm,
+.daidala-setup [role="status"] {
   grid-column: 1 / -1;
 }
 
-.ws-setup-field {
+.daidala-setup-field {
   display: grid;
   gap: 0.25rem;
-  color: var(--ws-muted);
+  color: var(--daidala-muted);
 }
 
-.ws-setup-field input,
-.ws-setup button {
+.daidala-setup-field input,
+.daidala-setup button {
   box-sizing: border-box;
   min-width: 0;
   width: 100%;
   padding: 0.5rem 0.65rem;
-  border: var(--ws-border);
-  border-radius: var(--ws-radius);
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
   background: var(--surface-raised, rgba(255, 255, 255, 0.04));
   color: var(--text-primary, inherit);
 }
 
-.ws-setup-preview {
+.daidala-setup-preview {
   overflow: auto;
   max-height: 16rem;
   padding: 0.75rem;
 }
 
-.ws-constraints {
+.daidala-constraints {
   display: grid;
-  gap: var(--ws-gap);
-  margin-top: var(--ws-gap);
-  padding-top: var(--ws-gap);
-  border-top: var(--ws-border);
+  gap: var(--daidala-gap);
+  margin-top: var(--daidala-gap);
+  padding-top: var(--daidala-gap);
+  border-top: var(--daidala-border);
 }
 
-.ws-constraints textarea,
-.ws-constraints pre {
+.daidala-constraints textarea,
+.daidala-constraints pre {
   box-sizing: border-box;
   width: 100%;
   overflow: auto;
   padding: 0.75rem;
-  border: var(--ws-border);
-  border-radius: var(--ws-radius);
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
   background: var(--surface-raised, rgba(255, 255, 255, 0.04));
   color: var(--text-primary, inherit);
   font-family: var(--font-mono, ui-monospace, monospace);
 }
 
 @media (max-width: 64rem) {
-  .ws-root {
+  .daidala-root {
     padding: 0.75rem;
   }
-  .ws-workflows,
-  .ws-setup {
+  .daidala-workflows,
+  .daidala-setup {
     grid-template-columns: 1fr;
   }
-  .ws-workflow-identity {
+  .daidala-workflow-identity {
     grid-template-columns: 1fr 1fr;
   }
-  .ws-card,
-  .ws-decision {
+  .daidala-card,
+  .daidala-decision {
     grid-template-columns: 1fr;
   }
 }

@@ -52,7 +52,7 @@ resuming an already-created workflow.
    and obtain fresh confirmation.
 9. After confirmation, call `daidala_start` exactly once. Report the returned
    workflow and card identities and point the user to native Kanban. If the
-   dashboard is available, `/wingstaff` is an optional observation surface; its
+   dashboard is available, `/daidala` is an optional observation surface; its
    absence never changes the request or blocks setup.
 10. Stop after start. Hermes Kanban dispatches workers using
     `daidala:orchestrate`; setup does not execute lifecycle stages.

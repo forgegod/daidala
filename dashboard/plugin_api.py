@@ -1,11 +1,11 @@
-"""Read-only Wingstaff routes mounted by the Hermes dashboard host.
+"""Read-only Daidala routes mounted by the Hermes dashboard host.
 
 This module is the dashboard backend proven by Phase 0. It exports the
 ``router`` symbol the Hermes dashboard process mounts under
-``/api/plugins/wingstaff/``. The implementation is profile-safe, read-only,
+``/api/plugins/daidala/``. The implementation is profile-safe, read-only,
 and never imports Hermes internals or writes the Kanban database. Live
 card data is read on demand through the same public
-``KanbanGraphAdapter`` boundary the existing ``wingstaff_status`` tool
+``KanbanGraphAdapter`` boundary the existing ``daidala_status`` tool
 already uses.
 
 The pure deterministic recommendation logic lives in
@@ -14,13 +14,13 @@ projections to FastAPI.
 
 Phase 2 endpoints (all read-only):
 
-- ``GET  /api/plugins/wingstaff/health``
-- ``GET  /api/plugins/wingstaff/prerequisites``
-- ``GET  /api/plugins/wingstaff/workflows``
-- ``GET  /api/plugins/wingstaff/workflows/{workflow_id}``
-- ``GET  /api/plugins/wingstaff/workflows/{workflow_id}/decisions``
-- ``GET  /api/plugins/wingstaff/workflows/{workflow_id}/recommendations``
-- ``POST /api/plugins/wingstaff/constraints/preview``
+- ``GET  /api/plugins/daidala/health``
+- ``GET  /api/plugins/daidala/prerequisites``
+- ``GET  /api/plugins/daidala/workflows``
+- ``GET  /api/plugins/daidala/workflows/{workflow_id}``
+- ``GET  /api/plugins/daidala/workflows/{workflow_id}/decisions``
+- ``GET  /api/plugins/daidala/workflows/{workflow_id}/recommendations``
+- ``POST /api/plugins/daidala/constraints/preview``
 """
 
 from __future__ import annotations
@@ -38,7 +38,6 @@ from daidala.dashboard_backend import (
     HostUnavailableError,
     UnknownWorkflowError,
 )
-from daidala.service import WorkflowService
 from daidala.setup_wizard import (
     SetupRequest,
     SetupWizardError,
@@ -51,11 +50,11 @@ from daidala.setup_wizard import (
 router = APIRouter()
 
 
-ServiceFactory = Callable[[], WorkflowService]
+ServiceFactory = Callable[[], Any]
 
 
 @lru_cache(maxsize=1)
-def _default_service() -> WorkflowService:
+def _default_service() -> Any:
     backend = DashboardBackend.from_default_profile()
     return backend.service
 
@@ -63,7 +62,7 @@ def _default_service() -> WorkflowService:
 service_factory: ServiceFactory = _default_service
 
 
-def configure_backend(backend: DashboardBackend) -> None:
+def configure_backend(backend: Any) -> None:
     """Inject a pre-built backend (used by tests and setup wiring)."""
 
     global service_factory
@@ -81,7 +80,7 @@ def health() -> dict[str, Any]:
         return {"success": False, "error": str(error)}
     return {
         "success": True,
-        "plugin": "wingstaff",
+        "plugin": "daidala",
         "read_only": True,
     }
 

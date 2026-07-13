@@ -2,11 +2,11 @@
 
 ## Purpose
 
-Provide the optional Wingstaff extension for the existing Hermes dashboard.
+Provide the optional Daidala extension for the existing Hermes dashboard.
 
 ## Ownership
 
-- `manifest.json` declares the `/wingstaff` tab, `sessions:top` slot, assets, and backend router.
+- `manifest.json` declares the `/daidala` tab, `sessions:top` slot, assets, and backend router.
 - `plugin_api.py` mounts the profile-safe read model and narrowly scoped setup routes.
 - `dist/index.js` renders workflow progress, pending decisions, and confirmation-gated setup.
 - `dist/style.css` adapts the extension to host themes and narrow layouts.
@@ -14,7 +14,10 @@ Provide the optional Wingstaff extension for the existing Hermes dashboard.
 ## Local Contracts
 
 - Register only documented Hermes dashboard SDK surfaces.
-- Browser requests authenticate with the host-provided session token and call only scoped Wingstaff routes.
+- Browser requests use the host SDK's authenticated `fetchJSON` helper and call
+  only scoped Daidala routes; never read the host session token directly.
+- `plugin_api.py` imports the stable `daidala` package exposed by both pip and
+  the repository-root directory entry point.
 - Workflow polling is read-only. Mutations are limited to board creation,
   confirmed setup, and compare-and-swap constraint replacement.
 - Preview and declined setup must not mutate; start requires a literal checked confirmation.
@@ -26,7 +29,7 @@ Provide the optional Wingstaff extension for the existing Hermes dashboard.
 ## Work Guidance
 
 - Keep the JavaScript dependency-free and compatible with the React instance exposed by the Hermes plugin SDK.
-- Keep the backend router thin; deterministic policy remains under `wingstaff/`.
+- Keep the backend router thin; deterministic policy remains under `daidala/`.
 
 ## Verification
 

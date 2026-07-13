@@ -38,8 +38,8 @@ if args[:1] == ["dashboard"]:
     sock.bind(("127.0.0.1", port))
     sock.listen(8)
     body = json.dumps([{
-        "name": "wingstaff", "label": "Wingstaff", "version": "0.1.0",
-        "tab": {"path": "/wingstaff", "position": "after:kanban"},
+        "name": "daidala", "label": "Daidala", "version": "0.2.0",
+        "tab": {"path": "/daidala", "position": "after:kanban"},
         "slots": ["sessions:top"], "entry": "dist/index.js", "css": "dist/style.css",
         "has_api": True, "source": "user",
     }]).encode()
@@ -53,9 +53,9 @@ if args[:1] == ["dashboard"]:
             response = (b"HTTP/1.1 200 OK\r\n"
                         b"Content-Type: application/json\r\n"
                         b"Content-Length: " + str(len(body)).encode() + b"\r\n\r\n" + body)
-        elif first.startswith("/dashboard-plugins/wingstaff/"):
+        elif first.startswith("/dashboard-plugins/daidala/"):
             response = b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok"
-        elif first == "/api/plugins/wingstaff/health":
+        elif first == "/api/plugins/daidala/health":
             response = b"HTTP/1.1 401 Unauthorized\r\nContent-Length: 0\r\n\r\n"
         else:
             response = b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n"
@@ -99,11 +99,11 @@ def test_probe_discovers_dashboard_plugin_and_serves_assets(tmp_path: Path) -> N
     assert payload["hermes"]["semver"] == "0.18.2"
     assert payload["hermes"]["build"] == "2026.7.7.2"
     assert payload["hermes"]["upstream"] == "4281151a"
-    assert payload["plugin"]["tab"] == "/wingstaff"
+    assert payload["plugin"]["tab"] == "/daidala"
     assert payload["plugin"]["slot"] == "sessions:top"
     assert payload["plugin"]["assets_served"] is True
     assert payload["plugin"]["api_mounted_and_auth_gated"] is True
-    assert not list(tmp_path.glob("wingstaff-dashboard-compat-*"))
+    assert not list(tmp_path.glob("daidala-dashboard-compat-*"))
 
 
 def test_probe_rejects_changed_supported_host_identity(tmp_path: Path) -> None:
@@ -112,7 +112,7 @@ def test_probe_rejects_changed_supported_host_identity(tmp_path: Path) -> None:
     assert result.returncode == 1
     assert "unsupported Hermes identity" in result.stderr
     assert "0.19.0" in result.stderr
-    assert not list(tmp_path.glob("wingstaff-dashboard-compat-*"))
+    assert not list(tmp_path.glob("daidala-dashboard-compat-*"))
 
 
 def test_probe_rejects_missing_host_identity_fields(tmp_path: Path) -> None:
@@ -120,7 +120,7 @@ def test_probe_rejects_missing_host_identity_fields(tmp_path: Path) -> None:
 
     assert result.returncode == 1
     assert "missing semantic, build, or upstream identity" in result.stderr
-    assert not list(tmp_path.glob("wingstaff-dashboard-compat-*"))
+    assert not list(tmp_path.glob("daidala-dashboard-compat-*"))
 
 
 def test_probe_rejects_manifest_drift(tmp_path: Path) -> None:
@@ -128,7 +128,7 @@ def test_probe_rejects_manifest_drift(tmp_path: Path) -> None:
     fake_path.mkdir()
     (fake_path / "hermes").write_text(
         FAKE_HERMES.replace(
-            '"name": "wingstaff", "label": "Wingstaff"',
+            '"name": "daidala", "label": "Daidala"',
             '"name": "renamed", "label": "Renamed"',
         ),
         encoding="utf-8",
@@ -158,4 +158,4 @@ def test_probe_rejects_manifest_drift(tmp_path: Path) -> None:
 
     assert result.returncode == 1
     assert "did not discover" in result.stderr
-    assert not list(tmp_path.glob("wingstaff-dashboard-compat-*"))
+    assert not list(tmp_path.glob("daidala-dashboard-compat-*"))

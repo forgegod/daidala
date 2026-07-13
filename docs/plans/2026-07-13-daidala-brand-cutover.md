@@ -1,6 +1,6 @@
 # Daidala brand cutover implementation plan
 
-> Status: **Approved for phase-gated execution. Phases 0–2 are complete; Phase 3 is next.**
+> Status: **Approved for phase-gated execution. Phases 0–3 are complete; Phase 4 is next.**
 >
 > This is a hard public rename. Do not add compatibility packages, import shims,
 > CLI aliases, tool aliases, skill aliases, schema fallbacks, or data migration.
@@ -329,6 +329,14 @@ daidala packs validate aidlc
 Stop if any fixture still depends on the old runtime namespace.
 
 ## Phase 3 — Rename the dashboard and browser contract
+
+**Status: Done.** The manifest, `/daidala` route, API namespace, browser labels,
+DOM/CSS identifiers, setup skill, and compatibility probe use Daidala. Browser
+verification against an isolated Hermes 0.18.2 dashboard passed at 1440×1000
+and 390×844 with no stale branding, overflow, clipping, or JavaScript
+exceptions. The browser pass found and fixed host-auth bypass through a direct
+session-token read and a directory-loader package alias that prevented all 12
+backend routes from mounting. The full phase gate passed with 231 tests.
 
 ### Files
 

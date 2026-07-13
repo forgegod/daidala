@@ -1,10 +1,10 @@
 /*
- * Wingstaff dashboard UI — Phase 3 read-only surface.
+ * Daidala dashboard UI — Phase 3 read-only surface.
  *
  * The plugin renders two components through the Hermes dashboard plugin SDK:
  *
- *   - the /wingstaff tab (Page) lists workflows, links live Kanban snapshots
- *     to Wingstaff policy identity, and surfaces pending decisions;
+ *   - the /daidala tab (Page) lists workflows, links live Kanban snapshots
+ *     to Daidala policy identity, and surfaces pending decisions;
  *   - the sessions:top slot (Slot) renders a compact pending-decision count.
  *
  * The UI is strictly read-only: only GET requests are issued, no write path is
@@ -34,42 +34,26 @@
   var useState = React.useState;
 
   var POLL_MS = 5000;
-  var API_BASE = "/api/plugins/wingstaff";
-  var PLUGIN_NAME = "wingstaff";
+  var API_BASE = "/api/plugins/daidala";
+  var PLUGIN_NAME = "daidala";
 
   function fetchJson(url) {
-    return fetch(url, {
+    return SDK.fetchJSON(url, {
       method: "GET",
-      credentials: "same-origin",
       headers: {
-        Accept: "application/json",
-        Authorization: "Bearer " + window.__HERMES_SESSION_TOKEN__
+        Accept: "application/json"
       }
-    }).then(function (response) {
-      if (!response.ok) {
-        var error = new Error("request failed: " + response.status);
-        error.status = response.status;
-        throw error;
-      }
-      return response.json();
     });
   }
 
   function postJson(url, payload) {
-    return fetch(url, {
+    return SDK.fetchJSON(url, {
       method: "POST",
-      credentials: "same-origin",
       headers: {
         Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + window.__HERMES_SESSION_TOKEN__
+        "Content-Type": "application/json"
       },
       body: JSON.stringify(payload)
-    }).then(function (response) {
-      return response.json().then(function (body) {
-        if (!response.ok) throw new Error(body.detail || "request failed");
-        return body;
-      });
     });
   }
 
@@ -148,16 +132,16 @@
   }
 
   function renderCardRow(card) {
-    var cardClass = "ws-card ws-card-" + card.stage + " is-" + card.status;
+    var cardClass = "daidala-card daidala-card-" + card.stage + " is-" + card.status;
     var blockReason = card.block_reason ? card.block_reason : "";
     return createElement(
       "li",
-      { key: card.task_id, className: cardClass, "data-testid": "ws-card" },
-      createElement("span", { className: "ws-card-stage" }, card.stage),
-      createElement("span", { className: "ws-card-status" }, card.status),
-      createElement("span", { className: "ws-card-assignee" }, card.assignee || "—"),
+      { key: card.task_id, className: cardClass, "data-testid": "daidala-card" },
+      createElement("span", { className: "daidala-card-stage" }, card.stage),
+      createElement("span", { className: "daidala-card-status" }, card.status),
+      createElement("span", { className: "daidala-card-assignee" }, card.assignee || "—"),
       blockReason
-        ? createElement("span", { className: "ws-card-reason" }, blockReason)
+        ? createElement("span", { className: "daidala-card-reason" }, blockReason)
         : null
     );
   }
@@ -167,15 +151,15 @@
       "li",
       {
         key: action.action_kind + (action.card_id || ""),
-        className: "ws-decision ws-decision-" + action.action_kind,
-        "data-testid": "ws-decision"
+        className: "daidala-decision daidala-decision-" + action.action_kind,
+        "data-testid": "daidala-decision"
       },
-      createElement("span", { className: "ws-decision-kind" }, actionBadge(action)),
-      createElement("span", { className: "ws-decision-rationale" }, summarizeAction(action)),
+      createElement("span", { className: "daidala-decision-kind" }, actionBadge(action)),
+      createElement("span", { className: "daidala-decision-rationale" }, summarizeAction(action)),
       action.card_id
         ? createElement(
             "span",
-            { className: "ws-decision-card" },
+            { className: "daidala-decision-card" },
             "card " + action.card_id
           )
         : null
@@ -196,29 +180,29 @@
     return createElement(
       "article",
       {
-        className: "ws-workflow",
+        className: "daidala-workflow",
         key: workflow.workflow_id,
-        "data-testid": "ws-workflow",
+        "data-testid": "daidala-workflow",
         "data-workflow-id": workflow.workflow_id
       },
       createElement(
         "header",
-        { className: "ws-workflow-header" },
-        createElement("h3", { className: "ws-workflow-title" }, workflow.workflow_id),
+        { className: "daidala-workflow-header" },
+        createElement("h3", { className: "daidala-workflow-title" }, workflow.workflow_id),
         createElement(
           "p",
-          { className: "ws-workflow-meta" },
+          { className: "daidala-workflow-meta" },
           workflow.board_slug + " · " + workflow.pack_name + " · policy " + policyRevision
         )
       ),
       createElement(
         "p",
-        { className: "ws-workflow-goal" },
+        { className: "daidala-workflow-goal" },
         workflow.requested_goal || ""
       ),
       createElement(
         "dl",
-        { className: "ws-workflow-identity" },
+        { className: "daidala-workflow-identity" },
         createElement(
           "div",
           null,
@@ -248,7 +232,7 @@
               createElement("dt", null, "constraint digest"),
               createElement(
                 "dd",
-                { className: "ws-workflow-digest" },
+                { className: "daidala-workflow-digest" },
                 workflow.current_constraints_digest
               )
             )
@@ -256,58 +240,58 @@
       ),
       createElement(
         "h4",
-        { className: "ws-workflow-section-title" },
+        { className: "daidala-workflow-section-title" },
         "Live Kanban"
       ),
       detail === undefined
         ? createElement(
             "p",
-            { className: "ws-workflow-loading" },
+            { className: "daidala-workflow-loading" },
             "Loading card status"
           )
         : detail === null || (detail.kanban && detail.kanban.available === false)
           ? createElement(
               "p",
-              { className: "ws-workflow-unavailable" },
+              { className: "daidala-workflow-unavailable" },
               "Live Kanban state unavailable"
             )
           : cards.length === 0
             ? createElement(
                 "p",
-                { className: "ws-workflow-empty" },
+                { className: "daidala-workflow-empty" },
                 "No cards yet"
               )
             : createElement(
                 "ul",
-                { className: "ws-workflow-cards", "data-testid": "ws-cards" },
+                { className: "daidala-workflow-cards", "data-testid": "daidala-cards" },
                 cards.map(renderCardRow)
               ),
       createElement(
         "h4",
-        { className: "ws-workflow-section-title" },
+        { className: "daidala-workflow-section-title" },
         "Pending decisions"
       ),
       decisions === undefined
         ? createElement(
             "p",
-            { className: "ws-workflow-loading" },
+            { className: "daidala-workflow-loading" },
             "Loading decisions"
           )
         : !decisions.available
           ? createElement(
               "p",
-              { className: "ws-workflow-unavailable" },
+              { className: "daidala-workflow-unavailable" },
               "Live Kanban state unavailable"
             )
           : decisionsList.length === 0
             ? createElement(
                 "p",
-                { className: "ws-workflow-empty" },
+                { className: "daidala-workflow-empty" },
                 "No pending human decision"
               )
             : createElement(
                 "ul",
-                { className: "ws-workflow-decisions", "data-testid": "ws-decisions" },
+                { className: "daidala-workflow-decisions", "data-testid": "daidala-decisions" },
                 decisionsList.map(renderDecisionItem)
               ),
       detail && detail.workflow
@@ -356,9 +340,9 @@
         .catch(function (error) { setMessage(error.message); });
     }
 
-    return createElement("section", { className: "ws-constraints", "data-testid": "ws-constraints" },
+    return createElement("section", { className: "daidala-constraints", "data-testid": "daidala-constraints" },
       createElement("h4", null, "Workflow constraints"),
-      createElement("p", { className: "ws-workflow-meta" },
+      createElement("p", { className: "daidala-workflow-meta" },
         "Revision " + (props.constraints ? props.constraints.revision : "none") +
         " · digest " + (props.workflow.current_constraints_digest || "none") +
         " · maximum 4096 canonical UTF-8 bytes"
@@ -503,7 +487,7 @@
     }
 
     function field(label, name) {
-      return createElement("label", { className: "ws-setup-field" }, label,
+      return createElement("label", { className: "daidala-setup-field" }, label,
         createElement("input", {
           value: form[name],
           onChange: function (event) {
@@ -530,14 +514,14 @@
         .catch(function (error) { setMessage(error.message); });
     }
 
-    return createElement("section", { className: "ws-setup", "data-testid": "ws-setup" },
+    return createElement("section", { className: "daidala-setup", "data-testid": "daidala-setup" },
       createElement("h2", null, "Start a workflow"),
       field("Board", "board_slug"),
       field("Repository path", "target_repository"),
       field("Goal", "goal"),
       createElement("button", { type: "button", onClick: previewSetup }, "Preview mutations"),
-      preview ? createElement("pre", { className: "ws-setup-preview" }, JSON.stringify(preview, null, 2)) : null,
-      preview ? createElement("label", { className: "ws-setup-confirm" },
+      preview ? createElement("pre", { className: "daidala-setup-preview" }, JSON.stringify(preview, null, 2)) : null,
+      preview ? createElement("label", { className: "daidala-setup-confirm" },
         createElement("input", { type: "checkbox", checked: confirmed, onChange: function (event) { setConfirmed(event.target.checked); } }),
         "I confirm these mutations"
       ) : null,
@@ -582,22 +566,22 @@
 
     return createElement(
       "main",
-      { className: "ws-root", "data-testid": "wingstaff-tab" },
+      { className: "daidala-root", "data-testid": "daidala-tab" },
       createElement(
         "header",
-        { className: "ws-root-header" },
-        createElement("h1", null, "Wingstaff"),
+        { className: "daidala-root-header" },
+        createElement("h1", null, "Daidala"),
         createElement(
           "p",
-          { className: "ws-root-subtitle" },
-          "Read-only view over the active Wingstaff profile."
+          { className: "daidala-root-subtitle" },
+          "Read-only view over the active Daidala profile."
         ),
         createElement(
           "button",
           {
             type: "button",
-            className: "ws-refresh",
-            "data-testid": "ws-refresh",
+            className: "daidala-refresh",
+            "data-testid": "daidala-refresh",
             onClick: refreshAll
           },
           "Refresh"
@@ -605,8 +589,8 @@
         healthDown
           ? createElement(
               "p",
-              { className: "ws-banner ws-banner-error" },
-              "Wingstaff backend is unreachable."
+              { className: "daidala-banner daidala-banner-error" },
+              "Daidala backend is unreachable."
             )
           : null
       ),
@@ -614,15 +598,15 @@
       firstLoad
         ? createElement(
             "p",
-            { className: "ws-state ws-state-loading", "data-testid": "ws-loading" },
+            { className: "daidala-state daidala-state-loading", "data-testid": "daidala-loading" },
             "Loading workflows"
           )
         : hostDown
           ? createElement(
               "p",
               {
-                className: "ws-state ws-state-unavailable",
-                "data-testid": "ws-host-unavailable"
+                className: "daidala-state daidala-state-unavailable",
+                "data-testid": "daidala-host-unavailable"
               },
               "Live Kanban state unavailable"
             )
@@ -630,14 +614,14 @@
             ? createElement(
                 "p",
                 {
-                  className: "ws-state ws-state-empty",
-                  "data-testid": "ws-no-workflows"
+                  className: "daidala-state daidala-state-empty",
+                  "data-testid": "daidala-no-workflows"
                 },
-                "No Wingstaff workflows"
+                "No Daidala workflows"
               )
             : createElement(
                 "section",
-                { className: "ws-workflows", "data-testid": "ws-workflows" },
+                { className: "daidala-workflows", "data-testid": "daidala-workflows" },
                 workflows.map(function (row) {
                   return createElement(WorkflowDetail, {
                     key: row.workflow_id,
@@ -674,11 +658,11 @@
     return createElement(
       "div",
       {
-        className: "ws-slot",
-        "data-testid": "wingstaff-slot",
-        title: "Wingstaff decisions: " + decisionCount
+        className: "daidala-slot",
+        "data-testid": "daidala-slot",
+        title: "Daidala decisions: " + decisionCount
       },
-      "Wingstaff decisions: " + (hostDown ? "?" : String(decisionCount))
+      "Daidala decisions: " + (hostDown ? "?" : String(decisionCount))
     );
   }
 

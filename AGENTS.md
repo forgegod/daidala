@@ -110,6 +110,8 @@ Project-wide durable preferences (style, workflow, conventions) live in user mem
   structured LLM calls.
 - External skills are referenced by fully qualified install target and validated by exact name.
 - Plugin tool handlers accept `args: dict, **kwargs` and always return a JSON string.
+- The directory-plugin entry point exposes its implementation package as
+  `daidala` so dashboard backend imports match pip installations.
 - Runtime files belong under a Hermes-resolved home/profile path; never hard-code `~/.hermes`.
 - Do not commit credentials, live workflow state, SQLite databases, or generated workspaces.
 - Do not commit, push, or publish unless explicitly requested.

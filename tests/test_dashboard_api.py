@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import importlib.util
+import subprocess
 import sys
 import types
 from pathlib import Path
 
-MODULE = Path(__file__).parents[1] / "dashboard" / "plugin_api.py"
+ROOT = Path(__file__).parents[1]
+MODULE = ROOT / "dashboard" / "plugin_api.py"
 
 
 class FakeRouter:
@@ -34,7 +36,7 @@ def load_api():
     original = sys.modules.get("fastapi")
     sys.modules["fastapi"] = fake
     try:
-        spec = importlib.util.spec_from_file_location("wingstaff_dashboard_api_test", MODULE)
+        spec = importlib.util.spec_from_file_location("daidala_dashboard_api_test", MODULE)
         assert spec and spec.loader
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
@@ -65,6 +67,52 @@ def test_router_exports_all_phase_two_routes() -> None:
         "wizard_start",
     ):
         assert callable(getattr(api, name))
+
+
+def test_router_imports_after_directory_plugin_registration(tmp_path: Path) -> None:
+    script = f"""
+import importlib.util
+import sys
+import types
+from pathlib import Path
+
+root = Path({str(ROOT)!r})
+
+class APIRouter:
+    def get(self, *_args, **_kwargs):
+        return lambda function: function
+    def post(self, *_args, **_kwargs):
+        return lambda function: function
+
+fake_fastapi = types.ModuleType("fastapi")
+fake_fastapi.APIRouter = APIRouter
+fake_fastapi.HTTPException = type("HTTPException", (Exception,), {{}})
+sys.modules["fastapi"] = fake_fastapi
+
+root_spec = importlib.util.spec_from_file_location(
+    "daidala_directory_plugin_test",
+    root / "__init__.py",
+    submodule_search_locations=[str(root)],
+)
+root_module = importlib.util.module_from_spec(root_spec)
+sys.modules["daidala_directory_plugin_test"] = root_module
+root_spec.loader.exec_module(root_module)
+assert sys.modules["daidala"] is sys.modules["daidala_directory_plugin_test.daidala"]
+
+api_spec = importlib.util.spec_from_file_location(
+    "directory_dashboard_api", root / "dashboard" / "plugin_api.py"
+)
+api_module = importlib.util.module_from_spec(api_spec)
+api_spec.loader.exec_module(api_module)
+assert api_module.router is not None
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_router_source_has_only_read_routes_and_nonmutating_preview() -> None:
