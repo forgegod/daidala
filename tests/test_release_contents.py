@@ -6,6 +6,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 CHECKER = Path(__file__).parents[1] / "scripts" / "check_release_contents.py"
+SUPERSEDED_IDENTITY = bytes((119, 105, 110, 103, 115, 116, 97, 102, 102))
 
 
 def initialize_repository(path: Path, files: dict[str, bytes]) -> None:
@@ -32,7 +33,7 @@ def test_release_checker_accepts_clean_repository_and_wheel(tmp_path: Path) -> N
     initialize_repository(root, {"README.md": b"safe release\n"})
     wheel = tmp_path / "clean.whl"
     with ZipFile(wheel, "w") as archive:
-        archive.writestr("wingstaff/__init__.py", "__version__ = 'test'\n")
+        archive.writestr("daidala/__init__.py", "__version__ = 'test'\n")
 
     result = run_checker(root, "--wheel", str(wheel))
 
@@ -57,3 +58,30 @@ def test_release_checker_rejects_runtime_state_and_secret_signatures(tmp_path: P
     assert "state.db: forbidden release path" in result.stderr
     assert "config.txt: possible private key" in result.stderr
     assert "Release-content check failed: 2 issue(s)" in result.stderr
+
+
+def test_release_checker_rejects_superseded_identity_in_paths_and_content(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "repository"
+    root.mkdir()
+    old_name = SUPERSEDED_IDENTITY.decode("ascii")
+    initialize_repository(
+        root,
+        {
+            f"docs/{old_name}-guide.md": b"safe path fixture\n",
+            "README.md": b"mentions " + SUPERSEDED_IDENTITY.upper() + b"\n",
+        },
+    )
+    wheel = tmp_path / "stale.whl"
+    with ZipFile(wheel, "w") as archive:
+        archive.writestr(
+            f"{old_name}/__init__.py",
+            b"name = '" + SUPERSEDED_IDENTITY + b"'\n",
+        )
+
+    result = run_checker(root, "--wheel", str(wheel))
+
+    assert result.returncode == 1
+    assert "superseded project identity in release path" in result.stderr
+    assert "superseded project identity in release content" in result.stderr

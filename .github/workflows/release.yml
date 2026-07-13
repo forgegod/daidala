@@ -72,12 +72,21 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
       - name: Install pinned Hermes and Daidala
         run: |
           git clone https://github.com/NousResearch/hermes-agent.git /tmp/hermes-agent
           git -C /tmp/hermes-agent checkout 4281151ae859241351ba14d8c7682dc67ff4c126
+          git -C /tmp/hermes-agent update-ref refs/remotes/origin/main 4281151ae859241351ba14d8c7682dc67ff4c126
+          git -C /tmp/hermes-agent remote set-url origin file:///tmp/hermes-agent-pinned-origin
+          (cd /tmp/hermes-agent && npm ci --workspace web && npm run build -w web)
           python -m pip install --upgrade pip
           python -m pip install -e /tmp/hermes-agent
           python -m pip install -e .
       - name: Probe supported Hermes boundary
-        run: python scripts/probe_hermes_compatibility.py
+        run: |
+          python scripts/probe_hermes_compatibility.py
+          python scripts/probe_hermes_dashboard_compatibility.py

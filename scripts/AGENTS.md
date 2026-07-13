@@ -21,9 +21,15 @@ Own dependency-free development and repository verification utilities.
 - Scripts must run on Python 3.11 or newer with no project-runtime side effects.
 - Verification scripts return zero on success and non-zero with actionable file
   and line diagnostics on failure.
+- Release-content verification rejects the superseded project identity in
+  tracked paths, decodable tracked content, wheel paths, and decodable wheel
+  content without retaining that identity in the checker source.
 - The live Hermes compatibility probe is release-only. It must clean its isolated
   home on success and failure and must not create profiles, gateways, or files in
   the operator's active Hermes configuration.
+- The dashboard compatibility probe requires the pinned Hermes checkout's web
+  distribution to be built before invocation; the probe uses `--skip-build` and
+  must not install or build host frontend dependencies itself.
 - Ignore generated, virtual-environment, VCS, and cache directories.
 - Markdown checking supports fenced and indented code exclusion, UTF-8 BOMs,
   headings indented by up to three spaces, duplicate/custom anchors, reference

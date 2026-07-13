@@ -107,7 +107,11 @@ on both paths unless `--keep-temp` is explicitly selected for diagnosis.
 `4281151ae859241351ba14d8c7682dc67ff4c126` and runs
 the probe only for `v*` tags or explicit `workflow_dispatch`, after normal test
 and package jobs pass. Ordinary branch pushes and pull requests do not pay the
-live-host cost.
+live-host cost. The release job pins the temporary checkout's local
+`origin/main` tracking ref to that revision and disables network fetches from
+the temporary clone so Hermes's background update check cannot change identity
+evidence between probes. It also builds the pinned host's `web` workspace with
+Node 22 before the dashboard probe uses `--skip-build`.
 
 ## Operator CLI registration
 

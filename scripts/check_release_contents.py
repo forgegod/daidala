@@ -12,6 +12,7 @@ from zipfile import ZipFile
 
 FORBIDDEN_PARTS = {".env", ".hermes", "__pycache__", "work"}
 FORBIDDEN_SUFFIXES = {".db", ".sqlite", ".sqlite3", ".pyc", ".pyo"}
+SUPERSEDED_IDENTITY = bytes((119, 105, 110, 103, 115, 116, 97, 102, 102)).decode("ascii")
 SECRET_PATTERNS = {
     "private key": re.compile(rb"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
     "AWS access key": re.compile(rb"(?<![A-Z0-9])AKIA[0-9A-Z]{16}(?![A-Z0-9])"),
@@ -38,8 +39,16 @@ def tracked_files(root: Path) -> list[Path]:
 
 def check_payload(name: str, payload: bytes) -> list[str]:
     errors = [f"{name}: forbidden release path"] if forbidden_path(name) else []
+    if SUPERSEDED_IDENTITY in name.casefold():
+        errors.append(f"{name}: superseded project identity in release path")
     if b"\0" in payload:
         return errors
+    try:
+        text = payload.decode("utf-8")
+    except UnicodeDecodeError:
+        text = ""
+    if SUPERSEDED_IDENTITY in text.casefold():
+        errors.append(f"{name}: superseded project identity in release content")
     for label, pattern in SECRET_PATTERNS.items():
         if pattern.search(payload):
             errors.append(f"{name}: possible {label}")

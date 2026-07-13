@@ -1,6 +1,6 @@
 # Daidala brand cutover implementation plan
 
-> Status: **Approved for phase-gated execution. Phases 0–5 are complete; Phase 6 is next.**
+> Status: **Approved for phase-gated execution. Phases 0–6 are complete; external Phase 7 requires separate approval.**
 >
 > This is a hard public rename. Do not add compatibility packages, import shims,
 > CLI aliases, tool aliases, skill aliases, schema fallbacks, or data migration.
@@ -476,6 +476,16 @@ Hermes process and that every command snippet matches the renamed schemas and
 CLI parser.
 
 ## Phase 6 — Release, isolated-host, and zero-old-name verification
+
+**Status: Done.** The clean release gate passes with 232 tests, Ruff, both pack
+validators, Markdown links, source and wheel release-content audits, build, and
+Twine. A fresh virtual environment installs `daidala` 0.2.0 with only the
+expected console and Hermes entry points. Both isolated probes pass against the
+exact pinned Hermes 0.18.2 revision after the release job was corrected to hold
+its temporary tracking identity stable and build the pinned host dashboard.
+Tracked source and the 36-member wheel contain no superseded identity in paths
+or decodable content. The release checker and CI workflow now enforce these
+contracts. Generated `dist/` artifacts remain untracked.
 
 ### Files
 
