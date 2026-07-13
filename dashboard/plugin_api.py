@@ -28,6 +28,7 @@ from __future__ import annotations
 import subprocess
 from collections.abc import Callable
 from functools import lru_cache
+from threading import Lock
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -51,12 +52,23 @@ router = APIRouter()
 
 
 ServiceFactory = Callable[[], Any]
+_default_service_lock = Lock()
 
 
 @lru_cache(maxsize=1)
-def _default_service() -> Any:
+def _cached_default_service() -> Any:
     backend = DashboardBackend.from_default_profile()
     return backend.service
+
+
+def _default_service() -> Any:
+    with _default_service_lock:
+        return _cached_default_service()
+
+
+def _reset_default_service() -> None:
+    with _default_service_lock:
+        _cached_default_service.cache_clear()
 
 
 service_factory: ServiceFactory = _default_service

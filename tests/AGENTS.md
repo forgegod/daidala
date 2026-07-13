@@ -24,7 +24,8 @@ completeness without touching a real Hermes profile.
   boundary, and dashboard-independent request parity.
 - Dashboard read-model tests keep router registration host-isolated and prove the
   finite recommendation vocabulary, exact approval identity, and absence of
-  persisted live-card status.
+  persisted live-card status, including concurrent first-request service
+  initialization.
 - Dashboard asset tests pin the supported tab and slot, authenticated read-only
   polling, confirmation-gated setup writes, required empty/error/progress states,
   and narrow host-theme styling.

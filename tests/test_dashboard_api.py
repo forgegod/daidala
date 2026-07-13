@@ -3,7 +3,10 @@ from __future__ import annotations
 import importlib.util
 import subprocess
 import sys
+import threading
+import time
 import types
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
@@ -132,17 +135,26 @@ def test_default_service_is_process_cached_to_avoid_concurrent_store_initializat
     api = load_api()
     service = object()
     calls = 0
+    worker_count = 8
+    start = threading.Barrier(worker_count)
 
     class Backend:
         @classmethod
         def from_default_profile(cls):
             nonlocal calls
             calls += 1
+            time.sleep(0.05)
             return types.SimpleNamespace(service=service)
 
     api.__dict__["DashboardBackend"] = Backend
-    api._default_service.cache_clear()
+    api._reset_default_service()
 
-    assert api._default_service() is service
-    assert api._default_service() is service
+    def resolve_service() -> object:
+        start.wait()
+        return api._default_service()
+
+    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+        services = list(executor.map(lambda _index: resolve_service(), range(worker_count)))
+
+    assert services == [service] * worker_count
     assert calls == 1

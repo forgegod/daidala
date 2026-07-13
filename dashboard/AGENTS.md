@@ -18,6 +18,8 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   only scoped Daidala routes; never read the host session token directly.
 - `plugin_api.py` imports the stable `daidala` package exposed by both pip and
   the repository-root directory entry point.
+- Initialize the process-local dashboard service exactly once under concurrent
+  first requests; route threads must not race SQLite schema initialization.
 - Workflow polling is read-only. Mutations are limited to board creation,
   confirmed setup, and compare-and-swap constraint replacement.
 - Preview and declined setup must not mutate; start requires a literal checked confirmation.
