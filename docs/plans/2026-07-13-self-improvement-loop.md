@@ -28,7 +28,7 @@ The first concrete project is defined in
 | Phase | Status | Checkpoint |
 |---|---|---|
 | 1 — Schemas and pure identity | Done | Commit `78c9732`; repository-local schemas, Daidala fixture, stable cases, documentation, 273 tests, Ruff, Markdown links, package/release checks, DOX, and post-commit graph review passed 2026-07-13. |
-| 2 — Controller coordination and adapters | Done | Commits `3d22a84` and `5b375f6`; repository coordination, fake-adapter tests, 286 tests, Ruff, Lefthook, Markdown links, both pack validations, package/release checks, DOX, and post-commit graph rebuild passed 2026-07-13. |
+| 2 — Controller coordination and adapters | Done | Commits `3d22a84`, `5b375f6`, and regression `3a75a88`; repository coordination, fake-adapter tests, 287 tests, Ruff, Lefthook, Markdown links, both pack validations, package/release checks, DOX, and post-commit graph rebuild passed 2026-07-13. |
 | 3 — Checklist-driven prerequisite diagnosis | Todo | Requires the Phase 2 checkpoint and separate implementation approval; `docs/16-self-improvement-setup.md` remains normative. |
 | 4 — Evaluator and comparison | Todo | Requires a completed Phase 3 checkpoint and cycle-specific approval. |
 | 5 — Project onboarding and reconciliation | Todo | Requires manual-cycle and attended-delivery evidence. |

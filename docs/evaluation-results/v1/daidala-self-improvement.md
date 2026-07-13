@@ -54,7 +54,7 @@ Repository tests cannot convert a blocked live probe into `pass`.
 The deterministic `pass` rows are grounded by the pure and fake-adapter tests in
 `tests/test_projects.py`, `tests/test_registrations.py`, `tests/test_adapters.py`,
 `tests/test_controller.py`, `tests/test_reconciliation.py`, and
-`tests/test_increments.py`. The current repository gate passes 286 tests, Ruff,
+`tests/test_increments.py`. The current repository gate passes 287 tests, Ruff,
 Lefthook validation, both pack validations, Markdown links, and diff checks.
 Live rows stay `not-run` until their own gate.
 
