@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import re
 from dataclasses import dataclass
 from enum import StrEnum
@@ -70,6 +71,16 @@ def load_pack(name: str) -> WorkflowPack:
 
     raw = yaml.safe_load(resource.read_text(encoding="utf-8"))
     return validate_pack(raw)
+
+
+def pack_content_digest(name: str) -> str:
+    """Return the SHA-256 digest of the exact bundled pack resource bytes."""
+    if not name or not name.replace("-", "").isalnum():
+        raise PackError(f"invalid pack name: {name!r}")
+    resource = files(__package__).joinpath("packs", f"{name}.yaml")
+    if not resource.is_file():
+        raise PackError(f"unknown bundled pack: {name!r}")
+    return hashlib.sha256(resource.read_bytes()).hexdigest()
 
 
 def validate_pack(raw: Any) -> WorkflowPack:

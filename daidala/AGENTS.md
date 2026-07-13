@@ -18,6 +18,11 @@ workflow-pack adapters, and bundled orchestration skills.
 | `service.py` | Repository preflight, approval-gated graph, artifact, worktree, and ledger coordination. |
 | `skills.py` | Exact installed-skill inventory, content-digest verification, and mutation-free install planning. |
 | `constraints.py` | Strict workflow-constraint YAML parsing, canonicalization, bounds, and digest identity. |
+| `projects.py` | Strict committed project-manifest parsing, canonical identity, verification declarations, and mutation policy. |
+| `registrations.py` | Trusted profile-local project registration structure, limits, manifest binding, and storage path. |
+| `cycles.py` | Pure self-improvement cycle identity, metric kinds, outcomes, delegation evidence, and lesson-reuse evidence. |
+| `increments.py` | Strict increment-document classification, producer provenance, canonical manifest, bounds, and digest. |
+| `adapters.py` | Side-effect-free normalized intake, finding, notification, claim, and receipt records plus injectable protocols. |
 | `execution.py` | Profile-local artifacts, detached worktrees, and diff capture. |
 | `kanban.py` | Public host-boundary adapter for the idempotent, approval-gated Hermes card graph. |
 | `schemas.py` | Tool schemas exposed to the model. |
@@ -54,6 +59,13 @@ workflow-pack adapters, and bundled orchestration skills.
 - Constraint file and exact policy-skill inputs converge on the shared service
   path. Policy skills require a verified complete-directory digest and exactly
   one fenced `yaml` constraint document after frontmatter.
+- A committed project manifest may narrow trusted registration but never grants
+  local paths, credentials, board/profile authority, evaluator capability,
+  notification authority, or release permissions.
+- Project, registration, cycle, and increment schemas reject unknown fields,
+  unbounded content, non-canonical identity, and stale or ambiguous provenance.
+- Phase 1 adapter code defines normalized records and protocols only; concrete
+  network adapters and admission coordination remain separately gated.
 - Hermes Kanban owns every operational status; Daidala persists no mirrored
   ready, running, blocked, done, or archived field.
 - Dashboard reads live Kanban state through documented `hermes kanban` commands;
@@ -142,6 +154,9 @@ fails locally rather than in production.
 ## Work Guidance
 
 - Add mechanism to Python and subject-matter mappings to `packs/*.yaml`.
+- Keep self-improvement identity and classification models pure; filesystem,
+  Kanban, adapter, evaluator, and retention side effects belong to later
+  coordination boundaries after their explicit phase gates.
 - Register bundled skills with `ctx.register_skill`; do not copy them into the user's mutable skill store.
 - `daidala:setup` remains dashboard-independent, previews the exact
   `schemas.py::START` request, and requires explicit confirmation before any

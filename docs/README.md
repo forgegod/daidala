@@ -27,7 +27,7 @@ architecture references.
 | [Workflow ecosystem market overview](12-market-overview.md) | Current projects evaluated as packs, interoperability layers, optional tools, or product references | Upstream documentation, local Matt Pocock Skills checkout, and Daidala pack contracts |
 | [Autonomous triggering](13-autonomous-triggering.md) | Hermes cron/webhook composition documented but not exercised end to end; implementation still requires exact-digest approval | Observed Hermes v0.18.2 CLI plus Daidala start CLI and tool schemas |
 | [Workflow constraints](14-workflow-constraints.md) | Implemented; workflow-scoped policy invariants, approval binding, replacement, and exact skill-backed reusable sources | `daidala/constraints.py`, `daidala/service.py`, and constraint regressions |
-| 15 — Autonomous self-improvement flow | Planned; generic protocol, Daidala dogfood flow, persistent-knowledge boundary, and increment-document protocol are specified but not implemented or exercised | `plans/2026-07-13-self-improvement-loop.md` and `plans/2026-07-13-daidala-self-improvement-loop.md` |
+| [Autonomous self-improvement flow](15-self-improvement.md) | Phase 1 strict schemas, Daidala fixture, increment provenance, normalized adapter records, and stable case IDs implemented; live controller/evaluator behavior remains unexercised | Pure model tests, project fixture, versioned result, and both implementation plans |
 | Target commit/push | Not part of Daidala runtime | Delivery records both flags as false |
 
 “Implemented” means present in this repository. Compatibility claims are limited
@@ -81,10 +81,9 @@ carry that manifest's digest and active skill names.
 12. [Workflow ecosystem market overview](12-market-overview.md) — compare candidate skill sets, workflow standards, design systems, and adjacent products.
 13. [Autonomous triggering](13-autonomous-triggering.md) — admit GitHub, Linear, Jira, or scheduled work without adding a Daidala scheduler or bypassing approval.
 14. [Workflow constraints](14-workflow-constraints.md) — define durable workflow policy without turning constraints into methodology.
-15. Autonomous self-improvement flow — planned comprehensive technical flow;
-    read the [generic protocol plan](plans/2026-07-13-self-improvement-loop.md)
-    and [Daidala instance plan](plans/2026-07-13-daidala-self-improvement-loop.md)
-    until the exercised numbered document exists.
+15. [Autonomous self-improvement flow](15-self-improvement.md) — understand the
+    Phase 1 identities, authority, document provenance, planned live flow, and
+    Daidala dogfood cases.
 
 ## Find the right document
 
@@ -104,7 +103,7 @@ carry that manifest's digest and active skill names.
 | Which external projects could become Daidala packs, and why do others not fit? | [Workflow ecosystem market overview](12-market-overview.md) |
 | How can GitHub issues, Actions failures, Linear tickets, Jira tickets, or cron start a workflow? | [Autonomous triggering](13-autonomous-triggering.md) |
 | How can one workflow enforce durable policy without creating another skill layer? | [Workflow constraints](14-workflow-constraints.md#policy-is-not-methodology) |
-| How will the autonomous self-improvement controller, evaluator, approval, evidence, and recovery flow work? | [Generic protocol plan](plans/2026-07-13-self-improvement-loop.md) and [Daidala instance plan](plans/2026-07-13-daidala-self-improvement-loop.md) |
+| How does the autonomous self-improvement controller, evaluator, approval, evidence, and recovery flow work? | [Autonomous self-improvement flow](15-self-improvement.md) |
 
 ## Verification
 

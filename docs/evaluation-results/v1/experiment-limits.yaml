@@ -1,0 +1,20 @@
+schema: daidala.experiment-limits/v1
+project_id: forgegod-daidala
+active_cycles: 1
+goal_turns: 12
+delegated_workers: 3
+research:
+  query_batches: 3
+  retained_results_per_batch: 5
+  extracted_primary_sources: 3
+time:
+  wall_clock_seconds: 3600
+system_boundaries:
+  mutable_repositories: 1
+  controller_candidate_loading: prohibited
+  evaluator_backend: restricted-container
+  evaluator_network: denied-by-default
+  browser_profile: dedicated-debug-only
+  commit: separately-approved
+  push: separately-approved
+  publication: separately-approved

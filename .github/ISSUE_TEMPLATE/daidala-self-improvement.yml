@@ -1,0 +1,76 @@
+name: Daidala self-improvement
+description: Propose one structured, approval-gated Daidala regression or improvement.
+title: "[Daidala SI] "
+labels:
+  - daidala-si
+body:
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - regression
+        - improvement
+        - compatibility
+        - skill-gap
+        - research-candidate
+    validations:
+      required: true
+  - type: input
+    id: source_identity
+    attributes:
+      label: Originating experiment, test case, or source identity
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+    validations:
+      required: true
+  - type: input
+    id: evidence
+    attributes:
+      label: Redacted evidence reference and SHA-256 digest
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and risk
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - "1"
+        - "2"
+        - "3"
+        - "4"
+        - "5"
+    validations:
+      required: true
+  - type: dropdown
+    id: publication
+    attributes:
+      label: Publication state
+      options:
+        - local
+        - pending
+        - published
+    validations:
+      required: true

@@ -9,6 +9,9 @@ completeness without touching a real Hermes profile.
 ## Ownership
 
 - Unit tests for pack loading and validation.
+- Strict self-improvement project, registration, cycle, adapter, and increment
+  model tests, including canonical identity, bounds, provenance, and fail-closed
+  malformed-input coverage.
 - Fake-context tests for plugin tool and skill registration.
 - Temporary-repository tests for policy services and JSON tool handlers.
 - Fake-inventory tests for exact external-skill prerequisites and host errors.
@@ -58,6 +61,8 @@ completeness without touching a real Hermes profile.
 ## Work Guidance
 
 - Every new policy operation requires positive, policy-violation, and persistence tests.
+- Pure schema phases require round-trip, canonical digest, unknown-field,
+  duplicate/collision, bound, and stale-identity tests without live services.
 - Skill activation coverage must prove strict serialization, exact pack-stage
   decisions, linear supersession, pending/finalized recovery, exclusive artifact
   creation, and fail-closed evidence operations for missing, pending, or blocked

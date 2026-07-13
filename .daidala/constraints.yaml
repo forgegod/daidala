@@ -1,0 +1,13 @@
+schema: daidala.workflow-constraints/v1
+global:
+  - Never read, copy, log, or persist credentials or connection strings.
+  - Never commit, push, merge, publish, release, deploy, or promote without separate approval.
+  - Mutate only the one approved Daidala-owned worktree and preserve the persistent controller.
+  - Keep one active self-improvement cycle globally.
+phases:
+  implement:
+    - Do not modify .daidala/project.yaml during the cycle it governs.
+  review:
+    - Reconcile repository documents with the applicable AGENTS.md chain and frozen diff.
+  deliver:
+    - Record commit and push as false unless each operation received separate approval.

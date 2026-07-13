@@ -113,6 +113,12 @@ Project-wide durable preferences (style, workflow, conventions) live in user mem
 - The directory-plugin entry point exposes its implementation package as
   `daidala` so dashboard backend imports match pip installations.
 - Runtime files belong under a Hermes-resolved home/profile path; never hard-code `~/.hermes`.
+- Registered projects commit strict `.daidala/project.yaml` policy, while trusted
+  checkout, remote, profile, board, credential aliases, attended target, and
+  evaluator authority remain profile-local registration data.
+- Self-improvement v1 uses one active cycle, one mutable repository,
+  `restricted-container` evaluators with denied-by-default network, 1 MiB
+  document bounds, and no external semantic-memory dependency.
 - Do not commit credentials, live workflow state, SQLite databases, or generated workspaces.
 - Do not commit, push, or publish unless explicitly requested.
 

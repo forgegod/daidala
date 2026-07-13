@@ -1,0 +1,72 @@
+schema: daidala.project/v1
+project_id: forgegod-daidala
+repository:
+  forge: github
+  canonical: forgegod/daidala
+  allowed_remote_urls:
+    - git@github.com:forgegod/daidala.git
+workflow:
+  allowed_packs:
+    - name: addyosmani
+      source_revision: 7ce442de03ddc1b72480c3b48d55c62880ea2a90
+      content_digest: 991faf8e26d1c472230dcbf2c29baae9925ad9b9e0cd954f1d90b374302b7832
+    - name: aidlc
+      source_revision: e49341dbeb8af82758dd85e96ed7fe9bcf38a447
+      content_digest: e4e921b9e719eb54a7d5ec753418e2e451369a3ef50ffd7f52cf74a85d6a6b6a
+  default_pack: addyosmani
+  default_constraints:
+    source: .daidala/constraints.yaml
+verification:
+  suites:
+    - id: repository
+      kind: deterministic
+      commands:
+        - lefthook validate
+        - pytest
+        - ruff check .
+        - daidala packs validate addyosmani
+        - daidala packs validate aidlc
+        - python scripts/check_md_links.py .
+        - python -m build
+        - python -m twine check dist/*
+        - python scripts/check_release_contents.py . --wheel dist/*.whl
+      timeout_seconds: 3600
+    - id: stability
+      kind: repeated
+      command: pytest
+      timeout_seconds: 600
+      repetitions: 3
+      acceptance:
+        maximum_failures: 0
+    - id: agent-observations
+      kind: observational
+      fields:
+        - ambiguity
+        - recovery-quality
+        - handoff-quality
+improvement:
+  mutable_paths:
+    - daidala/**
+    - tests/**
+    - docs/**
+    - .github/**
+    - .daidala/constraints.yaml
+  protected_paths:
+    - .daidala/project.yaml
+    - .git/**
+    - .env
+  maximum_changed_files: 20
+  approval_roles:
+    - maintainer
+intake:
+  adapter: github-issues
+  eligible_categories:
+    - regression
+    - improvement
+    - compatibility
+    - skill-gap
+    - research-candidate
+release:
+  allow_commit: false
+  allow_push: false
+  allow_publish: false
