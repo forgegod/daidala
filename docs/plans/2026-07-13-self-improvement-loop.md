@@ -28,10 +28,11 @@ The first concrete project is defined in
 | Phase | Status | Checkpoint |
 |---|---|---|
 | 1 — Schemas and pure identity | Done | Commit `78c9732`; repository-local schemas, Daidala fixture, stable cases, documentation, 273 tests, Ruff, Markdown links, package/release checks, DOX, and post-commit graph review passed 2026-07-13. |
-| 2 — Controller coordination and adapters | Todo | Starts after commit `78c9732`; requires separate Phase 2 and live-setup approval. |
-| 3 — Evaluator and comparison | Todo | Requires a completed Phase 2 checkpoint and cycle-specific approval. |
-| 4 — Project onboarding and reconciliation | Todo | Requires manual-cycle and attended-delivery evidence. |
-| 5 — Repository and host gate | Todo | Runs only after preceding phase evidence exists. |
+| 2 — Controller coordination and adapters | Ready for checkpoint | Repository coordination and fake-adapter tests implemented; 286 tests and the complete repository/package gate pass; commit checkpoint remains pending. |
+| 3 — Checklist-driven prerequisite diagnosis | Todo | Requires the Phase 2 checkpoint and separate implementation approval; `docs/16-self-improvement-setup.md` remains normative. |
+| 4 — Evaluator and comparison | Todo | Requires a completed Phase 3 checkpoint and cycle-specific approval. |
+| 5 — Project onboarding and reconciliation | Todo | Requires manual-cycle and attended-delivery evidence. |
+| 6 — Repository and host gate | Todo | Runs only after preceding phase evidence exists. |
 
 Relevant standing documents are
 [Workflow ecosystem market overview](../12-market-overview.md),
@@ -709,14 +710,60 @@ board, GitHub object, model, or external process is touched.
 
 - Add project admission and materialized manifest snapshots.
 - Add narrow injectable intake, findings, and notification adapter protocols.
-- Bind cycle identity to existing Daidala workflow and evidence operations.
+- Bind cycle identity, expected baseline, canonical constraints, and executable
+  stage profiles to existing Daidala workflow and evidence operations.
 - Add replay-safe claims, local pending synchronization, and receipt validation.
 - Add fake-adapter tests with no network calls.
 
 Gate: duplicate admissions and adapter retries converge; malformed external data
 fails before board or repository mutation.
 
-### Phase 3 — Evaluator and comparison
+### Phase 3 — Checklist-driven prerequisite diagnosis
+
+- Keep `docs/16-self-improvement-setup.md` as the normative operator guide and
+  prerequisite list. Give each ready-to-admit row a stable `SI-*` check ID.
+- Extend the existing shared `daidala doctor` / `hermes daidala doctor` command;
+  do not add a competing executable or a setup side effect.
+- Add `--project-manifest`, optional `--registration`, and explicit `--live`
+  inputs. Without `--live`, network, gateway-delivery, and container execution
+  checks report `not-run` and the aggregate result remains blocked.
+- Add a strict profile-local credential-binding model that maps each registration
+  alias to resolver `environment` plus an explicit environment-variable name.
+  The file contains no credential values. V1 performs no alias-name inference,
+  password-manager discovery, or `bw`/`bws`/`keepassxc-cli` invocation.
+- Resolve a token only at the bounded adapter call, pass it as `GH_TOKEN` to the
+  GitHub CLI child environment, and never print, persist, hash, or return it as
+  evidence. Missing variables and unsupported resolvers fail closed.
+- Add a strict `daidala.prerequisite-report/v1` JSON report with project and
+  checklist identity, bounded redacted evidence, per-check `pass`, `blocked`,
+  `not-run`, or `error` status, and the matching guide section.
+- Return exit code `0` only when every required check passes, `2` when any check
+  is blocked or not run, and `1` for invalid input or checker failure.
+- Probe manifest/registration binding, checkout and remote, profile, board,
+  plugin, packs, credential aliases, GitHub Project projection, attended target,
+  restricted evaluator, and active ownership through injected public command
+  boundaries. Never read or print token values, private destination IDs, profile
+  dumps, or private databases.
+- Validate retained capability metadata and prior approved receipts without
+  creating them. A missing receipt or capability proof is `blocked`; diagnosis
+  never sends a notification, writes a GitHub issue, or launches an evaluator to
+  manufacture passing evidence.
+- Add fake-command tests for complete, missing, malformed, denied, unavailable,
+  and partially configured environments. Add a parity test that extracts the
+  stable check IDs from `docs/16-self-improvement-setup.md` and requires exact
+  agreement with the CLI registry.
+- The command is diagnostic only: no `--fix`, `--apply`, profile/board creation,
+  credential storage, notification send, GitHub mutation, evaluator launch, or
+  admission. Human review of the guide and separate setup/cycle approvals remain
+  mandatory.
+
+Gate: standalone and Hermes-native outputs and exit codes agree; every guide
+check is represented exactly once; fake probes prove fail-closed behavior; and a
+live non-mutating run against the current host reports exact passes and blockers
+without changing profile, board, gateway, GitHub, repository, or evaluator
+state.
+
+### Phase 4 — Evaluator and comparison
 
 - Create fresh evaluator homes and owned worktrees through approved local
   registrations.
@@ -732,7 +779,7 @@ fails before board or repository mutation.
 Gate: one complete local fixture runs in all three modes, and every failure path
 produces evidence or an exact blocker.
 
-### Phase 4 — Project onboarding and reconciliation
+### Phase 5 — Project onboarding and reconciliation
 
 - Add dry-run-first project registration and archival commands.
 - Verify profile, board, repository, credential capability, evaluator backend,
@@ -743,7 +790,7 @@ produces evidence or an exact blocker.
 Gate: unattended intake remains disabled until the attended notification and
 replay-safety probes pass.
 
-### Phase 5 — Repository and host gate
+### Phase 6 — Repository and host gate
 
 Run:
 
@@ -802,8 +849,9 @@ dispatch. It is not reported as a product failure.
   2-20 repetitions, 1-100 changed files, normalized relative POSIX globs, and
   one global active cycle.
 - V1 accepts only evaluator backend `restricted-container` with
-  `denied-by-default` network. Phase 2 must verify its actual filesystem,
-  process, and credential guarantees before admission.
+  `denied-by-default` network. Phase 3 reports capability availability without
+  mutation; Phase 4 must verify actual filesystem, process, network, and
+  credential isolation before admission.
 - Trusted registration is profile-local at
   `projects/<project_id>/registration.yaml` below the Hermes-resolved data root.
 - Increment documents are bounded to 1 MiB each and 256 canonical entries.

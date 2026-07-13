@@ -2,22 +2,24 @@
 
 ## Support status
 
-The strict project manifest, trusted-registration model, cycle identity, metric
-schema, delegation and lesson evidence, increment-document manifest, normalized
-adapter records, Daidala project fixture, and stable evaluation case IDs are
-implemented. Controller admission, live adapters, evaluators, reconciliation,
-cron, GitHub setup, model execution, retention, and publication are planned and
-unexercised. Commands marked **UNEXERCISED** are design examples, not supported
-operator procedures.
+The strict project manifest, trusted registration, cycle identity, metric and
+increment schemas, normalized adapters, immutable manifest snapshots,
+deterministic workflow binding, replay-safe claims, local pending finding
+synchronization, and notification receipt validation are implemented.
+Concrete GitHub and gateway adapters, evaluator execution, cron, model
+comparison, retention, and publication remain blocked or unexercised. Commands
+marked **UNEXERCISED** are design examples, not supported operator procedures.
 
 Authoritative implementation sources are `daidala/projects.py`,
-`daidala/registrations.py`, `daidala/cycles.py`, `daidala/increments.py`, and
-`daidala/adapters.py`. The reusable and Daidala-instance plans remain the
+`daidala/registrations.py`, `daidala/cycles.py`, `daidala/increments.py`,
+`daidala/adapters.py`, `daidala/controller.py`, and
+`daidala/reconciliation.py`. The reusable and Daidala-instance plans remain the
 implementation authority for unfinished phases:
 
 - [Reusable protocol plan](plans/2026-07-13-self-improvement-loop.md)
 - [Daidala dogfood plan](plans/2026-07-13-daidala-self-improvement-loop.md)
 - [Versioned Phase 1 result](evaluation-results/v1/daidala-self-improvement.md)
+- [Environment prerequisites](16-self-improvement-setup.md)
 
 ## Purpose and invariant
 
@@ -113,9 +115,10 @@ Repository data cannot grant local authority. The trusted registration stores:
 - finite cycle, turn, delegation, research, source, and wall-clock limits.
 
 The registration path is derived from the Hermes-resolved profile data root as
-`projects/<project_id>/registration.yaml`. It is never committed. Phase 1
-validates structure and manifest binding only; filesystem, board, credential,
-gateway, and backend capability probes remain Phase 2.
+`projects/<project_id>/registration.yaml`. It is never committed. Structure,
+manifest binding, admission snapshots, and replay coordination are implemented;
+filesystem, board, credential, gateway, and backend capability probes remain
+live blockers listed in the [environment prerequisites](16-self-improvement-setup.md).
 
 The Daidala instance reserves attended notification alias `attended-daidala`;
 its gateway destination and authorized local identities remain profile-local.
@@ -317,7 +320,7 @@ Phase 1 enforces 1 MiB per document, 256 entries per manifest, canonical entry-I
 ordering, normalized relative paths, recognized media types, and fail-closed
 classification. Ephemeral entries, unknown producer digests, duplicate IDs,
 absolute or escaping paths, and invalid class/disposition combinations fail.
-Phase 3 will reconcile entries against the approved plan, mutable-path policy,
+Phase 4 will reconcile entries against the approved plan, mutable-path policy,
 frozen diff, artifact ledger, and finalized activation manifest.
 
 The immutable manifest path is
@@ -352,13 +355,17 @@ The engine consumes normalized records, not GitHub labels or prose directly.
   risk, admission actor, readiness, and optional bounded lease.
 - Finding records use stable identity derived from project, category, title, and
   evidence digest. `published` requires both a returned remote identity and URL.
-- Notification receipts contain adapter, attended target alias, returned receipt
-  ID, and timezone-aware delivery time.
+- Notification receipts contain the exact event ID, adapter, attended target
+  alias, returned receipt ID, and timezone-aware delivery time.
 
-Phase 1 defines records and injectable protocols only. Phase 2 owns concrete
-GitHub body/label validation, claims, retries, pending synchronization, receipt
-validation, and admission coordination. The loop never marks its generated
-finding `daidala-si:ready`.
+Phase 2 implements strict record serialization, injectable protocols,
+replay-safe claims, immutable admission snapshots, pending synchronization,
+event-bound receipt validation, and deterministic workflow binding. Admission
+snapshots bind the canonical constraint digest and complete executable-stage
+profile map; workflow dispatch requires the expected baseline before ledger or
+Kanban mutation. Concrete GitHub body/label/Project handling and gateway
+transport remain blocked on the live prerequisites. The loop never marks its
+generated finding `daidala-si:ready`.
 
 ## Recovery and reconciliation
 
@@ -461,7 +468,7 @@ GitHub Project membership is presentation only. Eligibility requires base label
 `daidala-si`, exactly one namespaced category, repository priority, structured
 body, and separate maintainer-applied `daidala-si:ready`. The issue template is
 committed; labels, Project, credentials, and live issue mutation are uncreated
-Phase 2 work.
+Phase 4 work.
 
 ### Pack-neutral activation
 
@@ -532,6 +539,9 @@ The following commands are **UNEXERCISED** and intentionally not copied into the
 getting-started path:
 
 ```bash
+# UNEXERCISED: check every documented self-improvement prerequisite
+daidala doctor --project-manifest .daidala/project.yaml --live
+
 # UNEXERCISED: preview project registration without mutation
 daidala projects register --manifest .daidala/project.yaml --dry-run
 
@@ -545,10 +555,11 @@ daidala projects approve forgegod-daidala --cycle <cycle-id> --digest <digest>
 daidala projects archive forgegod-daidala --dry-run
 ```
 
-Phase 2 must exercise setup preview, manual first run, status, approval, and
-recovery before these can become supported commands. Phase 3 must exercise
-pause/resume and reconciliation. Phase 4 must exercise candidate upgrades.
-Teardown remains destructive and separately approved.
+Phase 3 must exercise the checklist-driven prerequisite report. Phase 4 must
+exercise setup preview, manual first run, status, approval, and recovery before
+those commands can become supported. Phase 5 must exercise pause/resume and
+reconciliation. Phase 6 must exercise candidate upgrades. Teardown remains
+destructive and separately approved.
 
 ## Verification and source audit
 

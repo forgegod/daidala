@@ -116,9 +116,22 @@ Project-wide durable preferences (style, workflow, conventions) live in user mem
 - Registered projects commit strict `.daidala/project.yaml` policy, while trusted
   checkout, remote, profile, board, credential aliases, attended target, and
   evaluator authority remain profile-local registration data.
+- Credential aliases are logical names, not password-manager integrations. The
+  planned V1 resolver uses explicit profile-local alias-to-environment bindings;
+  it does not infer vault entries or invoke Bitwarden/KeePass CLIs.
 - Self-improvement v1 uses one active cycle, one mutable repository,
   `restricted-container` evaluators with denied-by-default network, 1 MiB
   document bounds, and no external semantic-memory dependency.
+- Self-improvement admission uses the deterministic cycle ID as the Daidala
+  workflow ID, writes the canonical manifest snapshot before dispatch, binds the
+  expected baseline, constraints, and stage profiles, and validates adapter
+  claims and event-specific notification receipts before Kanban mutation.
+- The persistent self-improvement controller loads Daidala from an exact detached
+  committed revision installed through verified Git or a detached local clone;
+  never from a mutable symlink, editable checkout, or uncommitted working tree.
+- `docs/16-self-improvement-setup.md` is the normative prerequisite guide. The
+  shared `daidala doctor` command may mirror its stable check IDs and report
+  evidence, but never mutates setup state or replaces human approval.
 - Do not commit credentials, live workflow state, SQLite databases, or generated workspaces.
 - Do not commit, push, or publish unless explicitly requested.
 

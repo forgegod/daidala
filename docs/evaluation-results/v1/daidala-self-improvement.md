@@ -2,13 +2,18 @@
 
 ## Record status
 
-Phase 1 materializes the case IDs and deterministic schemas. No live controller,
-board, GitHub object, evaluator, model, browser, cron job, or self-improvement
-cycle has been created. Every live case is therefore `not-run`; this document
-must not be read as evidence that the loop works end to end.
+Phase 2 repository coordination now materializes immutable manifest snapshots,
+replay-safe admission, deterministic workflow/baseline/constraint/profile
+binding, event-bound receipts, and pending finding synchronization under fake
+adapters. The controller profile exists, but no controller plugin is installed.
+No live controller, dedicated board, GitHub object, evaluator, model, browser,
+cron job, or self-improvement cycle has been created. Every live case remains
+`not-run`; this document must not be read as evidence that the loop works end to
+end.
 
 Limits: [`experiment-limits.yaml`](experiment-limits.yaml).
 Protocol: [`../../15-self-improvement.md`](../../15-self-improvement.md).
+Environment gate: [`../../16-self-improvement-setup.md`](../../16-self-improvement-setup.md).
 
 ## Evidence rules
 
@@ -46,10 +51,12 @@ Repository tests cannot convert a blocked live probe into `pass`.
 | TC-F18-02 | Document promotion | Reject ephemeral scratch, undeclared repository paths, oversized documents, and invalid dispositions. | Promotion by Kanban comment or file existence. | pass |
 | TC-F18-03 | Retention and DOX | Require planned mutable path, frozen diff, increment manifest, and owning DOX scope before retention. | Treating a workflow artifact as current documentation. | not-run |
 
-The Phase 1 `pass` rows are grounded only by the pure-model tests in
+The deterministic `pass` rows are grounded by the pure and fake-adapter tests in
 `tests/test_projects.py`, `tests/test_registrations.py`, `tests/test_adapters.py`,
-and `tests/test_increments.py`. Their observed command and commit identity are
-added at the Phase 1 checkpoint; live rows stay `not-run` until their own gate.
+`tests/test_controller.py`, `tests/test_reconciliation.py`, and
+`tests/test_increments.py`. The current repository gate passes 286 tests, Ruff,
+Lefthook validation, both pack validations, Markdown links, and diff checks.
+Live rows stay `not-run` until their own gate.
 
 ## Use-case records
 
@@ -74,15 +81,22 @@ and any later promotion remain human decisions.
 
 - Project: `forgegod-daidala`.
 - Committed manifest path: `.daidala/project.yaml`.
-- Controller profile and board are planned, not created.
-- Attended notification target alias is trusted local data and is not recorded here.
+- Controller profile `daidala-self-improvement` exists, but no non-bundled
+  Daidala plugin is discovered and board `daidala-forgegod-daidala` does not
+  exist.
+- The Docker CLI is unavailable in this WSL distro, so `restricted-container`
+  remains blocked pending Docker Desktop WSL integration and verification.
+- GitHub repository, Issues, and operator Project queries work, but no Project
+  exists and the runtime issue aliases are not bound or least-privilege verified.
+- No messaging platform is configured and the gateway is stopped, so
+  `attended-daidala` has no verified destination or receipt.
 - No delivery receipt, remote finding identity, evaluator result, retained
   increment, or version comparison exists yet.
 - Two pre-commit graph rebuild attempts timed out with zero parsed files. The
   post-commit hook then built 12 Python files, 165 nodes, 1,291 edges, and 153
   `TESTED_BY` edges. Impact review found no affected existing flow or downstream
   file. Symbol-level `tests_for` still missed direct tests, so graph test-gap
-  counts remain observational and cannot replace the 273-test repository gate.
+  counts remain observational and cannot replace the repository gate.
 
 ## Redaction statement
 

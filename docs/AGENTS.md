@@ -37,6 +37,10 @@ Own current architecture documentation, the numbered reading set, and executable
   including identities, modes, transitions, authority, adapters, evidence,
   persistent-knowledge boundaries, increment-document provenance,
   reconciliation, recovery, and exercised operator procedures.
+- `16-self-improvement-setup.md` owns the executable environment prerequisite
+  checklist, observed blocker states, controller/board/gateway/container/GitHub
+  setup boundaries, stable CLI check IDs, and ready-to-admit gate for the Daidala
+  dogfood instance. It remains normative when a checker is implemented.
 - `evaluation-results/` owns versioned, redacted evaluation definitions and
   observed case records; its child contract prevents unrun behavior from being
   reported as evidence.
@@ -50,6 +54,8 @@ Own current architecture documentation, the numbered reading set, and executable
 - Future numbered documents appear as unlinked support-status entries until their behavior exists.
 - Runtime documents name their source-of-truth modules and verification tests.
 - Use repository-relative links locally and authoritative upstream URLs for external claims.
+- A prerequisite checker mirrors `16-self-improvement-setup.md`; it never becomes
+  an independent checklist or substitutes a passing report for human approval.
 
 ## Work Guidance
 

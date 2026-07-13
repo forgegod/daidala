@@ -35,10 +35,12 @@ loaded by the controller gateway.
 | Phase | Status | Checkpoint |
 |---|---|---|
 | 1 — Daidala fixture and deterministic foundation | Done | Commit `78c9732`; manifest, constraints, issue form, strict models, fake-adapter records, F01-F18 cases, technical flow, 273 tests, package/release checks, DOX, and post-commit graph review passed 2026-07-13. |
-| 2 — Controller bootstrap and manual evaluation | Todo | Starts after commit `78c9732`; requires separate setup approval and verified attended target. |
-| 3 — Reconciliation, findings, and pack evaluation | Todo | Requires manual-cycle and replay evidence. |
-| 4 — Version-aware re-evaluation | Todo | Candidate Hermes identity is selected here, not invented in Phase 1. |
-| 5 — Repository gate and documentation | Todo | Requires prior live evidence or exact blockers. |
+| 2 — Controller coordination and adapters | Ready for checkpoint | Repository coordination and fake-adapter tests are implemented locally; 286 tests and the complete repository/package gate pass; checkpoint remains uncommitted. |
+| 3 — Prerequisite doctor and setup confirmation | Todo | Requires the Phase 2 checkpoint and separate implementation approval; the setup guide remains normative. |
+| 4 — Controller bootstrap and manual evaluation | Todo | Requires a completed Phase 3 report, separate setup approval, and a verified attended target. |
+| 5 — Reconciliation, findings, and pack evaluation | Todo | Requires manual-cycle and replay evidence. |
+| 6 — Version-aware re-evaluation | Todo | Candidate Hermes identity is selected here, not invented in Phase 1. |
+| 7 — Repository gate and documentation | Todo | Requires prior live evidence or exact blockers. |
 
 ## Registered project
 
@@ -481,8 +483,51 @@ Gate: focused tests, Ruff, Markdown links, and DOX reconciliation pass. No branc
 profile, board, GitHub object, live model, evaluator, or browser is created by
 approval of this document alone.
 
-### Phase 2 — Controller bootstrap and manual live evaluation
+### Phase 2 — Controller coordination and adapters
 
+Execution status: ready for checkpoint. Repository coordination and fake-adapter
+tests are implemented and verified; the checkpoint remains uncommitted. The
+operator checklist is
+[`../16-self-improvement-setup.md`](../16-self-improvement-setup.md).
+
+- Finish project admission, immutable manifest snapshots, deterministic
+  cycle/workflow/baseline binding, canonical constraint and stage-profile replay
+  identity, replay-safe claims, pending finding synchronization, strict adapter
+  serialization, and event-bound receipt validation.
+- Keep concrete profile, board, gateway, GitHub, credential, evaluator, and live
+  cycle mutation outside this repository-only phase.
+
+Gate: duplicate admissions and adapter retries converge; malformed external data
+fails before board or repository mutation; focused and repository tests, Ruff,
+Markdown links, and DOX pass.
+
+### Phase 3 — Prerequisite doctor and setup confirmation
+
+- Implement the parent protocol's checklist-driven `doctor` extension using the
+  stable check IDs and remediation sections in
+  [`../16-self-improvement-setup.md`](../16-self-improvement-setup.md).
+- Keep the guide normative and require exact guide/CLI check-ID parity in tests.
+- Add explicit profile-local environment bindings for the two GitHub aliases;
+  matching Bitwarden/KeePass entry names are not implicit bindings and Daidala
+  does not invoke personal password-manager CLIs.
+- Support the same JSON and exit-code behavior through standalone `daidala` and
+  native `hermes daidala` entry points.
+- Exercise a non-mutating live run against the current environment. Existing
+  Docker, GitHub Project, credential-alias, and gateway gaps must be reported as
+  exact blockers rather than repaired or treated as success.
+
+Gate: every ready-to-admit row is represented exactly once; the command leaks no
+secret or private destination data; no profile, board, gateway, GitHub,
+repository, evaluator, or admission state changes; and the report gives the
+operator one complete confirmation of passes and omissions.
+
+### Phase 4 — Controller bootstrap and manual live evaluation
+
+- Require a current Phase 3 prerequisite report before setup. A report is
+  advisory evidence, not setup approval or cycle approval.
+- Install the controller plugin from the exact approved committed revision using
+  verified GitHub installation or a detached local clone. A mutable symlink,
+  editable checkout, uncommitted tree, or mismatched remote head fails setup.
 - After separate setup approval, create the controller profile and board without
   changing the sticky default.
 - Configure and verify attended notification and least-privilege GitHub aliases.
@@ -497,7 +542,7 @@ Gate: each case has evidence or an exact blocker; no unrelated board, profile,
 browser profile, repository, credential, or private database was touched; the
 attended user received verifiable inspection identities.
 
-### Phase 3 — Reconciliation, findings, and pack evaluation
+### Phase 5 — Reconciliation, findings, and pack evaluation
 
 - Create the reconciliation cron job paused.
 - Run and replay one controlled tick; enable scheduling only after selection,
@@ -513,7 +558,7 @@ Gate: duplicate ticks create no duplicate workflows; every retained change
 resolves its cited case without weakening another gate; failures and approval
 waits reach the attended channel.
 
-### Phase 4 — Version-aware re-evaluation
+### Phase 6 — Version-aware re-evaluation
 
 - Identify one candidate Hermes version without changing the active runtime.
 - Run the stable matrix and selected use cases in an isolated evaluator.
@@ -524,7 +569,7 @@ waits reach the attended channel.
 Gate: comparison is reproducible, candidate identities are exact, and the active
 Hermes and controller Daidala installations remain unchanged.
 
-### Phase 5 — Repository gate and documentation
+### Phase 7 — Repository gate and documentation
 
 Run:
 
@@ -580,13 +625,13 @@ baseline.
   AI-DLC revision `e49341dbeb8af82758dd85e96ed7fe9bcf38a447` with digest
   `e4e921b9e719eb54a7d5ec753418e2e451369a3ef50ffd7f52cf74a85d6a6b6a`.
 - The only accepted v1 evaluator declaration is `restricted-container` with
-  denied-by-default network; Phase 2 capability verification remains a stop
-  gate before live admission.
+  denied-by-default network; Phase 3 diagnosis and Phase 4 isolation verification
+  remain stop gates before live admission.
 - The local notification alias is `attended-daidala`. Its gateway destination
   and authorized approval identities remain uncommitted trusted registration
   data. Approval uses the exact tuple defined by the parent protocol.
-- Candidate Hermes selection belongs to Phase 4 as that phase states. Phase 1
-  does not invent a future version; Phase 4 must record one exact available
+- Candidate Hermes selection belongs to Phase 6 as that phase states. Phase 1
+  does not invent a future version; Phase 6 must record one exact available
   candidate before evaluation.
 - `docs/evaluation-results/v1/daidala-self-improvement.md` materializes stable
   `TC-F01-01` through `TC-F18-03` procedures and separates pure-model passes
@@ -605,6 +650,7 @@ creation, or Hermes version change starts until both this instance plan and its
 parent protocol are explicitly approved.
 
 Approval of these documents authorizes no implementation phase automatically.
-Phase 1, Phase 2 setup, Phase 3 cron enablement, every isolated cycle, each
-retained improvement, evidence publication, commit, push, merge, release, and
-active-runtime promotion require their stated separate approvals.
+Phase 1, Phase 2 coordination, Phase 3 checker implementation, Phase 4 setup,
+Phase 5 cron enablement, every isolated cycle, each retained improvement,
+evidence publication, commit, push, merge, release, and active-runtime promotion
+require their stated separate approvals.

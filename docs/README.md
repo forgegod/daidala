@@ -27,7 +27,8 @@ architecture references.
 | [Workflow ecosystem market overview](12-market-overview.md) | Current projects evaluated as packs, interoperability layers, optional tools, or product references | Upstream documentation, local Matt Pocock Skills checkout, and Daidala pack contracts |
 | [Autonomous triggering](13-autonomous-triggering.md) | Hermes cron/webhook composition documented but not exercised end to end; implementation still requires exact-digest approval | Observed Hermes v0.18.2 CLI plus Daidala start CLI and tool schemas |
 | [Workflow constraints](14-workflow-constraints.md) | Implemented; workflow-scoped policy invariants, approval binding, replacement, and exact skill-backed reusable sources | `daidala/constraints.py`, `daidala/service.py`, and constraint regressions |
-| [Autonomous self-improvement flow](15-self-improvement.md) | Phase 1 strict schemas, Daidala fixture, increment provenance, normalized adapter records, and stable case IDs implemented; live controller/evaluator behavior remains unexercised | Pure model tests, project fixture, versioned result, and both implementation plans |
+| [Autonomous self-improvement flow](15-self-improvement.md) | Phase 2 admission coordination, immutable snapshots, replay-safe claims, pending finding synchronization, and receipt validation implemented; live setup/evaluator remains blocked | Pure and fake-adapter tests, project fixture, versioned result, and both implementation plans |
+| [Self-improvement environment prerequisites](16-self-improvement-setup.md) | Normative setup and remediation guide with stable check IDs; Phase 3 read-only CLI checker planned; container, Project scopes, least-privilege aliases, and attended gateway are blocked | Observed CLI probes, both implementation plans, and current official Hermes, GitHub CLI, and Docker documentation |
 | Target commit/push | Not part of Daidala runtime | Delivery records both flags as false |
 
 “Implemented” means present in this repository. Compatibility claims are limited
@@ -82,8 +83,12 @@ carry that manifest's digest and active skill names.
 13. [Autonomous triggering](13-autonomous-triggering.md) — admit GitHub, Linear, Jira, or scheduled work without adding a Daidala scheduler or bypassing approval.
 14. [Workflow constraints](14-workflow-constraints.md) — define durable workflow policy without turning constraints into methodology.
 15. [Autonomous self-improvement flow](15-self-improvement.md) — understand the
-    Phase 1 identities, authority, document provenance, planned live flow, and
+    Phase 2 admission, identities, authority, document provenance, planned live flow, and
     Daidala dogfood cases.
+16. [Self-improvement environment prerequisites](16-self-improvement-setup.md) —
+    provision and verify the controller, board, GitHub, gateway, and restricted
+    evaluator boundary before a live cycle; use the planned checker only as a
+    completeness confirmation for this guide.
 
 ## Find the right document
 
@@ -104,6 +109,7 @@ carry that manifest's digest and active skill names.
 | How can GitHub issues, Actions failures, Linear tickets, Jira tickets, or cron start a workflow? | [Autonomous triggering](13-autonomous-triggering.md) |
 | How can one workflow enforce durable policy without creating another skill layer? | [Workflow constraints](14-workflow-constraints.md#policy-is-not-methodology) |
 | How does the autonomous self-improvement controller, evaluator, approval, evidence, and recovery flow work? | [Autonomous self-improvement flow](15-self-improvement.md) |
+| What must I install and configure before the self-improvement tests can run live? | [Self-improvement environment prerequisites](16-self-improvement-setup.md) |
 
 ## Verification
 
