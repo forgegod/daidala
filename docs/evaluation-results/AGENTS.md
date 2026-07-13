@@ -8,6 +8,8 @@ Own versioned, redacted self-improvement evaluation definitions and result recor
 
 - `v1/experiment-limits.yaml` defines the bounded first evaluation envelope.
 - `v1/daidala-self-improvement.md` records the stable case matrix and observed results.
+- `v1/prerequisite-report-<sha256>.json` retains redacted content-addressed
+  prerequisite diagnosis evidence.
 
 ## Local Contracts
 

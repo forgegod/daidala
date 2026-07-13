@@ -2,14 +2,14 @@
 
 ## Record status
 
-Phase 2 repository coordination now materializes immutable manifest snapshots,
-replay-safe admission, deterministic workflow/baseline/constraint/profile
-binding, event-bound receipts, and pending finding synchronization under fake
-adapters. The controller profile exists, but no controller plugin is installed.
-No live controller, dedicated board, GitHub object, evaluator, model, browser,
-cron job, or self-improvement cycle has been created. Every live case remains
-`not-run`; this document must not be read as evidence that the loop works end to
-end.
+Phase 3 implements strict credential bindings, the stable eleven-check
+prerequisite registry, redacted reports, bounded live probes, and native versus
+standalone handler parity. A clean-tree `--live` run produced one blocked report:
+only `SI-REPOSITORY` passed because trusted registration, controller plugin,
+board, credential capability records, Project evidence, attended receipt, and
+evaluator receipt do not exist. No setup mutation, GitHub write, container run,
+model call, browser run, cron job, or self-improvement cycle occurred. This
+document is not evidence that the loop works end to end.
 
 Limits: [`experiment-limits.yaml`](experiment-limits.yaml).
 Protocol: [`../../15-self-improvement.md`](../../15-self-improvement.md).
@@ -31,7 +31,9 @@ Repository tests cannot convert a blocked live probe into `pass`.
 | TC-F02-01 | Pack provenance | Validate Addyosmani and AI-DLC source revisions and content digests. | Installing or updating skills. | pass |
 | TC-F02-02 | Pack drift | Change one pinned digest; validation rejects the identity. | Repairing the digest from remote state. | pass |
 | TC-F03-01 | CLI and tools | Compare planned native and standalone project-cycle surfaces. | Registering an untested tool. | not-run |
+| TC-F03-02 | Prerequisite CLI parity | Execute the shared handler through standalone and native parser surfaces; JSON and exit code match. | Adding a second checker executable. | pass |
 | TC-F04-01 | Setup preview | Preview registration and admission without mutation; require literal confirmation for setup. | Profile, board, GitHub, or repository mutation. | not-run |
+| TC-F04-02 | Prerequisite diagnosis | Run the complete stable checklist from a clean checkout; retain exact passes and blockers. | Fixing or creating prerequisite state. | blocked |
 | TC-F05-01 | Define and plan | Persist activation, definition, plan, and handoff identities; create one blocked approval card. | Implementation-card creation. | not-run |
 | TC-F06-01 | Exact approval | Reject wrong or stale tuple; exact approval creates one owned worktree and post-gate graph. | Treating generic Kanban unblock as approval. | not-run |
 | TC-F07-01 | Constraints | Formatting-only replacement is identity-preserving; semantic replacement invalidates stale work. | Deleting historical evidence. | not-run |
@@ -53,10 +55,12 @@ Repository tests cannot convert a blocked live probe into `pass`.
 
 The deterministic `pass` rows are grounded by the pure and fake-adapter tests in
 `tests/test_projects.py`, `tests/test_registrations.py`, `tests/test_adapters.py`,
-`tests/test_controller.py`, `tests/test_reconciliation.py`, and
-`tests/test_increments.py`. The current repository gate passes 287 tests, Ruff,
-Lefthook validation, both pack validations, Markdown links, and diff checks.
-Live rows stay `not-run` until their own gate.
+`tests/test_controller.py`, `tests/test_reconciliation.py`,
+`tests/test_credentials.py`, `tests/test_prerequisites.py`, and
+`tests/test_increments.py`. The current repository gate passes 308 tests, Ruff,
+Lefthook validation, both pack validations, Markdown links, build, Twine,
+release-content, and diff checks. Live cycle rows stay `not-run` until their own
+gate.
 
 ## Use-case records
 
@@ -81,9 +85,15 @@ and any later promotion remain human decisions.
 
 - Project: `forgegod-daidala`.
 - Committed manifest path: `.daidala/project.yaml`.
-- Controller profile `daidala-self-improvement` exists, but no non-bundled
-  Daidala plugin is discovered and board `daidala-forgegod-daidala` does not
-  exist.
+- Implementation checkpoint: `31e043be49f19a8f69cfb5eb630fb5b1257abc00`.
+- The redacted prerequisite report is
+  [`prerequisite-report-d4e1b3a3498507f9f9c069fc16beb4c81d4eb7c65943d82c5bf96f38497bcc3e.json`](prerequisite-report-d4e1b3a3498507f9f9c069fc16beb4c81d4eb7c65943d82c5bf96f38497bcc3e.json),
+  exits `2`, has SHA-256
+  `d4e1b3a3498507f9f9c069fc16beb4c81d4eb7c65943d82c5bf96f38497bcc3e`,
+  records `SI-REPOSITORY=pass`, and records all ten other checks as `blocked`.
+- Controller profile `daidala-self-improvement` exists, but its native
+  `daidala` command is unavailable because no non-bundled plugin is installed;
+  the dedicated board and trusted registration also do not exist.
 - The Docker CLI is unavailable in this WSL distro, so `restricted-container`
   remains blocked pending Docker Desktop WSL integration and verification.
 - GitHub repository, Issues, and operator Project queries work, but no Project
@@ -92,10 +102,8 @@ and any later promotion remain human decisions.
   `attended-daidala` has no verified destination or receipt.
 - No delivery receipt, remote finding identity, evaluator result, retained
   increment, or version comparison exists yet.
-- Two pre-commit graph rebuild attempts timed out with zero parsed files. The
-  post-commit hook then built 12 Python files, 165 nodes, 1,291 edges, and 153
-  `TESTED_BY` edges. Impact review found no affected existing flow or downstream
-  file. Symbol-level `tests_for` still missed direct tests, so graph test-gap
+- Incremental graph updates parsed all 26 changed and dependent files without
+  errors; the post-commit hook rebuilt the 1,079-row FTS index. Graph test-gap
   counts remain observational and cannot replace the repository gate.
 
 ## Redaction statement
