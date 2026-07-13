@@ -42,7 +42,7 @@ Before enabling an unattended trigger:
 
    ```bash
    hermes plugins install forgegod/daidala --enable
-   hermes daidala doctor --pack aidlc
+   hermes daidala packs check aidlc
    ```
 
 2. Create the named board and configure every assigned profile with the plugin

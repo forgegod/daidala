@@ -38,6 +38,10 @@ completeness without touching a real Hermes profile.
 - Shared-parser and fake-command tests proving native Hermes and standalone CLI
   service calls, public Kanban command translation, JSON, and exit codes remain
   equivalent.
+- Strict credential-binding and prerequisite-report tests cover guide/CLI ID
+  parity, redaction, pass/blocked/not-run/error aggregation, bounded `GH_TOKEN`
+  child environments, and complete, missing, malformed, denied, unavailable,
+  and partial host states.
 - Temporary Git worktree tests for the approved end-to-end executable slice.
 - Cross-pack fixture tests proving Addyosmani and AI-DLC use the same engine path
   and leave activation-gated structured handoff history across all executable

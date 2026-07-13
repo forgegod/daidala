@@ -88,7 +88,7 @@ Prerequisites:
 
 ```bash
 hermes plugins install forgegod/daidala --enable
-hermes daidala doctor --pack aidlc
+hermes daidala packs check aidlc
 hermes kanban boards create project-board --name "Project board"
 hermes gateway run
 ```

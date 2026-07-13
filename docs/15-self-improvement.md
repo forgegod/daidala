@@ -533,14 +533,21 @@ Failure preserves the baseline and creates at most one deduplicated finding.
 Rollback means discarding the candidate evaluator or reverting an unretained
 owned worktree; candidate code never replaces the currently loaded plugin.
 
-## Planned operator procedures
+## Operator procedures
 
-The following commands are **UNEXERCISED** and intentionally not copied into the
-getting-started path:
+The prerequisite diagnostic is implemented and repository-tested. The remaining
+commands are **UNEXERCISED** and intentionally absent from the getting-started
+path:
 
 ```bash
-# UNEXERCISED: check every documented self-improvement prerequisite
-daidala doctor --project-manifest .daidala/project.yaml --live
+# Implemented: local checks; network, gateway, and container checks remain not-run
+daidala doctor --project-manifest .daidala/project.yaml
+
+# Implemented: complete non-mutating diagnosis from the controller profile
+hermes -p daidala-self-improvement daidala doctor \
+  --project-manifest /home/raphael/src/rb/daidala/.daidala/project.yaml \
+  --registration /home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/registration.yaml \
+  --live
 
 # UNEXERCISED: preview project registration without mutation
 daidala projects register --manifest .daidala/project.yaml --dry-run
@@ -555,8 +562,7 @@ daidala projects approve forgegod-daidala --cycle <cycle-id> --digest <digest>
 daidala projects archive forgegod-daidala --dry-run
 ```
 
-Phase 3 must exercise the checklist-driven prerequisite report. Phase 4 must
-exercise setup preview, manual first run, status, approval, and recovery before
+Phase 4 must exercise setup preview, manual first run, status, approval, and recovery before
 those commands can become supported. Phase 5 must exercise pause/resume and
 reconciliation. Phase 6 must exercise candidate upgrades. Teardown remains
 destructive and separately approved.

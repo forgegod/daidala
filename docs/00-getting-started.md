@@ -23,11 +23,14 @@ own the workflow:
 ```bash
 hermes plugins install forgegod/daidala --enable
 hermes plugins list
-hermes daidala doctor --pack aidlc
+hermes daidala packs check aidlc
 ```
 
-`doctor` is read-only. For the Addyosmani pack, preview and then explicitly apply
-its pinned external-skill installation plan:
+For a registered self-improvement project, the read-only checklist diagnostic is
+`hermes daidala doctor --project-manifest PATH [--registration PATH] [--live]`;
+see [Self-improvement environment prerequisites](16-self-improvement-setup.md).
+For the Addyosmani pack, preview and then explicitly apply its pinned
+external-skill installation plan:
 
 ```bash
 hermes daidala packs install addyosmani

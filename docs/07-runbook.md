@@ -33,14 +33,15 @@ create directories or files.
 ## Diagnose prerequisites
 
 ```bash
-hermes daidala doctor
+hermes daidala doctor --project-manifest /absolute/repository/.daidala/project.yaml
 ```
 
-`doctor` validates the default Addyosmani pack against its pinned Git revision,
-bounded Hermes version, exact installed skill names, and complete-directory
-content digests. It is read-only and exits nonzero when the profile is not ready.
-It requires network access to resolve the pinned source repository's current
-HEAD.
+`doctor` emits the strict self-improvement prerequisite report. Add
+`--registration /profile/projects/<project-id>/registration.yaml` to bind the
+trusted profile-local authority and `--live` to run bounded GitHub, gateway, and
+container availability probes. Without `--live`, those checks are `not-run` and
+the command exits `2`. Exit `0` means every documented check passed; exit `1`
+means invalid input or checker failure. The command never fixes setup state.
 
 Inspect and install pack dependencies explicitly:
 
@@ -132,7 +133,7 @@ Hermes Kanban owns retry and recovery:
 
 ```bash
 hermes plugins update daidala
-hermes daidala doctor
+hermes daidala doctor --project-manifest /absolute/repository/.daidala/project.yaml
 hermes daidala packs check addyosmani
 ```
 

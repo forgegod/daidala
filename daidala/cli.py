@@ -7,7 +7,7 @@ import json
 import re
 import shlex
 import subprocess
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from importlib import resources
 from pathlib import Path
 from typing import NoReturn, cast
@@ -15,6 +15,7 @@ from typing import NoReturn, cast
 from .kanban import KanbanGraphAdapter
 from .locations import resolve_data_root
 from .packs import PackError, load_pack
+from .prerequisites import DoctorRunner, run_prerequisite_diagnosis
 from .service import WorkflowService
 from .skills import (
     PackInstallPlan,
@@ -38,8 +39,16 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     init = sub.add_parser("init", help="Preview or initialize the profile-local policy ledger")
     init.add_argument("--apply", action="store_true", help="Create the ledger directory and schema")
 
-    doctor = sub.add_parser("doctor", help="Check host, pack, and installed skill readiness")
-    doctor.add_argument("--pack", default="addyosmani")
+    doctor = sub.add_parser(
+        "doctor", help="Diagnose self-improvement prerequisites without mutation"
+    )
+    doctor.add_argument("--project-manifest", required=True, type=Path)
+    doctor.add_argument("--registration", type=Path)
+    doctor.add_argument(
+        "--live",
+        action="store_true",
+        help="Run bounded GitHub, gateway, and container availability probes",
+    )
 
     start = sub.add_parser("start", help="Validate inputs and create the initial Kanban graph")
     start.add_argument("target_repository")
@@ -184,6 +193,8 @@ def main(
     hermes_version: str | None = None,
     command_runner: CommandRunner | None = None,
     service_factory: ServiceFactory | None = None,
+    doctor_runner: DoctorRunner | None = None,
+    doctor_environ: Mapping[str, str] | None = None,
 ) -> int:
     args = build_parser().parse_args(argv)
     return run_command(
@@ -194,6 +205,8 @@ def main(
         hermes_version=hermes_version,
         command_runner=command_runner,
         service_factory=service_factory,
+        doctor_runner=doctor_runner,
+        doctor_environ=doctor_environ,
     )
 
 
@@ -206,21 +219,23 @@ def run_command(
     hermes_version: str | None = None,
     command_runner: CommandRunner | None = None,
     service_factory: ServiceFactory | None = None,
+    doctor_runner: DoctorRunner | None = None,
+    doctor_environ: Mapping[str, str] | None = None,
 ) -> int:
     """Execute one parsed command and return its process exit code."""
     try:
         if args.command == "init":
             return _run_init(args)
         if args.command == "doctor":
-            return _run_pack_operation(
-                argparse.Namespace(command="packs", packs_command="check", name=args.pack),
-                inventory=inventory,
-                registry=registry,
-                revision_resolver=revision_resolver,
-                hermes_version=hermes_version,
-                command_runner=command_runner,
-                operation="doctor",
+            report = run_prerequisite_diagnosis(
+                project_manifest=args.project_manifest,
+                registration=args.registration,
+                live=args.live,
+                runner=doctor_runner,
+                environ=doctor_environ,
             )
+            _print(report.to_dict())
+            return report.exit_code
         if args.command in {"start", "status", "replace-constraints", "approve", "cancel"}:
             selected_factory = service_factory or (
                 lambda: _default_service(command_runner=command_runner)

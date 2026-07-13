@@ -20,6 +20,8 @@ workflow-pack adapters, and bundled orchestration skills.
 | `constraints.py` | Strict workflow-constraint YAML parsing, canonicalization, bounds, and digest identity. |
 | `projects.py` | Strict committed project-manifest parsing, canonical identity, verification declarations, and mutation policy. |
 | `registrations.py` | Trusted profile-local project registration structure, limits, manifest binding, and storage path. |
+| `credentials.py` | Strict alias-to-environment credential bindings with no secret values or resolver inference. |
+| `prerequisites.py` | Stable self-improvement checklist registry, retained capability evidence, bounded probes, and strict prerequisite reports. |
 | `cycles.py` | Pure self-improvement cycle identity, metric kinds, outcomes, delegation evidence, and lesson-reuse evidence. |
 | `increments.py` | Strict increment-document classification, producer provenance, canonical manifest, bounds, and digest. |
 | `adapters.py` | Strict normalized intake, finding, notification, claim, and receipt records plus injectable protocols. |
@@ -61,6 +63,9 @@ workflow-pack adapters, and bundled orchestration skills.
 - Self-improvement prerequisite diagnosis extends the shared `doctor` command,
   mirrors the stable check IDs owned by `docs/16-self-improvement-setup.md`,
   emits bounded redacted evidence, and has no fix/apply or setup-mutation mode.
+- Credential aliases resolve only through explicit profile-local `environment`
+  bindings. GitHub tokens exist only for the bounded child call as `GH_TOKEN`;
+  command output and reports never include token-derived values.
 - Constraint file and exact policy-skill inputs converge on the shared service
   path. Policy skills require a verified complete-directory digest and exactly
   one fenced `yaml` constraint document after frontmatter.

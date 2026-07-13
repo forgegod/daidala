@@ -36,7 +36,7 @@ loaded by the controller gateway.
 |---|---|---|
 | 1 — Daidala fixture and deterministic foundation | Done | Commit `78c9732`; manifest, constraints, issue form, strict models, fake-adapter records, F01-F18 cases, technical flow, 273 tests, package/release checks, DOX, and post-commit graph review passed 2026-07-13. |
 | 2 — Controller coordination and adapters | Done | Commits `3d22a84`, `5b375f6`, and regression `3a75a88`; repository coordination, fake-adapter tests, 287 tests, Ruff, Lefthook, Markdown links, both pack validations, package/release checks, DOX, and post-commit graph rebuild passed 2026-07-13. |
-| 3 — Prerequisite doctor and setup confirmation | Todo | Requires the Phase 2 checkpoint and separate implementation approval; the setup guide remains normative. |
+| 3 — Prerequisite doctor and setup confirmation | In progress | Checker, credential bindings, strict reports, parity/fail-closed tests, and operator contracts are implemented; repository gate and clean-tree live report remain. |
 | 4 — Controller bootstrap and manual evaluation | Todo | Requires a completed Phase 3 report, separate setup approval, and a verified attended target. |
 | 5 — Reconciliation, findings, and pack evaluation | Todo | Requires manual-cycle and replay evidence. |
 | 6 — Version-aware re-evaluation | Todo | Candidate Hermes identity is selected here, not invented in Phase 1. |

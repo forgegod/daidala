@@ -252,11 +252,8 @@ credentials:
 
 Creating entries with matching names in Bitwarden or KeePass does not bind them
 to Daidala. There is no name-based lookup, browser extension integration, or
-implemented `bw`, `bws`, `keepassxc-cli`, or KeePass database adapter. Until the
-Phase 3 resolver is implemented, keep both token values only in the password
-manager and treat `SI-GITHUB-INTAKE` and `SI-GITHUB-FINDINGS` as blocked.
-
-Phase 3 will implement one explicit V1 bridge:
+implemented `bw`, `bws`, `keepassxc-cli`, or KeePass database adapter. The
+implemented V1 bridge is explicit:
 
 ```text
 registration alias
@@ -278,6 +275,27 @@ unlocking, session lifetime, and master-password handling outside the agent and
 GitHub adapters. The adapter receives only the resolved runtime credential,
 passes it as `GH_TOKEN` to the required `gh` subprocess, and must never print,
 persist, hash, or return it as evidence.
+
+Store the non-secret bindings beside the trusted registration as
+`credential-bindings.yaml`:
+
+```yaml
+schema: daidala.credential-bindings/v1
+project_id: forgegod-daidala
+bindings:
+  - alias: github-daidala-read-issues
+    resolver: environment
+    environment_variable: DAIDALA_GITHUB_INTAKE_TOKEN
+  - alias: github-daidala-write-issues
+    resolver: environment
+    environment_variable: DAIDALA_GITHUB_FINDINGS_TOKEN
+```
+
+The two explicit variables must be distinct and must not be named `GH_TOKEN`.
+The checker resolves one only at its bounded GitHub call, constructs a minimal
+child environment, and maps that value to `GH_TOKEN`. Missing variables,
+unsupported resolvers, duplicate aliases, reused variables, unknown fields, and
+embedded credential values fail before a GitHub command runs.
 
 ### 3.5 Record aliases without recording secrets
 
@@ -303,13 +321,73 @@ mutation rather than pretending public data can be hidden.
 The operator command above updates the interactive `gh` credential only. It
 does not create either runtime alias.
 
-Current implementation blocker: `ControllerRegistration` validates these two
-alias names, but Daidala does not yet implement a profile-local alias resolver
-or concrete GitHub adapter that consumes their credentials. Tokens may be
-provisioned now in your password manager, but matching entry names do not create
-a connection. Do not write token values into the Project, repository,
-`registration.yaml`, committed files, or Hermes configuration until the
-environment-binding resolver is implemented and verified.
+Retain non-secret capability metadata and prior approved receipts in sibling
+`prerequisite-evidence.json`. Its strict
+`daidala.prerequisite-evidence/v1` object binds the project ID, approved
+controller revision, unchanged sticky profile, exact allowed and denied
+credential capabilities, GitHub Project identity and required fields,
+notification alias and receipt, and evaluator isolation receipt. It contains no
+token, token-derived value, private destination ID, or raw command output.
+
+```json
+{
+  "schema": "daidala.prerequisite-evidence/v1",
+  "project_id": "forgegod-daidala",
+  "approved_controller_revision": "<40-character-approved-commit>",
+  "sticky_profile": "hermes-vc",
+  "credential_capabilities": [
+    {
+      "alias": "github-daidala-read-issues",
+      "capability": "github-intake",
+      "allowed": ["read-project", "read-public-repository"],
+      "denied": ["contents-write", "administration", "merge", "release", "deployment"],
+      "expires_on": "<YYYY-MM-DD>",
+      "read_probe_receipt": "<approved-receipt-id>",
+      "write_probe_identity": null
+    },
+    {
+      "alias": "github-daidala-write-issues",
+      "capability": "github-findings",
+      "allowed": ["metadata-read", "issues-read-write"],
+      "denied": ["contents-write", "administration", "merge", "release", "deployment"],
+      "expires_on": "<YYYY-MM-DD>",
+      "read_probe_receipt": "<approved-receipt-id>",
+      "write_probe_identity": "<approved-controlled-issue-id>"
+    }
+  ],
+  "github_project": {
+    "owner": "forgegod",
+    "project_id": "<returned-project-id>",
+    "url": "https://github.com/users/forgegod/projects/<number>",
+    "fields": [
+      "category", "priority", "readiness", "claim-owner",
+      "claim-lease-expiry", "cycle-id", "workflow-id",
+      "terminal-comparison-outcome"
+    ],
+    "read_probe_receipt": "<approved-receipt-id>"
+  },
+  "notification": {
+    "adapter": "hermes-gateway",
+    "target_alias": "attended-daidala",
+    "authorized_maintainer": "forgegod",
+    "receipt_id": "<approved-receipt-id>"
+  },
+  "evaluator": {
+    "backend": "restricted-container",
+    "network": "denied-by-default",
+    "image_identity": "<pinned-image-identity>",
+    "fresh_home": true,
+    "network_denied": true,
+    "controller_credentials_absent": true,
+    "bounded_mounts": true,
+    "receipt_id": "<approved-receipt-id>"
+  }
+}
+```
+
+Use `null` for a Project, notification, or evaluator record that has not been
+produced by its separately approved setup probe; the matching check remains
+`blocked`. Do not invent receipt IDs to make diagnosis pass.
 
 If the available credential cannot be represented with these boundaries, stop
 and provision a narrower GitHub App or fine-grained token. A broad operator
@@ -549,20 +627,20 @@ its local authority.
 
 ## 10. Run the prerequisite checker
 
-Status: **PLANNED FOR PHASE 3; UNEXERCISED.** These commands do not exist yet and
-must not be treated as supported operator procedures.
+Status: **IMPLEMENTED AND REPOSITORY-TESTED.** The command is diagnostic only;
+the current host result is recorded in the versioned evaluation result.
 
-Phase 3 extends the existing shared `doctor` command rather than adding another
-executable:
+The shared `doctor` command is the only prerequisite checker:
 
 ```bash
-# UNEXERCISED: repository-local checks; live checks remain not-run
+# Repository-local checks; live checks remain not-run
 daidala doctor \
   --project-manifest .daidala/project.yaml
 
-# UNEXERCISED: complete non-mutating check in the controller profile
+# Complete non-mutating check in the controller profile
 hermes -p daidala-self-improvement daidala doctor \
   --project-manifest /home/raphael/src/rb/daidala/.daidala/project.yaml \
+  --registration /home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/registration.yaml \
   --live
 ```
 
