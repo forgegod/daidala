@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Own the canonical Wingstaff identity, deterministic generator, review renders, and bundled font license.
+Own the canonical Daidala identity, deterministic generator, review renders, and bundled font license.
 
 ## Ownership
 
@@ -14,7 +14,11 @@ Own the canonical Wingstaff identity, deterministic generator, review renders, a
 
 ## Local Contracts
 
-- Keep the winged-staff mark and gold `#ffc72c` / amber `#f9a23a` palette.
+- Keep the crafted-D mark and gold `#ffc72c` / amber `#f9a23a` palette.
+- The mark is a smooth filled `D` with one meander-cut opening through its lower
+  edge. The ordered opening suggests staged craft leaving as delivery. It must
+  remain distinct from pixel art, a literal labyrinth, gear, robot, factory, or
+  the former winged staff.
 - Render amber only through clipped copies of the mark and wordmark geometry. Do not draw an amber background bridge through transparent gaps.
 - Position the mark slightly below the fixed wordmark band so gold remains visible beneath the amber overlay at the glyph's bottom edge, matching the Irigate and Talaria layering rule.
 - Use the bundled font through generated SVG paths. Do not depend on system fonts or silently substitute fonts.

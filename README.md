@@ -1,8 +1,26 @@
-# Wingstaff
+# Daidala
 
-![Wingstaff](assets/logo.svg)
+![Daidala](assets/logo.svg)
 
-Wingstaff is a Hermes-native staff of specialist agents that moves software work through interchangeable workflow packs and one explicit human approval gate—without introducing a second orchestration server.
+Daidala is a Hermes-native AI workshop that moves software work through
+interchangeable workflow packs and one explicit human approval gate—without
+introducing a second orchestration server.
+
+> Your daily driver for crafted, human-approved work.
+
+## Why Daidala
+
+**Daidala** (pronounced *DYE-dah-lah*) is an Ancient Greek name for
+[skillfully crafted or fashioned works](https://journal.eahn.org/articles/10.5334/ah.239/).
+The word belongs to the tradition of Daedalus, the legendary maker, and the
+wondrous craft associated with Hephaestus.
+
+The name fits a Hermes-native AI workshop built around disciplined craft rather
+than unconstrained automation. Daidala brings specialist agents and skills into
+an ordered process: a goal is defined, planned, approved by a human, implemented
+in isolation, verified, reviewed, and delivered with evidence. Skills provide
+the craft, workflow constraints shape the work, and Hermes supplies the agent
+runtime.
 
 ## What Wingstaff adds to Hermes
 

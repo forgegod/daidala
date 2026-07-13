@@ -1,6 +1,6 @@
 # Daidala brand cutover implementation plan
 
-> Status: **Approved for phase-gated execution. Phases 0–3 are complete; Phase 4 is next.**
+> Status: **Approved for phase-gated execution. Phases 0–4 are complete; Phase 5 is next.**
 >
 > This is a hard public rename. Do not add compatibility packages, import shims,
 > CLI aliases, tool aliases, skill aliases, schema fallbacks, or data migration.
@@ -30,7 +30,7 @@ Use these canonical forms everywhere:
 | Dashboard tab/API namespace | `/daidala`; `/api/plugins/daidala` |
 | Runtime data directory | `$HERMES_HOME/daidala` |
 | GitHub repository | `forgegod/daidala` |
-| Landing-page candidates | `daidala.io`, `daidala.dev` |
+| Reserved landing-page domains | `daidala.dev`, `daidala.work` |
 | Breaking-release version | `0.2.0` |
 
 The README should place this concise section immediately after the opening
@@ -82,7 +82,8 @@ as a separate orchestration service or autonomous model runtime.
 - Package, command, repository, and domain checks performed during preflight found:
   - no PyPI `daidala` project;
   - no local `daidala` executable;
-  - `daidala.dev` is reserved for this project and RDAP resolves its registration;
+  - `daidala.dev` and `daidala.work` are reserved for this project; RDAP resolves
+    the `.dev` registration and the operator confirmed the `.work` reservation;
   - `daidala.io` could not be reserved by the operator and is not required for
     the approved local cutover.
   Recheck software and repository namespaces immediately before publishing
@@ -120,8 +121,8 @@ as a separate orchestration service or autonomous model runtime.
 
 1. **Human approval gate:** stop after this plan until the user approves it.
 2. **Name reservation gate:** before public repository metadata or release work,
-   recheck and reserve at least one of `daidala.io` or `daidala.dev`. Prefer
-   reserving both. Stop if neither is available and ask for a naming decision.
+   recheck and reserve at least one suitable Daidala domain. Stop if no suitable
+   domain is available and ask for a naming decision.
 3. **Namespace gate:** recheck PyPI `daidala`, the ownership and empty state of
    `forgegod/daidala`, and the local command path immediately before
    implementation. Stop on a material software/AI collision or unexpected
@@ -159,10 +160,11 @@ will retain the prior identity.
 ## Phase 0 — Approval, reservation, and operational preflight
 
 **Status: Done.** The user approved the default plan decisions and confirmed
-`daidala.dev` is reserved for this project. RDAP resolves the registration;
-PyPI, the local command path, and the empty `forgegod/daidala` repository remain
-clear. No enabled Wingstaff installation, active Kanban task, policy ledger, or
-owned worktree was found across the inspected Hermes profiles.
+`daidala.dev` and `daidala.work` are reserved for this project. RDAP resolves the
+`.dev` registration; PyPI, the local command path, and the empty
+`forgegod/daidala` repository remain clear. No enabled Wingstaff installation,
+active Kanban task, policy ledger, or owned worktree was found across the
+inspected Hermes profiles.
 
 ### Files
 
@@ -177,7 +179,8 @@ owned worktree was found across the inspected Hermes profiles.
    - exact GitHub repository/name searches;
    - `gh repo view forgegod/daidala` and confirm it remains empty;
    - `command -v daidala`;
-   - RDAP and registrar checks for `daidala.io` and `daidala.dev`.
+   - RDAP and registrar checks for `daidala.io`, `daidala.dev`, and
+     `daidala.work`.
 3. Have the operator reserve the selected domains before public announcement.
 4. Inventory enabled installations, named boards, active cards, policy ledgers,
    and owned worktrees across affected Hermes profiles.
@@ -377,6 +380,15 @@ Daidala tab at desktop and narrow widths and confirming no old-brand label or UR
 appears.
 
 ## Phase 4 — Replace the brand assets and tell the name story
+
+**Status: Done.** The README now introduces Daidala and its craft narrative.
+The deterministic generator produces a distinct crafted-D mark, Daidala
+wordmark, raster lockups, and social card in the retained gold/amber palette.
+The user selected “Your daily driver for crafted, human-approved work.” as the
+short mnemonic tagline. Full-size, social-card, and 512-pixel mark reviews found
+no clipping or legibility defects; two consecutive generations were
+byte-identical, and dimension, alpha, accessible-text, link, and lint checks
+passed.
 
 ### Files
 
