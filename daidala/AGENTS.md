@@ -22,7 +22,9 @@ workflow-pack adapters, and bundled orchestration skills.
 | `registrations.py` | Trusted profile-local project registration structure, limits, manifest binding, and storage path. |
 | `cycles.py` | Pure self-improvement cycle identity, metric kinds, outcomes, delegation evidence, and lesson-reuse evidence. |
 | `increments.py` | Strict increment-document classification, producer provenance, canonical manifest, bounds, and digest. |
-| `adapters.py` | Side-effect-free normalized intake, finding, notification, claim, and receipt records plus injectable protocols. |
+| `adapters.py` | Strict normalized intake, finding, notification, claim, and receipt records plus injectable protocols. |
+| `controller.py` | Replay-safe cycle admission, manifest snapshots, deterministic workflow binding, immutable cycle storage, and receipt validation. |
+| `reconciliation.py` | Two-authority claim recovery evidence and local pending-to-published finding synchronization. |
 | `execution.py` | Profile-local artifacts, detached worktrees, and diff capture. |
 | `kanban.py` | Public host-boundary adapter for the idempotent, approval-gated Hermes card graph. |
 | `schemas.py` | Tool schemas exposed to the model. |
@@ -56,6 +58,9 @@ workflow-pack adapters, and bundled orchestration skills.
 - External packs pin a Git source revision, bounded Hermes version, and complete-directory digest per required skill.
 - Standalone CLI inventory comes from the profile skill directory; it never imports Hermes runtime internals.
 - Native and standalone operator commands share one parser and dispatch layer; setup and external installation remain dry-run by default.
+- Self-improvement prerequisite diagnosis extends the shared `doctor` command,
+  mirrors the stable check IDs owned by `docs/16-self-improvement-setup.md`,
+  emits bounded redacted evidence, and has no fix/apply or setup-mutation mode.
 - Constraint file and exact policy-skill inputs converge on the shared service
   path. Policy skills require a verified complete-directory digest and exactly
   one fenced `yaml` constraint document after frontmatter.
@@ -64,8 +69,14 @@ workflow-pack adapters, and bundled orchestration skills.
   notification authority, or release permissions.
 - Project, registration, cycle, and increment schemas reject unknown fields,
   unbounded content, non-canonical identity, and stale or ambiguous provenance.
-- Phase 1 adapter code defines normalized records and protocols only; concrete
-  network adapters and admission coordination remain separately gated.
+- Adapter code defines strict normalized records and protocols only; concrete
+  network implementations remain separately gated. Admission validates all
+  external claim and event-specific notification data before workflow dispatch.
+- Self-improvement workflow IDs equal deterministic cycle IDs, transitively
+  binding the workflow ledger to the immutable canonical manifest snapshot,
+  expected baseline, canonical constraints, and complete stage-profile map.
+- Finding synchronization stays locally pending until an adapter returns the
+  same stable finding identity plus a verified remote identity and HTTPS URL.
 - Hermes Kanban owns every operational status; Daidala persists no mirrored
   ready, running, blocked, done, or archived field.
 - Dashboard reads live Kanban state through documented `hermes kanban` commands;
@@ -154,9 +165,9 @@ fails locally rather than in production.
 ## Work Guidance
 
 - Add mechanism to Python and subject-matter mappings to `packs/*.yaml`.
-- Keep self-improvement identity and classification models pure; filesystem,
-  Kanban, adapter, evaluator, and retention side effects belong to later
-  coordination boundaries after their explicit phase gates.
+- Keep self-improvement identity and classification models pure. Admission may
+  write only immutable profile-local cycle artifacts and call injected host
+  adapters; evaluator and retention side effects remain later gated boundaries.
 - Register bundled skills with `ctx.register_skill`; do not copy them into the user's mutable skill store.
 - `daidala:setup` remains dashboard-independent, previews the exact
   `schemas.py::START` request, and requires explicit confirmation before any

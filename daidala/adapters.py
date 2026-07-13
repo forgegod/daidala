@@ -7,7 +7,7 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
-from typing import Protocol
+from typing import Any, Protocol
 
 from .errors import PolicyViolationError
 from .projects import _require_digest, _require_int, _require_slug, _require_text
@@ -43,6 +43,23 @@ class ClaimIdentity:
                 raise PolicyViolationError(f"{label} must be timezone-aware")
         if self.lease_expires_at <= self.claimed_at:
             raise PolicyViolationError("claim lease must expire after its claim timestamp")
+
+    def to_dict(self) -> dict[str, str]:
+        return {
+            "claimant": self.claimant,
+            "claimed_at": self.claimed_at.isoformat(),
+            "lease_expires_at": self.lease_expires_at.isoformat(),
+        }
+
+    @classmethod
+    def from_dict(cls, raw: Any) -> ClaimIdentity:
+        _require_fields(raw, {"claimant", "claimed_at", "lease_expires_at"}, "claim")
+        try:
+            claimed_at = datetime.fromisoformat(raw["claimed_at"])
+            lease_expires_at = datetime.fromisoformat(raw["lease_expires_at"])
+        except (TypeError, ValueError) as error:
+            raise PolicyViolationError("claim timestamps must be ISO-8601 strings") from error
+        return cls(raw["claimant"], claimed_at, lease_expires_at)
 
 
 @dataclass(frozen=True)
@@ -88,6 +105,61 @@ class IntakeRecord:
         if self.claim is not None and not self.ready:
             raise PolicyViolationError("an unready intake item cannot be claimed")
 
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "adapter": self.adapter,
+            "item_id": self.item_id,
+            "source_url": self.source_url,
+            "category": self.category.value,
+            "priority": self.priority,
+            "goal": self.goal,
+            "acceptance_criteria": list(self.acceptance_criteria),
+            "evidence_digests": list(self.evidence_digests),
+            "dependencies": list(self.dependencies),
+            "risk": self.risk,
+            "admission_actor": self.admission_actor,
+            "ready": self.ready,
+            "claim": None if self.claim is None else self.claim.to_dict(),
+        }
+
+    @classmethod
+    def from_dict(cls, raw: Any) -> IntakeRecord:
+        fields = {
+            "adapter",
+            "item_id",
+            "source_url",
+            "category",
+            "priority",
+            "goal",
+            "acceptance_criteria",
+            "evidence_digests",
+            "dependencies",
+            "risk",
+            "admission_actor",
+            "ready",
+            "claim",
+        }
+        _require_fields(raw, fields, "intake record")
+        try:
+            category = IntakeCategory(raw["category"])
+        except (TypeError, ValueError) as error:
+            raise PolicyViolationError("intake category is invalid") from error
+        return cls(
+            adapter=raw["adapter"],
+            item_id=raw["item_id"],
+            source_url=raw["source_url"],
+            category=category,
+            priority=raw["priority"],
+            goal=raw["goal"],
+            acceptance_criteria=_string_tuple(raw["acceptance_criteria"], "acceptance criteria"),
+            evidence_digests=_string_tuple(raw["evidence_digests"], "intake evidence"),
+            dependencies=_string_tuple(raw["dependencies"], "intake dependencies"),
+            risk=raw["risk"],
+            admission_actor=raw["admission_actor"],
+            ready=raw["ready"],
+            claim=None if raw["claim"] is None else ClaimIdentity.from_dict(raw["claim"]),
+        )
+
 
 @dataclass(frozen=True)
 class FindingRecord:
@@ -130,24 +202,104 @@ class FindingRecord:
             if not self.remote_url.startswith("https://"):
                 raise PolicyViolationError("finding remote URL must use HTTPS")
 
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "finding_id": self.finding_id,
+            "project_id": self.project_id,
+            "category": self.category.value,
+            "title": self.title,
+            "evidence_digest": self.evidence_digest,
+            "acceptance_criteria": list(self.acceptance_criteria),
+            "publication_state": self.publication_state.value,
+            "remote_identity": self.remote_identity,
+            "remote_url": self.remote_url,
+        }
+
+    @classmethod
+    def from_dict(cls, raw: Any) -> FindingRecord:
+        fields = {
+            "finding_id",
+            "project_id",
+            "category",
+            "title",
+            "evidence_digest",
+            "acceptance_criteria",
+            "publication_state",
+            "remote_identity",
+            "remote_url",
+        }
+        _require_fields(raw, fields, "finding record")
+        try:
+            category = IntakeCategory(raw["category"])
+            publication_state = PublicationState(raw["publication_state"])
+        except (TypeError, ValueError) as error:
+            raise PolicyViolationError("finding enum value is invalid") from error
+        return cls(
+            finding_id=raw["finding_id"],
+            project_id=raw["project_id"],
+            category=category,
+            title=raw["title"],
+            evidence_digest=raw["evidence_digest"],
+            acceptance_criteria=_string_tuple(
+                raw["acceptance_criteria"], "finding acceptance criteria"
+            ),
+            publication_state=publication_state,
+            remote_identity=raw["remote_identity"],
+            remote_url=raw["remote_url"],
+        )
+
 
 @dataclass(frozen=True)
 class NotificationReceipt:
+    event_id: str
     adapter: str
     target_alias: str
     receipt_id: str
     delivered_at: datetime
 
     def __post_init__(self) -> None:
+        _require_text(self.event_id, "notification event ID", 512)
         _require_slug(self.adapter, "notification adapter")
         _require_slug(self.target_alias, "notification target alias")
         _require_text(self.receipt_id, "notification receipt ID", 256)
         if not isinstance(self.delivered_at, datetime) or self.delivered_at.tzinfo is None:
             raise PolicyViolationError("notification delivery time must be timezone-aware")
 
+    def to_dict(self) -> dict[str, str]:
+        return {
+            "event_id": self.event_id,
+            "adapter": self.adapter,
+            "target_alias": self.target_alias,
+            "receipt_id": self.receipt_id,
+            "delivered_at": self.delivered_at.isoformat(),
+        }
+
+    @classmethod
+    def from_dict(cls, raw: Any) -> NotificationReceipt:
+        _require_fields(
+            raw,
+            {"event_id", "adapter", "target_alias", "receipt_id", "delivered_at"},
+            "notification receipt",
+        )
+        try:
+            delivered_at = datetime.fromisoformat(raw["delivered_at"])
+        except (TypeError, ValueError) as error:
+            raise PolicyViolationError(
+                "notification delivery time must be an ISO-8601 string"
+            ) from error
+        return cls(
+            raw["event_id"],
+            raw["adapter"],
+            raw["target_alias"],
+            raw["receipt_id"],
+            delivered_at,
+        )
+
 
 class IntakeAdapter(Protocol):
     def fetch_ready(self, *, limit: int) -> tuple[IntakeRecord, ...]: ...
+
+    def claim(self, item_id: str, claim: ClaimIdentity) -> IntakeRecord: ...
 
 
 class FindingsAdapter(Protocol):
@@ -184,3 +336,21 @@ def _require_nonempty_text_tuple(values: tuple[str, ...], label: str, maximum: i
         raise PolicyViolationError(f"{label} must contain 1-{maximum} values")
     for value in values:
         _require_text(value, label, 1_000)
+
+
+def _require_fields(raw: Any, expected: set[str], label: str) -> None:
+    if not isinstance(raw, dict):
+        raise PolicyViolationError(f"{label} must be an object")
+    actual = set(raw)
+    if actual != expected:
+        missing = sorted(expected - actual)
+        unknown = sorted(actual - expected)
+        raise PolicyViolationError(
+            f"{label} fields mismatch; missing={missing!r}, unknown={unknown!r}"
+        )
+
+
+def _string_tuple(raw: Any, label: str) -> tuple[str, ...]:
+    if not isinstance(raw, list) or any(not isinstance(value, str) for value in raw):
+        raise PolicyViolationError(f"{label} must be a list of strings")
+    return tuple(raw)

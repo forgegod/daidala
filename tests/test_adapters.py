@@ -36,10 +36,20 @@ def test_intake_claim_and_notification_records_are_normalized_and_bounded() -> N
         ready=True,
         claim=claim,
     )
-    receipt = NotificationReceipt("hermes-gateway", "attended-daidala", "receipt-1", NOW)
+    receipt = NotificationReceipt(
+        "cycle-1:admitted",
+        "hermes-gateway",
+        "attended-daidala",
+        "receipt-1",
+        NOW,
+    )
 
     assert intake.claim == claim
     assert receipt.receipt_id == "receipt-1"
+    assert receipt.event_id == "cycle-1:admitted"
+    assert IntakeRecord.from_dict(intake.to_dict()) == intake
+    assert ClaimIdentity.from_dict(claim.to_dict()) == claim
+    assert NotificationReceipt.from_dict(receipt.to_dict()) == receipt
     with pytest.raises(PolicyViolationError, match="unready"):
         replace(intake, ready=False)
     with pytest.raises(PolicyViolationError, match="expire after"):
@@ -89,3 +99,25 @@ def test_findings_deduplicate_by_stable_identity_and_require_verified_publicatio
         remote_url="https://github.com/forgegod/daidala/issues/42",
     )
     assert published.remote_url is not None
+    assert FindingRecord.from_dict(published.to_dict()) == published
+
+
+def test_adapter_serialization_rejects_unknown_fields() -> None:
+    raw = IntakeRecord(
+        adapter="github-issues",
+        item_id="42",
+        source_url=None,
+        category=IntakeCategory.IMPROVEMENT,
+        priority=2,
+        goal="Prove strict adapter serialization",
+        acceptance_criteria=("Unknown fields fail.",),
+        evidence_digests=(),
+        dependencies=(),
+        risk="Fixture only.",
+        admission_actor="maintainer-1",
+        ready=True,
+    ).to_dict()
+    raw["unknown"] = True
+
+    with pytest.raises(PolicyViolationError, match="fields mismatch"):
+        IntakeRecord.from_dict(raw)

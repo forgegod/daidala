@@ -9,9 +9,10 @@ completeness without touching a real Hermes profile.
 ## Ownership
 
 - Unit tests for pack loading and validation.
-- Strict self-improvement project, registration, cycle, adapter, and increment
-  model tests, including canonical identity, bounds, provenance, and fail-closed
-  malformed-input coverage.
+- Strict self-improvement project, registration, cycle, adapter, admission,
+  reconciliation, and increment tests, including canonical identity, immutable
+  snapshots, replay convergence, event-bound receipts, pre-mutation baseline
+  checks, bounds, provenance, and fail-closed malformed external-input coverage.
 - Fake-context tests for plugin tool and skill registration.
 - Temporary-repository tests for policy services and JSON tool handlers.
 - Fake-inventory tests for exact external-skill prerequisites and host errors.

@@ -99,6 +99,7 @@ class WorkflowService:
         constraints_content: str | None = None,
         constraints_skill: str | None = None,
         constraints_skill_digest: str | None = None,
+        expected_baseline_commit: str | None = None,
     ) -> WorkflowLedger:
         """Validate inputs and create or resume the initial Kanban graph."""
         pack = load_pack(pack_name)
@@ -120,6 +121,11 @@ class WorkflowService:
             if not str(error).startswith("unknown workflow:"):
                 raise
         else:
+            if (
+                expected_baseline_commit is not None
+                and existing.baseline_commit != expected_baseline_commit
+            ):
+                raise ServiceError("existing workflow baseline does not match expected baseline")
             _require_restart_match(
                 existing,
                 board_slug=board_slug,
@@ -139,6 +145,8 @@ class WorkflowService:
         baseline, is_clean = _inspect_repository(target)
         if not is_clean:
             raise ServiceError("target repository is dirty")
+        if expected_baseline_commit is not None and baseline != expected_baseline_commit:
+            raise ServiceError("repository baseline does not match expected baseline")
         skills = tuple(
             SkillDigest(name=name, digest=digest)
             for name, digest in pack_skill_digests(pack)

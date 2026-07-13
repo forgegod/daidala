@@ -11,7 +11,7 @@ from daidala import schemas, tools
 from daidala.errors import PolicyViolationError
 from daidala.kanban import KanbanGraphAdapter
 from daidala.packs import load_pack
-from daidala.service import WorkflowService
+from daidala.service import ServiceError, WorkflowService
 from daidala.skills import (
     content_registry_from_digests,
     inventory_from_names,
@@ -192,6 +192,26 @@ def test_start_and_status_return_policy_ledger_without_status(
     status = call(tools.status, {"workflow_id": "workflow-generated"})
     assert status["workflow"] == started["workflow"]
     assert [row["stage"] for row in status["kanban"]] == ["define", "plan"]
+
+
+def test_start_rejects_expected_baseline_before_ledger_or_kanban_mutation(
+    service: WorkflowService,
+    target_repository: Path,
+    fake_kanban_host,
+) -> None:
+    with pytest.raises(ServiceError, match="baseline does not match"):
+        service.start(
+            board_slug="daidala-test",
+            target_repository=str(target_repository),
+            goal="Reject the wrong baseline",
+            stage_profiles=STAGE_PROFILES,
+            workflow_id="workflow-wrong-baseline",
+            expected_baseline_commit="0" * 40,
+        )
+
+    with pytest.raises(StoreError, match="unknown workflow"):
+        service.status("workflow-wrong-baseline")
+    assert fake_kanban_host.cards == {}
 
 
 def test_start_restart_and_approval_create_one_idempotent_graph(
