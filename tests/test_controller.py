@@ -243,6 +243,36 @@ def test_duplicate_admission_converges_on_cycle_workflow_and_receipt(tmp_path: P
         replace(first[0], stage_profiles=("invalid",))  # type: ignore[arg-type]
 
 
+def test_pack_content_digest_mismatch_fails_before_adapters_or_artifacts(
+    tmp_path: Path,
+) -> None:
+    project = manifest()
+    tampered_pack = replace(project.allowed_packs[0], content_digest="0" * 64)
+    tampered_manifest = replace(
+        project,
+        allowed_packs=(tampered_pack, *project.allowed_packs[1:]),
+    )
+    intake_adapter = FakeIntake(intake())
+    notifications = FakeNotifications()
+    workflow = FakeWorkflow()
+    subject = coordinator(tmp_path, intake_adapter, notifications, workflow)
+
+    with pytest.raises(PolicyViolationError, match="pack identity does not match"):
+        subject.admit(
+            manifest=tampered_manifest,
+            registration=registration(),
+            intake=intake(),
+            baseline_revision=BASELINE,
+            stage_profiles=stage_profiles(),
+            constraints_content=(ROOT / ".daidala/constraints.yaml").read_text(),
+        )
+
+    assert intake_adapter.claim_calls == 0
+    assert notifications.calls == []
+    assert workflow.calls == 0
+    assert not (tmp_path / "projects").exists()
+
+
 def test_malformed_adapter_output_fails_before_workflow_or_notification(tmp_path: Path) -> None:
     intake_adapter = FakeIntake(intake(), mutate_goal=True)
     notifications = FakeNotifications()
