@@ -5,7 +5,8 @@ projects as inputs to Daidala. It distinguishes projects that can become
 workflow packs from projects that are better treated as interoperability layers,
 optional tools, or product references.
 
-The assessment reflects the sources available on 2026-07-11. A positive fit is
+The assessment reflects the sources available from 2026-07-11 through
+2026-07-13. A positive fit is
 not an implementation commitment; every bundled adapter still requires a pinned
 revision, license review, exact skill provenance, tests, and explicit human
 approval before implementation.
@@ -59,6 +60,11 @@ each project's own repository and license were evaluated separately.
 | [BMad Method](https://github.com/bmad-code-org/BMAD-METHOD) | 2/5 | Top listed skill: 348 installs | Methodology reference or narrow skill subset | Do not adapt wholesale |
 | [Get Shit Done Skills](https://github.com/ctsstc/get-shit-done-skills) | 1/5 | `gsd`: 2.7K installs | None until tested and licensed | Reject for now |
 | [AWS Kiro](https://kiro.dev/) | 1/5 | Not applicable | Product reference only | Not a pack candidate |
+| [Ankh.md](https://github.com/Abruptive/Ankh.md) | 2/5 | Awesome Hermes catalogue: experimental | Project-scoping reference only | Not a pack candidate |
+| [Gladiator](https://github.com/runtimenoteslabs/gladiator) | 1/5 | Awesome Hermes catalogue: experimental | Candidate-comparison reference only | Reject as infrastructure |
+| [Big Iron](https://github.com/supermodeltools/bigiron) | 1/5 | Awesome Hermes catalogue: beta | Structural-evidence reference only | Archived and rejected |
+| [opencode-hermes-multiagent](https://github.com/1ilkhamov/opencode-hermes-multiagent) | 1/5 | Awesome Hermes catalogue: beta | Conditional-role reference only | Reject |
+| [MisakaNet](https://github.com/Ikalus1988/MisakaNet) | 2/5 | Awesome Hermes catalogue: beta | Lesson-reuse evaluation reference | Watch as a reference |
 
 ## Addy Osmani Agent Skills
 
@@ -393,6 +399,65 @@ Use Kiro as a product and terminology reference only. Do not describe Daidala
 as running Kiro specs unless AWS publishes a stable, reusable contract that can
 be consumed without adopting Kiro's runtime.
 
+## Multi-Agent and swarm references
+
+The five entries in the
+[awesome-hermes-agent Multi-Agent & Swarms catalogue](https://github.com/0xNyk/awesome-hermes-agent#multi-agent--swarms)
+were audited against their primary repositories as a challenge to the planned
+autonomous self-improvement loop. The catalogue labels are discovery metadata,
+not verified maturity levels: Big Iron is already archived and deprecated, and
+opencode-hermes-multiagent is an OpenCode configuration rather than a Hermes
+Agent extension. None of the five is suitable as a Daidala pack or runtime
+dependency.
+
+| Project | Primary-source finding | Useful aspect | Blocking concern |
+|---|---|---|---|
+| Ankh.md | MIT-licensed wrapper and patched Hermes distribution with project-local `.agent/` configuration, skills, sessions, memories, and identity | Explicit project scoping and reduced delegated toolsets | Repository-local config and `.env` overrides can grant models, tools, instructions, and credential selection; folder scope is not a sandbox or approval boundary |
+| Gladiator | MIT-licensed hackathon system in which two Paperclip-managed agent companies compete on separate repositories | Same-baseline, side-by-side strategy evaluation with visible cost and telemetry | Adds a second orchestrator, nested `hermes chat` processes, several state stores, and a Goodhart-prone synthetic projected-stars score rather than correctness evidence |
+| Big Iron | Archived and deprecated graph-guided SDLC; no usable repository license was found during the audit | Blast-radius analysis, affected-flow detection, graph-guided test selection, and baseline/candidate structural deltas | External Supermodel service and MCP dependency, overlapping lifecycle authority, unsupported absolute correctness claims, and no clear reuse license |
+| opencode-hermes-multiagent | OpenCode prompt/configuration repository defining 17 fixed specialist roles; no root license was found | Conditional specialist roles, security escalation, and bounded revision loops | Not a Nous Hermes Agent extension; fixed serial handoffs, broad context sharing, prompt-only policy, and no durable approval, provenance, or recovery contract |
+| MisakaNet | Apache-2.0 Git-backed Markdown lesson network with lexical retrieval, contribution workflows, explicit limitations, and LessonReuseBench | Source-citable failure lessons and measurement of whether agents reuse verified experience | Community lessons remain untrusted, semantic correctness is not established by CI, Git synchronization is batch-oriented, and the published credential pattern is unsuitable for Daidala |
+
+### What the projects validate
+
+The projects collectively reinforce that project identity, bounded specialist
+delegation, structural code intelligence, source-citable failure knowledge, and
+comparable evaluation fixtures can improve agent work. They also demonstrate
+why those capabilities are insufficient without Daidala's existing contracts:
+most treat an agent role, folder, profile, repository, or board as authority or
+isolation; approval is usually a prompt checkpoint; evidence is frequently
+self-reported; and crash reconciliation across agents, repositories, and remote
+side effects is underspecified.
+
+### Transferable self-improvement insights
+
+The audit retains four design inputs without adopting any competing runtime:
+
+1. **Delegation provenance.** Evidence should preserve the parent and child run
+   identities, delegated goal, role, toolsets, model route, input identities,
+   output digest, resource observations, and terminal state. A child may return
+   advice or artifacts but cannot approve, retain, publish, or expand authority.
+2. **Lesson-reuse evaluation.** A repeated metric should compare approved
+   failure fixtures with and without access to a retained lesson, measuring
+   verified recovery, repeated failed actions, turns, wall time, irrelevant
+   matches, and unsafe use. Accumulating lessons is not itself improvement.
+3. **Bounded strategy comparison.** A future experiment may compare candidate
+   strategies against one frozen baseline and identical fixtures, limits, and
+   metrics in separate evaluator homes and worktrees. Candidates share no
+   mutable memory, do not define the score, and require human retention approval.
+4. **Structural graph evidence.** Supported repositories may record graph
+   freshness, affected-flow and blast-radius deltas, dependency cycles, and new
+   untested hotspots. Exact declared rules may be deterministic; centrality and
+   risk scores remain observational, and an incomplete graph makes the result
+   `incomparable` rather than successful.
+
+MisakaNet's lesson protocol is the strongest direct challenge to the
+self-improvement design, but it does not justify a second canonical lesson tree.
+A lesson starts as a provisional, content-addressed workflow artifact and may
+be promoted only through review and retention approval into existing project
+documentation, a governed skill, or a rebuildable advisory retrieval index.
+Unapproved lessons never enter shared project memory or execute commands.
+
 ## Recommended sequence
 
 1. **Spike a curated Superpowers pack.** It has the strongest complete lifecycle
@@ -433,4 +498,10 @@ be consumed without adopting Kiro's runtime.
 | [Open Agent Spec website](https://www.openagentspec.dev/) and [repository](https://github.com/prime-vector/open-agent-spec) | Version 1.5.0 contracts, runner boundaries, composition, tools, and tests |
 | [Open Design repository](https://github.com/nexu-io/open-design) | Design loop, artifact types, skills, `DESIGN.md`, CLI/MCP architecture, Hermes support, and Apache-2.0 license |
 | [Kiro Specs](https://kiro.dev/docs/specs/) and [Kiro Models](https://kiro.dev/docs/models/) | Proprietary spec workflow, dependency execution, and current multi-model routing |
+| [awesome-hermes-agent Multi-Agent & Swarms](https://github.com/0xNyk/awesome-hermes-agent#multi-agent--swarms) | Discovery inventory and catalogue labels; labels were checked against primary repositories rather than accepted as maturity evidence |
+| [Ankh.md](https://github.com/Abruptive/Ankh.md) `README.md` and `DOCS.md` on branch `divine` | Project-local configuration, skills, sessions, memories, delegation, secret precedence, unsupported surfaces, MIT license, and runtime-patching boundary |
+| [Gladiator](https://github.com/runtimenoteslabs/gladiator) | Paperclip orchestration, nested Hermes execution, company topology, evidence watcher, projected-stars formula, runtime dependencies, and MIT license |
+| [Big Iron](https://github.com/supermodeltools/bigiron) | Archived and deprecated status, graph-guided SDLC architecture, external Supermodel dependency, and missing usable repository license |
+| [opencode-hermes-multiagent](https://github.com/1ilkhamov/opencode-hermes-multiagent) | OpenCode agent definitions and pipeline configuration, fixed specialist topology, revision loops, broad context handoffs, and missing root license |
+| [MisakaNet](https://github.com/Ikalus1988/MisakaNet) | Git-backed lesson format, retrieval and contribution model, `LIMITATIONS.md`, security model, LessonReuseBench, and Apache-2.0 license |
 | [Pack reference](03-pack-reference.md), [Authoring packs](04-authoring-packs.md), and [Pack adapters](09-pack-adapters.md) | Daidala schema, engine boundary, implemented mappings, and constraints |

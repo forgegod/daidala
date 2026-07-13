@@ -32,6 +32,11 @@ Own current architecture documentation, the numbered reading set, and executable
   work through Hermes cron and webhooks without weakening Daidala approval.
 - `14-workflow-constraints.md` owns the implemented workflow-scoped policy artifact,
   the policy-versus-methodology boundary, and skill-backed reusable sources.
+- `15-self-improvement.md` will own the comprehensive technical flow for the
+  generic autonomous self-improvement protocol and its first Daidala instance,
+  including identities, modes, transitions, authority, adapters, evidence,
+  persistent-knowledge boundaries, increment-document provenance,
+  reconciliation, recovery, and exercised operator procedures.
 - `plans/` contains self-contained plans for future implementation sessions.
 
 ## Local Contracts
