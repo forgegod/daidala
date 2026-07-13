@@ -9,7 +9,7 @@ Own current architecture documentation, the numbered reading set, and executable
 - `README.md` is the only reading-order, support-status, and symptom-routing index.
 - `00-getting-started.md` owns the executable first-run operator walkthrough.
 - `01-architecture.md` owns process and component boundaries.
-- `02-workflow-state.md` owns the Wingstaff policy ledger, Hermes Kanban state
+- `02-workflow-state.md` owns the Daidala policy ledger, Hermes Kanban state
   authority, and transition-ownership contract.
 - `03-pack-reference.md` owns the workflow-pack schema and activation modes.
 - `04-authoring-packs.md` owns pack-neutral adapter and activation authoring.
@@ -29,7 +29,7 @@ Own current architecture documentation, the numbered reading set, and executable
   packs, interoperability standards, optional integrations, and adjacent
   products.
 - `13-autonomous-triggering.md` owns the how-to contract for admitting external
-  work through Hermes cron and webhooks without weakening Wingstaff approval.
+  work through Hermes cron and webhooks without weakening Daidala approval.
 - `14-workflow-constraints.md` owns the implemented workflow-scoped policy artifact,
   the policy-versus-methodology boundary, and skill-backed reusable sources.
 - `plans/` contains self-contained plans for future implementation sessions.
@@ -38,7 +38,7 @@ Own current architecture documentation, the numbered reading set, and executable
 
 - Plans name exact files, verification gates, stop conditions, and unresolved decisions.
 - Describe the current intended design without iteration diaries or stale migration breadcrumbs.
-- Runtime claims must be grounded in Wingstaff source or current official Hermes documentation.
+- Runtime claims must be grounded in Daidala source or current official Hermes documentation.
 - Future numbered documents appear as unlinked support-status entries until their behavior exists.
 - Runtime documents name their source-of-truth modules and verification tests.
 - Use repository-relative links locally and authoritative upstream URLs for external claims.
@@ -59,8 +59,8 @@ Own current architecture documentation, the numbered reading set, and executable
 python scripts/check_md_links.py .
 ```
 
-- Confirm Mermaid diagrams show Wingstaff inside the existing Hermes process, never as a server.
-- Audit runtime claims against `wingstaff/`, `tests/`, and current official Hermes documentation.
+- Confirm Mermaid diagrams show Daidala inside the existing Hermes process, never as a server.
+- Audit runtime claims against `daidala/`, `tests/`, and current official Hermes documentation.
 
 ## Child DOX Index
 

@@ -1,26 +1,26 @@
-# Wingstaff Bootstrap and Implementation Roadmap
+# Daidala Bootstrap and Implementation Roadmap
 
 > For the implementing agent: read `/AGENTS.md`, the applicable child `AGENTS.md`, this plan, and current official Hermes plugin documentation before each phase. Implement one phase at a time and stop when its verification gate fails.
 
 ## Goal
 
-Deliver Wingstaff as a native, installable Hermes Agent plugin that maps
+Deliver Daidala as a native, installable Hermes Agent plugin that maps
 interchangeable software-development packs onto Hermes Kanban, requires one
 digest-bound human approval before implementation, and introduces no separate
 server, daemon, or user-visible state machine.
 
 ## Product boundary
 
-Wingstaff is:
+Daidala is:
 
 - a Hermes general plugin;
 - deterministic policy, provenance, repository-safety, and evidence code;
 - namespaced bundled orchestration skills;
 - workflow-pack adapters for external skill repositories;
-- an operator CLI registered as `hermes wingstaff ...`;
+- an operator CLI registered as `hermes daidala ...`;
 - a user of Hermes delegation, Kanban, cron, gateway, tools, and host-owned LLM access.
 
-Wingstaff is not:
+Daidala is not:
 
 - an MCP server;
 - an HTTP service or dashboard server;
@@ -39,21 +39,21 @@ Read these before porting behavior:
 - https://github.com/awslabs/aidlc-workflows — second adapter after the core proves pack neutrality.
 - https://hermes-agent.nousresearch.com/docs/developer-guide/plugins — authoritative Hermes extension contract.
 
-Do not modify either sibling source repository while implementing Wingstaff.
+Do not modify either sibling source repository while implementing Daidala.
 
 ## Decisions fixed for the bootstrap
 
-1. Repository, distribution, import package, and plugin name: `wingstaff`.
+1. Repository, distribution, import package, and plugin name: `daidala`.
 2. Python: 3.11 or newer.
 3. License: MIT.
 4. Canonical install, verified on Hermes v0.18.2:
-   `hermes plugins install forgegod/hermes-wingstaff --enable`.
-5. Canonical operator surface: `hermes wingstaff ...`; standalone `wingstaff` remains diagnostics-only.
+   `hermes plugins install forgegod/daidala --enable`.
+5. Canonical operator surface: `hermes daidala ...`; standalone `daidala` remains diagnostics-only.
 6. Stable Kanban graph: `define -> plan -> approval -> implement -> verify -> review -> deliver`.
 7. The first executable pack is Addy Osmani's `agent-skills`.
 8. AI-DLC is added only after one real end-to-end workflow passes.
 9. External skills are referenced by fully qualified install targets and not vendored.
-10. Wingstaff policy and artifact-integrity data belongs below a profile-aware
+10. Daidala policy and artifact-integrity data belongs below a profile-aware
     Hermes home resolved through supported APIs; Kanban remains the operational
     state authority. Never hard-code `~/.hermes`.
 11. The existing Hermes gateway is the only required long-running process for unattended operation.
@@ -64,12 +64,12 @@ The initial repository contains:
 
 - `plugin.yaml` plus Git-directory plugin entry point;
 - `pyproject.toml` with `hermes_agent.plugins` entry point;
-- `wingstaff.register(ctx)` using documented plugin APIs only;
-- the `wingstaff_pack_info` tool;
-- the `wingstaff:orchestrate` bundled skill;
+- `daidala.register(ctx)` using documented plugin APIs only;
+- the `daidala_pack_info` tool;
+- the `daidala:orchestrate` bundled skill;
 - immutable pack dataclasses and deterministic validation;
 - `packs/addyosmani.yaml` mapping the six core lifecycle stages;
-- standalone `wingstaff packs validate addyosmani` diagnostics;
+- standalone `daidala packs validate addyosmani` diagnostics;
 - tests using a fake Hermes plugin context;
 - DOX work contracts.
 
@@ -89,31 +89,31 @@ committed before work starts on the next phase.
 | 1 — isolated Hermes installation proof | Done | Preserve both directory and entry-point regression coverage. |
 | 1A — compatibility baseline and release policy | Done | Preserve the v0.18.2 host boundary and fixed execution policy. |
 | 1B — public Git installation proof | Done | Preserve the verified public install command and fresh-process probe. |
-| 2 — workflow state contract | Done | Migrate approval and evidence facts into the policy ledger; do not preserve Wingstaff statuses. |
+| 2 — workflow state contract | Done | Migrate approval and evidence facts into the policy ledger; do not preserve Daidala statuses. |
 | 3 — durable persistence | Done | Preserve optimistic concurrency while removing operational status ownership. |
 | 4 — read-only and gate tools | Done | Preserve strict JSON boundaries while moving lifecycle transitions to Kanban. |
 | 4A — exact external-skill prerequisite check | Done | Preserve exact-name matching and read-only host inventory access. |
 | 5 — thin Addyosmani workflow | Done | Preserve worktree isolation, immutable diff scope, and evidence-backed delivery while moving progress to Kanban. |
 | 6 — external skill installation and revision management | Done | Preserve publisher-pinned targets, bounded Hermes compatibility, complete-directory digests, dry-run-by-default mutation plans, post-apply verification, and refused recursive installation. Gate: 19 Markdown files, 75 tests, Ruff, pack validation, build, Twine, diff check, 20-action standalone dry-run, recursive refusal, and on-disk digest-mismatch blocking passed. |
 | 7 — Hermes Kanban mapping | Done | Expand into the canonical full card graph: one named board, real parent links, exact skills, stage profiles, one shared worktree, and retry-safe keys. |
-| 8 — `hermes wingstaff` operator CLI | Done | Preserve the shared parser/service dispatcher, profile-local dry-run initialization, read-only doctor, required cancellation reasons, isolated-module resource loading, and v0.18.2 process exit-code shim. Gate: 20 Markdown files, 86 tests, Ruff, pack validation, build, Twine, diff check, isolated native Hermes command/doctor probes, and clean-wheel standalone init/list probe passed. |
+| 8 — `hermes daidala` operator CLI | Done | Preserve the shared parser/service dispatcher, profile-local dry-run initialization, read-only doctor, required cancellation reasons, isolated-module resource loading, and v0.18.2 process exit-code shim. Gate: 20 Markdown files, 86 tests, Ruff, pack validation, build, Twine, diff check, isolated native Hermes command/doctor probes, and clean-wheel standalone init/list probe passed. |
 | 9 — AI-DLC adapter | Done | Preserve the pinned MIT-0 adapter, mutually exclusive external/bundled skill providers, and pack-neutral engine path. Gate: 21 Markdown files, 92 tests, Ruff, both pack validations, build, Twine, diff check, isolated two-skill directory load, and no-`aidlc`-runtime-literal scan passed. |
 | 10 — operational hardening and release | Done | Preserve owned-worktree cleanup, restart idempotency, host-owned token accounting, the v0.18.2 compatibility matrix, release-content and dependency audits, and the Python 3.11/3.12 release gate. Gate: 21 Markdown files, 97 tests, Ruff, both pack validations, build, Twine, wheel inspection, isolated wheel installation, clean runtime dependency audit, workflow parse, and diff checks passed. |
 
-## Phase 0A — rescue the Wingstaff brand under the new narrative
+## Phase 0A — rescue the Daidala brand under the new narrative
 
 ### Objective
 
-Move only the selected Wingstaff identity from
+Move only the selected Daidala identity from
 `../tonbistudio-hermes-multi-agent-workflow/assets/` into this repository,
 remove the naming-comparison history, and regenerate the derived assets from a
-Wingstaff-owned source.
+Daidala-owned source.
 
 ### Narrative contract
 
 Use this as the canonical product description:
 
-> Wingstaff is a Hermes-native staff of specialist agents that moves software
+> Daidala is a Hermes-native staff of specialist agents that moves software
 > work through interchangeable workflow packs and one explicit human approval
 > gate—without introducing a second orchestration server.
 
@@ -123,14 +123,14 @@ Use this shorter asset tagline where space is limited:
 
 The name continues to carry both meanings: Hermes' winged herald staff and a
 staff of specialists coordinating work for a human decision. Do not describe
-Wingstaff as a unified CLI, a scout-first triage product, an MCP server, or a
+Daidala as a unified CLI, a scout-first triage product, an MCP server, or a
 standalone agent daemon.
 
 ### Source classification
 
 Rescue:
 
-- `assets/logo.svg` — selected Wingstaff lockup;
+- `assets/logo.svg` — selected Daidala lockup;
 - `assets/logo-mark.svg` — selected winged-staff mark;
 - `assets/logo-256.png`, `logo-512.png`, `logo-1024.png` — derived review/use renders;
 - the selected mark/lockup geometry, palette, and generation logic from
@@ -140,7 +140,7 @@ Do not copy:
 
 - `project-name-proposals.svg` or `.png`;
 - `proposal-heraldforge*`, `proposal-signalstaff*`, or `proposal-wingmarshal*`;
-- `proposal-wingstaff*`, because it duplicates the selected canonical lockup;
+- `proposal-daidala*`, because it duplicates the selected canonical lockup;
 - the stale subtitle `Pip-installable unified CLI · scout → proposal → human
   gate → fulfillment`;
 - `__pycache__` or any generated runtime residue.
@@ -163,7 +163,7 @@ Do not copy:
 
 1. Record hashes and dimensions of the five canonical source assets before
    touching them.
-2. Copy the selected SVG geometry into Wingstaff and render it once to prove the
+2. Copy the selected SVG geometry into Daidala and render it once to prove the
    visual identity survived the move.
 3. Rename and reduce `build_name_proposals.py` to `build_brand_assets.py`: one
    selected brand only, no proposal dataclass, no alternative names, and no
@@ -220,7 +220,7 @@ pack-neutral lifecycle rather than by the old triage scaffold.
 | File | Owns | First complete after |
 |---|---|---|
 | `docs/README.md` | Entry point, reading order, lifecycle diagram, support-status table, and symptom-to-document routing. | Phase 0B |
-| `docs/01-architecture.md` | Plugin/skill/pack boundaries; deterministic engine vs. model judgment; why there is no Wingstaff server; component and process diagrams. | Phase 0B, reconciled every runtime phase |
+| `docs/01-architecture.md` | Plugin/skill/pack boundaries; deterministic engine vs. model judgment; why there is no Daidala server; component and process diagrams. | Phase 0B, reconciled every runtime phase |
 | `docs/00-getting-started.md` | Executable first-workflow path, gateway prerequisite, explicit start, digest approval, observation, and recovery. | Kanban-native documentation phase |
 | `docs/02-workflow-state.md` | Workflow identity, policy facts, card references, artifact evidence, plan-digest approval, idempotency, and recovery. | Phase 2 |
 | `docs/03-pack-reference.md` | Complete workflow-pack schema: source, revision, stages, skills, gate, and generic Kanban card mapping. | Phase 0B, reconciled with Kanban-native execution |
@@ -239,11 +239,11 @@ pack-neutral lifecycle rather than by the old triage scaffold.
 - Distinguish implemented, verified behavior from planned contracts in one
   support-status table; do not scatter `TODO` claims through every document.
 - Do not copy predecessor text and rename symbols. Re-derive every runtime claim
-  from Wingstaff source and current official Hermes documentation.
+  from Daidala source and current official Hermes documentation.
 - Do not retain migration history, naming comparisons, prior architecture, or
   line-number references to sibling repositories.
 - Diagrams must show the existing Hermes process as host and make clear that
-  Wingstaff registers in-process. Do not draw a Wingstaff HTTP/MCP service.
+  Daidala registers in-process. Do not draw a Daidala HTTP/MCP service.
 - Each runtime document names its source-of-truth modules and verification tests.
 - Commands appear only after they have been exercised against the supported
   Hermes version. Before that, the support-status table marks the surface as
@@ -279,14 +279,14 @@ implemented and verified, according to the map above.
 - all relative links and heading anchors pass the chosen link checker;
 - `docs/README.md` reading order matches actual numbered files;
 - architecture diagrams render with Mermaid and contain no standalone
-  Wingstaff server;
-- source-to-document audit confirms each runtime claim against `wingstaff/`,
+  Daidala server;
+- source-to-document audit confirms each runtime claim against `daidala/`,
   tests, or current official Hermes docs;
 - `pytest`, `ruff check .`, pack validation, and package build remain green.
 
 ### Stop-and-ask rules
 
-- Stop when a predecessor claim cannot be verified against Wingstaff or current
+- Stop when a predecessor claim cannot be verified against Daidala or current
   Hermes behavior; omit it rather than carrying it forward.
 - Stop when a command differs between the live Hermes CLI and official docs;
   record the incompatibility in the plan and ask which supported version wins.
@@ -341,7 +341,7 @@ Install the local repository as a Hermes plugin in an isolated profile and prove
 - `plugin.yaml`
 - root `__init__.py`
 - `pyproject.toml`
-- `wingstaff/__init__.py`
+- `daidala/__init__.py`
 - `tests/test_installation.py`
 - `README.md`
 - `docs/README.md`
@@ -355,8 +355,8 @@ Install the local repository as a Hermes plugin in an isolated profile and prove
    built wheel through an isolated entry-point target. The tested Hermes CLI
    does not accept local paths or wheels in `hermes plugins install`.
 4. Enable it explicitly.
-5. Start a fresh Hermes process and verify `wingstaff_pack_info` appears.
-6. Load `wingstaff:orchestrate` explicitly and verify its content is reachable.
+5. Start a fresh Hermes process and verify `daidala_pack_info` appears.
+6. Load `daidala:orchestrate` explicitly and verify its content is reachable.
 7. Add an automated smoke test around the stable boundary available in the installed Hermes version.
 8. Resolve the root directory-plugin `__init__.py` versus import-package name
    collision that makes targeted pytest collection fail, without breaking either
@@ -370,7 +370,7 @@ Install the local repository as a Hermes plugin in an isolated profile and prove
 - `ruff check .`
 - `python -m build`
 - wheel contains `packs/addyosmani.yaml` and `skills/orchestrate/SKILL.md`;
-- isolated Hermes reports Wingstaff enabled and registered.
+- isolated Hermes reports Daidala enabled and registered.
 - both `pytest` and `pytest tests/test_installation.py` collect without import
   ambiguity.
 
@@ -390,7 +390,7 @@ policy before the workflow state model is frozen.
   without separate authorization;
 - bind one approval to the whole plan digest and require reapproval after plan
   changes;
-- reject dirty target repositories and use a fresh Wingstaff worktree;
+- reject dirty target repositories and use a fresh Daidala worktree;
 - support local target repositories only in the first executable release.
 
 ### Files
@@ -415,12 +415,12 @@ to a public GitHub repository.
 
 ### Steps
 
-1. Push all completed phases to `forgegod/hermes-wingstaff`.
+1. Push all completed phases to `forgegod/daidala`.
 2. Create a fresh `HERMES_HOME`.
-3. Run `hermes plugins install forgegod/hermes-wingstaff --enable`.
+3. Run `hermes plugins install forgegod/daidala --enable`.
 4. Start a separate Hermes process using that home.
 5. Verify the plugin is enabled without errors, registers
-   `wingstaff_pack_info`, and loads `wingstaff:orchestrate`.
+   `daidala_pack_info`, and loads `daidala:orchestrate`.
 6. Publish only that exercised command in the README and integration guide.
 
 ### Verification gate
@@ -432,17 +432,17 @@ tool, and a successful explicit skill load.
 
 ### Objective
 
-Persist only Wingstaff-owned policy and integrity facts. Hermes Kanban owns card
+Persist only Daidala-owned policy and integrity facts. Hermes Kanban owns card
 status, dependencies, assignment, claims, completion, blocking, retry, and
 recovery.
 
 ### Files
 
-- create `wingstaff/workflow.py`
-- create `wingstaff/state.py`
-- create `wingstaff/errors.py`
+- create `daidala/workflow.py`
+- create `daidala/state.py`
+- create `daidala/errors.py`
 - create `tests/test_workflow.py`
-- update `wingstaff/AGENTS.md`
+- update `daidala/AGENTS.md`
 
 ### Required ledger facts
 
@@ -451,7 +451,7 @@ Each workflow records:
 - immutable workflow ID;
 - canonical local target-repository path, baseline commit, and requested goal;
 - target-cleanliness validation result and timestamp;
-- Wingstaff worktree path once implementation begins;
+- Daidala worktree path once implementation begins;
 - fixed delivery mode `reviewed_diff_only`;
 - selected pack and exact pack/source revision;
 - selected board and deterministic stage-to-card identifiers;
@@ -459,10 +459,10 @@ Each workflow records:
 - artifact references and digests per stage;
 - human-gate decision, exact approved plan digest, and timestamp;
 - verification evidence;
-- evidence and policy-invalidity reason when Wingstaff must refuse an operation;
+- evidence and policy-invalidity reason when Daidala must refuse an operation;
 - created/updated timestamps.
 
-No operational status is stored in Wingstaff. Hermes Kanban supplies the card
+No operational status is stored in Daidala. Hermes Kanban supplies the card
 state and run history used by combined status reads.
 
 ### Rules
@@ -471,13 +471,13 @@ state and run history used by combined status reads.
 - Workflow creation accepts local repository paths only.
 - Graph creation requires a clean target and recorded baseline commit; tracked
   or untracked target changes fail policy validation before cards are created.
-- Implementation requires a fresh Wingstaff-owned worktree distinct from the
+- Implementation requires a fresh Daidala-owned worktree distinct from the
   target checkout.
 - Approval is single-shot and bound to a plan artifact digest.
 - Modifying the plan after approval invalidates approval.
 - Delivery produces a reviewed diff and cannot represent an automatic target
   commit or push.
-- Workers block and resume through Hermes Kanban; Wingstaff does not mirror that
+- Workers block and resume through Hermes Kanban; Daidala does not mirror that
   operational status.
 - Re-running a completed transition is idempotent.
 - No guessed artifact is accepted.
@@ -490,13 +490,13 @@ Unit tests cover every valid transition, every invalid transition, approval inva
 
 ### Objective
 
-Persist Wingstaff policy facts using a simple local store while keeping Hermes
+Persist Daidala policy facts using a simple local store while keeping Hermes
 Kanban as the operational database of record.
 
 ### Files
 
-- create `wingstaff/store.py`
-- create `wingstaff/locations.py`
+- create `daidala/store.py`
+- create `daidala/locations.py`
 - create `tests/test_store.py`
 
 ### Approach
@@ -519,19 +519,19 @@ Provide the minimal safe plugin API before any autonomous execution.
 
 ### Tools
 
-- `wingstaff_start` — validate a clean local repository, exact skills, named
+- `daidala_start` — validate a clean local repository, exact skills, named
   board, and complete stage-profile mapping, then create the initial card graph;
-- `wingstaff_status` — combine policy facts with live read-only Kanban status;
-- `wingstaff_approve` — approve the exact current plan digest and create the
+- `daidala_status` — combine policy facts with live read-only Kanban status;
+- `daidala_approve` — approve the exact current plan digest and create the
   post-gate graph;
-- `wingstaff_cancel` — clean up Wingstaff-owned worktree state and archive the
+- `daidala_cancel` — clean up Daidala-owned worktree state and archive the
   workflow cards with an operator-supplied reason.
 
 ### Files
 
-- extend `wingstaff/schemas.py`
-- extend `wingstaff/tools.py`
-- create `wingstaff/service.py`
+- extend `daidala/schemas.py`
+- extend `daidala/tools.py`
+- create `daidala/service.py`
 - create `tests/test_tools.py`
 
 ### Verification gate
@@ -548,7 +548,7 @@ the minimum read-only availability check before executable work begins.
 
 ### Scope
 
-- create `wingstaff/skills.py` with a host boundary for exact installed-skill
+- create `daidala/skills.py` with a host boundary for exact installed-skill
   lookup;
 - validate every selected pack skill by exact name before workflow start;
 - return an actionable missing-skill error containing the fully qualified
@@ -573,11 +573,11 @@ Only this vertical slice:
 
 1. User selects a named board, local Git repository, default profile, and
    optional stage overrides.
-2. Wingstaff validates the clean baseline, profiles, pack, and exact skills.
-3. Wingstaff creates linked `define` and `plan` cards.
-4. After the plan handoff, Wingstaff creates a blocked approval card.
-5. Human approves the exact plan digest through Wingstaff policy.
-6. Wingstaff creates linked `implement`, `verify`, `review`, and `deliver` cards
+2. Daidala validates the clean baseline, profiles, pack, and exact skills.
+3. Daidala creates linked `define` and `plan` cards.
+4. After the plan handoff, Daidala creates a blocked approval card.
+5. Human approves the exact plan digest through Daidala policy.
+6. Daidala creates linked `implement`, `verify`, `review`, and `deliver` cards
    in one persistent worktree.
 7. Workers complete or block through Kanban with structured handoffs.
 8. Delivery reports changed paths and verification evidence. It does not commit
@@ -607,11 +607,11 @@ source revision pinning, version constraints, and controlled update planning.
 
 ### Files
 
-- extend `wingstaff/skills.py`;
+- extend `daidala/skills.py`;
 - extend pack schema with source revision and optional version constraints;
-- add standalone `wingstaff packs install`, `check`, and `update-plan`
+- add standalone `daidala packs install`, `check`, and `update-plan`
   operations over a reusable service boundary; Phase 8 registers the same
-  operations under `hermes wingstaff`;
+  operations under `hermes daidala`;
 - add tests with a fake Hermes command/registry boundary.
 
 ### Rules
@@ -639,25 +639,25 @@ Use the built-in durable queue without private database coupling.
 
 ### Files
 
-- create `wingstaff/kanban.py`
+- create `daidala/kanban.py`
 - add task creation/transition tests around a fake plugin context;
 - update architecture docs.
 
 ### Rules
 
-- Board cards reference Wingstaff workflow/stage IDs.
+- Board cards reference Daidala workflow/stage IDs.
 - Hermes Kanban remains authoritative for the complete operational lifecycle.
-- Wingstaff remains authoritative only for pack policy, exact approval,
+- Daidala remains authoritative only for pack policy, exact approval,
   repository safety, and artifact/evidence integrity.
 - The first post-gate card and worktree are created only after approval.
 - Workers use persistent worktrees/workspaces across dependent stages.
-- Generic Kanban unblock is interaction, not Wingstaff authorization.
+- Generic Kanban unblock is interaction, not Daidala authorization.
 
 ### Verification gate
 
 Simulate worker interruption and restart; the workflow must resume from persisted state without duplicating implementation tasks.
 
-## Phase 8 — register `hermes wingstaff` CLI
+## Phase 8 — register `hermes daidala` CLI
 
 ### Objective
 
@@ -665,13 +665,13 @@ Make Hermes the canonical operator shell.
 
 ### Commands
 
-- `hermes wingstaff init`
-- `hermes wingstaff doctor`
-- `hermes wingstaff start`
-- `hermes wingstaff status`
-- `hermes wingstaff approve`
-- `hermes wingstaff cancel`
-- `hermes wingstaff packs list|validate|install|check`
+- `hermes daidala init`
+- `hermes daidala doctor`
+- `hermes daidala start`
+- `hermes daidala status`
+- `hermes daidala approve`
+- `hermes daidala cancel`
+- `hermes daidala packs list|validate|install|check`
 
 ### Rules
 
@@ -692,8 +692,8 @@ Integrate `awslabs/aidlc-workflows` without changing core workflow code.
 ### Steps
 
 1. Audit the current upstream release, license, stages, artifacts, approval points, and installation format.
-2. Write a design note mapping AI-DLC concepts to Wingstaff lifecycle stages. Record that stable v1.0.1 ships rules rather than Agent Skills, while the v2 preview requires a complete harness overlay and owns an incompatible nested state machine.
-3. Add `wingstaff/packs/aidlc.yaml` plus a licensed, pinned pack-owned adapter skill derived from the stable rules release.
+2. Write a design note mapping AI-DLC concepts to Daidala lifecycle stages. Record that stable v1.0.1 ships rules rather than Agent Skills, while the v2 preview requires a complete harness overlay and owns an incompatible nested state machine.
+3. Add `daidala/packs/aidlc.yaml` plus a licensed, pinned pack-owned adapter skill derived from the stable rules release.
 4. Extend the pack schema generically for bundled plugin skill references; external install targets remain the default and no pack-name branch is allowed.
 5. Run the same fixture workflow used for Addyosmani.
 
@@ -716,7 +716,7 @@ If AI-DLC requires core code branches named `aidlc`, the adapter boundary is wro
 
 ### Release acceptance
 
-- no listening Wingstaff port or background daemon;
+- no listening Daidala port or background daemon;
 - one-command plugin installation from Git;
 - plugin is opt-in and disabled until enabled;
 - Addyosmani and AI-DLC fixture workflows both pass;
@@ -733,7 +733,7 @@ Mitigation: test against a declared Hermes version range and use only documented
 
 ### Bundled plugin skills are not automatically indexed
 
-Hermes requires explicit namespaced loading for plugin skills. The orchestration entry point must request `wingstaff:orchestrate`; do not assume discovery from the global skill list.
+Hermes requires explicit namespaced loading for plugin skills. The orchestration entry point must request `daidala:orchestrate`; do not assume discovery from the global skill list.
 
 ### Skill-pack drift
 
@@ -754,9 +754,9 @@ Do not build one. Use Hermes CLI, gateway messages, Kanban, and existing observa
 ## Decisions for the first executable slice
 
 The conservative defaults remain binding first-release policy: Hermes Kanban is
-the sole operational state authority; Wingstaff owns exact-digest approval and
+the sole operational state authority; Daidala owns exact-digest approval and
 evidence integrity; there is no automatic target commit or push; plan changes
-require reapproval; dirty targets are rejected; one absolute Wingstaff worktree
+require reapproval; dirty targets are rejected; one absolute Daidala worktree
 is shared by post-gate cards; and local repositories only are supported. Hermes
 v0.18.2 (`7acaff5e`) is the only supported host boundary until another release
 passes the same plugin and Kanban capability probes.
@@ -767,13 +767,13 @@ Keep every remaining phase independently green and commit it before starting
 the next phase:
 
 1. `docs: lock Hermes compatibility and release policy`
-2. `refactor: reduce Wingstaff state to policy and artifact ledger`
+2. `refactor: reduce Daidala state to policy and artifact ledger`
 3. `feat: persist policy and approval decisions`
-4. `feat: expose Wingstaff lifecycle tools`
+4. `feat: expose Daidala lifecycle tools`
 5. `feat: validate exact external skill prerequisites`
 6. `feat: execute approved Addyosmani workflow slice`
 7. `feat: manage external skill revisions`
-8. `feat: integrate Wingstaff with Hermes Kanban`
-9. `feat: add Hermes-native Wingstaff CLI`
+8. `feat: integrate Daidala with Hermes Kanban`
+9. `feat: add Hermes-native Daidala CLI`
 10. `feat: add AI-DLC workflow adapter`
 11. `docs: harden operations and release evidence`

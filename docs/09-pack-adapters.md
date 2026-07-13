@@ -1,9 +1,9 @@
 # 09 — Pack adapters
 
-Pack adapters map external skill sets onto Wingstaff's pack-neutral lifecycle.
+Pack adapters map external skill sets onto Daidala's pack-neutral lifecycle.
 The engine validates common mechanics only; skill selection and sequencing live
 in bundled pack YAML. Both adapters expand into the same approval-gated Kanban
-graph, activation manifest, and `wingstaff.handoff/v1` worker contract; only the
+graph, activation manifest, and `daidala.handoff/v1` worker contract; only the
 pinned stage skills, activation policy, and methodology judgment differ.
 
 ## Implemented adapters
@@ -31,7 +31,7 @@ first lifecycle position.
 All listed skills remain pinned to the card and loaded as candidates. The worker
 cannot demote a required entry. It classifies each conditional entry from the
 pinned skill criteria and current card evidence, then persists the exact decision
-before Wingstaff accepts stage evidence.
+before Daidala accepts stage evidence.
 
 Every install target is fully qualified as
 `addyosmani/agent-skills/skills/<exact-name>`. A similar name does not satisfy
@@ -58,23 +58,23 @@ pack-neutral validation.
 
 Stable AI-DLC v1.0.1 is MIT-0 licensed and distributes a core workflow plus
 rule-detail directories for coding harnesses. It does not distribute Agent
-Skills. Wingstaff therefore packages one attributed `aidlc-adapter` skill and
+Skills. Daidala therefore packages one attributed `aidlc-adapter` skill and
 references it through the generic `bundled` provider field in every stage.
 Worker cards load it by its Hermes plugin-qualified name,
-`wingstaff:aidlc-adapter`. The adapter is `required` in every executable stage,
+`daidala:aidlc-adapter`. The adapter is `required` in every executable stage,
 so each activation manifest records it as applicable or blocked.
 
-| Wingstaff stage | AI-DLC concept and artifact intent |
+| Daidala stage | AI-DLC concept and artifact intent |
 |---|---|
 | Define | Inception intent analysis, requirements, constraints, and acceptance criteria. |
 | Plan | Inception design/decomposition plus the selected Construction execution plan. |
-| Implement | Construction code generation in the approved Wingstaff worktree. |
+| Implement | Construction code generation in the approved Daidala worktree. |
 | Verify | Construction build and test commands with exact evidence. |
 | Review | Requirements, design, security, diff, and evidence review. |
 | Deliver | Reviewed changed paths and release-readiness evidence; no implicit deployment. |
 
 AI-DLC's generated `aidlc-state.md` and `audit.md` are not adopted because
-Wingstaff already owns durable state and approval. Stable Operations is a
+Daidala already owns durable state and approval. Stable Operations is a
 placeholder and does not justify invented deployment behavior. The v2 preview
 is not embedded: it requires a complete harness overlay and owns an independent
 orchestration engine, state machine, hooks, and workspace state.
@@ -85,20 +85,20 @@ The same temporary-repository fixture executes both packs through
 ## Current limitations
 
 - Publisher signatures are not available; integrity is commit and content-hash based.
-- Hermes v0.18.2 cannot recursively install a repository, so Wingstaff refuses
+- Hermes v0.18.2 cannot recursively install a repository, so Daidala refuses
   `--recursive` and installs only the required subset.
-- Updates are plans only when installed content differs; Wingstaff never
+- Updates are plans only when installed content differs; Daidala never
   silently replaces a skill during an active workflow.
 - Stable AI-DLC rules are adapted, not copied wholesale; upstream methodology
   changes require an explicit pinned adapter update.
 
 ## Source of truth
 
-- Mappings: `wingstaff/packs/addyosmani.yaml`, `wingstaff/packs/aidlc.yaml`
-- AI-DLC adapter and license: `wingstaff/skills/aidlc-adapter/`
-- Pack model and validation: `wingstaff/packs.py`
-- Exact skill gate: `wingstaff/skills.py`
-- Pack-neutral execution: `wingstaff/service.py`, `wingstaff/execution.py`
+- Mappings: `daidala/packs/addyosmani.yaml`, `daidala/packs/aidlc.yaml`
+- AI-DLC adapter and license: `daidala/skills/aidlc-adapter/`
+- Pack model and validation: `daidala/packs.py`
+- Exact skill gate: `daidala/skills.py`
+- Pack-neutral execution: `daidala/service.py`, `daidala/execution.py`
 - Verification: `tests/test_packs.py`, `tests/test_skills.py`,
   `tests/test_skill_installation.py`,
   `tests/test_execution.py`

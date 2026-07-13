@@ -1,14 +1,14 @@
 # 11 — Skill usage, handoff, and user control
 
-Wingstaff separates development methodology from workflow mechanics. A workflow
-pack chooses the skills that guide each development stage; Wingstaff and Hermes
+Daidala separates development methodology from workflow mechanics. A workflow
+pack chooses the skills that guide each development stage; Daidala and Hermes
 provide the durable lifecycle around those skills. This design lets a user
 select a methodology without giving model-authored instructions authority over
 approval, repository isolation, evidence, or task status.
 
 This document answers three design questions:
 
-1. What does it mean for Wingstaff to “use” a skill?
+1. What does it mean for Daidala to “use” a skill?
 2. How does work pass from one phase and worker to the next?
 3. How can the user select or influence skills without weakening reproducibility?
 
@@ -20,15 +20,15 @@ For the pack schema, see the [Workflow-pack reference](03-pack-reference.md).
 
 ```mermaid
 flowchart LR
-    U["User selects<br>goal + pack + profiles"] --> W["Wingstaff validates<br>pack + exact skills"]
+    U["User selects<br>goal + pack + profiles"] --> W["Daidala validates<br>pack + exact skills"]
     W --> C["Hermes Kanban card<br>stage context + pinned skills"]
     C --> A["Stage worker<br>records activation manifest"]
     A --> J["Active skills<br>model judgment"]
-    J --> E["Wingstaff artifact<br>or evidence operation"]
-    E --> H["kanban_complete<br>wingstaff.handoff/v1"]
+    J --> E["Daidala artifact<br>or evidence operation"]
+    E --> H["kanban_complete<br>daidala.handoff/v1"]
     H --> N["Dependent card<br>next stage skills"]
 
-    P["Wingstaff policy<br>approval + scope + digests"] -.-> W
+    P["Daidala policy<br>approval + scope + digests"] -.-> W
     P -.-> E
     K["Hermes Kanban<br>status + retry + assignment"] -.-> C
     K -.-> H
@@ -37,7 +37,7 @@ flowchart LR
 The important boundary is between guidance and authority:
 
 - skills guide the worker's judgment;
-- Wingstaff deterministically validates policy and evidence;
+- Daidala deterministically validates policy and evidence;
 - Hermes Kanban owns execution state and worker dispatch;
 - the user owns methodology selection and plan approval.
 
@@ -47,17 +47,17 @@ A skill is not called like a Python function, shell command, or tool handler.
 It is a named set of instructions and supporting resources loaded by Hermes into
 a worker's context.
 
-At card creation, Wingstaff reads the selected stage from the pack and sets the
+At card creation, Daidala reads the selected stage from the pack and sets the
 card's skill list to:
 
 ```text
-wingstaff:orchestrate
+daidala:orchestrate
 + every exact skill declared for this pack stage
 ```
 
 Hermes dispatches the card with those skills available as candidates. The worker
 first calls `kanban_show`, evaluates each pinned criterion against current task
-evidence, and records a `wingstaff.skill-activation/v1` manifest. Only applicable
+evidence, and records a `daidala.skill-activation/v1` manifest. Only applicable
 skills become active guidance for producing an artifact, changing the approved
 worktree, running verification, or reviewing evidence.
 
@@ -78,10 +78,10 @@ source-driven-development
 doubt-driven-development
 ```
 
-Wingstaff turns that declaration into this one Kanban card skill list:
+Daidala turns that declaration into this one Kanban card skill list:
 
 ```text
-wingstaff:orchestrate
+daidala:orchestrate
 incremental-implementation
 test-driven-development
 source-driven-development
@@ -102,7 +102,7 @@ complementary constraints when their criteria match:
   sources rather than invented APIs or assumptions;
 - `doubt-driven-development` requires uncertainty to be investigated or
   surfaced instead of silently guessed;
-- `wingstaff:orchestrate` enforces the card, workspace, evidence, completion,
+- `daidala:orchestrate` enforces the card, workspace, evidence, completion,
   and blocking protocol around all of them.
 
 There is no intermediate result such as “incremental implementation finished,
@@ -110,7 +110,7 @@ now start TDD.” Active skills can overlap throughout the run. A documentation-
 task may mark TDD not applicable, while an unfamiliar framework change may rank
 source-driven and doubt-driven guidance ahead of the remaining active skills.
 
-The YAML order is preserved when Wingstaff builds the card's candidate list, but
+The YAML order is preserved when Daidala builds the card's candidate list, but
 it does not make the first skill active or higher priority. The manifest's rank
 is explicit worker judgment. If two active skills conflict, the worker must
 reconcile them using the normal instruction hierarchy and task context. There is
@@ -118,7 +118,7 @@ no deterministic conflict resolver, per-skill completion state, weighting, or
 proof that each skill had a distinct effect.
 
 All named skills must already be installed and loadable in the assignee profile.
-The dispatcher does not install missing skills at runtime. Wingstaff's readiness
+The dispatcher does not install missing skills at runtime. Daidala's readiness
 checks exist so a missing exact name or mismatched external skill digest stops
 the workflow instead of silently running with a partial methodology.
 
@@ -126,11 +126,11 @@ the workflow instead of silently running with a partial methodology.
 
 The Addyosmani catalog gives every skill a `Use When` description, and each
 skill's `SKILL.md` carries more detailed `When to Use` and often `When NOT to
-Use` guidance. A stage mapping is a candidate set: Wingstaff and Hermes load
+Use` guidance. A stage mapping is a candidate set: Daidala and Hermes load
 every mapped skill, then the worker evaluates those pinned criteria against the
 card and inherited evidence before applying methodology.
 
-Wingstaff does not run the upstream `using-agent-skills` discovery tree or let a
+Daidala does not run the upstream `using-agent-skills` discovery tree or let a
 worker find replacements. Its pack adapter pins the complete candidate list and
 the required-versus-conditional policy; the activation manifest records the
 task-specific decision for that exact list.
@@ -152,7 +152,7 @@ Conditional relevance is even stronger in later stages:
 - security and performance review apply when the diff crosses those concerns;
 - CI/CD, migration, observability, and launch skills do not all apply to every
   delivery;
-- TDD's code-writing loop cannot be followed literally by Wingstaff's
+- TDD's code-writing loop cannot be followed literally by Daidala's
   `verify` worker because implementation scope is already immutable.
 
 The last example shows why `Use When` alone is not enough. A useful assessment
@@ -160,11 +160,11 @@ must evaluate four dimensions:
 
 1. **Task relevance** — does the goal, plan, or diff match the skill's positive
    and negative criteria?
-2. **Stage compatibility** — are the skill's actions legal in this Wingstaff
+2. **Stage compatibility** — are the skill's actions legal in this Daidala
    stage?
 3. **Worker capability** — does the assignee profile have the tools needed by
    the skill, such as browser access, delegation, or authoritative docs?
-4. **Policy compatibility** — would the skill attempt an action Wingstaff
+4. **Policy compatibility** — would the skill attempt an action Daidala
    forbids, such as changing captured scope, committing, pushing, or deploying?
 
 ### Activation modes and decisions
@@ -187,13 +187,13 @@ does not replace the decision or rationale.
 
 The canonical criteria should come from the pinned skill directory—frontmatter,
 `When to Use`, `When NOT to Use`, and capability requirements—not only from the
-repository README table. The README is a useful catalog, but Wingstaff verifies
+repository README table. The README is a useful catalog, but Daidala verifies
 the installed skill directory's digest, and the full skill often contains
 constraints omitted by the one-line catalog summary.
 
 ### Persisted manifest and correction
 
-`wingstaff_record_skill_activation` validates the complete exact stage skill
+`daidala_record_skill_activation` validates the complete exact stage skill
 set, pack mode, decision legality, evidence shape, ranks, and optional deferred
 condition. It writes an immutable canonical JSON artifact, then finalizes its
 ledger reference. Evidence operations accept only the latest finalized,
@@ -207,7 +207,7 @@ that superseding manifest before submitting evidence. Prior artifacts remain
 unchanged for audit.
 
 Activation is authorized by dispatcher-owned worker identity, not by model input.
-`wingstaff_record_skill_activation` reads `HERMES_KANBAN_BOARD` and
+`daidala_record_skill_activation` reads `HERMES_KANBAN_BOARD` and
 `HERMES_KANBAN_TASK` from the worker environment; both must match the workflow
 ledger's board and current stage card. Calls outside that matching Kanban worker
 fail closed. Model-supplied workflow or stage fields, and generic tool-call
@@ -218,7 +218,7 @@ context, do not grant card authority.
 Hermes supports shell hooks and Python plugin callbacks on `pre_llm_call`. A
 Kanban-aware hook can read `HERMES_KANBAN_TASK`, `HERMES_KANBAN_BOARD`,
 `HERMES_KANBAN_WORKSPACE`, `HERMES_KANBAN_RUN_ID`, and `HERMES_PROFILE`, gather
-the card and Wingstaff artifacts, and return runtime context such as:
+the card and Daidala artifacts, and return runtime context such as:
 
 ```json
 {
@@ -246,7 +246,7 @@ ephemeral context for API calls in that turn's internal tool loop. It is not a
 new independent ranking before every tool-follow-up API request. Goal-mode or
 later user turns can invoke it again, so caching still matters.
 
-It is not Wingstaff's authoritative gate:
+It is not Daidala's authoritative gate:
 
 Calling the hook a gate would overstate what it enforces:
 
@@ -255,11 +255,11 @@ Calling the hook a gate would overstate what it enforces:
   model to defer a skill, but cannot remove that skill from the loaded context
   or recover its context-window cost.
 - Hook context is API-call-time only and is not persisted in the card, session,
-  Wingstaff ledger, or handoff. A later auditor cannot reconstruct which
+  Daidala ledger, or handoff. A later auditor cannot reconstruct which
   relevance decision affected the run.
 - A missing command, timeout, exception, invalid JSON response, or absent
   context is logged and execution continues. `pre_llm_call` is fail-open, while
-  Wingstaff's policy contract requires missing or invalid required inputs to
+  Daidala's policy contract requires missing or invalid required inputs to
   stop the workflow.
 - The hook return shape injects context; it does not provide a deterministic
   authorization decision comparable to plan approval or a `pre_tool_call`
@@ -267,7 +267,7 @@ Calling the hook a gate would overstate what it enforces:
 - Profile-local configuration means every possible assignee profile must carry
   and approve the same hook, or ranking behavior will vary by assignment.
 
-Wingstaff instead enforces the persisted manifest at its artifact and evidence
+Daidala instead enforces the persisted manifest at its artifact and evidence
 operations. This is post-spawn activation: all candidates remain loaded on the
 card, while the worker contract forbids applying methodology or producing
 evidence before a valid manifest exists. No current hook filters card skills
@@ -281,7 +281,7 @@ reason to apply, defer, exclude, or block each skill. It does not silently turn
 the fixed pack into discovery: names, content, modes, and candidate order remain
 pack data, and all candidates remain loaded.
 
-Wingstaff can prove:
+Daidala can prove:
 
 - which pack and source revision were selected;
 - which exact skill names were required for each stage;
@@ -290,15 +290,15 @@ Wingstaff can prove:
 - which finalized activation decisions authorized each stage's evidence;
 - which artifacts and evidence were accepted by policy operations.
 
-Wingstaff cannot prove that the model followed every instruction inside a skill
+Daidala cannot prove that the model followed every instruction inside a skill
 or identify which paragraph caused a particular decision. Outcome controls—plan
 approval, immutable scope, command evidence, and review—therefore remain
 necessary even when skill provenance is exact.
 
-## Why every card also receives `wingstaff:orchestrate`
+## Why every card also receives `daidala:orchestrate`
 
-Pack skills contain methodology-specific judgment. They do not own Wingstaff's
-lifecycle protocol. The bundled `wingstaff:orchestrate` skill is pinned to every
+Pack skills contain methodology-specific judgment. They do not own Daidala's
+lifecycle protocol. The bundled `daidala:orchestrate` skill is pinned to every
 executable card so that each independently dispatched worker receives the same
 rules:
 
@@ -306,7 +306,7 @@ rules:
 - trust the card's pinned skills instead of discovering replacements;
 - record and finalize exact activation decisions before methodology or evidence;
 - use only the assigned target checkout or persistent worktree;
-- record artifacts and evidence through Wingstaff operations;
+- record artifacts and evidence through Daidala operations;
 - end through exactly one `kanban_complete` or `kanban_block` call;
 - use structured handoff metadata and explicit blocking reasons.
 
@@ -315,12 +315,12 @@ instructions. A planning worker and a later review worker may be different
 models in different Hermes profiles, but both receive the same worker contract.
 
 The approval card is intentionally different. It carries no worker skills
-because approval is Wingstaff policy infrastructure and a human decision, not a
+because approval is Daidala policy infrastructure and a human decision, not a
 model-executed methodology stage.
 
 ## How packs shape the phases
 
-Wingstaff has one fixed lifecycle:
+Daidala has one fixed lifecycle:
 
 ```text
 define -> plan -> approval -> implement -> verify -> review -> deliver
@@ -329,7 +329,7 @@ define -> plan -> approval -> implement -> verify -> review -> deliver
 The pack changes the judgment available inside the executable stages, not the
 workflow mechanics around them.
 
-| Stage | Stable Wingstaff responsibility | Pack-controlled judgment |
+| Stage | Stable Daidala responsibility | Pack-controlled judgment |
 |---|---|---|
 | Define | Store `define.md` and its digest. | How to elicit intent, refine scope, identify ambiguity, and express acceptance criteria. |
 | Plan | Store `plan.md`, its digest, and create the blocked approval gate. | How to decompose work, make design decisions, and define verification. |
@@ -346,7 +346,7 @@ The shipped packs demonstrate two valid mapping styles:
   implementation uses incremental, test-driven, source-driven, and
   doubt-driven skills; verification and review receive their own specialist
   sets.
-- `aidlc` maps the bundled `wingstaff:aidlc-adapter` to every stage. The adapter
+- `aidlc` maps the bundled `daidala:aidlc-adapter` to every stage. The adapter
   inspects the stage context and applies the corresponding AI-DLC concept:
   inception for definition and planning, construction for implementation and
   verification, assessment for review, and release-readiness reporting for
@@ -360,12 +360,12 @@ and handoff schema. The engine has no `addyosmani` or `aidlc` execution branch.
 A handoff transfers durable references and policy facts, not a model's full
 conversation.
 
-### 1. Wingstaff creates a card-scoped context
+### 1. Daidala creates a card-scoped context
 
 Each card body records the workflow ID, stage, plan revision, pack, pack source
 revision, goal, and—after approval—the plan digest and persistent worktree. The
 card also receives its resolved profile, parents, workspace, idempotency key,
-`wingstaff:orchestrate`, and exact pack-stage skill candidates.
+`daidala:orchestrate`, and exact pack-stage skill candidates.
 
 ### 2. The worker reads inherited state
 
@@ -377,23 +377,23 @@ content of a definition, plan, diff, verification output, or review.
 ### 3. The worker records skill activation
 
 The worker evaluates every exact candidate and calls
-`wingstaff_record_skill_activation`. Required entries must be applicable or
+`daidala_record_skill_activation`. Required entries must be applicable or
 blocked. Conditional entries may also be deferred or not applicable. The
 finalized manifest digest becomes part of every later successful handoff for
 that stage. A blocked result stops here and blocks the card.
 
 ### 4. The worker records a durable result
 
-The stage uses the matching Wingstaff operation:
+The stage uses the matching Daidala operation:
 
 | Stage | Evidence operation |
 |---|---|
-| Define | `wingstaff_submit_artifact(stage: "define")` |
-| Plan | `wingstaff_submit_artifact(stage: "plan")` |
-| Implement | `wingstaff_capture_implementation` |
-| Verify | `wingstaff_record_verification` |
-| Review | `wingstaff_submit_artifact(stage: "review")` |
-| Deliver | `wingstaff_deliver` |
+| Define | `daidala_submit_artifact(stage: "define")` |
+| Plan | `daidala_submit_artifact(stage: "plan")` |
+| Implement | `daidala_capture_implementation` |
+| Verify | `daidala_record_verification` |
+| Review | `daidala_submit_artifact(stage: "review")` |
+| Deliver | `daidala_deliver` |
 
 These operations write artifacts and policy facts before the worker reports the
 card complete. Each rejects missing, pending, stale-revision, or blocked
@@ -402,7 +402,7 @@ activation references.
 ### 5. The worker completes with structured metadata
 
 A successful worker calls `kanban_complete` with a concise summary and
-`wingstaff.handoff/v1` metadata. The metadata includes workflow, pack, plan
+`daidala.handoff/v1` metadata. The metadata includes workflow, pack, plan
 revision, stage, outcome, artifact references, `skill_activation_digest`, and
 active skill names. Post-approval handoffs also carry workspace and baseline
 facts; implementation, verification, review, and delivery add their
@@ -494,7 +494,7 @@ bundled adapters ship with the plugin.
 | Assign priorities or weights to skills on one card | Unsupported as a user override; the worker records contiguous attention ranks for applicable skills in the immutable manifest. |
 | Change the pack after workflow start | Unsupported as an in-place operator action. |
 | Approve only part of the plan | Unsupported; approval binds the entire current plan artifact. |
-| Let Kanban unblock imply approval | Forbidden; interaction state and Wingstaff authorization are separate. |
+| Let Kanban unblock imply approval | Forbidden; interaction state and Daidala authorization are separate. |
 
 These restrictions trade ad hoc flexibility for reproducibility. If a worker
 could silently replace a skill, two runs claiming to use the same pack would no
@@ -520,7 +520,7 @@ instructions must not be mistaken for deterministic enforcement.
 
 ## Why this design matters
 
-Wingstaff's value is not that it supplies more prompts. It makes methodology
+Daidala's value is not that it supplies more prompts. It makes methodology
 selection inspectable and connects model judgment to deterministic controls:
 
 - the pack says which skills are required or conditional candidates;
@@ -537,16 +537,16 @@ approval or the evidence required for completion.
 
 ## Source of truth
 
-- Pack model and validation: `wingstaff/packs.py`
-- Shipped mappings: `wingstaff/packs/addyosmani.yaml`,
-  `wingstaff/packs/aidlc.yaml`
-- Skill readiness and content verification: `wingstaff/skills.py`
-- Card construction and exact skill assignment: `wingstaff/kanban.py`
-- Worker procedure: `wingstaff/skills/orchestrate/SKILL.md`
-- AI-DLC stage interpretation: `wingstaff/skills/aidlc-adapter/SKILL.md`
-- Policy and artifact coordination: `wingstaff/service.py`
-- Activation model and evidence gate: `wingstaff/state.py`,
-  `wingstaff/workflow.py`
+- Pack model and validation: `daidala/packs.py`
+- Shipped mappings: `daidala/packs/addyosmani.yaml`,
+  `daidala/packs/aidlc.yaml`
+- Skill readiness and content verification: `daidala/skills.py`
+- Card construction and exact skill assignment: `daidala/kanban.py`
+- Worker procedure: `daidala/skills/orchestrate/SKILL.md`
+- AI-DLC stage interpretation: `daidala/skills/aidlc-adapter/SKILL.md`
+- Policy and artifact coordination: `daidala/service.py`
+- Activation model and evidence gate: `daidala/state.py`,
+  `daidala/workflow.py`
 - Skill and handoff contract tests: `tests/test_worker_contract.py`,
   `tests/test_skills.py`, `tests/test_kanban.py`, and
   `tests/test_execution.py`

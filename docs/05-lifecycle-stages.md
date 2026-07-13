@@ -1,6 +1,6 @@
 # 05 — Lifecycle stages
 
-The executable lifecycle is a Hermes Kanban card graph. Wingstaff validates
+The executable lifecycle is a Hermes Kanban card graph. Daidala validates
 policy and records evidence; it does not call a model, start another agent
 process, publish a competing task status, or automatically commit and push
 target changes.
@@ -11,7 +11,7 @@ standalone operator-command paths are implemented.
 ## Stage contract
 
 Every executable stage requires a current, finalized, unblocked skill activation
-manifest before Wingstaff records its durable handoff. Approval is the only
+manifest before Daidala records its durable handoff. Approval is the only
 non-executable card and has no activation manifest. Replacing a plan increments
 the revision, clears approval, and requires a new matching approval before
 post-gate work can proceed.
@@ -23,7 +23,7 @@ historical artifacts, and restarts at `define` before renewed tuple approval.
 |---|---|---|---|
 | Define | Goal, pack, exact skills, clean baseline | `define.md` path and digest | Complete or block |
 | Plan | Definition handoff | `plan.md` path and digest | Complete or block |
-| Approval | Current plan and nullable constraint revision/digest tuple | Approval actor, time, and exact tuple | Remain blocked until Wingstaff approval; then complete |
+| Approval | Current plan and nullable constraint revision/digest tuple | Approval actor, time, and exact tuple | Remain blocked until Daidala approval; then complete |
 | Implement | Approved revision and absolute owned worktree | Captured diff and changed-path manifest | Complete or block |
 | Verify | Immutable implementation scope and exact commands | Commands, exit codes, and output references | Complete or block |
 | Review | Captured diff and passing evidence | Review artifact and decision | Complete or block |
@@ -33,22 +33,22 @@ historical artifacts, and restarts at `define` before renewed tuple approval.
 
 1. The caller selects an existing named board, one default Hermes profile, and
    optional per-stage profile overrides.
-2. Wingstaff expands and persists the complete stage-to-profile mapping, then
+2. Daidala expands and persists the complete stage-to-profile mapping, then
    validates every profile before creating cards.
-3. `wingstaff_start` creates `define` and dependent `plan` with the bundled
-   `wingstaff:orchestrate` worker contract, exact pack skills, and deterministic
+3. `daidala_start` creates `define` and dependent `plan` with the bundled
+   `daidala:orchestrate` worker contract, exact pack skills, and deterministic
    idempotency keys.
-4. After the plan handoff, Wingstaff records its digest and creates a blocked
+4. After the plan handoff, Daidala records its digest and creates a blocked
    approval card linked from `plan`.
-5. `hermes wingstaff approve <workflow-id> <digest>` records exact approval.
+5. `hermes daidala approve <workflow-id> <digest>` records exact approval.
    The command annotates and completes the gate through documented host
-   operations; generic `hermes kanban unblock` does not satisfy Wingstaff policy.
-6. Wingstaff creates `implement → verify → review → deliver` only after approval.
+   operations; generic `hermes kanban unblock` does not satisfy Daidala policy.
+6. Daidala creates `implement → verify → review → deliver` only after approval.
    Every card uses its resolved profile, the bundled worker contract, exact stage
-   skills, real parent links, and the same absolute Wingstaff-owned worktree.
+   skills, real parent links, and the same absolute Daidala-owned worktree.
 
-`wingstaff_status` is read-only and combines ledger facts with live Kanban card
-data. Cancellation cleans Wingstaff-owned resources and uses documented Kanban
+`daidala_status` is read-only and combines ledger facts with live Kanban card
+data. Cancellation cleans Daidala-owned resources and uses documented Kanban
 operations; card lifecycle remains visible on the board.
 
 ## Skill activation before evidence
@@ -58,19 +58,19 @@ Every executable worker follows the same ordering:
 ```text
 kanban_show
     -> inspect parent artifacts and pinned skill criteria
-    -> wingstaff_record_skill_activation
+    -> daidala_record_skill_activation
     -> apply active methodology
     -> stage evidence operation
     -> kanban_complete with activation digest + active skill names
 ```
 
-The card still loads `wingstaff:orchestrate` and the full exact pack-stage skill
+The card still loads `daidala:orchestrate` and the full exact pack-stage skill
 set. Loaded pack skills are candidates, not proof that every skill applies.
 `required` is pack policy; `conditional` permits worker judgment. The immutable
 activation artifact records applicable, deferred, not-applicable, or blocked
 decisions with criteria, evidence, rationale, and applicable-skill rank.
 
-Wingstaff accepts each stage's artifact, implementation capture, verification
+Daidala accepts each stage's artifact, implementation capture, verification
 record, review, or delivery only when the current stage/revision has a finalized,
 unblocked activation reference. Missing and pending references fail closed. A
 blocked manifest remains durable for audit, but the worker comments with its
@@ -87,9 +87,9 @@ the previous graph.
 
 ## Implementation isolation
 
-Implementation runs in a detached Wingstaff-owned Git worktree created at the
+Implementation runs in a detached Daidala-owned Git worktree created at the
 recorded baseline commit. The original target checkout stays unchanged.
-Immediately after implementation, Wingstaff captures:
+Immediately after implementation, Daidala captures:
 
 - a binary-capable diff, including untracked implementation files;
 - the changed-path set before verification creates caches or build products.
@@ -114,7 +114,7 @@ the activation digest and blocked skill when relevant, and the decision required
 
 A human comments with the decision or remediation, may reassign the blocked
 card to an implementation-capable profile, and unblocks it. Hermes respawns the
-card with its full thread and the same preserved worktree. Wingstaff does not
+card with its full thread and the same preserved worktree. Daidala does not
 rewind or mirror a private status.
 
 The implementation diff is immutable after capture. Verification and review may
@@ -131,10 +131,10 @@ pushing the target requires a separate future authorization surface.
 ## Source of truth
 
 - Contract: this document
-- Schemas and handlers: `wingstaff/schemas.py`, `wingstaff/tools.py`
-- Policy service and graph adapter: `wingstaff/service.py`,
-  `wingstaff/kanban.py`
-- Preserved artifact and worktree operations: `wingstaff/execution.py`
-- Target worker procedure: `wingstaff/skills/orchestrate/SKILL.md`
+- Schemas and handlers: `daidala/schemas.py`, `daidala/tools.py`
+- Policy service and graph adapter: `daidala/service.py`,
+  `daidala/kanban.py`
+- Preserved artifact and worktree operations: `daidala/execution.py`
+- Target worker procedure: `daidala/skills/orchestrate/SKILL.md`
 - Graph verification: `tests/test_execution.py`, Kanban adapter tests,
   and an isolated end-to-end host probe

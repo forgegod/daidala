@@ -1,12 +1,12 @@
 # 03 — Workflow-pack reference
 
 This document describes schema version 1 as implemented by
-`wingstaff/packs.py`. The schema is pack-neutral and includes pinned external
+`daidala/packs.py`. The schema is pack-neutral and includes pinned external
 source and skill-content integrity fields.
 
 ## Location and loading
 
-Bundled packs live at `wingstaff/packs/<name>.yaml` and are loaded with
+Bundled packs live at `daidala/packs/<name>.yaml` and are loaded with
 `importlib.resources`, so package and source-tree access use the same path.
 `load_pack(name)` accepts a conservative alphanumeric-and-hyphen slug and
 rejects unknown resources.
@@ -89,13 +89,13 @@ The human gate is metadata between `plan` and `implement`, not a separate
 stage.
 
 At graph creation, every executable stage becomes one Hermes Kanban card pinned
-with `wingstaff:orchestrate` plus the exact skills declared for that stage. All
+with `daidala:orchestrate` plus the exact skills declared for that stage. All
 declared skills are loaded as candidates. After `kanban_show`, the worker records
-a `wingstaff.skill-activation/v1` manifest before stage methodology or evidence:
+a `daidala.skill-activation/v1` manifest before stage methodology or evidence:
 `required` skills must be applicable or blocked, while `conditional` skills may
 be applicable, deferred, not applicable, or blocked. The approval card is
-Wingstaff policy infrastructure and carries no worker skills. Profiles, card
-links, workspaces, activation decisions, and `wingstaff.handoff/v1` metadata use
+Daidala policy infrastructure and carries no worker skills. Profiles, card
+links, workspaces, activation decisions, and `daidala.handoff/v1` metadata use
 pack-neutral runtime contracts.
 
 Each stage may declare at most 32 skills, matching the activation tool and
@@ -103,8 +103,8 @@ artifact bounds. Missing or unknown `activation` values fail pack validation;
 schema version 1 has no migration reader for the unreleased older shape.
 
 External card skills use their exact `name`. A `bundled` skill is loaded through
-the plugin namespace as `wingstaff:<name>`; for example, the AI-DLC worker card
-pins `wingstaff:aidlc-adapter`.
+the plugin namespace as `daidala:<name>`; for example, the AI-DLC worker card
+pins `daidala:aidlc-adapter`.
 
 ## Runtime model
 
@@ -120,9 +120,9 @@ preserved and must not be treated as supported extensions.
 
 ## Installation and readiness
 
-`wingstaff packs validate <pack>` proves pack shape only.
+`daidala packs validate <pack>` proves pack shape only.
 
-`wingstaff packs install <pack>` defaults to a mutation-free plan that resolves
+`daidala packs install <pack>` defaults to a mutation-free plan that resolves
 source `HEAD`, checks the bounded Hermes version, scans profile-local installed
 names, verifies complete-directory digests, and prints every intended
 `hermes skills install … --yes` mutation. `--apply` executes only an unblocked
@@ -137,17 +137,17 @@ refused capability, not a local glob expansion.
 `addyosmani` maps the six stages to
 [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills), pinned at
 the commit and per-skill digests declared in
-`wingstaff/packs/addyosmani.yaml`. The mapping remains data, not a Python
+`daidala/packs/addyosmani.yaml`. The mapping remains data, not a Python
 special case. `aidlc` maps the same stages to the packaged
-`wingstaff:aidlc-adapter` skill because stable AI-DLC v1.0.1 publishes editor
+`daidala:aidlc-adapter` skill because stable AI-DLC v1.0.1 publishes editor
 rules rather than externally installable Hermes skills. Both provider forms
 use the same `SkillRef` and stage machinery.
 
 ## Source of truth and tests
 
-- Runtime validator: `wingstaff/packs.py`
-- Installation and revision mechanism: `wingstaff/skills.py`, `wingstaff/cli.py`
-- Bundled adapters: `wingstaff/packs/addyosmani.yaml`, `wingstaff/packs/aidlc.yaml`
+- Runtime validator: `daidala/packs.py`
+- Installation and revision mechanism: `daidala/skills.py`, `daidala/cli.py`
+- Bundled adapters: `daidala/packs/addyosmani.yaml`, `daidala/packs/aidlc.yaml`
 - Validation tests: `tests/test_packs.py`
 - Activation-policy tests: `tests/test_workflow.py`, `tests/test_execution.py`
 - Installation tests: `tests/test_skill_installation.py`

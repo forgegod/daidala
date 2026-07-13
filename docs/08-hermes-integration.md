@@ -1,6 +1,6 @@
 # Hermes integration
 
-Wingstaff 0.1.0 has been exercised against Hermes Agent v0.18.2
+Daidala 0.2.0 has been exercised against Hermes Agent v0.18.2
 (`2026.7.7.2`, upstream `4281151a`) on Python 3.11.15. The proof used fresh
 `HERMES_HOME` directories and did not read or modify the active Hermes profile.
 
@@ -10,27 +10,27 @@ remains authoritative when later Hermes releases differ.
 
 ## Supported integration surfaces
 
-Wingstaff supports both plugin discovery paths exposed by the tested Hermes
+Daidala supports both plugin discovery paths exposed by the tested Hermes
 release:
 
 | Source | Hermes source label | Result |
 |---|---|---|
 | Directory containing `plugin.yaml` and root `__init__.py` | `user` (`git` in `hermes plugins list`) | Explicit enablement, tool registration, and bundled skill loading passed |
 | Python distribution entry point in `hermes_agent.plugins` | `entrypoint` | Explicit enablement, tool registration, and bundled skill loading passed |
-| Public Git repository `forgegod/hermes-wingstaff` | `user` (`git` in `hermes plugins list`) | Clone, enablement, fresh-process tool registration, and bundled skill loading passed |
+| Public Git repository `forgegod/daidala` | `user` (`git` in `hermes plugins list`) | Pending the authorized Phase 6 destination push and fresh installation probe |
 
-All verified discovery paths register exactly:
+The verified directory and entry-point discovery paths register exactly:
 
-- tool `wingstaff_pack_info`;
-- tools `wingstaff_start`, `wingstaff_status`, `wingstaff_replace_constraints`,
-  `wingstaff_approve`, and `wingstaff_cancel`;
-- tools `wingstaff_submit_artifact`, `wingstaff_prepare_implementation`,
-  `wingstaff_capture_implementation`, `wingstaff_record_skill_activation`,
-  `wingstaff_record_verification`, and `wingstaff_deliver`;
-- skills `wingstaff:orchestrate` and `wingstaff:aidlc-adapter`;
-- operator command family `hermes wingstaff`.
+- tool `daidala_pack_info`;
+- tools `daidala_start`, `daidala_status`, `daidala_replace_constraints`,
+  `daidala_approve`, and `daidala_cancel`;
+- tools `daidala_submit_artifact`, `daidala_prepare_implementation`,
+  `daidala_capture_implementation`, `daidala_record_skill_activation`,
+  `daidala_record_verification`, and `daidala_deliver`;
+- skills `daidala:orchestrate` and `daidala:aidlc-adapter`;
+- operator command family `hermes daidala`.
 
-The optional dashboard package registers `/wingstaff`, the `sessions:top` slot,
+The optional dashboard package registers `/daidala`, the `sessions:top` slot,
 authenticated backend routes, and SDK `1.1.0` assets. Hermes v0.18.2 exposes no
 `kanban:top` extension slot. Workflow polling is read-only; setup and constraint
 writes are narrowly typed and confirmation-gated. Python entry points do not
@@ -38,29 +38,29 @@ materialize dashboard assets, so installation must retain the packaged
 `dashboard/` subtree alongside the plugin manifest.
 
 The root directory entry point must import the bundled package relatively.
-The Python entry point must resolve to the `wingstaff` module, not directly to
-`wingstaff:register`, because Hermes loads the entry point and then looks for a
+The Python entry point must resolve to the `daidala` module, not directly to
+`daidala:register`, because Hermes loads the entry point and then looks for a
 module-level `register(ctx)` function.
 
 ## Isolated directory verification
 
 The following development procedure is the directory-install path exercised in
-Phase 1. Run it from the Wingstaff repository root:
+Phase 1. Run it from the Daidala repository root:
 
 ```bash
 isolated_home="$(mktemp -d)/home"
 mkdir -p "$isolated_home/plugins"
-ln -s "$PWD" "$isolated_home/plugins/wingstaff"
-HERMES_HOME="$isolated_home" hermes plugins enable wingstaff
+ln -s "$PWD" "$isolated_home/plugins/daidala"
+HERMES_HOME="$isolated_home" hermes plugins enable daidala
 HERMES_HOME="$isolated_home" hermes plugins list --user --json
 ```
 
-The list output must report `wingstaff` as enabled with source `git`. A fresh
+The list output must report `daidala` as enabled with source `git`. A fresh
 Hermes process using the same `HERMES_HOME` must expose
-`wingstaff_pack_info`; loading `wingstaff:orchestrate` must return the bundled
+`daidala_pack_info`; loading `daidala:orchestrate` must return the bundled
 skill content.
 
-Wingstaff does not override built-in tools.
+Daidala does not override built-in tools.
 
 ## Workflow-constraint host verification
 
@@ -72,7 +72,7 @@ Phase 7 repeated the constraint integration against a fresh isolated
 - created an isolated named board and clean local Git target;
 - resolved one exact `policy-probe` skill, verified its complete-directory
   digest, and materialized its sole fenced YAML document;
-- started an AI-DLC workflow through `hermes wingstaff`, producing two cards
+- started an AI-DLC workflow through `hermes daidala`, producing two cards
   whose bodies contained full constraint text but no policy-skill activation;
 - removed the installed source and successfully read the self-contained
   materialized workflow;
@@ -91,7 +91,7 @@ and the successful probe used the host-visible `default` assignee instead. The
 repeatable release probe therefore does not call `hermes profile create` and
 exercises Kanban without assignment.
 
-Run it from a Wingstaff checkout with the supported `hermes` executable on
+Run it from a Daidala checkout with the supported `hermes` executable on
 `PATH`:
 
 ```bash
@@ -111,9 +111,9 @@ live-host cost.
 
 ## Operator CLI registration
 
-The plugin registers `hermes wingstaff` through the documented
+The plugin registers `hermes daidala` through the documented
 `ctx.register_cli_command` API. Its setup callback and the standalone
-`wingstaff` executable share one argparse tree and one service dispatcher.
+`daidala` executable share one argparse tree and one service dispatcher.
 
 Hermes v0.18.2 invokes plugin command callbacks but discards their integer
 return values. The native callback therefore raises `SystemExit` with the
@@ -121,20 +121,20 @@ shared dispatcher's code. This narrow host-compatibility boundary keeps success
 and failure process codes equivalent across native and standalone invocations.
 Directory-loaded plugins run under a host-generated module namespace, so
 package resources resolve through the current `__package__`, not a hard-coded
-top-level `wingstaff` import.
+top-level `daidala` import.
 
 `PluginContext.dispatch_tool` resolves built-in Kanban tools in an agent process.
 A standalone plugin CLI invocation does not load the agent tool registry and
 returned `Unknown tool: kanban_create` in the Phase 0 probe. Agent-facing
-Wingstaff tools therefore use `ctx.dispatch_tool`, while native and standalone
+Daidala tools therefore use `ctx.dispatch_tool`, while native and standalone
 operator commands translate the same narrow graph-adapter calls into documented
 `hermes kanban` subprocess commands. Both paths use public host operations;
-Wingstaff never imports Hermes Kanban modules or accesses its SQLite database.
+Daidala never imports Hermes Kanban modules or accesses its SQLite database.
 
 ## Kanban-native workflow boundary
 
 Hermes v0.18.2 exposes the required public operations for the complete graph,
-and Wingstaff's graph adapter uses these surfaces:
+and Daidala's graph adapter uses these surfaces:
 
 | Capability | Verified surface |
 |---|---|
@@ -149,7 +149,7 @@ and Wingstaff's graph adapter uses these surfaces:
 | Recovery | comment, block kind, reassign, unblock, and run history |
 
 The caller selects one existing named board per workflow. It also supplies one
-default Hermes profile with optional per-stage overrides; Wingstaff expands and
+default Hermes profile with optional per-stage overrides; Daidala expands and
 validates the complete mapping before card creation. The gateway's embedded
 dispatcher remains the only unattended runtime.
 
@@ -174,26 +174,28 @@ operator installation method.
 ## Installation CLI boundary
 
 On Hermes v0.18.2, `hermes plugins install` accepts a Git URL or `owner/repo`
-identifier. It does not accept a local directory or wheel. The verified public
-installation command is:
+identifier. It does not accept a local directory or wheel. The target public
+installation command after the authorized destination push is:
 
 ```bash
-hermes plugins install forgegod/hermes-wingstaff --enable
+hermes plugins install forgegod/daidala --enable
 ```
 
-Phase 1B exercised this command in a fresh `HERMES_HOME`, then used a separate
-Hermes process to confirm that the plugin was enabled without errors, registered
-`wingstaff_pack_info`, and loaded `wingstaff:orchestrate`.
+Phase 6 must exercise this exact command in a fresh `HERMES_HOME`, then use a
+separate Hermes process to confirm that the plugin is enabled without errors,
+registers `daidala_pack_info`, and loads `daidala:orchestrate` before public Git
+installation is marked verified.
 
 ## Compatibility limits
 
 | Hermes host | Directory plugin | Python entry point | Public Git install | Native CLI | Kanban restart/idempotency | Status |
 |---|---|---|---|---|---|---|
-| v0.18.2 (`2026.7.7.2`, `4281151a`) | Passed | Passed | Passed | Passed | Passed | Supported |
+| v0.18.2 (`2026.7.7.2`, `4281151a`) | Passed | Passed | Pending Phase 6 | Passed | Passed | Supported locally; publication pending |
 | Other versions | Not probed | Not probed | Not probed | Not probed | Not probed | Unsupported until the full matrix passes |
 
 - Hermes v0.18.2 is the only verified host version.
-- Directory, entry-point, and public remote Git installation are verified.
+- Directory and entry-point installation are verified; public remote Git
+  installation remains pending the Phase 6 destination push and fresh probe.
 - Plugin registration, approval-gated Kanban graph mapping, policy-ledger persistence,
   exact-skill and pinned-content gates, fresh worktrees, artifact capture,
   verification evidence, review, uncommitted delivery, shared native/standalone
@@ -203,7 +205,7 @@ Hermes process to confirm that the plugin was enabled without errors, registered
 - Compatibility with a newer Hermes release must be re-probed before widening
   the supported range.
 
-Wingstaff does not declare Hermes as a Python package dependency. Hermes is the
+Daidala does not declare Hermes as a Python package dependency. Hermes is the
 plugin host, and its Git installation uses a separate managed environment;
 adding it to `project.dependencies` would install a second host rather than
 express the verified runtime boundary. Compatibility is therefore recorded and
@@ -211,16 +213,17 @@ tested as a host integration contract.
 
 ## First-release execution policy
 
-The first executable Wingstaff release supports local target repositories only
+The first executable Daidala release supports local target repositories only
 and enforces these rules:
 
 - reject dirty target repositories;
-- implement in a fresh Wingstaff-owned worktree;
+- implement in a fresh Daidala-owned worktree;
 - return a reviewed working-tree diff without automatically committing or
   pushing target changes;
 - require separate authorization for any target commit or push;
 - bind one approval to the complete plan digest and invalidate that approval
   after any plan modification.
 
-Phase 5 verifies this policy against a temporary repository with both passing
-and deliberately failing workflow slices.
+Repository tests and the isolated compatibility probe verify this policy against
+temporary repositories with both passing and deliberately failing workflow
+slices.

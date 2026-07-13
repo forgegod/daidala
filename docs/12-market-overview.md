@@ -1,7 +1,7 @@
 # 12 — Workflow ecosystem market overview
 
 This overview evaluates adjacent agent-skill, workflow, specification, and design
-projects as inputs to Wingstaff. It distinguishes projects that can become
+projects as inputs to Daidala. It distinguishes projects that can become
 workflow packs from projects that are better treated as interoperability layers,
 optional tools, or product references.
 
@@ -12,24 +12,24 @@ approval before implementation.
 
 ## Evaluation criteria
 
-A strong Wingstaff pack candidate should:
+A strong Daidala pack candidate should:
 
 - provide reusable instructions or skills rather than require a competing agent
   runtime;
 - map honestly onto `define → plan → implement → verify → review → deliver`;
-- preserve Wingstaff's human gate after planning;
+- preserve Daidala's human gate after planning;
 - let Hermes remain the Kanban, worker, delegation, and retry authority;
-- produce repository artifacts and verification evidence that Wingstaff can
+- produce repository artifacts and verification evidence that Daidala can
   capture;
 - support revision pinning, attribution, and deterministic prerequisite checks;
-- avoid a new Wingstaff daemon, dashboard, MCP server, or nested agent process.
+- avoid a new Daidala daemon, dashboard, MCP server, or nested agent process.
 
 Projects may still be valuable when they fail the pack test. Declarative
 contracts can improve stage handoffs, design systems can extend artifact types,
 and proprietary products can provide useful product comparisons without being
 adaptable source material.
 
-The **Wingstaff rating** below measures fit as a Wingstaff pack, not general
+The **Daidala rating** below measures fit as a Daidala pack, not general
 project quality or popularity:
 
 - **5/5** — direct pack candidate with full lifecycle coverage and minor adaptation;
@@ -47,7 +47,7 @@ each project's own repository and license were evaluated separately.
 
 ## Decision matrix
 
-| Project | Wingstaff rating | Marketplace signal | Recommended relationship | Status |
+| Project | Daidala rating | Marketplace signal | Recommended relationship | Status |
 |---|---:|---:|---|---|
 | [Addy Osmani Agent Skills](https://github.com/addyosmani/agent-skills) | 4.5/5 | Not used | External-skill pack | Implemented |
 | [AWS AI-DLC](https://github.com/awslabs/aidlc-workflows) | 4/5 | Not used | Bundled adapter skill | Implemented |
@@ -67,18 +67,18 @@ each project's own repository and license were evaluated separately.
 The repository publishes small, independently installable Agent Skills covering
 requirements discovery, planning, incremental implementation, testing,
 debugging, review, security, delivery, and documentation. That breadth maps
-naturally to all six Wingstaff stages without importing another state machine.
-The skills remain judgment providers while Wingstaff supplies provenance,
+naturally to all six Daidala stages without importing another state machine.
+The skills remain judgment providers while Daidala supplies provenance,
 approval, worktree isolation, evidence, and conservative delivery.
 
 ### Why it does not match perfectly
 
 The upstream collection is a capability library, not one authoritative workflow.
-Wingstaff must select which skills are required or conditional and own their
+Daidala must select which skills are required or conditional and own their
 stage mapping. Similar names are not sufficient: exact installed names,
 repository paths, revisions, and complete-directory digests remain necessary.
 
-### Wingstaff decision
+### Daidala decision
 
 Implemented as the `addyosmani` external-skill pack. The exact mapping and pinned
 revision are documented in [Pack adapters](09-pack-adapters.md).
@@ -89,21 +89,21 @@ revision are documented in [Pack adapters](09-pack-adapters.md).
 
 AI-DLC supplies a recognizable inception and construction lifecycle with
 requirements, design, decomposition, implementation, build, test, and review
-activities. Its methodology is broad enough to guide every Wingstaff stage and
+activities. Its methodology is broad enough to guide every Daidala stage and
 places substantial emphasis on traceable artifacts and deliberate execution.
 
 ### Why it does not match perfectly
 
 Stable AI-DLC publishes coding-harness rules rather than independently
-installable Agent Skills. Its own state and audit files overlap with Wingstaff's
+installable Agent Skills. Its own state and audit files overlap with Daidala's
 policy ledger and Hermes Kanban. The v2 preview goes further and owns hooks,
 workspace state, orchestration, and lifecycle mechanics that must not become a
-second authority inside Wingstaff.
+second authority inside Daidala.
 
-### Wingstaff decision
+### Daidala decision
 
-Implemented as one attributed `wingstaff:aidlc-adapter` skill reused at every
-stage. Wingstaff adopts the methodology but rejects its competing runtime and
+Implemented as one attributed `daidala:aidlc-adapter` skill reused at every
+stage. Daidala adopts the methodology but rejects its competing runtime and
 state machinery.
 
 ## Matt Pocock Skills
@@ -121,16 +121,16 @@ The engineering set is explicitly small, composable, model-independent, and
 opposed to frameworks that take over the whole process. It offers strong stage
 coverage:
 
-| Wingstaff stage | Relevant Matt Pocock skills |
+| Daidala stage | Relevant Matt Pocock skills |
 |---|---|
 | Define | `grill-with-docs`, `domain-modeling`, `research`, `to-spec` |
 | Plan | `to-tickets`, `wayfinder`, `codebase-design`, `prototype` |
 | Implement | `implement`, `tdd`, `diagnosing-bugs` |
 | Verify | `tdd`, `diagnosing-bugs` |
 | Review | `code-review`, `improve-codebase-architecture` |
-| Deliver | No dedicated delivery skill; Wingstaff's conservative delivery contract can remain authoritative |
+| Deliver | No dedicated delivery skill; Daidala's conservative delivery contract can remain authoritative |
 
-The strongest differentiators are useful to Wingstaff: explicit test seams,
+The strongest differentiators are useful to Daidala: explicit test seams,
 tracer-bullet tickets with dependency edges, domain vocabulary, disciplined bug
 reproduction, and separate standards-versus-spec review axes. The MIT license
 and `skills/<category>/<name>/SKILL.md` layout are also suitable for external
@@ -138,28 +138,28 @@ skill installation and content hashing.
 
 ### Why it does not match perfectly
 
-Several instructions conflict with Wingstaff policy unless adapted:
+Several instructions conflict with Daidala policy unless adapted:
 
-- `implement` tells the worker to commit, while Wingstaff delivery must not
+- `implement` tells the worker to commit, while Daidala delivery must not
   commit or push without separate authorization.
 - `to-spec` publishes directly to an issue tracker and `to-tickets` may create
-  tracker issues and dependency links; Wingstaff currently creates and owns the
+  tracker issues and dependency links; Daidala currently creates and owns the
   Hermes Kanban graph instead.
 - setup writes `docs/agents/*` plus `AGENTS.md` or `CLAUDE.md`, adding repository
   mutations that are not necessary for every workflow.
 - user-invoked and model-invoked skill semantics do not directly equal
-  Wingstaff's required and conditional stage activation.
+  Daidala's required and conditional stage activation.
 - there is no dedicated delivery discipline, and verification is distributed
   across TDD, diagnosis, and review rather than represented as one stage skill.
 
 These are adapter concerns, not reasons to copy or rewrite the skills. Silently
 removing the conflicting instructions would misrepresent upstream behavior.
 
-### Wingstaff decision
+### Daidala decision
 
 Run a focused pack spike. Prefer exact external skills and map the strongest
 non-orchestrating skills first. Before implementation, decide whether the
-commit, issue-tracker, and setup side effects can be constrained by Wingstaff's
+commit, issue-tracker, and setup side effects can be constrained by Daidala's
 higher-priority worker contract. If they cannot, do not ship the pack; a bundled
 adapter that selectively restates the methodology would have higher maintenance
 and attribution cost than the current AI-DLC case.
@@ -174,9 +174,9 @@ distribution, not correctness or compatibility.
 ### Why it matches
 
 Superpowers is an MIT-licensed, composable software-development methodology with
-nearly complete Wingstaff stage coverage:
+nearly complete Daidala stage coverage:
 
-| Wingstaff stage | Relevant Superpowers skills |
+| Daidala stage | Relevant Superpowers skills |
 |---|---|
 | Define | `brainstorming` |
 | Plan | `writing-plans` |
@@ -186,7 +186,7 @@ nearly complete Wingstaff stage coverage:
 | Deliver | `finishing-a-development-branch` |
 
 Its evidence-over-claims philosophy, mandatory verification, test-first loop,
-design approval, and isolated-worktree practice align closely with Wingstaff.
+design approval, and isolated-worktree practice align closely with Daidala.
 The repository also maintains behavior evaluations, which is stronger upstream
 quality evidence than marketplace installs alone.
 
@@ -196,7 +196,7 @@ Superpowers presents itself as the complete methodology and automatically
 activates skills from session start. It creates its own worktrees, dispatches
 subagents, commits during TDD, reviews between tasks, and offers merge, PR, keep,
 or discard choices when finishing a branch. Those actions overlap or conflict
-with Hermes delegation, Wingstaff's preserved worktree, one approval gate,
+with Hermes delegation, Daidala's preserved worktree, one approval gate,
 stage-scoped activation, immutable evidence capture, and prohibition on implicit
 commit, merge, push, or PR creation.
 
@@ -204,12 +204,12 @@ The conflict is concentrated in orchestrating skills; the underlying
 `brainstorming`, `writing-plans`, `systematic-debugging`, and verification skills
 are substantially cleaner fits.
 
-### Wingstaff decision
+### Daidala decision
 
 Rate **4/5** and run a curated-pack spike. Start with non-orchestrating skills,
 then prove through tests that card instructions override commit, worktree,
 subagent, and branch-finishing behavior. Do not install the complete plugin or
-its session-start bootstrap as part of Wingstaff.
+its session-start bootstrap as part of Daidala.
 
 ## Spec Kit Agent Skills
 
@@ -223,9 +223,9 @@ search results.
 
 The workflow has explicit skills for constitution, specification, clarification,
 planning, consistency analysis, task generation, and implementation. It is
-artifact-oriented and maps well to Wingstaff definition and planning:
+artifact-oriented and maps well to Daidala definition and planning:
 
-| Wingstaff stage | Relevant Spec Kit skills |
+| Daidala stage | Relevant Spec Kit skills |
 |---|---|
 | Define | `speckit-constitution`, `speckit-specify`, `speckit-clarify`, `speckit-baseline` |
 | Plan | `speckit-plan`, `speckit-analyze`, `speckit-checklist`, `speckit-tasks` |
@@ -245,11 +245,11 @@ It owns a feature workflow through generated files and tasks but lacks complete
 verification, code review, and conservative delivery stages. The conversion is
 AGPL-3.0, which requires legal review before bundling or adapting it; using exact
 external skills is operationally and legally different from copying them into
-Wingstaff.
+Daidala.
 
-### Wingstaff decision
+### Daidala decision
 
-Rate **2.5/5**. Do not present it as a full Wingstaff pack. Reassess as a
+Rate **2.5/5**. Do not present it as a full Daidala pack. Reassess as a
 definition-and-planning adapter if there is real demand for Spec Kit artifacts,
 the external CLI boundary is acceptable, and license obligations are resolved.
 
@@ -274,10 +274,10 @@ specialized agent personas, 34+ workflows, help router, modules, configuration,
 sprint concepts, and evolving automation. Adapting it wholesale would put a
 second workflow framework and role model inside Hermes Kanban. Its direct
 installation also mutates the target project for a chosen AI IDE, which is not
-equivalent to Wingstaff's exact, profile-local skill readiness model. Trademark
+equivalent to Daidala's exact, profile-local skill readiness model. Trademark
 constraints additionally require care in naming an adapter.
 
-### Wingstaff decision
+### Daidala decision
 
 Rate **2/5**. Do not create a full BMad pack. Evaluate individual, independently
 usable skills only if they can run without BMad's installer, agent personas,
@@ -293,7 +293,7 @@ ahead of several smaller GSD conversions.
 
 The converted skill set covers project initialization, discussion, research,
 planning, execution, verification, debugging, milestones, progress, pause/resume,
-and codebase mapping. On names alone it resembles a complete Wingstaff pack.
+and codebase mapping. On names alone it resembles a complete Daidala pack.
 
 ### Why it is rejected for now
 
@@ -304,7 +304,7 @@ assessment. Its phase, milestone, progress, pause/resume, and orchestration
 commands duplicate Hermes Kanban and would require substantial behavioral
 validation before any exact mapping could be trusted.
 
-### Wingstaff decision
+### Daidala decision
 
 Rate **1/5** and reject for now. Install count does not compensate for missing
 license clarity, upstream self-reported lack of testing, and overlapping state
@@ -317,24 +317,24 @@ machinery. Reconsider only after those fundamentals change.
 Open Agent Spec 1.5.0 declares task inputs, outputs, prompts, model configuration,
 tools, task dependencies, specialist-spec composition, sandbox constraints, and
 evaluation cases in version-controlled YAML. Its fail-fast schema validation is
-well aligned with Wingstaff's refusal to fabricate or accept malformed worker
+well aligned with Daidala's refusal to fabricate or accept malformed worker
 handoffs. It could make stage contracts portable and independently testable.
 
 ### Why it is not a workflow pack
 
 Open Agent Spec defines agents and data dependencies, not a software-delivery
 methodology. It deliberately does not prescribe governance or long-running
-orchestration and provides no Wingstaff-equivalent approval, repository safety,
+orchestration and provides no Daidala-equivalent approval, repository safety,
 review, or delivery policy. Its `oa` runner, provider selection, tools, and
 multi-task chaining also overlap with Hermes execution if adopted wholesale.
 
-### Wingstaff decision
+### Daidala decision
 
 Do not force Open Agent Spec tasks into the six-stage pack schema. Consider a
 future pack-neutral interoperability feature that can import or export a single
 stage contract and translate schema violations into a blocked Kanban card.
 Hermes must still execute the worker lifecycle, and an OA dependency graph must
-not become a second Wingstaff workflow.
+not become a second Daidala workflow.
 
 ## Open Design
 
@@ -342,11 +342,11 @@ not become a second Wingstaff workflow.
 
 Open Design describes an agent-native loop of discovering a brief, locking a
 direction, streaming an artifact, critiquing it, and delivering exports. That
-maps well to Wingstaff's define, plan, approval, implement, verify, review, and
+maps well to Daidala's define, plan, approval, implement, verify, review, and
 deliver sequence. It publishes skills and `DESIGN.md` design systems and already
 documents Hermes as a supported consumer through its CLI/MCP integration.
 
-A narrow repository-backed HTML prototype or dashboard would fit Wingstaff well:
+A narrow repository-backed HTML prototype or dashboard would fit Daidala well:
 the brief and design system become inputs, the approved direction binds the
 human gate, generated files stay in the worktree, and browser/render evidence
 supports verification and review.
@@ -354,19 +354,19 @@ supports verification and review.
 ### Why it does not match perfectly
 
 Open Design is also a local desktop application, daemon, model proxy, automation
-surface, CLI, and MCP server. Wingstaff must not embed, recreate, or silently
+surface, CLI, and MCP server. Daidala must not embed, recreate, or silently
 start those facilities. Its broader outputs—images, PDF, PPTX, MP4, and motion
 graphics—are binary artifacts for which a Git diff and ordinary test output are
 insufficient evidence. Current pack schema v1 cannot declare artifact media
 types, render properties, dimensions, duration, or visual evidence requirements.
 
-### Wingstaff decision
+### Daidala decision
 
 First add pack-neutral binary and rendered-artifact evidence if those outputs are
 in scope. Then consider an `open-design` pack limited initially to HTML
 prototypes, with `od` and its Hermes integration as explicit optional external
 prerequisites. Do not bundle the Open Design daemon or add an MCP server to
-Wingstaff.
+Daidala.
 
 ## AWS Kiro
 
@@ -374,7 +374,7 @@ Wingstaff.
 
 Kiro's spec workflow turns an idea into `requirements.md` or `bugfix.md`,
 `design.md`, and `tasks.md`, then executes a dependency graph of tasks. This is a
-useful product comparison for Wingstaff's definition, planning, approval, and
+useful product comparison for Daidala's definition, planning, approval, and
 Kanban graph. Kiro also demonstrates that model selection is an execution-policy
 concern rather than a workflow methodology: its recommended `Auto` setting
 routes across models, while users may select specific Claude, DeepSeek, MiniMax,
@@ -383,13 +383,13 @@ GLM, or Qwen models.
 ### Why it is not a pack candidate
 
 Kiro is a proprietary IDE and hosted agent runtime, not an open skill or workflow
-source that Wingstaff can pin, hash, package, and execute through Hermes. Its own
+source that Daidala can pin, hash, package, and execute through Hermes. Its own
 spec task UI and parallel task runner duplicate responsibilities already owned
 by Hermes Kanban. Product similarity alone is not an adapter boundary.
 
-### Wingstaff decision
+### Daidala decision
 
-Use Kiro as a product and terminology reference only. Do not describe Wingstaff
+Use Kiro as a product and terminology reference only. Do not describe Daidala
 as running Kiro specs unless AWS publishes a stable, reusable contract that can
 be consumed without adopting Kiro's runtime.
 
@@ -397,7 +397,7 @@ be consumed without adopting Kiro's runtime.
 
 1. **Spike a curated Superpowers pack.** It has the strongest complete lifecycle
    coverage and upstream behavioral evaluations, but exclude its bootstrap and
-   prove that Wingstaff retains worktree, delegation, commit, and delivery authority.
+   prove that Daidala retains worktree, delegation, commit, and delivery authority.
 2. **Spike Matt Pocock Skills.** It remains a strong composable alternative and
    requires no new artifact model, but its setup, tracker, and commit side effects
    need explicit policy tests.
@@ -433,4 +433,4 @@ be consumed without adopting Kiro's runtime.
 | [Open Agent Spec website](https://www.openagentspec.dev/) and [repository](https://github.com/prime-vector/open-agent-spec) | Version 1.5.0 contracts, runner boundaries, composition, tools, and tests |
 | [Open Design repository](https://github.com/nexu-io/open-design) | Design loop, artifact types, skills, `DESIGN.md`, CLI/MCP architecture, Hermes support, and Apache-2.0 license |
 | [Kiro Specs](https://kiro.dev/docs/specs/) and [Kiro Models](https://kiro.dev/docs/models/) | Proprietary spec workflow, dependency execution, and current multi-model routing |
-| [Pack reference](03-pack-reference.md), [Authoring packs](04-authoring-packs.md), and [Pack adapters](09-pack-adapters.md) | Wingstaff schema, engine boundary, implemented mappings, and constraints |
+| [Pack reference](03-pack-reference.md), [Authoring packs](04-authoring-packs.md), and [Pack adapters](09-pack-adapters.md) | Daidala schema, engine boundary, implemented mappings, and constraints |

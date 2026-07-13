@@ -1,8 +1,8 @@
-# Wingstaff documentation
+# Daidala documentation
 
-Wingstaff adds pack provenance, persisted skill activation, digest-bound
+Daidala adds pack provenance, persisted skill activation, digest-bound
 approval, Git isolation, and durable evidence to Hermes Kanban. Hermes owns card
-status, dependencies, assignment, retries, comments, and worker runs; Wingstaff
+status, dependencies, assignment, retries, comments, and worker runs; Daidala
 owns only its policy and artifact integrity boundary.
 
 New operators should start with [Getting started](00-getting-started.md), not the
@@ -24,10 +24,10 @@ architecture references.
 | [Pack adapters](09-pack-adapters.md) | Addyosmani and AI-DLC mappings and activation modes implemented | Pack YAML, bundled adapter, and cross-pack execution tests |
 | [Autonomous development use cases](10-autonomous-development-use-cases.md) | Current use cases, activation handoffs, user controls, tutorial ideas, and unsupported opportunities documented | Runtime contracts plus external agent-development research |
 | [Skill usage and user control](11-skill-usage-and-user-control.md) | Candidate loading, persisted activation, structured handoff, and user-selection boundaries documented | Pack, policy ledger, worker contract, and cross-pack tests |
-| [Workflow ecosystem market overview](12-market-overview.md) | Current projects evaluated as packs, interoperability layers, optional tools, or product references | Upstream documentation, local Matt Pocock Skills checkout, and Wingstaff pack contracts |
-| [Autonomous triggering](13-autonomous-triggering.md) | Hermes cron/webhook composition documented but not exercised end to end; implementation still requires exact-digest approval | Observed Hermes v0.18.2 CLI plus Wingstaff start CLI and tool schemas |
-| [Workflow constraints](14-workflow-constraints.md) | Implemented; workflow-scoped policy invariants, approval binding, replacement, and exact skill-backed reusable sources | `wingstaff/constraints.py`, `wingstaff/service.py`, and constraint regressions |
-| Target commit/push | Not part of Wingstaff runtime | Delivery records both flags as false |
+| [Workflow ecosystem market overview](12-market-overview.md) | Current projects evaluated as packs, interoperability layers, optional tools, or product references | Upstream documentation, local Matt Pocock Skills checkout, and Daidala pack contracts |
+| [Autonomous triggering](13-autonomous-triggering.md) | Hermes cron/webhook composition documented but not exercised end to end; implementation still requires exact-digest approval | Observed Hermes v0.18.2 CLI plus Daidala start CLI and tool schemas |
+| [Workflow constraints](14-workflow-constraints.md) | Implemented; workflow-scoped policy invariants, approval binding, replacement, and exact skill-backed reusable sources | `daidala/constraints.py`, `daidala/service.py`, and constraint regressions |
+| Target commit/push | Not part of Daidala runtime | Delivery records both flags as false |
 
 “Implemented” means present in this repository. Compatibility claims are limited
 to the host version and discovery paths in the
@@ -37,10 +37,10 @@ to the host version and discovery paths in the
 
 ```mermaid
 flowchart LR
-    S["explicit Wingstaff start"] --> D["define"]
+    S["explicit Daidala start"] --> D["define"]
     D --> P["plan"]
     P --> G["approval<br>blocked"]
-    G -->|"Wingstaff exact-digest approval"| I["implement"]
+    G -->|"Daidala exact-digest approval"| I["implement"]
     I --> V["verify"]
     V --> R["review"]
     R --> DL["deliver"]
@@ -51,12 +51,12 @@ flowchart LR
     H --> V
     H --> R
     H --> DL
-    W["Wingstaff<br>policy + evidence"] -.-> G
+    W["Daidala<br>policy + evidence"] -.-> G
 ```
 
-Wingstaff creates the graph explicitly. The existing gateway's Kanban dispatcher
-runs ready cards; Wingstaff adds no scheduler, daemon, dashboard server, or
-polling loop. `/wingstaff` is an optional extension of the existing Hermes
+Daidala creates the graph explicitly. The existing gateway's Kanban dispatcher
+runs ready cards; Daidala adds no scheduler, daemon, dashboard server, or
+polling loop. `/daidala` is an optional extension of the existing Hermes
 dashboard. Generic Kanban unblock is interaction, not plan authorization.
 
 Every executable card loads the complete exact pack-stage candidate set. After
@@ -69,7 +69,7 @@ carry that manifest's digest and active skill names.
 1. [Getting started](00-getting-started.md) — run the first workflow.
 2. [Operator runbook](07-runbook.md) — operate, recover, cancel, and upgrade.
 3. [Architecture](01-architecture.md) — understand the authority and process boundaries.
-4. [Policy ledger](02-workflow-state.md) — understand durable Wingstaff facts.
+4. [Policy ledger](02-workflow-state.md) — understand durable Daidala facts.
 5. [Lifecycle stages](05-lifecycle-stages.md) — inspect card inputs, handoffs, and blocks.
 6. [Security](06-security.md) — review trust and Git boundaries.
 7. [Pack reference](03-pack-reference.md) and [authoring guide](04-authoring-packs.md) — build adapters.
@@ -78,14 +78,14 @@ carry that manifest's digest and active skill names.
 10. [Autonomous development use cases](10-autonomous-development-use-cases.md) — choose suitable work, steer skills, and assess current limitations.
 11. [Skill usage and user control](11-skill-usage-and-user-control.md) — understand how packs become card skills and which controls remain with the user.
 12. [Workflow ecosystem market overview](12-market-overview.md) — compare candidate skill sets, workflow standards, design systems, and adjacent products.
-13. [Autonomous triggering](13-autonomous-triggering.md) — admit GitHub, Linear, Jira, or scheduled work without adding a Wingstaff scheduler or bypassing approval.
+13. [Autonomous triggering](13-autonomous-triggering.md) — admit GitHub, Linear, Jira, or scheduled work without adding a Daidala scheduler or bypassing approval.
 
 ## Find the right document
 
 | Question or symptom | Read |
 |---|---|
 | How do I start and approve the first workflow? | [Getting started](00-getting-started.md) |
-| Is Wingstaff a separate service or scheduler? | [Architecture](01-architecture.md#process-boundary) |
+| Is Daidala a separate service or scheduler? | [Architecture](01-architecture.md#process-boundary) |
 | Who owns status and retries? | [Policy ledger](02-workflow-state.md) |
 | Why is Kanban unblock not approval? | [Security](06-security.md#human-approval-boundary) |
 | What must each worker record? | [Lifecycle stages](05-lifecycle-stages.md) |
@@ -95,7 +95,7 @@ carry that manifest's digest and active skill names.
 | How do packs change stage workers without engine branches? | [Authoring packs](04-authoring-packs.md) |
 | Which autonomous-development tasks fit, how do skills hand off, and where can I intervene? | [Autonomous development use cases](10-autonomous-development-use-cases.md) |
 | What does “using” a pack skill mean, and can I select or override stage skills? | [Skill usage and user control](11-skill-usage-and-user-control.md) |
-| Which external projects could become Wingstaff packs, and why do others not fit? | [Workflow ecosystem market overview](12-market-overview.md) |
+| Which external projects could become Daidala packs, and why do others not fit? | [Workflow ecosystem market overview](12-market-overview.md) |
 | How can GitHub issues, Actions failures, Linear tickets, Jira tickets, or cron start a workflow? | [Autonomous triggering](13-autonomous-triggering.md) |
 | How can one workflow enforce durable policy without creating another skill layer? | [Workflow constraints](14-workflow-constraints.md#policy-is-not-methodology) |
 

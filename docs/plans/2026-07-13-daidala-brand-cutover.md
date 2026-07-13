@@ -1,16 +1,16 @@
 # Daidala brand cutover implementation plan
 
-> Status: **Approved for phase-gated execution. Phases 0–4 are complete; Phase 5 is next.**
+> Status: **Approved for phase-gated execution. Phases 0–5 are complete; Phase 6 is next.**
 >
 > This is a hard public rename. Do not add compatibility packages, import shims,
 > CLI aliases, tool aliases, skill aliases, schema fallbacks, or data migration.
 
 ## Goal
 
-Rename the complete project identity from Wingstaff to **Daidala**, including the
-Python distribution and package, Hermes plugin, command and tool surfaces,
-bundled skill namespace, persisted schema identities, runtime paths, dashboard,
-repository, documentation, tests, release probes, and generated brand assets.
+Complete the **Daidala** project identity across the Python distribution and
+package, Hermes plugin, command and tool surfaces, bundled skill namespace,
+persisted schema identities, runtime paths, dashboard, documentation, generated
+assets, Git repository, and release metadata.
 Add the story and pronunciation of Daidala to the root `README.md`.
 
 ## Name and narrative decision
@@ -57,37 +57,20 @@ as a separate orchestration service or autonomous model runtime.
 
 ## Current context
 
-- The repository is on `main`, clean, and tracks
-  `git@github.com:forgegod/hermes-wingstaff.git` as `origin`.
-- The project is a pre-alpha Hermes plugin at version `0.1.0`.
-- The current survey found 625 `Wingstaff`, 924 `wingstaff`, and one
-  `WINGSTAFF` occurrence across 86 tracked text files.
-- The name is embedded in behavior, not only prose:
-  - package/distribution/import and executable names;
-  - native Hermes CLI registration;
-  - 12 agent-facing tool names and the toolset;
-  - plugin-qualified skills;
-  - constraint, activation, artifact, and handoff schema IDs;
-  - Kanban card titles and idempotency keys;
-  - profile-local data and worktree roots;
-  - dashboard manifest, tab, asset, and API routes;
-  - isolated compatibility probes and release workflow paths;
-  - generated SVG/PNG metadata and geometry IDs.
-- Two tracked implementation-plan filenames and the `wingstaff/` source
-  directory contain the old name.
-- `plugin.yaml` is already stale: it advertises obsolete `wingstaff_validate`
-  and `wingstaff_modify` tools while the runtime registers
-  `wingstaff_replace_constraints` and `wingstaff_record_skill_activation`.
-  The rename must reconcile the manifest to the actual 12-tool runtime.
-- Package, command, repository, and domain checks performed during preflight found:
-  - no PyPI `daidala` project;
-  - no local `daidala` executable;
-  - `daidala.dev` and `daidala.work` are reserved for this project; RDAP resolves
-    the `.dev` registration and the operator confirmed the `.work` reservation;
-  - `daidala.io` could not be reserved by the operator and is not required for
-    the approved local cutover.
-  Recheck software and repository namespaces immediately before publishing
-  because availability can change independently of this repository.
+- The repository is on `main` with checkpoint commits through Phase 4. The
+  current `origin` remains the legacy source repository until the explicitly
+  authorized Phase 6 remote cutover.
+- Distribution, package, executable, Hermes command, 12 tools, toolset, skills,
+  schemas, runtime paths, Kanban identities, dashboard routes, compatibility
+  probes, and generated brand assets use Daidala at version `0.2.0`.
+- Phase 5 owns the remaining documentation and DOX cutover. Phase 6 owns release
+  workflow verification, isolated installation, destination push, repository
+  metadata, and final tracked-file zero-name verification.
+- `daidala.dev` and `daidala.work` are reserved for this project; RDAP resolves
+  the `.dev` registration and the operator confirmed the `.work` reservation.
+  `daidala.io` is not required for the approved cutover.
+- Recheck PyPI and repository namespaces immediately before publishing because
+  availability can change independently of this repository.
 - `https://github.com/forgegod/daidala` has now been created as an empty public
   repository. SSH read access is verified; it has no default branch or commits,
   and no source has been pushed.
@@ -132,7 +115,7 @@ as a separate orchestration service or autonomous model runtime.
    installing Daidala. Do not strand live cards behind removed tool and skill
    names.
 5. **Fresh-state gate:** Daidala starts with `$HERMES_HOME/daidala`; it must not
-   inspect, move, copy, or delete `$HERMES_HOME/wingstaff`. Old state remains
+   inspect, move, copy, or delete `$HERMES_HOME/daidala`. Old state remains
    inert for manual retention or later deletion.
 6. **Dirty-tree gate:** implementation starts only from a clean target tree.
 7. **Verification gate:** any missing skill, invalid structured output, stale
@@ -162,7 +145,7 @@ will retain the prior identity.
 **Status: Done.** The user approved the default plan decisions and confirmed
 `daidala.dev` and `daidala.work` are reserved for this project. RDAP resolves the
 `.dev` registration; PyPI, the local command path, and the empty
-`forgegod/daidala` repository remain clear. No enabled Wingstaff installation,
+`forgegod/daidala` repository remain clear. No enabled Daidala installation,
 active Kanban task, policy ledger, or owned worktree was found across the
 inspected Hermes profiles.
 
@@ -205,7 +188,7 @@ passed with 228 tests. A fresh isolated Hermes directory load registered the
 
 ### Files
 
-- `wingstaff/` → `daidala/` via `git mv`
+- `daidala/`
 - root `__init__.py`
 - `pyproject.toml`
 - `plugin.yaml`
@@ -215,15 +198,13 @@ passed with 228 tests. A fresh isolated Hermes directory load registered the
 
 ### Steps
 
-1. Rename the package directory with `git mv wingstaff daidala` so history is
-   preserved.
+1. Require `daidala/` as the sole implementation package.
 2. Change project metadata to distribution `daidala`, version `0.2.0`, console
    script `daidala = "daidala.cli:main"`, Hermes entry point
    `daidala = "daidala"`, package discovery `daidala*`, and Daidala package data.
 3. Update the root directory-plugin entry point to import `.daidala` or
    top-level `daidala` exactly as the current dual discovery paths require.
-4. Register native command `hermes daidala`; provide no `hermes wingstaff`
-   alias.
+4. Register native command `hermes daidala`; provide no compatibility alias.
 5. Rename all internal and external Python imports to `daidala.*`.
 6. Change the plugin manifest name and description, then reconcile
    `provides_tools` to the exact 12 tools actually registered by
@@ -243,7 +224,7 @@ passed with 228 tests. A fresh isolated Hermes directory load registered the
    Rename the matching schema names, handler-map keys, and toolset in this phase
    so the manifest and runtime cannot diverge at the checkpoint.
 7. Rename CI temporary paths and executable invocations to `daidala`.
-8. Replace the ignored build-metadata directory `wingstaff.egg-info` with
+8. Replace the ignored build-metadata directory `daidala.egg-info` with
    `daidala.egg-info` in the Markdown checker.
 9. Clean stale `build/`, `dist/`, and old `*.egg-info` output before testing so
    an obsolete package cannot survive into release inspection.
@@ -259,8 +240,8 @@ python -m build
 python -m twine check dist/*
 ```
 
-Inspect the wheel and require `daidala/` resources, `daidala-*.dist-info`, the
-`daidala = daidala` Hermes entry point, and no `wingstaff/` package members.
+Inspect the wheel and require `daidala/` resources, `daidala-*.dist-info`, and
+the `daidala = daidala` Hermes entry point with no unexpected top-level package.
 
 ## Phase 2 — Rename every executable Hermes contract and serialized identity
 
@@ -305,7 +286,7 @@ tests, Ruff, both pack validators, build, Twine, and diff checks.
    and idempotency keys to `daidala:`. Do not accept old idempotency keys as
    equivalent.
 5. Rename runtime ownership and error text to Daidala.
-6. Change all runtime roots from `$HERMES_HOME/wingstaff` to
+6. Change all runtime roots from `$HERMES_HOME/daidala` to
    `$HERMES_HOME/daidala`, including worktrees and policy-ledger construction.
    Keep the generic `policy-ledger.sqlite3`, `workflows/`, `worktrees/`, and
    artifact filenames unless they themselves expose the product name.
@@ -438,6 +419,15 @@ The two hash sets must match. Verify PNG dimensions and alpha, SVG accessible
 text, README rendering, and the external etymology link.
 
 ## Phase 5 — Rename all documentation, DOX contracts, and plan paths
+
+**Status: Done.** Current documentation, DOX contracts, bundled skill guidance,
+commands, schemas, diagrams, and plan paths use Daidala. The two branded plan
+filenames were renamed, all Markdown links pass, and no tracked Markdown token
+or filename retains the superseded identity. Mermaid diagrams preserve the
+in-process Hermes boundary, live CLI help matches documented command forms, and
+public Git installation evidence is explicitly pending the authorized Phase 6
+destination push and fresh probe. The full gate passed with 231 tests, Ruff, and
+both bundled pack validations.
 
 ### Files
 

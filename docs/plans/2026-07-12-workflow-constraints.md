@@ -4,18 +4,18 @@
 > passed their gates and have committed checkpoints.
 >
 > For the implementing agent: read `/AGENTS.md`, `docs/AGENTS.md`,
-> `wingstaff/AGENTS.md`, `tests/AGENTS.md`, this plan, and
+> `daidala/AGENTS.md`, `tests/AGENTS.md`, this plan, and
 > `docs/14-workflow-constraints.md`. Stop when any gate fails.
 
 ## Goal
 
-Give one Wingstaff workflow a durable, revisioned policy contract that applies to
+Give one Daidala workflow a durable, revisioned policy contract that applies to
 all executable phases. Constraints express invariants and approval boundaries,
-not methodology. Exact Hermes policy skills provide reusable sources; Wingstaff
+not methodology. Exact Hermes policy skills provide reusable sources; Daidala
 materializes their validated content into immutable workflow artifacts.
 
 Before describing the feature as implemented, document the topology from Hermes
-profile and worker lane through named board and Wingstaff workflow to the
+profile and worker lane through named board and Daidala workflow to the
 workflow-scoped constraint artifact. The documentation must make authority,
 cardinality, dispatch, and lifecycle ownership explicit rather than implying a
 parent-child hierarchy that Hermes does not provide.
@@ -36,10 +36,10 @@ the current row's gate and commit succeed.
 | 5. Approval and graph replacement | Done | Bind approval to plan and constraint identity; durably invalidate and recreate stale workflow work. | Workflow/service/Kanban recovery tests plus the repository gate. |
 | 6. Tool and CLI surfaces | Done | Expose explicit start, replacement, status, skill-source, and file-source inputs through shared service paths. | Tool/plugin/CLI parity tests plus the repository gate. |
 | 7. Documentation and host verification | Done | Reconcile numbered docs, architecture, integration guidance, operator surfaces, and supported-host evidence. | Full repository gate and isolated supported-host probes. |
-| 8. Release compatibility regression | Done | Turn the Phase 1 host findings into durable architecture documentation and a repeatable Hermes compatibility probe that gates Wingstaff releases and intentional host-version changes, not every push. | Script tests, an isolated supported-host run, release-workflow trigger assertions, and the repository gate. |
+| 8. Release compatibility regression | Done | Turn the Phase 1 host findings into durable architecture documentation and a repeatable Hermes compatibility probe that gates Daidala releases and intentional host-version changes, not every push. | Script tests, an isolated supported-host run, release-workflow trigger assertions, and the repository gate. |
 
 Phase 8 verdict: GREEN. The dependency-free probe now verifies exact Hermes
-identity, Wingstaff policy-skill discovery and hashing, public named-board
+identity, Daidala policy-skill discovery and hashing, public named-board
 lifecycle operations, cleanup, and the 8,192/8,300 worker-context boundary in an
 isolated home without profile creation. Subprocess regressions fail on malformed
 or changed host output and boundary drift. The release workflow pins the full
@@ -109,7 +109,7 @@ task bodies of 7,900 and 8,192 characters intact and visibly truncated an
 8,300-character body. The implementation therefore caps canonical constraint
 content at 4,096 UTF-8 bytes and rejects any fully rendered card body over 8,192
 characters; it never truncates policy content. The smaller canonical-content
-budget reserves space for Wingstaff card identity, goal, pack, plan, worktree,
+budget reserves space for Daidala card identity, goal, pack, plan, worktree,
 and worker instructions and remains safe for multibyte constraint text.
 
 ## Scope and authority
@@ -125,7 +125,7 @@ source may be used on multiple boards.
 | Required or conditional skills per phase | Workflow pack |
 | What must remain true regardless of methodology | Workflow constraints |
 | Card lifecycle, assignment, comments, dependencies, and retries | Hermes Kanban |
-| Artifact integrity, approval binding, and stale-worker rejection | Wingstaff |
+| Artifact integrity, approval binding, and stale-worker rejection | Daidala |
 
 ## Topology and worker-lane documentation
 
@@ -142,15 +142,15 @@ as the host reference and state all of the following:
 - A named Hermes board is an independent card namespace and the canonical
   lifecycle and audit authority. It owns cards, dependencies, assignments,
   claims, retries, comments, run history, and the dispatcher; it does not own
-  Wingstaff workflow policy.
-- A Wingstaff workflow is a profile-local policy-ledger record that selects
+  Daidala workflow policy.
+- A Daidala workflow is a profile-local policy-ledger record that selects
   exactly one existing board and maps each lifecycle stage to a profile-lane
   assignee. It creates and identifies its card graph on that board, but does not
   mirror Kanban status or dispatch workers.
 - The dispatcher routes a ready card to its assignee lane. A Hermes profile lane
   receives the card's board, task, workspace, and run identity through Hermes;
   it ends the run through the public `kanban_complete` or `kanban_block`
-  boundary. Wingstaff must not replace that lifecycle terminator or dispatcher.
+  boundary. Daidala must not replace that lifecycle terminator or dispatcher.
 - Workflow constraints are immutable, revisioned, workflow-owned artifacts. They
   are neither profile instructions nor board configuration: a workflow projects
   its current constraint identity and applicable text onto its own cards, and
@@ -162,9 +162,9 @@ as the host reference and state all of the following:
   constraint artifact, with immutable historical revisions retained.
 
 The documentation must also distinguish the standard `review-required` Kanban
-block convention from Wingstaff's exact plan-and-constraint approval gate:
+block convention from Daidala's exact plan-and-constraint approval gate:
 unblocking a card remains a Kanban interaction and cannot authorize a stale or
-changed Wingstaff workflow.
+changed Daidala workflow.
 
 Workflow constraints may express:
 
@@ -181,20 +181,20 @@ Workflow constraints may not express:
 - skill, pack, profile, model, or tool selection;
 - shell commands or tool calls;
 - activation modes, ranks, or overrides;
-- permissions or exceptions to Wingstaff, Hermes, repository, or system policy.
+- permissions or exceptions to Daidala, Hermes, repository, or system policy.
 
 Structured fields named `skills`, `pack`, `profiles`, `models`, `tools`, `steps`,
 `commands`, `activation`, or equivalent executable configuration are rejected as
 unknown fields. Workers block free-text constraints that attempt to prescribe
-methodology or capabilities. Such content belongs in a skill or pack. Wingstaff
+methodology or capabilities. Such content belongs in a skill or pack. Daidala
 does not claim deterministic semantic classification of arbitrary prose.
 
 ## Constraint artifact
 
-The schema is `wingstaff.workflow-constraints/v1`:
+The schema is `daidala.workflow-constraints/v1`:
 
 ```yaml
-schema: wingstaff.workflow-constraints/v1
+schema: daidala.workflow-constraints/v1
 global:
   - Never commit or push.
   - Do not add production dependencies without explicit approval.
@@ -237,19 +237,19 @@ A workflow without constraints has explicit null identity and no implied default
 
 Implementation ownership:
 
-- `wingstaff/constraints.py` — parsing, canonicalization, source materialization,
+- `daidala/constraints.py` — parsing, canonicalization, source materialization,
   and rendering;
-- `wingstaff/state.py` — immutable artifact, reference, provenance, approval, and
+- `daidala/state.py` — immutable artifact, reference, provenance, approval, and
   policy-revision models;
-- `wingstaff/workflow.py` — deterministic recording and invalidation transitions;
-- `wingstaff/execution.py` — exclusive artifact writes and digest verification;
-- `wingstaff/store.py` — optimistic persistence of the extended ledger.
+- `daidala/workflow.py` — deterministic recording and invalidation transitions;
+- `daidala/execution.py` — exclusive artifact writes and digest verification;
+- `daidala/store.py` — optimistic persistence of the extended ledger.
 
 ## Reusable policy skills
 
 A reusable constraint source is an exact installed Hermes policy skill containing
-only a `wingstaff.workflow-constraints/v1` document and bounded descriptive skill
-metadata. Hermes owns skill installation, discovery, and loading. Wingstaff:
+only a `daidala.workflow-constraints/v1` document and bounded descriptive skill
+metadata. Hermes owns skill installation, discovery, and loading. Daidala:
 
 - accepts standard `SKILL.md` YAML frontmatter followed by exactly one fenced
   `yaml` block containing the constraint document; no other Markdown body
@@ -275,12 +275,12 @@ are mutually exclusive inputs.
 The host integration gate must prove that exact skill content can be resolved,
 digest-verified, snapshotted, and represented separately from pack activation.
 Failure blocks implementation and requires an amended, separately approved plan;
-Wingstaff must not introduce a second skill-loading or activation system.
+Daidala must not introduce a second skill-loading or activation system.
 
 Likely integration points:
 
-- `wingstaff/skills.py` — exact installed-skill inventory and digest verification;
-- `wingstaff/constraints.py` — policy-skill document extraction and materialization;
+- `daidala/skills.py` — exact installed-skill inventory and digest verification;
+- `daidala/constraints.py` — policy-skill document extraction and materialization;
 - `tests/test_constraints.py` — source validation, digest, disappearance, and
   activation-separation cases.
 
@@ -320,7 +320,7 @@ Every executable card receives a delimited `Workflow constraints` section with:
   weaken higher-level policy.
 
 Constraint identity participates in card references and idempotency keys.
-Workers compare card identity with current Wingstaff status after `kanban_show`
+Workers compare card identity with current Daidala status after `kanban_show`
 and before applying methodology or submitting evidence.
 
 Constraint identity is carried by:
@@ -336,9 +336,9 @@ commit authority, push authority, or an exception to higher-level policy.
 
 Implementation ownership:
 
-- `wingstaff/kanban.py` — deterministic projection and policy-aware card identity;
-- `wingstaff/service.py` — current-identity validation and coordination;
-- `wingstaff/skills/orchestrate/SKILL.md` — worker comparison and blocking
+- `daidala/kanban.py` — deterministic projection and policy-aware card identity;
+- `daidala/service.py` — current-identity validation and coordination;
+- `daidala/skills/orchestrate/SKILL.md` — worker comparison and blocking
   contract;
 - `tests/test_kanban.py`, `tests/test_worker_contract.py`, and
   `tests/test_execution.py` — projection and stale-worker behavior.
@@ -356,7 +356,7 @@ A changed constraint revision:
 1. persists the new immutable artifact and policy identity;
 2. clears approval before host cleanup;
 3. makes prior activation, artifacts, evidence, and cards historical;
-4. removes a Wingstaff-owned worktree through the ownership guard;
+4. removes a Daidala-owned worktree through the ownership guard;
 5. comments on and archives obsolete cards through public Hermes operations;
 6. creates a fresh `define -> plan` graph under the new policy revision;
 7. requires regenerated definition and plan artifacts;
@@ -364,19 +364,19 @@ A changed constraint revision:
 
 Interrupted cleanup and graph recreation are idempotently recoverable and never
 restore stale approval. Public Hermes Kanban operations remain the only card
-boundary; Wingstaff does not import host internals or access Kanban SQLite.
+boundary; Daidala does not import host internals or access Kanban SQLite.
 
 Implementation ownership:
 
-- `wingstaff/workflow.py` — approval tuple and pure invalidation transitions;
-- `wingstaff/service.py` — durable-before-host mutation ordering and recovery;
-- `wingstaff/kanban.py` — comment, archive, and graph recreation;
+- `daidala/workflow.py` — approval tuple and pure invalidation transitions;
+- `daidala/service.py` — durable-before-host mutation ordering and recovery;
+- `daidala/kanban.py` — comment, archive, and graph recreation;
 - workflow, Kanban, and execution tests — replacement at every lifecycle point,
   concurrency, failed archival, failed recreation, and retry.
 
 ## Tool and operator surfaces
 
-`wingstaff_start` accepts at most one constraint source:
+`daidala_start` accepts at most one constraint source:
 
 - inline `constraints_content`; or
 - `constraints_skill` with mandatory `constraints_skill_digest`.
@@ -403,15 +403,15 @@ commands.
 
 Implementation ownership:
 
-- `wingstaff/service.py` — start, status, and replacement operations;
-- `wingstaff/schemas.py` — strict model-facing schemas;
-- `wingstaff/tools.py` and `wingstaff/__init__.py` — handlers and registration;
-- `wingstaff/cli.py` — explicit file and skill selectors;
+- `daidala/service.py` — start, status, and replacement operations;
+- `daidala/schemas.py` — strict model-facing schemas;
+- `daidala/tools.py` and `daidala/__init__.py` — handlers and registration;
+- `daidala/cli.py` — explicit file and skill selectors;
 - `tests/test_tools.py`, `tests/test_plugin.py`, and `tests/test_cli.py` — schema,
   dispatch, mutual exclusion, compare-and-swap, and parity.
 
 Changing the public start surface requires synchronizing every consumer listed in
-`wingstaff/AGENTS.md`.
+`daidala/AGENTS.md`.
 
 ## Host integration requirements
 
@@ -439,29 +439,29 @@ findings durable rather than leaving them only in this plan:
    canonical constraint budget, exact policy-skill discovery, and public Kanban
    lifecycle dependency in `docs/01-architecture.md` and
    `docs/08-hermes-integration.md`. Keep the architecture document focused on
-   why Wingstaff rejects oversize projections; keep observed host versions and
+   why Daidala rejects oversize projections; keep observed host versions and
    probe evidence in the integration document.
 2. Add a dependency-free script under `scripts/` that creates an isolated
    `HERMES_HOME`, installs a synthetic exact policy skill, verifies its exact
-   inventory name and deterministic Wingstaff directory digest, exercises a
+   inventory name and deterministic Daidala directory digest, exercises a
    named-board create/show/comment/link/complete/archive lifecycle, and proves
    that 8,192-character bodies remain intact while larger bodies are visibly
    truncated. The script must never inspect or mutate the active profile.
 3. Add subprocess regression tests under `tests/` for successful probe parsing,
    changed or missing host output, boundary drift, cleanup, and actionable
-   failure messages. Do not mock Wingstaff's canonicalization or digest code.
+   failure messages. Do not mock Daidala's canonicalization or digest code.
 4. Integrate the live compatibility probe into `.github/workflows/release.yml`
    as a release-only job. It runs for version tags and explicit
    `workflow_dispatch`, and may run when the declared supported Hermes version
    changes. It must not run for every branch push or pull request. Fast unit and
    packaging checks remain eligible for normal CI.
 5. Require a green probe before changing the supported Hermes baseline or
-   publishing a Wingstaff release. Record the exact Hermes semantic version,
+   publishing a Daidala release. Record the exact Hermes semantic version,
    build version, and upstream revision in `docs/08-hermes-integration.md`; any
    changed boundary blocks release until code, limits, tests, and documentation
    are reconciled.
 
-The probe is compatibility evidence, not a runtime dependency. Wingstaff still
+The probe is compatibility evidence, not a runtime dependency. Daidala still
 uses only public plugin, skill, and Kanban boundaries in production.
 
 ## Verification
@@ -472,7 +472,7 @@ Targeted gates:
 pytest tests/test_constraints.py tests/test_workflow.py tests/test_store.py tests/test_execution.py
 pytest tests/test_kanban.py tests/test_worker_contract.py tests/test_execution.py
 pytest tests/test_tools.py tests/test_plugin.py tests/test_cli.py
-ruff check wingstaff tests
+ruff check daidala tests
 ```
 
 Required cases:
@@ -501,8 +501,8 @@ Repository gate:
 lefthook validate
 pytest
 ruff check .
-wingstaff packs validate addyosmani
-wingstaff packs validate aidlc
+daidala packs validate addyosmani
+daidala packs validate aidlc
 python -m build
 python -m twine check dist/*
 python scripts/check_release_contents.py . --wheel dist/*.whl
@@ -532,23 +532,23 @@ in [Workflow constraints](../14-workflow-constraints.md).
 
 No assessed project becomes a direct reusable constraint source. Such a source
 must be an exact installed Hermes policy skill whose bounded content is only a
-`wingstaff.workflow-constraints/v1` document. Existing workflow specifications,
+`daidala.workflow-constraints/v1` document. Existing workflow specifications,
 methodologies, products, and tool configurations must not be accepted directly or
 translated in a way that imports their runtime, procedures, or activation model.
 
 | Project | Existing pack assessment | Constraint fit | Decision |
 |---|---:|---|---|
 | Open Agent Spec | 2/5 | Partial | Keep as future stage-contract interoperability; its evaluation and boundary declarations may inform separately curated constraints. |
-| Open Design | 3.5/5 | Partial | Artifact invariants may inform constraints after Wingstaff can verify the required rendered or binary evidence. |
+| Open Design | 3.5/5 | Partial | Artifact invariants may inform constraints after Daidala can verify the required rendered or binary evidence. |
 | Spec Kit Agent Skills | 2.5/5 | Partial to weak | Constitution principles may inform policy, but the CLI workflow, generated tasks, scripts, and license boundary remain outside constraints. |
-| Superpowers and Matt Pocock Skills | 4/5 each | Compatibility mechanism | Keep as methodology-pack candidates; use constraints to test whether Wingstaff can bound their commit, tracker, worktree, setup, and delivery side effects. |
+| Superpowers and Matt Pocock Skills | 4/5 each | Compatibility mechanism | Keep as methodology-pack candidates; use constraints to test whether Daidala can bound their commit, tracker, worktree, setup, and delivery side effects. |
 | BMad Method, Get Shit Done Skills, and AWS Kiro | 1–2/5 | No direct fit | Constraints do not resolve competing runtime, provenance, testing, licensing, or proprietary-source failures. |
 
 Open Agent Spec has the strongest conceptual overlap because required inputs,
 outputs, sandbox boundaries, and evaluation acceptance criteria are
 constraint-shaped. Its prompts, models, tools, task dependencies, composition,
 and runner behavior remain executable configuration and are prohibited constraint
-content. An Open Agent Spec graph must not become a second Wingstaff workflow.
+content. An Open Agent Spec graph must not become a second Daidala workflow.
 
 Open Design can supply output properties and release boundaries, such as
 conformance to an approved design system, required export dimensions, rendered
@@ -603,7 +603,7 @@ no project rating or implementation status changes as part of this plan.
 - Reuse uses exact Hermes policy skills without joining pack activation.
 - Materialization creates a self-contained immutable workflow artifact.
 - The documented profile, worker-lane, board, workflow, and constraint topology
-  preserves Hermes lifecycle authority and distinguishes it from Wingstaff
+  preserves Hermes lifecycle authority and distinguishes it from Daidala
   approval.
 - Approval and every current card, handoff, activation, and evidence operation
   bind current constraint identity.

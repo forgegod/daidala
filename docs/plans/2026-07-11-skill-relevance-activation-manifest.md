@@ -11,12 +11,12 @@
 
 ## Goal
 
-Make Wingstaff distinguish between skills that a pack makes mandatory and skills
+Make Daidala distinguish between skills that a pack makes mandatory and skills
 that are candidates whose `Use When` criteria must be assessed for the concrete
 card. The worker contract requires a validated, durable skill activation manifest
-before stage methodology begins. Wingstaff deterministically refuses stage
+before stage methodology begins. Daidala deterministically refuses stage
 evidence operations when the current manifest is missing, invalid, pending, or
-reports a blocked capability. Wingstaff cannot prove when methodology application
+reports a blocked capability. Daidala cannot prove when methodology application
 began; it proves that activation decisions existed before evidence was accepted.
 
 Keep Hermes Kanban as the worker lifecycle and keep all candidate skills loaded
@@ -31,17 +31,17 @@ with the stage contract. This is already a correctness problem, not only a token
 cost:
 
 - `test-driven-development` is loaded during `verify`, although its normal
-  code-writing loop conflicts with Wingstaff's immutable captured scope;
+  code-writing loop conflicts with Daidala's immutable captured scope;
 - browser verification, debugging, security, performance, migration,
   observability, and CI/CD guidance are conditional but currently load as if
   every card needed them;
 - Addyosmani's `Use When` and `When NOT to Use` instructions are available to the
-  model but Wingstaff neither requires an explicit decision nor records one;
+  model but Daidala neither requires an explicit decision nor records one;
 - an auditor can reconstruct the candidate list but not why the worker applied
   or ignored an individual skill.
 
 The implementation should therefore be adapted. The adjustment is worth doing
-because workflow packs and exact skill provenance are core Wingstaff value, and
+because workflow packs and exact skill provenance are core Daidala value, and
 broad unconditional mappings weaken that value.
 
 The profile-local `pre_llm_call` proposal is not the right production design for
@@ -60,7 +60,7 @@ has the pinned skill documents and receives card and parent context through
 
 ## Design decision
 
-Implement Wingstaff-native, pre-work activation assessment:
+Implement Daidala-native, pre-work activation assessment:
 
 ```text
 Hermes loads orchestrate + all stage candidate skills
@@ -70,7 +70,7 @@ Hermes loads orchestrate + all stage candidate skills
 worker evaluates required + conditional skills against:
 Use When / When NOT / stage policy / available capability
                          |
-          wingstaff_record_skill_activation
+          daidala_record_skill_activation
                          v
 validated immutable activation artifact + ledger reference
                          |
@@ -81,7 +81,7 @@ handoff includes activation artifact digest and active skill names
 
 This is a deterministic gate on *accepting stage evidence*, not a pre-spawn
 filter or a tool-execution sandbox. The worker contract requires assessment before
-applying methodology, but Wingstaff cannot deterministically prevent or timestamp
+applying methodology, but Daidala cannot deterministically prevent or timestamp
 earlier reads, edits, or commands. It does not claim to reduce initial prompt
 size. Pre-spawn filtering is a separate future optimization that would require a
 supported Hermes spawn-transform boundary or progressive creation of each stage
@@ -105,13 +105,13 @@ Allowed values:
 - `required` — pack policy says the skill must be applied in this stage; the
   worker may not demote it;
 - `conditional` — the worker classifies it using the pinned skill's `Use When`,
-  `When NOT to Use`, capability requirements, and Wingstaff stage policy.
+  `When NOT to Use`, capability requirements, and Daidala stage policy.
 
 Do not add a compatibility default. Both bundled packs must declare the field
 explicitly, and pack validation must reject missing or unknown values. The
 project is pre-release and should have one unambiguous schema.
 
-`wingstaff:orchestrate` remains unconditionally required by the engine and is not
+`daidala:orchestrate` remains unconditionally required by the engine and is not
 part of the pack activation decision.
 
 ### Initial bundled-pack mapping
@@ -127,7 +127,7 @@ Use conservative defaults:
   - `verify`: all verification specialists conditional;
   - `review`: code review required; simplification, security, and performance
     conditional;
-  - `deliver`: delivery specialists conditional because Wingstaff records
+  - `deliver`: delivery specialists conditional because Daidala records
     readiness but does not commit, push, migrate, or deploy.
 - AI-DLC: the bundled stage-aware adapter required in every executable stage.
 
@@ -147,17 +147,17 @@ directory already covered by the content digest:
 - loading and capability constraints.
 
 The activation artifact records the worker's matched criteria as quoted or tight
-paraphrases. Wingstaff validates structure and provenance, not semantic truth;
+paraphrases. Daidala validates structure and provenance, not semantic truth;
 judgment remains with the host model.
 
 ## Activation manifest contract
 
 Persist the full immutable `ActivationManifest` as JSON using schema
-`wingstaff.skill-activation/v1`:
+`daidala.skill-activation/v1`:
 
 ```json
 {
-  "schema": "wingstaff.skill-activation/v1",
+  "schema": "daidala.skill-activation/v1",
   "workflow_id": "workflow-123",
   "stage": "implement",
   "plan_revision": 0,
@@ -203,7 +203,7 @@ Category meanings:
 `deferred` conditions are model-authored prose and are not interpreted by the
 engine. If a deferred skill is later applied or its trigger is observed, the
 worker must record a superseding manifest changing that decision to `applicable`
-or `blocked` before submitting stage evidence. Wingstaff enforces the resulting
+or `blocked` before submitting stage evidence. Daidala enforces the resulting
 manifest at the evidence boundary; it does not claim to detect arbitrary prose
 conditions independently.
 
@@ -251,7 +251,7 @@ The deterministic validator must require:
    is turn-isolation state, not Kanban identity. Do not trust a model-supplied
    task ID or board.
 2. Every exact pack-stage skill appears once and only once.
-3. No undeclared or substituted entry appears. `wingstaff:orchestrate` is injected
+3. No undeclared or substituted entry appears. `daidala:orchestrate` is injected
    by the engine rather than declared by the pack, is outside the activation
    decision set, and must never appear as a manifest decision.
 4. Skill digests and activation modes are copied from the ledger and pack;
@@ -307,12 +307,12 @@ boundary; earlier methodology ordering is a worker-contract requirement:
 
 | Stage | Gated operation |
 |---|---|
-| Define | `wingstaff_submit_artifact(stage: "define")` |
-| Plan | `wingstaff_submit_artifact(stage: "plan")` |
-| Implement | `wingstaff_capture_implementation` |
-| Verify | `wingstaff_record_verification` |
-| Review | `wingstaff_submit_artifact(stage: "review")` |
-| Deliver | `wingstaff_deliver` |
+| Define | `daidala_submit_artifact(stage: "define")` |
+| Plan | `daidala_submit_artifact(stage: "plan")` |
+| Implement | `daidala_capture_implementation` |
+| Verify | `daidala_record_verification` |
+| Review | `daidala_submit_artifact(stage: "review")` |
+| Deliver | `daidala_deliver` |
 
 The manifest gate does not mirror Kanban status. When a manifest reports
 `blocked`, the worker contract requires a focused comment and `kanban_block`;
@@ -348,7 +348,7 @@ evidence.
 The user does not directly edit categories or bypass pack-required skills.
 Steering remains durable and reviewable:
 
-1. Inspect the activation artifact through Wingstaff status or its artifact path.
+1. Inspect the activation artifact through Daidala status or its artifact path.
 2. Comment with missing context, a capability correction, or a policy decision.
 3. Reassign the card if a different profile is needed.
 4. Unblock the card.
@@ -360,7 +360,7 @@ judgment.
 
 ## Explicit non-goals
 
-- no `pre_llm_call` shell hook or Python hook bundled by Wingstaff;
+- no `pre_llm_call` shell hook or Python hook bundled by Daidala;
 - no new Hermes hook or Kanban lifecycle hook;
 - no selector cards or extra lifecycle stages;
 - no secondary LLM call, classifier service, or nested `hermes chat` process;
@@ -450,14 +450,14 @@ changing card dispatch.
 
 ### Files
 
-- `wingstaff/packs.py`
-- `wingstaff/packs/addyosmani.yaml`
-- `wingstaff/packs/aidlc.yaml`
-- `wingstaff/tools.py`
+- `daidala/packs.py`
+- `daidala/packs/addyosmani.yaml`
+- `daidala/packs/aidlc.yaml`
+- `daidala/tools.py`
 - `tests/test_packs.py`
 - `tests/test_tools.py`
 - `tests/test_plugin.py`
-- `wingstaff/AGENTS.md`
+- `daidala/AGENTS.md`
 
 ### Steps
 
@@ -466,21 +466,21 @@ changing card dispatch.
    rejection of missing and unknown modes in `_validate_skill`. Keep the
    validator and both YAML updates in one commit so no committed checkpoint has
    an impossible pack schema.
-3. Extend `wingstaff_pack_info` to report each skill's canonical name, provider,
+3. Extend `daidala_pack_info` to report each skill's canonical name, provider,
    digest provenance, and activation mode instead of reducing the response to an
    install-target string.
 4. Add tests for required fields, invalid modes, exact bundled mappings, and
    pack-info JSON.
-5. Update `wingstaff/AGENTS.md` to state that pack entries declare required or
+5. Update `daidala/AGENTS.md` to state that pack entries declare required or
    conditional activation while the engine remains pack-neutral.
 
 ### Gate
 
 ```bash
 pytest tests/test_packs.py tests/test_tools.py
-ruff check wingstaff/packs.py wingstaff/tools.py tests/test_packs.py tests/test_tools.py
-wingstaff packs validate addyosmani
-wingstaff packs validate aidlc
+ruff check daidala/packs.py daidala/tools.py tests/test_packs.py tests/test_tools.py
+daidala packs validate addyosmani
+daidala packs validate aidlc
 ```
 
 Phase 1 gate: GREEN — exact required/conditional mappings were checked against
@@ -508,12 +508,12 @@ gated before the recording tool and worker instructions exist.
 
 ### Files
 
-- `wingstaff/state.py`
-- `wingstaff/workflow.py`
-- `wingstaff/execution.py`
+- `daidala/state.py`
+- `daidala/workflow.py`
+- `daidala/execution.py`
 - `tests/test_workflow.py`
 - `tests/test_execution.py`
-- `wingstaff/AGENTS.md`
+- `daidala/AGENTS.md`
 - `tests/AGENTS.md`
 
 ### Steps
@@ -541,7 +541,7 @@ gated before the recording tool and worker instructions exist.
 
 ```bash
 pytest tests/test_workflow.py tests/test_execution.py
-ruff check wingstaff/state.py wingstaff/workflow.py wingstaff/execution.py tests/test_workflow.py tests/test_execution.py
+ruff check daidala/state.py daidala/workflow.py daidala/execution.py tests/test_workflow.py tests/test_execution.py
 ```
 
 Phase 2 gate: GREEN — strict canonical activation models, exact pack-stage
@@ -562,21 +562,21 @@ feat(policy): persist stage skill activation manifests
 ### Objective
 
 Let the assigned stage worker submit a validated manifest through the normal
-Wingstaff tool boundary.
+Daidala tool boundary.
 
 ### Files
 
-- `wingstaff/schemas.py`
-- `wingstaff/tools.py`
-- `wingstaff/service.py`
-- `wingstaff/__init__.py`
+- `daidala/schemas.py`
+- `daidala/tools.py`
+- `daidala/service.py`
+- `daidala/__init__.py`
 - `tests/test_tools.py`
 - `tests/test_plugin.py`
 - `tests/test_execution.py`
 
 ### Steps
 
-1. Add `wingstaff_record_skill_activation` with bounded nested JSON schema for
+1. Add `daidala_record_skill_activation` with bounded nested JSON schema for
    workflow ID, stage, superseded digest, and decisions.
 2. Preserve handler `args: dict, **kwargs` and JSON-string return behavior.
 3. Read `HERMES_KANBAN_TASK` and `HERMES_KANBAN_BOARD` in the handler and pass
@@ -599,7 +599,7 @@ Wingstaff tool boundary.
 
 ```bash
 pytest tests/test_tools.py tests/test_plugin.py tests/test_execution.py
-ruff check wingstaff/schemas.py wingstaff/tools.py wingstaff/service.py wingstaff/__init__.py tests/test_tools.py tests/test_plugin.py tests/test_execution.py
+ruff check daidala/schemas.py daidala/tools.py daidala/service.py daidala/__init__.py tests/test_tools.py tests/test_plugin.py tests/test_execution.py
 ```
 
 Phase 3 gate: GREEN — 31 focused tests cover strict nested input, host-owned
@@ -626,10 +626,10 @@ carry its digest across worker boundaries.
 
 ### Files
 
-- `wingstaff/workflow.py`
-- `wingstaff/service.py`
-- `wingstaff/AGENTS.md`
-- `wingstaff/skills/orchestrate/SKILL.md`
+- `daidala/workflow.py`
+- `daidala/service.py`
+- `daidala/AGENTS.md`
+- `daidala/skills/orchestrate/SKILL.md`
 - `tests/AGENTS.md`
 - `tests/test_workflow.py`
 - `tests/test_store.py`
@@ -642,13 +642,13 @@ carry its digest across worker boundaries.
 
 1. Change the worker sequence to:
    `kanban_show` → inspect relevant parent artifacts → classify all pack-stage
-   skills → `wingstaff_record_skill_activation` → stage work.
+   skills → `daidala_record_skill_activation` → stage work.
 2. Define the four categories (`applicable`, `deferred`, `not_applicable`, and
    `blocked`), the separate required/conditional activation modes, rank semantics,
    evidence requirements, and blocked behavior in the orchestration skill.
-3. State explicitly that loaded skills are candidates, `wingstaff:orchestrate`
+3. State explicitly that loaded skills are candidates, `daidala:orchestrate`
    is always required, and workers must not discover replacements.
-4. Require every successful `wingstaff.handoff/v1` to include
+4. Require every successful `daidala.handoff/v1` to include
    `skill_activation_digest` and the active skill names.
 5. Require blocked workers to cite the activation digest and blocked skill in the
    Kanban comment and block reason.
@@ -708,7 +708,7 @@ enforcement.
 - `docs/11-skill-usage-and-user-control.md`
 - `docs/README.md`
 - `docs/AGENTS.md`
-- `wingstaff/AGENTS.md`
+- `daidala/AGENTS.md`
 - `tests/AGENTS.md`
 
 ### Steps
@@ -722,7 +722,7 @@ enforcement.
    together: they are all loaded, but only active or triggered deferred guidance
    should be applied.
 5. Keep `pre_llm_call` documented as an advisory context extension, not the
-   Wingstaff gate.
+   Daidala gate.
 6. Add the activation artifact to security and audit-boundary documentation.
 7. Complete the DOX pass and refresh ownership text where policy or verification
    responsibilities changed.
@@ -755,8 +755,8 @@ Run the complete repository gate after all phase commits:
 lefthook validate
 pytest
 ruff check .
-wingstaff packs validate addyosmani
-wingstaff packs validate aidlc
+daidala packs validate addyosmani
+daidala packs validate aidlc
 rm -rf dist build *.egg-info
 python -m build
 python -m twine check dist/*
@@ -821,7 +821,7 @@ verified implementation sequence. Pre-existing operator-document changes in
 
 Revisit pre-spawn filtering only if Hermes exposes a supported fail-closed
 transform that can alter a claimed task's skill list before command construction,
-or if Wingstaff later creates each stage card only after predecessor evidence is
+or if Daidala later creates each stage card only after predecessor evidence is
 available. Any such change must consume the same persisted activation schema and
 must not depend on profile-local hooks.
 

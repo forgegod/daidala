@@ -38,6 +38,8 @@ workflow-pack adapters, and bundled orchestration skills.
   target or a plugin-bundled skill with the same exact name.
 - Every pack skill explicitly declares `required` or `conditional` activation;
   pack adapters own the mapping and the engine remains pack-neutral.
+- Daidala coordinates any pack-defined, skill-backed work; bundled software
+  packs are current adapters, not the engine's product boundary.
 - Skill activation manifests are immutable, exact-pack decision artifacts whose
   pending/finalized ledger references form a linear supersession chain.
 - Every stage evidence operation requires its current activation manifest to be

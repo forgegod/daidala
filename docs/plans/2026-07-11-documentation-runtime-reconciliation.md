@@ -19,7 +19,7 @@
 
 ## Goal
 
-Reconcile Wingstaff's numbered documentation with the implemented activation,
+Reconcile Daidala's numbered documentation with the implemented activation,
 approval, triggering, provenance, and verification contracts found during the
 2026-07-11 audit. Keep the work documentation-only, preserve the current runtime
 boundary, and remove completed implementation plans from normative
@@ -39,9 +39,9 @@ source-of-truth claims.
 
 ## Scope and constraints
 
-- Edit documentation only. Do not modify `wingstaff/`, `tests/`, schemas, packs,
+- Edit documentation only. Do not modify `daidala/`, `tests/`, schemas, packs,
   or runtime behavior.
-- Preserve the distinction between Wingstaff capabilities and Hermes-owned cron
+- Preserve the distinction between Daidala capabilities and Hermes-owned cron
   or webhook composition.
 - Do not introduce current test totals or other time-sensitive counts into
   durable documentation.
@@ -78,8 +78,8 @@ Read-only survey of:
 1. Run `git status --short --branch` and confirm the tree contains only this
    approved plan or is otherwise explicitly accounted for.
 2. Re-read every target section and verify the cited runtime behavior against:
-   `wingstaff/state.py`, `wingstaff/workflow.py`, `wingstaff/service.py`,
-   `wingstaff/tools.py`, and the relevant tests.
+   `daidala/state.py`, `daidala/workflow.py`, `daidala/service.py`,
+   `daidala/tools.py`, and the relevant tests.
 3. Search for sibling copies of each stale phrase or contract so a correction
    does not leave the documentation internally inconsistent.
 4. Record any newly discovered runtime mismatch as a separate finding. Do not
@@ -90,9 +90,9 @@ Read-only survey of:
 ```bash
 python scripts/check_md_links.py .
 pytest
-ruff check wingstaff tests scripts
-wingstaff packs validate addyosmani
-wingstaff packs validate aidlc
+ruff check daidala tests scripts
+daidala packs validate addyosmani
+daidala packs validate aidlc
 ```
 
 ### Stop condition
@@ -114,7 +114,7 @@ Remove factual drift without changing the documented product boundary.
 
 Replace the source-of-truth entry that names "the active Kanban-native
 implementation plan". State that this numbered document owns the contract and
-that `wingstaff/state.py`, `wingstaff/workflow.py`, `wingstaff/store.py`, and the
+that `daidala/state.py`, `daidala/workflow.py`, `daidala/store.py`, and the
 relevant service/Kanban modules implement it.
 
 #### `docs/05-lifecycle-stages.md`
@@ -128,13 +128,13 @@ runtime and test references.
 Replace the ambiguous opening claim that cron is unavailable with wording that
 preserves both boundaries:
 
-> Wingstaff provides no scheduler and no commit or push surface. Hermes cron and
+> Daidala provides no scheduler and no commit or push surface. Hermes cron and
 > webhooks may admit work through the composition documented in
 > [Autonomous triggering](../13-autonomous-triggering.md), which is not yet verified
-> end to end and does not weaken Wingstaff's approval gate.
+> end to end and does not weaken Daidala's approval gate.
 
-Keep commit/push unavailable as a Wingstaff runtime capability. Do not imply that
-Wingstaff owns Hermes scheduling or webhook infrastructure.
+Keep commit/push unavailable as a Daidala runtime capability. Do not imply that
+Daidala owns Hermes scheduling or webhook infrastructure.
 
 #### `docs/12-market-overview.md`
 
@@ -190,7 +190,7 @@ entry points so operators do not have to infer it from lower-level prose.
 Immediately before the stage-contract table, add this contract:
 
 > Every executable stage requires a current, finalized, unblocked skill
-> activation manifest before Wingstaff records its durable handoff. Approval is
+> activation manifest before Daidala records its durable handoff. Approval is
 > the only non-executable card and has no activation manifest.
 
 Update the Approval row to use:
@@ -211,7 +211,7 @@ that no row begins with a doubled `||`.
 After the persisted-manifest validation paragraph, add a concise authorization
 paragraph stating that:
 
-- `wingstaff_record_skill_activation` reads `HERMES_KANBAN_BOARD` and
+- `daidala_record_skill_activation` reads `HERMES_KANBAN_BOARD` and
   `HERMES_KANBAN_TASK` from the dispatcher-owned worker environment;
 - both values must match the workflow ledger's board and current stage card;
 - calls outside the matching Kanban worker fail closed;
@@ -229,11 +229,11 @@ pytest tests/test_tools.py tests/test_workflow.py tests/test_execution.py
 
 Cross-check the final wording against:
 
-- `wingstaff/tools.py::record_skill_activation`
-- `wingstaff/service.py::WorkflowService.record_skill_activation`
-- `wingstaff/state.py::WorkflowLedger.activation_for`
-- `wingstaff/workflow.py::_require_stage_activation`
-- `wingstaff/workflow.py::replace_plan`
+- `daidala/tools.py::record_skill_activation`
+- `daidala/service.py::WorkflowService.record_skill_activation`
+- `daidala/state.py::WorkflowLedger.activation_for`
+- `daidala/workflow.py::_require_stage_activation`
+- `daidala/workflow.py::replace_plan`
 
 ### Proposed commit
 
@@ -246,7 +246,7 @@ prerequisites at the lifecycle entry point, not only in implementation details.
 
 ### Stop condition
 
-Stop if the wording implies that Wingstaff can prove methodology was applied
+Stop if the wording implies that Daidala can prove methodology was applied
 before activation, or if it treats generic Kanban unblock as approval.
 
 ## Phase 3 — align support and verification references
@@ -290,9 +290,9 @@ python scripts/check_md_links.py .
 git diff --check
 git diff --stat
 pytest
-ruff check wingstaff tests scripts
-wingstaff packs validate addyosmani
-wingstaff packs validate aidlc
+ruff check daidala tests scripts
+daidala packs validate addyosmani
+daidala packs validate aidlc
 ```
 
 ### Proposed commit
@@ -335,8 +335,8 @@ The initial candidate is:
 
 The same decision should explicitly include or exclude:
 
-- `docs/plans/2026-07-11-kanban-native-wingstaff-integration.md`
-- `docs/plans/2026-07-10-wingstaff-bootstrap-and-roadmap.md`
+- `docs/plans/2026-07-11-kanban-native-daidala-integration.md`
+- `docs/plans/2026-07-10-daidala-bootstrap-and-roadmap.md`
 
 Do not assume all three plans have the same disposition. Audit each one for
 unique durable contracts before moving, deleting, or condensing it.
@@ -358,7 +358,7 @@ python scripts/check_md_links.py .
 git diff --check
 git diff --stat
 pytest
-ruff check wingstaff tests scripts
+ruff check daidala tests scripts
 ```
 
 Re-run repository searches for old plan paths and historical test-count phrases.
@@ -394,8 +394,8 @@ lefthook validate
 python scripts/check_md_links.py .
 pytest
 ruff check .
-wingstaff packs validate addyosmani
-wingstaff packs validate aidlc
+daidala packs validate addyosmani
+daidala packs validate aidlc
 python -m build
 python -m twine check dist/*
 python scripts/check_release_contents.py . --wheel dist/*.whl
@@ -430,7 +430,7 @@ Phase 4 only if separately approved:
 
 ## Risks and tradeoffs
 
-- Clarifying Hermes cron composition can accidentally imply Wingstaff owns a
+- Clarifying Hermes cron composition can accidentally imply Daidala owns a
   scheduler. The security text must retain the unverified, host-owned boundary.
 - Lifecycle table edits can create malformed Markdown or duplicate detailed
   contracts. Prefer one preamble invariant over another wide column.

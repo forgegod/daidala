@@ -2,7 +2,7 @@
 
 ![Daidala](logo.svg)
 
-Daidala is a Hermes-native AI workshop that moves software work through
+Daidala is a Hermes-native AI workshop that moves skill-backed work through
 interchangeable workflow packs and one explicit human approval gate—without
 introducing a second orchestration server.
 

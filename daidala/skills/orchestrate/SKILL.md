@@ -1,19 +1,19 @@
 ---
 name: orchestrate
-description: Use when running a software-development workflow through Daidala. Enforces pack validation, explicit artifacts, a pre-implementation human gate, and evidence-backed completion.
+description: Use when running a skill-backed workflow through Daidala. Enforces pack validation, explicit artifacts, a pre-implementation human gate, and evidence-backed completion.
 version: 0.2.0
 author: Daidala
 license: MIT
 metadata:
   hermes:
-    tags: [software-development, orchestration, human-in-the-loop]
+    tags: [workflow-orchestration, skills, human-in-the-loop]
 ---
 
 # Daidala Orchestrate
 
 ## Overview
 
-Coordinate a pack-defined software-development lifecycle on Hermes Kanban. This
+Coordinate a pack-defined, skill-backed lifecycle on Hermes Kanban. This
 skill has two entry modes: a launcher explicitly starts or resumes a workflow;
 each dispatcher-spawned stage worker follows the card-scoped worker contract.
 Daidala does not start another server or call nested Hermes processes.

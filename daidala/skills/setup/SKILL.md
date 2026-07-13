@@ -6,7 +6,7 @@ author: Daidala
 license: MIT
 metadata:
   hermes:
-    tags: [software-development, setup, onboarding, human-in-the-loop]
+    tags: [workflow-orchestration, setup, onboarding, human-in-the-loop]
 ---
 
 # Daidala Setup

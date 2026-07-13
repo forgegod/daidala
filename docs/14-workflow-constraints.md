@@ -3,7 +3,7 @@
 > Status: implemented. The artifact and interfaces described here are enforced
 > by the policy ledger, service, tool, and CLI boundaries.
 
-Workflow constraints give one Wingstaff workflow durable user-defined policy
+Workflow constraints give one Daidala workflow durable user-defined policy
 that applies across definition, planning, implementation, verification, review,
 and delivery. They complement the initial goal: the goal says what to accomplish;
 constraints state what must remain true while accomplishing it.
@@ -59,7 +59,7 @@ Constraints may not express:
 
 Methodology belongs in a skill and its workflow-pack mapping. General worker
 behavior belongs in a Hermes profile. Constraint text cannot grant tools,
-credentials, commit/push authority, or exceptions to Wingstaff, Hermes,
+credentials, commit/push authority, or exceptions to Daidala, Hermes,
 repository, pack, or system policy.
 
 The schema rejects executable configuration structurally: fields such as
@@ -67,7 +67,7 @@ The schema rejects executable configuration structurally: fields such as
 `activation` are unknown and invalid. Arbitrary prose cannot be classified
 perfectly without pretending that a semantic judgment is deterministic. A worker
 that encounters methodology-like constraint prose must record a blocked result
-and ask the user to move that content into a skill or pack. Wingstaff can prove
+and ask the user to move that content into a skill or pack. Daidala can prove
 which text and digest governed a run; it cannot prove that arbitrary prose is
 semantically policy-only.
 
@@ -82,10 +82,10 @@ Examples:
 
 ## Constraint artifact
 
-The schema is `wingstaff.workflow-constraints/v1`:
+The schema is `daidala.workflow-constraints/v1`:
 
 ```yaml
-schema: wingstaff.workflow-constraints/v1
+schema: daidala.workflow-constraints/v1
 global:
   - Never commit or push.
   - Do not add production dependencies without explicit approval.
@@ -98,7 +98,7 @@ phases:
       any required operator action.
 ```
 
-The optional `/wingstaff` editor displays the complete current canonical YAML,
+The optional `/daidala` editor displays the complete current canonical YAML,
 revision, digest, provenance, and server limits. Preview uses the same parser and
 digest identity as the service and never mutates. Formatting-only edits are a
 no-op. Semantic replacement requires the displayed current digest and explicit
@@ -125,7 +125,7 @@ order and the parsed scalar content are meaningful; scalar style, indentation,
 and mapping order are not.
 
 The supported Hermes v0.18.2 host preserves a task body through 8,192 characters
-in worker context and visibly truncates larger bodies. Wingstaff therefore also
+in worker context and visibly truncates larger bodies. Daidala therefore also
 rejects any fully rendered card body over 8,192 characters. The smaller
 canonical-content limit leaves room for workflow identity, goal, pack, plan,
 worktree, and worker instructions and remains safe for multibyte text. Oversized
@@ -134,7 +134,7 @@ content is rejected rather than truncated.
 ## Persistence and projection
 
 Each accepted constraint version becomes an immutable workflow-owned artifact.
-The Wingstaff policy ledger stores an append-only reference containing revision,
+The Daidala policy ledger stores an append-only reference containing revision,
 path, digest, and recording time. Historical artifacts are never overwritten.
 A workflow without constraints has explicit null identity and no implied
 defaults.
@@ -151,7 +151,7 @@ Every executable card receives a delimited `Workflow constraints` section with:
 
 Constraints remain separate from the card's pack-stage skill candidate list,
 activation modes, and attention ranks. Successful and blocked handoffs and every
-Wingstaff evidence operation carry the current constraint revision and digest. A
+Daidala evidence operation carry the current constraint revision and digest. A
 worker attached to a stale card cannot submit current evidence.
 
 ## Approval and replacement
@@ -167,7 +167,7 @@ revision:
 
 1. preserves the previous immutable artifact;
 2. invalidates approval and stale activation/evidence eligibility;
-3. removes any Wingstaff-owned implementation worktree through its existing
+3. removes any Daidala-owned implementation worktree through its existing
    ownership guard;
 4. archives obsolete cards through public Hermes operations;
 5. creates a fresh `define -> plan` graph under the new policy revision;
@@ -181,7 +181,7 @@ explicitly.
 ## Reusable sources
 
 Reusable constraint sources use exact installed Hermes policy skills for
-distribution and reuse. Wingstaff:
+distribution and reuse. Daidala:
 
 - requires standard YAML frontmatter followed by exactly one fenced `yaml`
   constraint document and rejects any other body prose or fence;
@@ -192,7 +192,7 @@ distribution and reuse. Wingstaff:
 - keeps that source outside pack methodology activation and ranking;
 - remains operable if the installed source later changes or disappears.
 
-Hermes skills provide reusable distribution. Wingstaff adds workflow
+Hermes skills provide reusable distribution. Daidala adds workflow
 materialization, revision, approval, and evidence binding. The reusable source
 stays outside pack methodology activation and ranking.
 
@@ -212,7 +212,7 @@ methodology:
 4. regenerate and reapprove the current plan-and-constraint tuple.
 
 Generic `hermes kanban unblock` does not resolve the policy conflict or restore
-Wingstaff approval.
+Daidala approval.
 
 ## Security and failure behavior
 
@@ -222,7 +222,7 @@ Wingstaff approval.
 - Materialized workflow artifacts are self-contained and do not require their
   reusable source to remain installed.
 - Ledger invalidation becomes durable before stale host work is cleaned up.
-- Public Hermes Kanban operations are the only card boundary; Wingstaff does not
+- Public Hermes Kanban operations are the only card boundary; Daidala does not
   import host internals or access Kanban SQLite.
 - Constraints cannot weaken existing commit, push, approval, or evidence policy.
 
@@ -230,14 +230,14 @@ Wingstaff approval.
 
 - Concept and usage: this document
 - Executable plan: `docs/plans/2026-07-12-workflow-constraints.md`
-- Artifact and ledger models: `wingstaff/state.py`
-- Deterministic transitions: `wingstaff/workflow.py`
-- Coordination and persistence: `wingstaff/service.py`, `wingstaff/execution.py`
-- Card projection: `wingstaff/kanban.py`
-- Existing skill inventory and digest verification: `wingstaff/skills.py`
-- Reusable-source adapter: `wingstaff/constraints.py` with exact installed-skill
-  verification from `wingstaff/skills.py`
-- Tool and CLI surfaces: `wingstaff/schemas.py`, `wingstaff/tools.py`,
-  `wingstaff/cli.py`
+- Artifact and ledger models: `daidala/state.py`
+- Deterministic transitions: `daidala/workflow.py`
+- Coordination and persistence: `daidala/service.py`, `daidala/execution.py`
+- Card projection: `daidala/kanban.py`
+- Existing skill inventory and digest verification: `daidala/skills.py`
+- Reusable-source adapter: `daidala/constraints.py` with exact installed-skill
+  verification from `daidala/skills.py`
+- Tool and CLI surfaces: `daidala/schemas.py`, `daidala/tools.py`,
+  `daidala/cli.py`
 - Verification: workflow, store, tool, CLI, Kanban, worker-contract, and execution
   tests under `tests/`

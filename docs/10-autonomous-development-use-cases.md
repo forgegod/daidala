@@ -1,18 +1,18 @@
 # 10 — Autonomous development use cases
 
-Wingstaff is useful when a development task should run without continuous human
+Daidala is useful when a development task should run without continuous human
 attention but must not become an unaudited “prompt to production” operation. It
 turns one goal into an approval-gated Hermes Kanban workflow whose workers use a
 selected methodology, exchange durable evidence, and stop when human judgment is
 required.
 
-This guide starts from user situations rather than Wingstaff internals. Use the
+This guide starts from user situations rather than Daidala internals. Use the
 [getting-started guide](00-getting-started.md) for commands and the
 [lifecycle reference](05-lifecycle-stages.md) for the complete stage contract.
 See [Skill usage and user control](11-skill-usage-and-user-control.md) for the
 design behind pack selection, card-scoped skill loading, and handoff.
 
-## Where Wingstaff adds value
+## Where Daidala adds value
 
 A coding agent can edit files and run tests. That alone does not answer the
 operational questions that appear when the user stops watching every tool call:
@@ -26,14 +26,14 @@ operational questions that appear when the user stops watching every tool call:
 - What happens when a worker lacks access, a test fails, or review rejects the
   result?
 
-Wingstaff adds this missing control layer without replacing Hermes:
+Daidala adds this missing control layer without replacing Hermes:
 
 - workflow packs pin the stage-to-skill mapping and skill provenance;
 - workers persist task-specific activation decisions before applying methodology;
 - Hermes Kanban owns assignment, dependencies, execution, comments, retries,
   and recovery;
-- Wingstaff binds approval to the current plan digest;
-- implementation runs in a detached Wingstaff-owned worktree;
+- Daidala binds approval to the current plan digest;
+- implementation runs in a detached Daidala-owned worktree;
 - immutable artifacts connect definition, plan, diff, verification, review,
   and delivery;
 - delivery reports evidence but does not commit, push, merge, or deploy.
@@ -58,7 +58,7 @@ scoped work.
 | Test coverage, documentation, or bounded technical debt | Strong | The expected changed paths and checks are usually reviewable. |
 | Repository research followed by a proposed plan | Strong | Definition and planning can complete without authorizing implementation. |
 | Large refactor inside one repository | Conditional | It needs explicit boundaries, architecture context, and reliable tests. |
-| Security or authentication change | Conditional | Use specialist profiles and independent human review; Wingstaff does not provide a security sandbox. |
+| Security or authentication change | Conditional | Use specialist profiles and independent human review; Daidala does not provide a security sandbox. |
 | Incident response or production repair | Weak | The workflow is intentionally deliberative and has no deployment authority. |
 | Cross-repository migration | Unsupported | A workflow currently owns one target repository and one baseline. |
 | Autonomous release or deployment | Unsupported | Delivery intentionally records `committed: false` and `pushed: false`. |
@@ -85,11 +85,11 @@ Choose a pack when starting the workflow:
   always requires specification while interview and refinement are conditional;
   implementation, verification, and delivery classify their specialist skills
   from the current task and evidence.
-- `aidlc` loads the bundled `wingstaff:aidlc-adapter` at every stage. The card's
+- `aidlc` loads the bundled `daidala:aidlc-adapter` at every stage. The card's
   stage tells the adapter whether to apply AI-DLC inception, planning,
   construction, verification, review, or delivery guidance.
 
-Wingstaff also pins `wingstaff:orchestrate` to every executable card. That skill
+Daidala also pins `daidala:orchestrate` to every executable card. That skill
 supplies the common worker protocol: inspect the card first, work in the assigned
 workspace, record evidence, and finish through Kanban completion or blocking.
 The approval card has no worker skills because it represents a human decision.
@@ -98,7 +98,7 @@ Skills are contextual instructions, not functions called in sequence. Every
 mapped skill is loaded as a candidate. After `kanban_show`, the worker records
 which candidates are applicable, deferred, not applicable, or blocked. Required
 entries must be applicable or blocked; only applicable entries receive contiguous
-attention ranks. Wingstaff validates and persists that decision but cannot prove
+attention ranks. Daidala validates and persists that decision but cannot prove
 which paragraphs influenced the model's reasoning.
 
 ### 2. Let definition and planning run
@@ -106,7 +106,7 @@ which paragraphs influenced the model's reasoning.
 The definition worker receives the goal, repository, selected pack, assigned
 profile, and its exact skill candidates. It records a finalized activation
 manifest before the definition artifact, then completes with a compact
-`wingstaff.handoff/v1` record containing artifact references, activation digest,
+`daidala.handoff/v1` record containing artifact references, activation digest,
 active skill names, and workflow identity.
 
 Completion makes the dependent planning card runnable. Its worker calls
@@ -125,12 +125,12 @@ The user now has a concrete control point. Check that the plan names:
 - documentation and operational effects.
 
 Approve only the digest of the acceptable plan. A generic Kanban unblock does
-not grant Wingstaff approval. This prevents a stale or silently changed plan
+not grant Daidala approval. This prevents a stale or silently changed plan
 from authorizing implementation.
 
 ### 4. Observe implementation without sharing a checkout
 
-After approval, Wingstaff creates one detached worktree at the recorded clean
+After approval, Daidala creates one detached worktree at the recorded clean
 baseline. The implementation worker changes only that worktree and captures:
 
 - a binary-capable diff, including untracked implementation files;
@@ -164,13 +164,13 @@ card body + parent metadata + artifact references
                          v
            inspect pinned skill candidates
                          |
-       wingstaff_record_skill_activation
+       daidala_record_skill_activation
                          v
               stage worker + active skills
                          |
-          Wingstaff artifact/evidence operation
+          Daidala artifact/evidence operation
                          |
-       kanban_complete with wingstaff.handoff/v1
+       kanban_complete with daidala.handoff/v1
                          v
                dependent card becomes ready
 ```
@@ -184,7 +184,7 @@ replacement worker reads that thread and records a superseding manifest before
 continuing.
 
 This design addresses a common multi-agent failure mode: context is lost or
-mutated when one model summarizes work for another. Wingstaff still relies on
+mutated when one model summarizes work for another. Daidala still relies on
 model-authored artifacts, but their paths, digests, revision, workspace, and
 verification evidence are durable and checked at the handoff boundary.
 
@@ -200,7 +200,7 @@ verification evidence are durable and checked at the handoff boundary.
 | Activation correction | Before stage evidence | Human guidance on a blocked or deferred decision; the worker records a superseding manifest rather than editing history. |
 | Reassignment | When another capability or independent reviewer is needed | The profile used for the next run of that card. |
 | Unblock | After fixing a dependency or supplying input | Allows Hermes to retry the same card; it never substitutes for plan approval. |
-| Cancel | At any point | Archives cards and removes only the Wingstaff-owned worktree. |
+| Cancel | At any point | Archives cards and removes only the Daidala-owned worktree. |
 | Pack authoring | Before future workflows | Creates a reusable, validated skill mapping rather than a one-off override. |
 
 There is intentionally no `--stage-skill` option. A workflow cannot silently add,
@@ -214,7 +214,7 @@ experimentation requires authoring or updating a pack.
 A deterministic test failure is not a reason to let the agent loop until it
 finds a convenient green result.
 
-1. The worker records the failed command and output through Wingstaff.
+1. The worker records the failed command and output through Daidala.
 2. It comments with the workflow, stage, evidence references, and required
    decision.
 3. It blocks the card as `needs_input` with a `verification-failed:` reason.
@@ -244,7 +244,7 @@ useful when independence or capability matters more than configuration cost:
 - a review profile that did not author the implementation.
 
 The pack still determines the skills. Profiles determine who interprets them
-and which host capabilities are available. Wingstaff validates that each
+and which host capabilities are available. Daidala validates that each
 assignee profile exists before creating cards, but it does not currently declare
 least-privilege tool or network policy in the pack.
 
@@ -263,7 +263,7 @@ Before delegating larger tasks, make these inputs discoverable and executable:
   from unit tests;
 - explicit ownership and review rules.
 
-This is where Wingstaff's evidence boundary has leverage: it can preserve the
+This is where Daidala's evidence boundary has leverage: it can preserve the
 plan, diff, and command results, but it cannot manufacture missing acceptance
 criteria or a reliable verifier.
 
@@ -286,7 +286,7 @@ Useful measures include:
 - cost per accepted change;
 - percentage of generated scope discarded before integration.
 
-Wingstaff currently records artifacts and evidence needed for several of these
+Daidala currently records artifacts and evidence needed for several of these
 measures, but it does not aggregate operational metrics, token usage, model
 cost, or outcome trends.
 
@@ -300,7 +300,7 @@ and human approval for high-impact actions. GitHub's coding-agent security model
 similarly uses isolated branches, restricted credentials, audit logs, and human
 review before merge.
 
-Wingstaff contributes:
+Daidala contributes:
 
 - exact skill provenance and content checks;
 - clean-baseline enforcement and detached worktrees;
@@ -309,7 +309,7 @@ Wingstaff contributes:
 - no automatic commit, push, merge, or deployment;
 - visible Kanban comments, blocks, assignment, and retries.
 
-Wingstaff does not currently provide a sandbox, network firewall, secret broker,
+Daidala does not currently provide a sandbox, network firewall, secret broker,
 per-stage tool allowlist, prompt-injection filter, signed agent commits, or
 publisher signatures for skill packs. Those controls must come from Hermes,
 the selected profiles, repository tooling, and downstream review policy.
@@ -363,7 +363,7 @@ hidden behind optimistic prose.
 - [OWASP: Excessive Agency](https://genai.owasp.org/llmrisk/llm062025-excessive-agency/) — minimum functionality, permissions, autonomy, complete mediation, and human approval.
 - [METR: 2026 developer-productivity experiment update](https://metr.org/blog/2026-02-24-uplift-update/) — task-selection effects, concurrent-agent measurement problems, and uncertainty around universal speedup claims.
 
-## Wingstaff references
+## Daidala references
 
 - Pack schema and skill providers: [Workflow-pack reference](03-pack-reference.md)
 - Shipped stage mappings: [Pack adapters](09-pack-adapters.md)

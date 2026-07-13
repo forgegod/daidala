@@ -1,15 +1,15 @@
-# Getting started with Wingstaff
+# Getting started with Daidala
 
-This walkthrough starts one Wingstaff workflow from the native Hermes CLI and
-follows it through the digest-bound approval gate. Wingstaff creates the graph;
+This walkthrough starts one Daidala workflow from the native Hermes CLI and
+follows it through the digest-bound approval gate. Daidala creates the graph;
 the Hermes gateway's Kanban dispatcher executes ready cards.
 
-For guided onboarding, load `wingstaff:setup`. It checks the same prerequisites,
-previews the exact `wingstaff_start` request, and requires explicit confirmation
-before mutation. The skill works without the web dashboard; `/wingstaff` is an
+For guided onboarding, load `daidala:setup`. It checks the same prerequisites,
+previews the exact `daidala_start` request, and requires explicit confirmation
+before mutation. The skill works without the web dashboard; `/daidala` is an
 optional visual path when the dashboard extension is installed.
 
-In `/wingstaff`, enter the existing board, absolute repository path, and goal,
+In `/daidala`, enter the existing board, absolute repository path, and goal,
 then select **Preview mutations**. Review the exact request before checking the
 confirmation box; **Start workflow** remains disabled until confirmation.
 Repeating the confirmed request reuses the same workflow and Kanban graph.
@@ -21,18 +21,18 @@ clean local Git repository. Run these commands in the Hermes profile that will
 own the workflow:
 
 ```bash
-hermes plugins install forgegod/hermes-wingstaff --enable
+hermes plugins install forgegod/daidala --enable
 hermes plugins list
-hermes wingstaff doctor --pack aidlc
+hermes daidala doctor --pack aidlc
 ```
 
 `doctor` is read-only. For the Addyosmani pack, preview and then explicitly apply
 its pinned external-skill installation plan:
 
 ```bash
-hermes wingstaff packs install addyosmani
-hermes wingstaff packs install addyosmani --apply
-hermes wingstaff packs check addyosmani
+hermes daidala packs install addyosmani
+hermes daidala packs install addyosmani --apply
+hermes daidala packs check addyosmani
 ```
 
 Every assigned profile must have the plugin and the card's exact skills
@@ -49,13 +49,13 @@ hermes gateway run
 Run `hermes gateway run` in a separate terminal on WSL, Docker, or another
 foreground-oriented environment. On a host with an installed gateway service,
 `hermes gateway start` is the background-service form. The gateway contains the
-Kanban dispatcher that claims ready cards; Wingstaff has no dispatcher loop of
+Kanban dispatcher that claims ready cards; Daidala has no dispatcher loop of
 its own.
 
 ## 3. Start explicitly
 
 ```bash
-hermes wingstaff start /absolute/path/to/repo "Implement the requested change" \
+hermes daidala start /absolute/path/to/repo "Implement the requested change" \
   --board project-board \
   --default-profile default \
   --pack aidlc \
@@ -74,7 +74,7 @@ Inputs:
 - optional `--constraints-file PATH` or `--constraints-skill NAME` with
   `--constraints-skill-digest SHA256`: the initial workflow policy source.
 
-Use `hermes wingstaff replace-constraints WORKFLOW_ID EXPECTED_DIGEST` with the
+Use `hermes daidala replace-constraints WORKFLOW_ID EXPECTED_DIGEST` with the
 same file/skill selectors to create a new policy revision. Pass no positional
 digest only when the workflow currently has no constraints.
 
@@ -85,7 +85,7 @@ subcommand parser receives it. Override individual stages only when needed:
 --stage-profile define=architect --stage-profile review=reviewer
 ```
 
-Observable result: Wingstaff records the clean baseline and creates linked
+Observable result: Daidala records the clean baseline and creates linked
 `define → plan` cards with deterministic idempotency keys. Repeating the same
 start command returns the same workflow and cards.
 
@@ -96,15 +96,15 @@ Use normal Hermes surfaces:
 ```bash
 hermes kanban --board project-board watch
 hermes kanban --board project-board list --json
-hermes wingstaff status first-workflow
+hermes daidala status first-workflow
 ```
 
 The worker first calls `kanban_show`, uses the skills pinned to its card, records
-its artifact through a Wingstaff evidence tool, and completes with structured
-`wingstaff.handoff/v1` metadata. The `plan` card becomes runnable after `define`
+its artifact through a Daidala evidence tool, and completes with structured
+`daidala.handoff/v1` metadata. The `plan` card becomes runnable after `define`
 completes.
 
-After planning, Wingstaff creates an approval card in `blocked` state. No
+After planning, Daidala creates an approval card in `blocked` state. No
 implementation-capable card exists yet.
 
 ## 5. Approve the exact plan
@@ -113,11 +113,11 @@ Read the plan artifact and its 64-character SHA-256 digest. Approve only after
 the plan, risks, scope, and verification criteria are acceptable:
 
 ```bash
-hermes wingstaff approve first-workflow <64-character-plan-digest>
+hermes daidala approve first-workflow <64-character-plan-digest>
 ```
 
 A stale or changed digest fails closed. `hermes kanban unblock` only changes a
-card interaction state and never satisfies Wingstaff approval policy. Successful
+card interaction state and never satisfies Daidala approval policy. Successful
 approval records the exact digest, creates one detached worktree, completes the
 gate, and creates:
 
@@ -127,8 +127,8 @@ implement → verify → review → deliver
 
 ## 6. Follow execution and delivery
 
-All post-gate cards share the Wingstaff-owned worktree. Hermes Kanban owns their
-status, assignment, dependencies, retry history, comments, and runs. Wingstaff
+All post-gate cards share the Daidala-owned worktree. Hermes Kanban owns their
+status, assignment, dependencies, retry history, comments, and runs. Daidala
 owns the captured implementation scope and evidence:
 
 - `implement`: immutable diff and changed-path manifest;
@@ -140,7 +140,7 @@ Inspect a card or combined workflow status with:
 
 ```bash
 hermes kanban --board project-board show <card-id> --json
-hermes wingstaff status first-workflow
+hermes daidala status first-workflow
 ```
 
 Delivery does not commit or push the target repository.
@@ -159,25 +159,25 @@ The dispatcher respawns the card with its thread and persistent workspace.
 Verification and review must not mutate an already captured implementation; code
 changes require a new plan digest and approval revision.
 
-Cancel Wingstaff-owned resources explicitly:
+Cancel Daidala-owned resources explicitly:
 
 ```bash
-hermes wingstaff cancel first-workflow "Superseded by another change"
+hermes daidala cancel first-workflow "Superseded by another change"
 ```
 
-This comments and archives the workflow cards and removes only the Wingstaff-owned
+This comments and archives the workflow cards and removes only the Daidala-owned
 worktree. The policy and artifact ledger remains available for diagnostics.
 
 ## Trigger and runtime boundary
 
-Wingstaff does not create cron jobs. A workflow starts through an explicit
-`hermes wingstaff start` command or an agent call to `wingstaff_start`. Cron may
+Daidala does not create cron jobs. A workflow starts through an explicit
+`hermes daidala start` command or an agent call to `daidala_start`. Cron may
 optionally prompt an agent to perform that same action, but it is external to
-Wingstaff and does not replace the gateway dispatcher.
+Daidala and does not replace the gateway dispatcher.
 
 Hermes issue
 [#34977](https://github.com/NousResearch/hermes-agent/issues/34977) concerns the
-global orchestrator profile used by host goal decomposition. Wingstaff does not
+global orchestrator profile used by host goal decomposition. Daidala does not
 use that routing path: it selects a board, expands a complete explicit
 stage-to-profile map, and creates each card directly. Native and standalone CLI
 processes use documented `hermes kanban` subprocess operations; agent-facing
