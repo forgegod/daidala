@@ -35,7 +35,7 @@ loaded by the controller gateway.
 | Phase | Status | Checkpoint |
 |---|---|---|
 | 1 — Daidala fixture and deterministic foundation | Done | Commit `78c9732`; manifest, constraints, issue form, strict models, fake-adapter records, F01-F18 cases, technical flow, 273 tests, package/release checks, DOX, and post-commit graph review passed 2026-07-13. |
-| 2 — Controller coordination and adapters | Ready for checkpoint | Repository coordination and fake-adapter tests are implemented locally; 286 tests and the complete repository/package gate pass; checkpoint remains uncommitted. |
+| 2 — Controller coordination and adapters | Done | Commits `3d22a84` and `5b375f6`; repository coordination, fake-adapter tests, 286 tests, Ruff, Lefthook, Markdown links, both pack validations, package/release checks, DOX, and post-commit graph rebuild passed 2026-07-13. |
 | 3 — Prerequisite doctor and setup confirmation | Todo | Requires the Phase 2 checkpoint and separate implementation approval; the setup guide remains normative. |
 | 4 — Controller bootstrap and manual evaluation | Todo | Requires a completed Phase 3 report, separate setup approval, and a verified attended target. |
 | 5 — Reconciliation, findings, and pack evaluation | Todo | Requires manual-cycle and replay evidence. |
@@ -485,9 +485,9 @@ approval of this document alone.
 
 ### Phase 2 — Controller coordination and adapters
 
-Execution status: ready for checkpoint. Repository coordination and fake-adapter
-tests are implemented and verified; the checkpoint remains uncommitted. The
-operator checklist is
+Execution status: complete in commits `3d22a84` and `5b375f6`. Repository
+coordination and fake-adapter tests are implemented and verified. The operator
+checklist is
 [`../16-self-improvement-setup.md`](../16-self-improvement-setup.md).
 
 - Finish project admission, immutable manifest snapshots, deterministic
