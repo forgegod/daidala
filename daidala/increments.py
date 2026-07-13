@@ -5,14 +5,17 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
+from fnmatch import fnmatchcase
 from pathlib import Path, PurePosixPath
 from typing import Any
 
 from .errors import PolicyViolationError
 from .projects import (
+    ProjectManifest,
     _as_list,
     _require_digest,
     _require_exact_fields,
@@ -20,7 +23,7 @@ from .projects import (
     _require_slug,
     _require_text,
 )
-from .state import WorkflowStage
+from .state import ActivationCategory, ActivationManifest, WorkflowStage
 
 INCREMENT_SCHEMA = "daidala.increment-manifest/v1"
 MAX_DOCUMENT_BYTES = 1_048_576
@@ -305,6 +308,196 @@ class IncrementManifest:
                 IncrementEntry.from_dict(row)
                 for row in _as_list(raw["entries"], "increment entries")
             ),
+        )
+
+
+@dataclass(frozen=True)
+class IncrementReconciliation:
+    manifest_digest: str
+    repository_paths: tuple[str, ...]
+    artifact_references: tuple[str, ...]
+    activation_digests: tuple[str, ...]
+
+
+def reconcile_increment_manifest(
+    manifest: IncrementManifest,
+    *,
+    project_manifest: ProjectManifest,
+    repository_root: Path,
+    approved_repository_paths: tuple[str, ...],
+    frozen_changed_paths: tuple[str, ...],
+    artifact_ledger: Mapping[str, tuple[str, int]],
+    activation_manifests: tuple[ActivationManifest, ...],
+    expected_pack_identity_digest: str,
+    expected_constraints_digest: str | None,
+) -> IncrementReconciliation:
+    """Reconcile durable documents against immutable policy and observed content."""
+    if not isinstance(manifest, IncrementManifest):
+        raise PolicyViolationError("increment reconciliation manifest is invalid")
+    if not isinstance(project_manifest, ProjectManifest):
+        raise PolicyViolationError("increment reconciliation project manifest is invalid")
+    root = Path(repository_root)
+    if not root.is_absolute() or root != root.resolve() or not root.is_dir():
+        raise PolicyViolationError("increment repository root must be an existing resolved path")
+    _require_digest(expected_pack_identity_digest, "expected pack identity digest")
+    if expected_constraints_digest is not None:
+        _require_digest(expected_constraints_digest, "expected constraints digest")
+    approved = _canonical_path_set(approved_repository_paths, "approved plan paths")
+    changed = _canonical_path_set(frozen_changed_paths, "frozen changed paths")
+    if len(changed) > project_manifest.maximum_changed_files:
+        raise PolicyViolationError("frozen diff exceeds the project changed-file limit")
+    for path in changed:
+        _require_mutable_path(project_manifest, path)
+
+    activations = {
+        hashlib.sha256(row.canonical_bytes()).hexdigest(): row
+        for row in activation_manifests
+    }
+    if len(activations) != len(activation_manifests):
+        raise PolicyViolationError("increment activation manifests contain duplicate identity")
+    repository_paths: list[str] = []
+    artifact_references: list[str] = []
+    used_activations: set[str] = set()
+    for entry in manifest.entries:
+        if entry.project_manifest_digest != project_manifest.digest:
+            raise PolicyViolationError("increment project manifest identity is stale")
+        if entry.pack_identity_digest != expected_pack_identity_digest:
+            raise PolicyViolationError("increment pack identity is stale")
+        if entry.constraints_digest != expected_constraints_digest:
+            raise PolicyViolationError("increment constraints identity is stale")
+        activation = activations.get(entry.activation_manifest_digest)
+        if activation is None:
+            raise PolicyViolationError("increment activation identity is stale or missing")
+        _validate_entry_activation(
+            entry, activation, project_manifest, expected_pack_identity_digest
+        )
+        used_activations.add(entry.activation_manifest_digest)
+
+        if entry.document_class is DocumentClass.REPOSITORY_INCREMENT:
+            path = entry.repository_path or ""
+            if path not in approved:
+                raise PolicyViolationError(
+                    "repository increment is not declared by the approved plan"
+                )
+            if path not in changed:
+                raise PolicyViolationError("repository increment is absent from the frozen diff")
+            _require_mutable_path(project_manifest, path)
+            content = _read_repository_document(root, path)
+            if hashlib.sha256(content).hexdigest() != entry.content_digest:
+                raise PolicyViolationError("repository increment content digest does not match")
+            if len(content) != entry.byte_size:
+                raise PolicyViolationError("repository increment byte size does not match")
+            _require_nearest_dox(root, path, entry.dox_scope or "")
+            repository_paths.append(path)
+        else:
+            reference = entry.artifact_reference or ""
+            ledger_row = artifact_ledger.get(reference)
+            if ledger_row is None:
+                raise PolicyViolationError("increment artifact is missing from the artifact ledger")
+            if ledger_row != (entry.content_digest, entry.byte_size):
+                raise PolicyViolationError("increment artifact ledger identity does not match")
+            artifact_references.append(reference)
+
+    return IncrementReconciliation(
+        manifest_digest=manifest.digest,
+        repository_paths=tuple(sorted(repository_paths)),
+        artifact_references=tuple(sorted(artifact_references)),
+        activation_digests=tuple(sorted(used_activations)),
+    )
+
+
+def _validate_entry_activation(
+    entry: IncrementEntry,
+    activation: ActivationManifest,
+    project_manifest: ProjectManifest,
+    expected_pack_identity_digest: str,
+) -> None:
+    if activation.blocked:
+        raise PolicyViolationError("blocked activation cannot produce an increment document")
+    if (
+        activation.workflow_id != entry.workflow_id
+        or activation.stage is not entry.stage
+        or activation.plan_revision != entry.plan_revision
+        or activation.policy_revision != entry.policy_revision
+        or activation.constraints_digest != entry.constraints_digest
+    ):
+        raise PolicyViolationError("increment activation identity does not match the entry")
+    selected_pack = next(
+        (
+            pack
+            for pack in project_manifest.allowed_packs
+            if pack.name == activation.pack
+            and pack.source_revision == activation.pack_source_revision
+        ),
+        None,
+    )
+    if selected_pack is None:
+        raise PolicyViolationError("increment activation pack is not allowed by the project")
+    selected_digest = hashlib.sha256(
+        json.dumps(
+            selected_pack.to_dict(), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+    ).hexdigest()
+    if selected_digest != expected_pack_identity_digest:
+        raise PolicyViolationError("approved pack identity does not match the activation")
+    applicable = {
+        (decision.name, decision.skill_digest)
+        for decision in activation.decisions
+        if decision.category is ActivationCategory.APPLICABLE
+    }
+    for producer in entry.producers:
+        if (producer.name, producer.content_digest) not in applicable:
+            raise PolicyViolationError(
+                "increment producer is not active in the finalized activation"
+            )
+
+
+def _canonical_path_set(values: tuple[str, ...], label: str) -> set[str]:
+    if not isinstance(values, tuple) or len(values) != len(set(values)):
+        raise PolicyViolationError(f"{label} must be a duplicate-free tuple")
+    for value in values:
+        _require_repository_path(value, label)
+    return set(values)
+
+
+def _require_mutable_path(manifest: ProjectManifest, path: str) -> None:
+    if any(fnmatchcase(path, pattern) for pattern in manifest.protected_paths):
+        raise PolicyViolationError("frozen diff touches a protected project path")
+    if not any(fnmatchcase(path, pattern) for pattern in manifest.mutable_paths):
+        raise PolicyViolationError("frozen diff touches a path outside mutable project policy")
+
+
+def _read_repository_document(root: Path, relative: str) -> bytes:
+    target = root / relative
+    try:
+        resolved = target.resolve(strict=True)
+    except OSError as error:
+        raise PolicyViolationError("repository increment document is missing") from error
+    if not resolved.is_file() or root not in resolved.parents:
+        raise PolicyViolationError("repository increment document escapes its repository")
+    if target.is_symlink():
+        raise PolicyViolationError("repository increment document cannot be a symlink")
+    try:
+        return resolved.read_bytes()
+    except OSError as error:
+        raise PolicyViolationError("repository increment document is unreadable") from error
+
+
+def _require_nearest_dox(root: Path, relative: str, declared_scope: str) -> None:
+    _require_repository_path(declared_scope, "repository increment DOX scope")
+    cursor = (root / relative).parent
+    nearest: Path | None = None
+    while cursor == root or root in cursor.parents:
+        candidate = cursor / "AGENTS.md"
+        if candidate.is_file():
+            nearest = candidate
+            break
+        if cursor == root:
+            break
+        cursor = cursor.parent
+    if nearest is None or nearest.relative_to(root).as_posix() != declared_scope:
+        raise PolicyViolationError(
+            "repository increment does not name its nearest owning DOX scope"
         )
 
 

@@ -23,6 +23,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `credentials.py` | Strict alias-to-environment credential bindings with no secret values or resolver inference. |
 | `prerequisites.py` | Stable self-improvement checklist registry, retained capability evidence, bounded probes, and strict prerequisite reports. |
 | `cycles.py` | Pure self-improvement cycle identity, metric kinds, outcomes, delegation evidence, and lesson-reuse evidence. |
+| `evaluation.py` | Isolation receipts, fresh evaluator homes, isolated candidate environments, immutable metric and lesson-reuse evidence, comparison verdicts, baseline-before-mutation worktrees, cleanup, and quarantine records. |
 | `increments.py` | Strict increment-document classification, producer provenance, canonical manifest, bounds, and digest. |
 | `adapters.py` | Strict normalized intake, finding, notification, claim, and receipt records plus injectable protocols. |
 | `controller.py` | Replay-safe cycle admission, manifest snapshots, deterministic workflow binding, immutable cycle storage, and receipt validation. |
@@ -74,6 +75,24 @@ workflow-pack adapters, and bundled orchestration skills.
   notification authority, or release permissions.
 - Project, registration, cycle, and increment schemas reject unknown fields,
   unbounded content, non-canonical identity, and stale or ambiguous provenance.
+- Evaluation comparison produces `improved`, `equivalent`, `regressed`, or
+  `incomparable` evidence only. It never performs or implies the separately
+  approved terminal retention decision.
+- Numeric repeated metrics declare higher-is-better or lower-is-better
+  direction and a finite variance bound; the evaluator never guesses direction.
+- Candidate evaluators use a fresh profile-local home and an allowlisted
+  environment without controller credentials and require a complete isolation
+  receipt whose digest matches the immutable evaluator identity and registration.
+  Candidate identity must differ from the
+  loaded controller artifact, durable baseline evidence must match cycle, mode,
+  repository revision, limits, controller, and boundary identity before any
+  mutation worktree, clean terminal state removes evaluator homes/worktrees,
+  and dirty or ownership-ambiguous state is quarantined.
+- Controlled lesson-reuse evidence is bounded and compared by exact lesson
+  digest. Its deltas are observational and cannot alone authorize retention.
+- Increment reconciliation recomputes repository content from the frozen diff
+  and requires approved mutable paths, artifact-ledger identity, finalized
+  activation/producer identity, and the nearest owning DOX scope.
 - Adapter code defines strict normalized records and protocols only; concrete
   network implementations remain separately gated. Admission validates all
   external claim and event-specific notification data before workflow dispatch.
@@ -172,7 +191,8 @@ fails locally rather than in production.
 - Add mechanism to Python and subject-matter mappings to `packs/*.yaml`.
 - Keep self-improvement identity and classification models pure. Admission may
   write only immutable profile-local cycle artifacts and call injected host
-  adapters; evaluator and retention side effects remain later gated boundaries.
+  adapters. Evaluator filesystem operations stay registration-bound; live
+  backend execution and retention remain separately gated boundaries.
 - Register bundled skills with `ctx.register_skill`; do not copy them into the user's mutable skill store.
 - `daidala:setup` remains dashboard-independent, previews the exact
   `schemas.py::START` request, and requires explicit confirmation before any

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import re
 from dataclasses import dataclass
 from enum import StrEnum
@@ -45,6 +46,13 @@ class ComparisonOutcome(StrEnum):
     BLOCKED = "blocked"
     INCOMPARABLE = "incomparable"
     NO_CHANGE = "no-change"
+
+
+class ComparisonVerdict(StrEnum):
+    IMPROVED = "improved"
+    EQUIVALENT = "equivalent"
+    REGRESSED = "regressed"
+    INCOMPARABLE = "incomparable"
 
 
 @dataclass(frozen=True)
@@ -137,6 +145,8 @@ class MetricDefinition:
     repetitions: int | None = None
     maximum_failures: int | None = None
     aggregation: str | None = None
+    maximum_variance: float | None = None
+    direction: str | None = None
 
     def __post_init__(self) -> None:
         _require_slug(self.id, "metric ID")
@@ -145,7 +155,13 @@ class MetricDefinition:
         if not isinstance(self.required, bool):
             raise PolicyViolationError("metric required must be a boolean")
         if self.kind is MetricKind.DETERMINISTIC:
-            repeated_values = (self.repetitions, self.maximum_failures, self.aggregation)
+            repeated_values = (
+                self.repetitions,
+                self.maximum_failures,
+                self.aggregation,
+                self.maximum_variance,
+                self.direction,
+            )
             if any(value is not None for value in repeated_values):
                 raise PolicyViolationError("deterministic metrics do not aggregate repeated runs")
             if not self.required:
@@ -159,9 +175,33 @@ class MetricDefinition:
                 )
             if self.aggregation == "all-pass" and self.maximum_failures != 0:
                 raise PolicyViolationError("all-pass metrics cannot allow failures")
+            if self.aggregation == "all-pass" and self.maximum_variance is not None:
+                raise PolicyViolationError("all-pass metrics cannot define numeric variance")
+            if self.aggregation == "all-pass" and self.direction is not None:
+                raise PolicyViolationError("all-pass metrics cannot define numeric direction")
+            if self.aggregation in {"mean", "median"}:
+                if (
+                    isinstance(self.maximum_variance, bool)
+                    or not isinstance(self.maximum_variance, (int, float))
+                    or not math.isfinite(self.maximum_variance)
+                    or self.maximum_variance < 0
+                ):
+                    raise PolicyViolationError(
+                        "mean and median metrics require a finite non-negative maximum variance"
+                    )
+                if self.direction not in {"higher-is-better", "lower-is-better"}:
+                    raise PolicyViolationError(
+                        "mean and median metrics require an explicit comparison direction"
+                    )
         elif any(
             value is not None
-            for value in (self.repetitions, self.maximum_failures, self.aggregation)
+            for value in (
+                self.repetitions,
+                self.maximum_failures,
+                self.aggregation,
+                self.maximum_variance,
+                self.direction,
+            )
         ):
             raise PolicyViolationError("observational metrics cannot define retention thresholds")
 
@@ -173,13 +213,24 @@ class MetricDefinition:
             "repetitions": self.repetitions,
             "maximum_failures": self.maximum_failures,
             "aggregation": self.aggregation,
+            "maximum_variance": self.maximum_variance,
+            "direction": self.direction,
         }
 
     @classmethod
     def from_dict(cls, raw: Any) -> MetricDefinition:
         _require_exact_fields(
             raw,
-            {"id", "kind", "required", "repetitions", "maximum_failures", "aggregation"},
+            {
+                "id",
+                "kind",
+                "required",
+                "repetitions",
+                "maximum_failures",
+                "aggregation",
+                "maximum_variance",
+                "direction",
+            },
             "metric definition",
         )
         try:

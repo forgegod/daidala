@@ -269,11 +269,32 @@ worktree, command, exit-code, artifact, adapter, and metric identities. Raw logs
 are bounded and content-addressed. Credentials, connection strings, profile
 dumps, private board data, and unbounded logs are prohibited.
 
+`daidala/evaluation.py` implements the repository-tested evaluator identity,
+fresh-home, immutable evidence, comparison, baseline-ordering, and quarantine
+contracts. A comparison verdict is only `improved`, `equivalent`, `regressed`,
+or `incomparable`; even `improved` merely makes an `improve` cycle eligible for
+the separate human retention decision. It never records terminal `retained`.
+
+Evaluator workspace creation requires a complete isolation receipt matching the
+registered `restricted-container` and `denied-by-default` boundary; the
+receipt's digest is part of immutable evaluator identity. Durable baseline
+identity binds cycle, mode, repository revision, limits, controller artifact,
+backend, and network before a candidate worktree can exist. Successful clean
+evaluators remove their home and worktree; dirty or uncertain state preserves
+the worktree and moves scratch evidence to quarantine.
+
+Controlled lesson-reuse runs bind the same lesson digest on both sides and
+record bounded deltas for avoided failures, turns, wall time, irrelevant
+matches, and unsafe uses. These deltas remain observational and never grant
+retention authority.
+
 Metric authority is explicit:
 
 - `deterministic`: required exact pass/fail; no retention threshold can weaken it;
 - `repeated`: 2-20 declared repetitions with `all-pass`, `mean`, or `median`
-  aggregation and an explicit maximum failure count; and
+  aggregation, an explicit maximum failure count and variance bound, and an
+  explicit higher-is-better or lower-is-better direction for numeric samples;
+  and
 - `observational`: structured review evidence that cannot alone authorize
   retention.
 
@@ -320,8 +341,10 @@ Phase 1 enforces 1 MiB per document, 256 entries per manifest, canonical entry-I
 ordering, normalized relative paths, recognized media types, and fail-closed
 classification. Ephemeral entries, unknown producer digests, duplicate IDs,
 absolute or escaping paths, and invalid class/disposition combinations fail.
-Phase 4 will reconcile entries against the approved plan, mutable-path policy,
-frozen diff, artifact ledger, and finalized activation manifest.
+`daidala/increments.py` reconciles entries against the approved plan,
+mutable-path policy, frozen diff, observed bytes, artifact ledger, finalized
+activation manifest, active producer digest, and nearest owning `AGENTS.md`.
+Any mismatch blocks retention eligibility.
 
 The immutable manifest path is
 `projects/<project_id>/cycles/<cycle_id>/increment-manifest.json` below the
@@ -366,6 +389,10 @@ profile map; workflow dispatch requires the expected baseline before ledger or
 Kanban mutation. Concrete GitHub body/label/Project handling and gateway
 transport remain blocked on the live prerequisites. The loop never marks its
 generated finding `daidala-si:ready`.
+
+Phase 4 repository coverage uses temporary repositories and fake host
+boundaries. It does not claim that the currently blocked restricted-container,
+attended gateway, credential, or live controller prerequisites have passed.
 
 ## Recovery and reconciliation
 

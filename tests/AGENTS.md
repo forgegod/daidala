@@ -13,6 +13,14 @@ completeness without touching a real Hermes profile.
   reconciliation, and increment tests, including canonical identity, immutable
   snapshots, replay convergence, event-bound receipts, pre-mutation baseline
   checks, bounds, provenance, and fail-closed malformed external-input coverage.
+- Fresh-evaluator tests cover all three cycle modes, candidate/controller
+  separation, isolation receipts, credential-free homes, durable baseline
+  identity and ordering, immutable evidence, deterministic/repeated/
+  observational verdicts, controlled lesson-reuse deltas, graph staleness,
+  clean teardown, dirty-worktree quarantine, and exact blockers.
+- Increment-reconciliation tests bind planned mutable paths, frozen diffs,
+  observed content, artifact and activation identities, producers, and nearest
+  owning DOX scope before retention can become eligible.
 - Fake-context tests for plugin tool and skill registration.
 - Temporary-repository tests for policy services and JSON tool handlers.
 - Fake-inventory tests for exact external-skill prerequisites and host errors.

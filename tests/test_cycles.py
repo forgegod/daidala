@@ -61,6 +61,16 @@ def test_metric_kinds_encode_retention_authority() -> None:
         MetricDefinition("observation", MetricKind.OBSERVATIONAL, False, 3, 0, "mean")
     with pytest.raises(PolicyViolationError, match="cannot allow failures"):
         MetricDefinition("stability", MetricKind.REPEATED, True, 3, 1, "all-pass")
+    with pytest.raises(PolicyViolationError, match="comparison direction"):
+        MetricDefinition(
+            "latency",
+            MetricKind.REPEATED,
+            True,
+            repetitions=3,
+            maximum_failures=0,
+            aggregation="mean",
+            maximum_variance=1.0,
+        )
 
 
 def test_delegation_and_lesson_reuse_evidence_are_bounded_and_round_trip() -> None:

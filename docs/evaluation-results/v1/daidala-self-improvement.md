@@ -2,9 +2,14 @@
 
 ## Record status
 
-Phase 3 implements strict credential bindings, the stable eleven-check
-prerequisite registry, redacted reports, bounded live probes, and native versus
-standalone handler parity. A clean-tree `--live` run produced one blocked report:
+Phase 4 adds repository-tested fresh evaluator homes, immutable metric evidence,
+comparison verdicts and controlled lesson-reuse deltas for all three modes,
+isolation-receipt and candidate/controller separation, identity-bound
+baseline-before-mutation ordering, clean teardown, dirty-state quarantine, and
+increment/DOX reconciliation. Phase 3 implements strict credential bindings,
+the stable eleven-check prerequisite registry, redacted reports, bounded live
+probes, and native versus standalone handler parity. A clean-tree `--live` run
+produced one blocked report:
 only `SI-REPOSITORY` passed because trusted registration, controller plugin,
 board, credential capability records, Project evidence, attended receipt, and
 evaluator receipt do not exist. No setup mutation, GitHub write, container run,
@@ -48,19 +53,19 @@ Repository tests cannot convert a blocked live probe into `pass`.
 | TC-F14-01 | Version comparison | Compare exact supported and candidate Daidala/Hermes identities. | Updating the active runtime. | not-run |
 | TC-F15-01 | Controller isolation | Load candidate artifacts only in a fresh evaluator. | Candidate plugin loading in the persistent controller. | not-run |
 | TC-F16-01 | Reconciliation | Duplicate ticks converge; missing board, dirty worktree, or uncertain claim blocks. | Recreating state from titles or prose. | not-run |
-| TC-F17-01 | Metrics | Required deterministic and repeated thresholds govern retention; missing evidence is `incomparable`. | Retention from observational evidence alone. | not-run |
+| TC-F17-01 | Metrics | Required deterministic and repeated thresholds govern retention eligibility; missing evidence is `incomparable`. | Retention from observational evidence alone. | pass |
 | TC-F18-01 | Producer provenance | Reject unknown skill producers, digest drift, duplicate entry IDs, and stale activation identity. | Worker self-assertion of an unactivated skill. | pass |
 | TC-F18-02 | Document promotion | Reject ephemeral scratch, undeclared repository paths, oversized documents, and invalid dispositions. | Promotion by Kanban comment or file existence. | pass |
-| TC-F18-03 | Retention and DOX | Require planned mutable path, frozen diff, increment manifest, and owning DOX scope before retention. | Treating a workflow artifact as current documentation. | not-run |
+| TC-F18-03 | Retention and DOX | Require planned mutable path, frozen diff, increment manifest, and owning DOX scope before retention. | Treating a workflow artifact as current documentation. | pass |
 
 The deterministic `pass` rows are grounded by the pure and fake-adapter tests in
 `tests/test_projects.py`, `tests/test_registrations.py`, `tests/test_adapters.py`,
 `tests/test_controller.py`, `tests/test_reconciliation.py`,
-`tests/test_credentials.py`, `tests/test_prerequisites.py`, and
-`tests/test_increments.py`. The current repository gate passes 308 tests, Ruff,
-Lefthook validation, both pack validations, Markdown links, build, Twine,
-release-content, and diff checks. Live cycle rows stay `not-run` until their own
-gate.
+`tests/test_credentials.py`, `tests/test_prerequisites.py`,
+`tests/test_evaluation.py`, and `tests/test_increments.py`. The current repository
+gate passes 328 tests, Ruff, Lefthook validation, both pack validations, Markdown
+links, build, Twine, release-content, and diff checks. Live cycle rows stay
+`not-run` until their own gate.
 
 ## Use-case records
 

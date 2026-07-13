@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
@@ -15,8 +17,16 @@ from daidala.increments import (
     RedactionState,
     RetentionDisposition,
     increment_manifest_path,
+    reconcile_increment_manifest,
 )
-from daidala.state import WorkflowStage
+from daidala.packs import SkillActivationMode
+from daidala.projects import parse_project_manifest
+from daidala.state import (
+    ActivationCategory,
+    ActivationDecision,
+    ActivationManifest,
+    WorkflowStage,
+)
 
 NOW = datetime(2026, 7, 13, 12, 0, tzinfo=UTC)
 
@@ -131,3 +141,151 @@ def test_manifest_rejects_duplicate_identity_and_cross_cycle_entry() -> None:
         IncrementManifest(one.cycle_id, one.workflow_id, (one, one))
     with pytest.raises(PolicyViolationError, match="does not match"):
         IncrementManifest("cycle-" + "9" * 64, one.workflow_id, (one,))
+
+
+def activation_manifest() -> ActivationManifest:
+    return ActivationManifest(
+        schema="daidala.skill-activation/v1",
+        workflow_id="workflow-1",
+        stage=WorkflowStage.IMPLEMENT,
+        plan_revision=1,
+        policy_revision=1,
+        constraints_digest="e" * 64,
+        pack="addyosmani",
+        pack_source_revision="7ce442de03ddc1b72480c3b48d55c62880ea2a90",
+        sequence=1,
+        supersedes_digest=None,
+        decisions=(
+            ActivationDecision(
+                name="documentation-and-adrs",
+                skill_digest="1" * 64,
+                activation_mode=SkillActivationMode.CONDITIONAL,
+                category=ActivationCategory.APPLICABLE,
+                rank=1,
+                matched_criteria=("The approved plan declares a document.",),
+                evidence=("The implementation card owns the document.",),
+                rationale="The skill produced the repository increment.",
+                condition=None,
+            ),
+        ),
+    )
+
+
+def pack_identity_digest(project) -> str:
+    pack = next(row for row in project.allowed_packs if row.name == "addyosmani")
+    content = json.dumps(
+        pack.to_dict(), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    ).encode("utf-8")
+    return hashlib.sha256(content).hexdigest()
+
+
+def test_increment_reconciliation_binds_plan_diff_content_activation_and_nearest_dox(
+    tmp_path: Path,
+) -> None:
+    repository = tmp_path / "repository"
+    docs = repository / "docs"
+    docs.mkdir(parents=True)
+    (repository / "AGENTS.md").write_text("# root\n", encoding="utf-8")
+    (docs / "AGENTS.md").write_text("# docs\n", encoding="utf-8")
+    content = b"# Approved architecture\n"
+    (docs / "architecture.md").write_bytes(content)
+    project = parse_project_manifest(
+        (Path(__file__).parents[1] / ".daidala/project.yaml").read_text(encoding="utf-8")
+    )
+    activation = activation_manifest()
+    activation_digest = hashlib.sha256(activation.canonical_bytes()).hexdigest()
+    pack_digest = pack_identity_digest(project)
+    document = entry(
+        repository_path="docs/architecture.md",
+        content_digest=hashlib.sha256(content).hexdigest(),
+        byte_size=len(content),
+        project_manifest_digest=project.digest,
+        pack_identity_digest=pack_digest,
+        activation_manifest_digest=activation_digest,
+        dox_scope="docs/AGENTS.md",
+    )
+    manifest = IncrementManifest(document.cycle_id, document.workflow_id, (document,))
+
+    result = reconcile_increment_manifest(
+        manifest,
+        project_manifest=project,
+        repository_root=repository,
+        approved_repository_paths=("docs/architecture.md",),
+        frozen_changed_paths=("docs/architecture.md",),
+        artifact_ledger={},
+        activation_manifests=(activation,),
+        expected_pack_identity_digest=pack_digest,
+        expected_constraints_digest="e" * 64,
+    )
+
+    assert result.manifest_digest == manifest.digest
+    assert result.repository_paths == ("docs/architecture.md",)
+    assert result.activation_digests == (activation_digest,)
+
+
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        ("undeclared", "approved plan"),
+        ("stale-activation", "activation"),
+        ("duplicate-activation", "duplicate identity"),
+        ("unknown-producer", "not active"),
+        ("wrong-dox", "nearest owning DOX"),
+        ("content-drift", "content digest"),
+    ],
+)
+def test_increment_reconciliation_fails_closed(
+    tmp_path: Path,
+    change: str,
+    message: str,
+) -> None:
+    repository = tmp_path / "repository"
+    docs = repository / "docs"
+    docs.mkdir(parents=True)
+    (repository / "AGENTS.md").write_text("# root\n", encoding="utf-8")
+    (docs / "AGENTS.md").write_text("# docs\n", encoding="utf-8")
+    content = b"# Approved architecture\n"
+    target = docs / "architecture.md"
+    target.write_bytes(content)
+    project = parse_project_manifest(
+        (Path(__file__).parents[1] / ".daidala/project.yaml").read_text(encoding="utf-8")
+    )
+    activation = activation_manifest()
+    activation_digest = hashlib.sha256(activation.canonical_bytes()).hexdigest()
+    pack_digest = pack_identity_digest(project)
+    document = entry(
+        repository_path="docs/architecture.md",
+        content_digest=hashlib.sha256(content).hexdigest(),
+        byte_size=len(content),
+        project_manifest_digest=project.digest,
+        pack_identity_digest=pack_digest,
+        activation_manifest_digest=(
+            "9" * 64 if change == "stale-activation" else activation_digest
+        ),
+        dox_scope=("AGENTS.md" if change == "wrong-dox" else "docs/AGENTS.md"),
+        producers=(
+            ProducerIdentity("unknown-producer", "8" * 64),
+        )
+        if change == "unknown-producer"
+        else (ProducerIdentity("documentation-and-adrs", "1" * 64),),
+    )
+    if change == "content-drift":
+        target.write_text("changed after capture\n", encoding="utf-8")
+    approved = () if change == "undeclared" else ("docs/architecture.md",)
+
+    with pytest.raises(PolicyViolationError, match=message):
+        reconcile_increment_manifest(
+            IncrementManifest(document.cycle_id, document.workflow_id, (document,)),
+            project_manifest=project,
+            repository_root=repository,
+            approved_repository_paths=approved,
+            frozen_changed_paths=("docs/architecture.md",),
+            artifact_ledger={},
+            activation_manifests=(
+                (activation, activation)
+                if change == "duplicate-activation"
+                else (activation,)
+            ),
+            expected_pack_identity_digest=pack_digest,
+            expected_constraints_digest="e" * 64,
+        )

@@ -55,5 +55,6 @@ def test_stable_case_matrix_materializes_every_f01_through_f18_area() -> None:
     }
 
     assert areas == set(range(1, 19))
-    assert "No live controller" in result
+    assert "No setup mutation" in result
+    assert "not evidence that the loop works end to end" in result
     assert "Status: `not-run`" in result
