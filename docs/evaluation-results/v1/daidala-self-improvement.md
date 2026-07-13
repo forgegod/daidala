@@ -90,7 +90,8 @@ and any later promotion remain human decisions.
 
 - Project: `forgegod-daidala`.
 - Committed manifest path: `.daidala/project.yaml`.
-- Implementation checkpoint: `31e043be49f19a8f69cfb5eb630fb5b1257abc00`.
+- Phase 3 implementation checkpoint: `31e043be49f19a8f69cfb5eb630fb5b1257abc00`.
+- Phase 4 implementation checkpoint: `cba9c52`.
 - The redacted prerequisite report is
   [`prerequisite-report-d4e1b3a3498507f9f9c069fc16beb4c81d4eb7c65943d82c5bf96f38497bcc3e.json`](prerequisite-report-d4e1b3a3498507f9f9c069fc16beb4c81d4eb7c65943d82c5bf96f38497bcc3e.json),
   exits `2`, has SHA-256
