@@ -71,6 +71,10 @@ def test_manifest_tool_inventory_matches_runtime_registration() -> None:
         (Path(__file__).parents[1] / "plugin.yaml").read_text(encoding="utf-8")
     )
 
+    assert manifest["description"] == (
+        "Hermes-native AI workshop for crafted, human-approved work through "
+        "specialist agents and skills."
+    )
     assert manifest["provides_tools"] == [tool["name"] for tool in ctx.tools]
 
 
