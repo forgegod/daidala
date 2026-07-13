@@ -178,28 +178,29 @@ operator installation method.
 ## Installation CLI boundary
 
 On Hermes v0.18.2, `hermes plugins install` accepts a Git URL or `owner/repo`
-identifier. It does not accept a local directory or wheel. The target public
-installation command after the authorized destination push is:
+identifier. It does not accept a local directory or wheel. The verified public
+installation command is:
 
 ```bash
 hermes plugins install forgegod/daidala --enable
 ```
 
-Phase 6 must exercise this exact command in a fresh `HERMES_HOME`, then use a
+Phase 7 exercised this exact command in a fresh `HERMES_HOME`, then used a
 separate Hermes process to confirm that the plugin is enabled without errors,
-registers `daidala_pack_info`, and loads `daidala:orchestrate` before public Git
-installation is marked verified.
+registers all 12 tools, loads all three bundled skills, exposes the native CLI
+and dashboard manifest, validates both packs, and creates only the Daidala
+runtime root. A desktop and narrow browser pass exercised the untouched public
+clone on the pinned host.
 
 ## Compatibility limits
 
 | Hermes host | Directory plugin | Python entry point | Public Git install | Native CLI | Kanban restart/idempotency | Status |
 |---|---|---|---|---|---|---|
-| v0.18.2 (`2026.7.7.2`, `4281151a`) | Passed | Passed | Pending Phase 6 | Passed | Passed | Supported locally; publication pending |
+| v0.18.2 (`2026.7.7.2`, `4281151a`) | Passed | Passed | Passed | Passed | Passed | Supported through public Git installation |
 | Other versions | Not probed | Not probed | Not probed | Not probed | Not probed | Unsupported until the full matrix passes |
 
 - Hermes v0.18.2 is the only verified host version.
-- Directory and entry-point installation are verified; public remote Git
-  installation remains pending the Phase 6 destination push and fresh probe.
+- Directory, entry-point, and public remote Git installation are verified.
 - Plugin registration, approval-gated Kanban graph mapping, policy-ledger persistence,
   exact-skill and pinned-content gates, fresh worktrees, artifact capture,
   verification evidence, review, uncommitted delivery, shared native/standalone

@@ -1,6 +1,6 @@
 # Daidala brand cutover implementation plan
 
-> Status: **Approved for phase-gated execution. Phases 0–6 are complete; external Phase 7 requires separate approval.**
+> Status: **Phases 0–6 and the authorized Phase 7 GitHub cutover are complete. GitHub social-preview upload and TestPyPI/tag publication remain deferred.**
 >
 > This is a hard public rename. Do not add compatibility packages, import shims,
 > CLI aliases, tool aliases, skill aliases, schema fallbacks, or data migration.
@@ -551,9 +551,18 @@ tracked repository contains zero old-brand names or paths.
 
 ## Phase 7 — Populate the Daidala repository
 
-Creating the empty public destination repository is complete. Changing remotes,
-pushing source, repository metadata changes, tags, and publication remain
-external side effects and require separate explicit approval.
+**Status: GitHub cutover and public installation done; social preview and
+publication deferred.** `main` is published at `forgegod/daidala`, the former
+repository is preserved unchanged as the `legacy` remote, and `origin` tracks
+the new public repository. GitHub description, topics, and
+`https://daidala.work` are verified. A fresh public Git installation on pinned
+Hermes v0.18.2 exposes the native CLI, 12 tools, three bundled skills, both
+packs, the dashboard manifest, and the new runtime root. Desktop and narrow
+browser checks against untouched public bytes pass after fixing concurrent
+first-request service initialization. GitHub social-preview upload remains an
+operator-only follow-up because the dedicated debug browser has no
+authenticated settings session. Tagging and TestPyPI publication remain
+separately gated and were not authorized.
 
 ### Steps
 
