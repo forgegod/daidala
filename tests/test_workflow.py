@@ -40,8 +40,8 @@ PROFILES = tuple(
     for stage in WorkflowStage
     if stage is not WorkflowStage.APPROVAL
 )
-TARGET = "/tmp/wingstaff-target"
-WORKTREE = "/tmp/wingstaff-worktrees/workflow-1"
+TARGET = "/tmp/daidala-target"
+WORKTREE = "/tmp/daidala-worktrees/workflow-1"
 ACTIVATION_DIGEST = "b" * 64
 
 
@@ -94,7 +94,7 @@ def activation_manifest(
     category: ActivationCategory = ActivationCategory.APPLICABLE,
 ) -> ActivationManifest:
     return ActivationManifest(
-        schema="wingstaff.skill-activation/v1",
+        schema="daidala.skill-activation/v1",
         workflow_id="workflow-1",
         stage=stage,
         plan_revision=revision,
@@ -121,7 +121,7 @@ def activation_manifest(
 def make_ledger() -> WorkflowLedger:
     return new_workflow(
         workflow_id="workflow-1",
-        board_slug="wingstaff-test",
+        board_slug="daidala-test",
         target_repository=TARGET,
         baseline_commit="abcdef123456",
         requested_goal="Fix the deliberately failing test",
@@ -196,7 +196,7 @@ def test_new_ledger_contains_policy_facts_but_no_operational_status() -> None:
     ledger = make_ledger()
     payload = ledger.to_dict()
 
-    assert ledger.board_slug == "wingstaff-test"
+    assert ledger.board_slug == "daidala-test"
     assert ledger.baseline_commit == "abcdef123456"
     assert ledger.plan_revision == 0
     assert ledger.committed is ledger.pushed is False
@@ -218,7 +218,7 @@ def test_serialization_round_trip_preserves_complete_ledger() -> None:
         make_planned(),
         stage=WorkflowStage.APPROVAL,
         task_id="t_approval",
-        idempotency_key="wingstaff:workflow-1:0:0:none:approval",
+        idempotency_key="daidala:workflow-1:0:0:none:approval",
         recorded_at=NOW + timedelta(minutes=3),
     )
 
@@ -229,10 +229,10 @@ def test_constraint_recording_is_idempotent_and_invalidates_approval() -> None:
     from daidala.constraints import parse_workflow_constraints
 
     constraints = parse_workflow_constraints(
-        "schema: wingstaff.workflow-constraints/v1\nglobal: [Never commit.]\n"
+        "schema: daidala.workflow-constraints/v1\nglobal: [Never commit.]\n"
     )
     artifact = WorkflowConstraintsArtifact(
-        "wingstaff.workflow-constraints-artifact/v1",
+        "daidala.workflow-constraints-artifact/v1",
         "workflow-1",
         WorkflowConstraintsIdentity(1, 1, constraints.digest),
         constraints.canonical_bytes().decode(),
@@ -301,7 +301,7 @@ def test_card_mapping_is_idempotent_and_rejects_conflicts() -> None:
         planned,
         stage=WorkflowStage.APPROVAL,
         task_id="t_approval",
-        idempotency_key="wingstaff:workflow-1:0:0:none:approval",
+        idempotency_key="daidala:workflow-1:0:0:none:approval",
         recorded_at=NOW + timedelta(minutes=3),
     )
     assert (
@@ -309,7 +309,7 @@ def test_card_mapping_is_idempotent_and_rejects_conflicts() -> None:
             recorded,
             stage=WorkflowStage.APPROVAL,
             task_id="t_approval",
-            idempotency_key="wingstaff:workflow-1:0:0:none:approval",
+            idempotency_key="daidala:workflow-1:0:0:none:approval",
             recorded_at=NOW + timedelta(minutes=3),
         )
         is recorded
@@ -319,7 +319,7 @@ def test_card_mapping_is_idempotent_and_rejects_conflicts() -> None:
             recorded,
             stage=WorkflowStage.APPROVAL,
             task_id="t_other",
-            idempotency_key="wingstaff:workflow-1:0:0:none:approval",
+            idempotency_key="daidala:workflow-1:0:0:none:approval",
             recorded_at=NOW + timedelta(minutes=4),
         )
     with pytest.raises(PolicyViolationError, match="idempotency key"):
@@ -327,7 +327,7 @@ def test_card_mapping_is_idempotent_and_rejects_conflicts() -> None:
             planned,
             stage=WorkflowStage.APPROVAL,
             task_id="t_bad",
-            idempotency_key="wingstaff:workflow-1:approval",
+            idempotency_key="daidala:workflow-1:approval",
             recorded_at=NOW + timedelta(minutes=3),
         )
 

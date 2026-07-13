@@ -1,8 +1,8 @@
-"""Wingstaff policy-ledger errors."""
+"""Daidala policy-ledger errors."""
 
 
 class WorkflowError(ValueError):
-    """Base class for deterministic Wingstaff policy failures."""
+    """Base class for deterministic Daidala policy failures."""
 
 
 class PolicyViolationError(WorkflowError):

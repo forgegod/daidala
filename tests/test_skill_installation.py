@@ -215,7 +215,7 @@ def test_revision_error_is_actionable() -> None:
 
     with pytest.raises(
         SkillRevisionError,
-        match="wingstaff packs update-plan addyosmani",
+        match="daidala packs update-plan addyosmani",
     ):
         from daidala.skills import require_pack_skill_revisions
 

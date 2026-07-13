@@ -26,13 +26,13 @@ PROFILES = tuple(
     for stage in WorkflowStage
     if stage is not WorkflowStage.APPROVAL
 )
-TARGET = "/tmp/wingstaff-store-target"
+TARGET = "/tmp/daidala-store-target"
 
 
 def make_ledger(workflow_id: str = "workflow-1") -> WorkflowLedger:
     return new_workflow(
         workflow_id=workflow_id,
-        board_slug="wingstaff-test",
+        board_slug="daidala-test",
         target_repository=TARGET,
         baseline_commit="deadbeef",
         requested_goal="Fix the failing test",
@@ -83,7 +83,7 @@ def make_planned() -> WorkflowLedger:
 
 @pytest.fixture
 def data_root(tmp_path: Path) -> Path:
-    return tmp_path / "wingstaff-data"
+    return tmp_path / "daidala-data"
 
 
 def test_store_creates_fresh_policy_ledger_schema(data_root: Path) -> None:
@@ -141,7 +141,7 @@ def test_duplicate_unknown_and_corrupt_rows_fail_closed(data_root: Path) -> None
             """,
             (
                 "workflow-bad",
-                "wingstaff-test",
+                "daidala-test",
                 "addyosmani",
                 NOW.isoformat(),
                 NOW.isoformat(),
@@ -165,7 +165,7 @@ def test_restart_recovers_policy_facts_without_operational_status(data_root: Pat
 
     assert recovered == approved
     assert recovered.approval is not None
-    assert recovered.board_slug == "wingstaff-test"
+    assert recovered.board_slug == "daidala-test"
     assert "status" not in recovered.to_dict()
 
 

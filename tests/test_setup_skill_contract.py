@@ -46,9 +46,9 @@ def test_setup_skill_requires_preview_and_explicit_confirmation_before_start() -
 
     preview = instructions.index("Build and display the exact request")
     confirmation = instructions.index("explicitly confirm that exact preview")
-    start = instructions.index("call `wingstaff_start` exactly once")
+    start = instructions.index("call `daidala_start` exactly once")
     assert preview < confirmation < start
-    assert "A general request to\n   configure Wingstaff is not confirmation" in instructions
+    assert "A general request to\n   configure Daidala is not confirmation" in instructions
     assert "If the preview changes" in instructions
 
 
@@ -59,6 +59,6 @@ def test_setup_skill_keeps_dashboard_and_non_dashboard_requests_identical() -> N
     assert "its\n   absence never changes the request or blocks setup" in instructions
     assert "Do not add\naliases" in instructions
     assert (
-        "Setup prepares and starts; `wingstaff:orchestrate` remains the\nworker contract"
+        "Setup prepares and starts; `daidala:orchestrate` remains the\nworker contract"
         in instructions
     )

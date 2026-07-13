@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Probe Wingstaff's supported Hermes compatibility boundary in isolation."""
+"""Probe Daidala's supported Hermes compatibility boundary in isolation."""
 
 from __future__ import annotations
 
@@ -85,7 +85,7 @@ def exercise(root: Path, hermes: str) -> dict[str, Any]:
     skill.mkdir(parents=True)
     markdown = (
         "---\nname: policy-probe\ndescription: Compatibility probe policy.\n---\n"
-        "```yaml\nschema: wingstaff.workflow-constraints/v1\nglobal:\n"
+        "```yaml\nschema: daidala.workflow-constraints/v1\nglobal:\n"
         "  - Never push.\n```\n"
     )
     (skill / "SKILL.md").write_text(markdown, encoding="utf-8")
@@ -104,12 +104,12 @@ def exercise(root: Path, hermes: str) -> dict[str, Any]:
     if digest is None:
         raise ProbeError("policy skill registry did not resolve the exact installed name")
     if digest != hash_skill_directory(skill):
-        raise ProbeError("policy skill registry digest disagrees with Wingstaff directory hashing")
+        raise ProbeError("policy skill registry digest disagrees with Daidala directory hashing")
     if len(digest) != 64:
         raise ProbeError("policy skill directory digest is not SHA-256")
 
-    board = "wingstaff-compatibility"
-    run([hermes, "kanban", "boards", "create", board, "--name", "Wingstaff compatibility"], env=env)
+    board = "daidala-compatibility"
+    run([hermes, "kanban", "boards", "create", board, "--name", "Daidala compatibility"], env=env)
     run([hermes, "kanban", "--board", board, "init"], env=env)
 
     parent = create_task(hermes, board, "compat-parent", "parent", env=env)
@@ -157,7 +157,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--hermes", default="hermes", help="Hermes executable to probe")
     parser.add_argument("--keep-temp", action="store_true", help="Keep the isolated probe root")
     args = parser.parse_args(argv)
-    root = Path(tempfile.mkdtemp(prefix="wingstaff-hermes-compat-"))
+    root = Path(tempfile.mkdtemp(prefix="daidala-hermes-compat-"))
     try:
         result = exercise(root, args.hermes)
         if args.keep_temp:

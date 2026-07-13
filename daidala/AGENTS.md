@@ -52,13 +52,13 @@ workflow-pack adapters, and bundled orchestration skills.
 - Constraint file and exact policy-skill inputs converge on the shared service
   path. Policy skills require a verified complete-directory digest and exactly
   one fenced `yaml` constraint document after frontmatter.
-- Hermes Kanban owns every operational status; Wingstaff persists no mirrored
+- Hermes Kanban owns every operational status; Daidala persists no mirrored
   ready, running, blocked, done, or archived field.
 - Dashboard reads live Kanban state through documented `hermes kanban` commands;
   unavailable host state is labeled and never replaced by cached status.
 - Agent-facing Kanban integration uses `ctx.dispatch_tool`; native and standalone
   CLI handlers translate the same narrow adapter boundary into documented
-  `hermes kanban` subprocess commands. Wingstaff never imports or writes Hermes'
+  `hermes kanban` subprocess commands. Daidala never imports or writes Hermes'
   Kanban database.
 - Native `start` uses `--default-profile`; `--profile` is reserved and consumed
   by the Hermes host before plugin subcommand parsing.
@@ -108,10 +108,10 @@ The verification gate does not catch doc drift against the live schema; only
 `ruff check daidala tests` and `daidala packs validate <pack>` run.
 Add a unit test or schema assertion whenever feasible so the next rename
 fails locally rather than in production.
-- Every executable card pins `wingstaff:orchestrate` plus its exact pack-stage
+- Every executable card pins `daidala:orchestrate` plus its exact pack-stage
   skills, so worker lifecycle instructions survive launcher-session exit.
 - External card skills retain their exact unqualified names; plugin-bundled card
-  skills use the `wingstaff:<name>` namespace required by Hermes skill loading.
+  skills use the `daidala:<name>` namespace required by Hermes skill loading.
 - Card IDs and idempotency keys are persisted as policy facts; live card status is read from Kanban and never mirrored.
 - Card references and skill-activation manifests bind the current policy revision
   and constraint digest. Card references also persist the named board and
@@ -133,7 +133,7 @@ fails locally rather than in production.
 - The policy store uses one fresh schema and does not inspect or migrate the
   unreleased workflow-state database.
 - The engine never substitutes guessed data when a model, skill, or verifier fails.
-- Delivery and operator cancellation remove only their Wingstaff-owned detached
+- Delivery and operator cancellation remove only their Daidala-owned detached
   worktree; captured artifacts remain durable.
 - No server, listening socket, or nested Hermes process is part of this package.
 
@@ -141,7 +141,7 @@ fails locally rather than in production.
 
 - Add mechanism to Python and subject-matter mappings to `packs/*.yaml`.
 - Register bundled skills with `ctx.register_skill`; do not copy them into the user's mutable skill store.
-- `wingstaff:setup` remains dashboard-independent, previews the exact
+- `daidala:setup` remains dashboard-independent, previews the exact
   `schemas.py::START` request, and requires explicit confirmation before any
   setup mutation or workflow start.
 - Keep third-party attribution and license text beside derived bundled adapters.

@@ -18,7 +18,7 @@ from daidala.state import (
 
 NOW = datetime(2026, 7, 12, 12, 0, tzinfo=UTC)
 VALID = """\
-schema: wingstaff.workflow-constraints/v1
+schema: daidala.workflow-constraints/v1
 global:
   - Never commit or push.
   - "Do not add dependencies without approval."
@@ -67,7 +67,7 @@ def test_policy_skill_rejects_any_body_other_than_one_yaml_fence(body: str) -> N
 def test_plain_quoted_literal_and_folded_scalars_canonicalize() -> None:
     constraints = parse_workflow_constraints(
         """\
-schema: wingstaff.workflow-constraints/v1
+schema: daidala.workflow-constraints/v1
 global:
   - Plain policy.
   - "Quoted policy."
@@ -95,7 +95,7 @@ phases:
         '{"global":["Plain policy.","Quoted policy.",'
         '"First line.\\nSecond line."],"phases":{"verify":'
         '["Folded policy stays one line."]},'
-        '"schema":"wingstaff.workflow-constraints/v1"}'
+        '"schema":"daidala.workflow-constraints/v1"}'
     )
 
 
@@ -107,7 +107,7 @@ phases:
   deliver: ["Documentation must match changed contracts.\\nDescribe required operator action."]
   review: [Unresolved critical findings block delivery.]
 global: [Never commit or push., Do not add dependencies without approval.]
-schema: wingstaff.workflow-constraints/v1
+schema: daidala.workflow-constraints/v1
 """
     )
 
@@ -115,26 +115,34 @@ schema: wingstaff.workflow-constraints/v1
     assert second.digest == first.digest
 
 
+def test_legacy_constraint_schema_is_rejected() -> None:
+    legacy = "wing" + "staff"
+    with pytest.raises(PolicyViolationError, match="constraint schema"):
+        parse_workflow_constraints(
+            f"schema: {legacy}.workflow-constraints/v1\nglobal: [Never push.]\n"
+        )
+
+
 @pytest.mark.parametrize(
     ("content", "message"),
     [
         (
-            "schema: wingstaff.workflow-constraints/v1\n"
+            "schema: daidala.workflow-constraints/v1\n"
             "global: [ok]\nglobal: [again]\n",
             "duplicate key",
         ),
-        ("schema: wingstaff.workflow-constraints/v1\nglobal: &rows [ok]\n", "anchors"),
-        ("schema: wingstaff.workflow-constraints/v1\nglobal: [!!str ok]\n", "tags"),
-        ("schema: wingstaff.workflow-constraints/v1\nglobal: [ok]\nextra: true\n", "unknown"),
+        ("schema: daidala.workflow-constraints/v1\nglobal: &rows [ok]\n", "anchors"),
+        ("schema: daidala.workflow-constraints/v1\nglobal: [!!str ok]\n", "tags"),
+        ("schema: daidala.workflow-constraints/v1\nglobal: [ok]\nextra: true\n", "unknown"),
         ("schema: wrong\nglobal: [ok]\n", "schema"),
-        ("schema: wingstaff.workflow-constraints/v1\nglobal: []\n", "1-16"),
-        ("schema: wingstaff.workflow-constraints/v1\nglobal: [true]\n", "non-empty strings"),
+        ("schema: daidala.workflow-constraints/v1\nglobal: []\n", "1-16"),
+        ("schema: daidala.workflow-constraints/v1\nglobal: [true]\n", "non-empty strings"),
         (
-            "schema: wingstaff.workflow-constraints/v1\nglobal: [ok]\nphases:\n  approval: [no]\n",
+            "schema: daidala.workflow-constraints/v1\nglobal: [ok]\nphases:\n  approval: [no]\n",
             "not an executable",
         ),
         (
-            "schema: wingstaff.workflow-constraints/v1\nglobal: [ok]\nphases:\n  build: [no]\n",
+            "schema: daidala.workflow-constraints/v1\nglobal: [ok]\nphases:\n  build: [no]\n",
             "unknown constraint phase",
         ),
     ],
@@ -147,13 +155,13 @@ def test_invalid_yaml_structures_fail_closed(content: str, message: str) -> None
 def test_alias_merge_and_control_characters_fail_closed() -> None:
     with pytest.raises(PolicyViolationError, match="anchors, aliases"):
         parse_workflow_constraints(
-            "schema: wingstaff.workflow-constraints/v1\n"
+            "schema: daidala.workflow-constraints/v1\n"
             "global: &rows [ok]\n"
             "phases: {review: *rows}\n"
         )
     with pytest.raises(PolicyViolationError, match="control characters"):
         parse_workflow_constraints(
-            "schema: wingstaff.workflow-constraints/v1\nglobal: [bad\x07value]\n"
+            "schema: daidala.workflow-constraints/v1\nglobal: [bad\x07value]\n"
         )
 
 
@@ -161,13 +169,13 @@ def test_item_and_canonical_utf8_bounds_fail_closed() -> None:
     oversized_item = "é" * 513
     with pytest.raises(PolicyViolationError, match="1024 UTF-8 bytes"):
         parse_workflow_constraints(
-            f"schema: wingstaff.workflow-constraints/v1\nglobal: [{oversized_item!r}]\n"
+            f"schema: daidala.workflow-constraints/v1\nglobal: [{oversized_item!r}]\n"
         )
 
     rows = "\n".join(f"  - {'x' * 250}{index}" for index in range(16))
     with pytest.raises(PolicyViolationError, match="4096 UTF-8 bytes"):
         parse_workflow_constraints(
-            f"schema: wingstaff.workflow-constraints/v1\nglobal:\n{rows}\n"
+            f"schema: daidala.workflow-constraints/v1\nglobal:\n{rows}\n"
         )
 
 
@@ -180,7 +188,7 @@ def test_artifact_identity_provenance_and_reference_are_strict_and_immutable() -
     )
     source = ConstraintSourceProvenance(name="release-policy", digest="a" * 64)
     artifact = WorkflowConstraintsArtifact(
-        schema="wingstaff.workflow-constraints-artifact/v1",
+        schema="daidala.workflow-constraints-artifact/v1",
         workflow_id="workflow-1",
         identity=identity,
         canonical_content=constraints.canonical_bytes().decode(),
@@ -206,14 +214,14 @@ def test_artifact_rejects_noncanonical_or_mismatched_content() -> None:
 
     with pytest.raises(PolicyViolationError, match="canonical JSON"):
         WorkflowConstraintsArtifact(
-            "wingstaff.workflow-constraints-artifact/v1",
+            "daidala.workflow-constraints-artifact/v1",
             "workflow-1",
             identity,
             json.dumps(constraints.to_dict(), ensure_ascii=False),
         )
     with pytest.raises(PolicyViolationError, match="digest does not match"):
         WorkflowConstraintsArtifact(
-            "wingstaff.workflow-constraints-artifact/v1",
+            "daidala.workflow-constraints-artifact/v1",
             "workflow-1",
             WorkflowConstraintsIdentity(1, 1, "b" * 64),
             constraints.canonical_bytes().decode(),

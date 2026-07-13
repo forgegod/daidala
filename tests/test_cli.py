@@ -27,7 +27,7 @@ class FakeState:
     workflow_id: str = "wf-1"
 
     def to_dict(self) -> dict[str, str]:
-        return {"workflow_id": self.workflow_id, "board_slug": "wingstaff-test"}
+        return {"workflow_id": self.workflow_id, "board_slug": "daidala-test"}
 
 
 @dataclass
@@ -68,7 +68,7 @@ class FakeService:
 
 
 def _host_args(argv: list[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="hermes wingstaff")
+    parser = argparse.ArgumentParser(prog="hermes daidala")
     cli.register_cli(parser)
     return parser.parse_args(argv)
 
@@ -85,7 +85,7 @@ def _factory(service: FakeService) -> cli.ServiceFactory:
             "/repo",
             "Implement feature",
             "--board",
-            "wingstaff-test",
+            "daidala-test",
             *PROFILE_ARGS,
             "--workflow-id",
             "wf-1",
@@ -133,11 +133,15 @@ def test_init_is_dry_run_by_default(tmp_path: Path, monkeypatch, capsys) -> None
 
     assert result == 0
     assert payload["dry_run"] is True
-    assert not (tmp_path / "wingstaff").exists()
+    assert not (tmp_path / "daidala").exists()
 
 
 def test_init_apply_creates_profile_local_schema(tmp_path: Path, monkeypatch, capsys) -> None:
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    legacy_root = tmp_path / ("wing" + "staff")
+    legacy_root.mkdir()
+    sentinel = legacy_root / "do-not-read"
+    sentinel.write_text("legacy", encoding="utf-8")
 
     result = cli.main(["init", "--apply"])
     payload = json.loads(capsys.readouterr().out)
@@ -145,7 +149,8 @@ def test_init_apply_creates_profile_local_schema(tmp_path: Path, monkeypatch, ca
     assert result == 0
     assert payload["dry_run"] is False
     assert Path(payload["database"]).is_file()
-    assert Path(payload["database"]).parent == tmp_path / "wingstaff"
+    assert Path(payload["database"]).parent == tmp_path / "daidala"
+    assert sentinel.read_text(encoding="utf-8") == "legacy"
 
 
 def test_packs_list_uses_shared_command_tree(capsys) -> None:
@@ -195,7 +200,7 @@ def test_default_profile_expands_without_stage_overrides(capsys) -> None:
             "/repo",
             "Implement feature",
             "--board",
-            "wingstaff-test",
+            "daidala-test",
             "--default-profile",
             "engineer",
             "--workflow-id",
@@ -212,14 +217,14 @@ def test_default_profile_expands_without_stage_overrides(capsys) -> None:
 def test_constraint_file_start_and_replacement_share_service_paths(tmp_path, capsys) -> None:
     constraint_file = tmp_path / "constraints.yaml"
     constraint_file.write_text(
-        "schema: wingstaff.workflow-constraints/v1\nglobal: [Never push.]\n",
+        "schema: daidala.workflow-constraints/v1\nglobal: [Never push.]\n",
         encoding="utf-8",
     )
     service = FakeService()
 
     start_code = cli.main(
         [
-            "start", "/repo", "Implement feature", "--board", "wingstaff-test",
+            "start", "/repo", "Implement feature", "--board", "daidala-test",
             "--default-profile", "engineer", "--workflow-id", "wf-1",
             "--constraints-file", str(constraint_file),
         ],
@@ -275,14 +280,14 @@ def test_cli_kanban_dispatch_translates_public_create_and_show_commands() -> Non
             run,
             "kanban_create",
             {
-                "board": "wingstaff-test",
+                "board": "daidala-test",
                 "title": "Define workflow",
                 "body": "workflow_id=wf-1 stage=define",
                 "assignee": "engineer",
                 "parents": [],
                 "workspace_path": "/repo",
-                "idempotency_key": "wingstaff:wf-1:0:define",
-                "skills": ["wingstaff:orchestrate", "wingstaff:aidlc-adapter"],
+                "idempotency_key": "daidala:wf-1:0:define",
+                "skills": ["daidala:orchestrate", "daidala:aidlc-adapter"],
             },
         )
     )
@@ -290,7 +295,7 @@ def test_cli_kanban_dispatch_translates_public_create_and_show_commands() -> Non
         cli._dispatch_kanban_cli(
             run,
             "kanban_show",
-            {"board": "wingstaff-test", "task_id": "t_define"},
+            {"board": "daidala-test", "task_id": "t_define"},
         )
     )
 
@@ -300,7 +305,7 @@ def test_cli_kanban_dispatch_translates_public_create_and_show_commands() -> Non
         "hermes",
         "kanban",
         "--board",
-        "wingstaff-test",
+        "daidala-test",
         "create",
         "Define workflow",
         "--body",
@@ -310,18 +315,18 @@ def test_cli_kanban_dispatch_translates_public_create_and_show_commands() -> Non
         "--workspace",
         "dir:/repo",
         "--idempotency-key",
-        "wingstaff:wf-1:0:define",
+        "daidala:wf-1:0:define",
         "--skill",
-        "wingstaff:orchestrate",
+        "daidala:orchestrate",
         "--skill",
-        "wingstaff:aidlc-adapter",
+        "daidala:aidlc-adapter",
         "--json",
     )
     assert commands[1] == (
         "hermes",
         "kanban",
         "--board",
-        "wingstaff-test",
+        "daidala-test",
         "show",
         "t_define",
         "--json",
@@ -354,7 +359,7 @@ def test_cli_kanban_dispatch_propagates_host_command_failure() -> None:
         cli._dispatch_kanban_cli(
             lambda command: (2, f"failed: {' '.join(command)}"),
             "kanban_show",
-            {"board": "wingstaff-test", "task_id": "t_missing"},
+            {"board": "daidala-test", "task_id": "t_missing"},
         )
     )
 

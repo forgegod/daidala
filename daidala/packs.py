@@ -16,7 +16,7 @@ _REQUIRED_LIFECYCLE = ("define", "plan", "implement", "verify", "review", "deliv
 
 
 class PackError(ValueError):
-    """Raised when a workflow pack violates the Wingstaff pack contract."""
+    """Raised when a workflow pack violates the Daidala pack contract."""
 
 
 class SkillActivationMode(StrEnum):

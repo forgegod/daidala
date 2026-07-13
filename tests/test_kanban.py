@@ -94,8 +94,8 @@ def profiles() -> tuple[StageProfile, ...]:
 def make_ledger():
     return new_workflow(
         workflow_id="workflow-1",
-        board_slug="wingstaff-test",
-        target_repository="/tmp/wingstaff-target",
+        board_slug="daidala-test",
+        target_repository="/tmp/daidala-target",
         baseline_commit="deadbeef",
         requested_goal="Change VALUE to 2",
         pack_name="addyosmani",
@@ -108,7 +108,7 @@ def make_ledger():
 
 def with_constraints(ledger):
     constraints = parse_workflow_constraints(
-        """schema: wingstaff.workflow-constraints/v1
+        """schema: daidala.workflow-constraints/v1
 global:
   - Never commit or push.
 phases:
@@ -193,7 +193,7 @@ def make_approved_worktree():
     )
     return record_worktree(
         ledger,
-        worktree_path="/tmp/wingstaff-worktrees/workflow-1",
+        worktree_path="/tmp/daidala-worktrees/workflow-1",
         recorded_at=NOW + timedelta(minutes=4),
     )
 
@@ -206,7 +206,7 @@ def record_host_card(ledger, stage: WorkflowStage, task_id: str, minute: int):
         stage=stage,
         task_id=task_id,
         idempotency_key=(
-            f"wingstaff:{ledger.workflow_id}:{revision}:{ledger.policy_revision}:"
+            f"daidala:{ledger.workflow_id}:{revision}:{ledger.policy_revision}:"
             f"{constraint_key}:{stage.value}"
         ),
         recorded_at=NOW + timedelta(minutes=minute),
@@ -229,10 +229,10 @@ def test_initial_graph_pins_board_profiles_skills_and_parent() -> None:
 
     define_args = host.cards[define.task_id]["args"]
     plan_args = host.cards[plan.task_id]["args"]
-    assert define_args["board"] == "wingstaff-test"
+    assert define_args["board"] == "daidala-test"
     assert define_args["assignee"] == "architect"
     assert define_args["skills"] == [
-        "wingstaff:orchestrate",
+        "daidala:orchestrate",
         *(
             skill.name
             for skill in next(
@@ -241,7 +241,7 @@ def test_initial_graph_pins_board_profiles_skills_and_parent() -> None:
         ),
     ]
     assert plan_args["parents"] == [define.task_id]
-    assert plan_args["idempotency_key"] == "wingstaff:workflow-1:0:0:none:plan"
+    assert plan_args["idempotency_key"] == "daidala:workflow-1:0:0:none:plan"
     assert "Policy revision: 0" in str(define_args["body"])
     assert "Constraint revision: none" in str(define_args["body"])
     assert "Constraint digest: none" in str(define_args["body"])
@@ -335,7 +335,7 @@ def test_unknown_assignee_stops_before_card_creation() -> None:
     adapter = KanbanGraphAdapter(host.dispatch)
 
     with pytest.raises(KanbanError, match="unknown Kanban assignee.*missing"):
-        adapter.validate_assignees("wingstaff-test", ["architect", "missing"])
+        adapter.validate_assignees("daidala-test", ["architect", "missing"])
 
     assert not host.cards
 

@@ -29,9 +29,9 @@ def test_every_executable_card_pins_worker_contract_and_exact_pack_skills(
     selected = next(row for row in pack.stages if row.id == stage.value)
 
     assert KanbanGraphAdapter._stage_skills(pack, stage) == [
-        "wingstaff:orchestrate",
+        "daidala:orchestrate",
         *(
-            f"wingstaff:{skill.name}" if skill.bundled else skill.name
+            f"daidala:{skill.name}" if skill.bundled else skill.name
             for skill in selected.skills
         ),
     ]
@@ -47,12 +47,12 @@ def test_approval_card_has_no_worker_skills() -> None:
 @pytest.mark.parametrize(
     ("stage", "operation"),
     (
-        ("define", 'wingstaff_submit_artifact(stage: "define")'),
-        ("plan", 'wingstaff_submit_artifact(stage: "plan")'),
-        ("implement", "wingstaff_capture_implementation"),
-        ("verify", "wingstaff_record_verification"),
-        ("review", 'wingstaff_submit_artifact(stage: "review")'),
-        ("deliver", "wingstaff_deliver"),
+        ("define", 'daidala_submit_artifact(stage: "define")'),
+        ("plan", 'daidala_submit_artifact(stage: "plan")'),
+        ("implement", "daidala_capture_implementation"),
+        ("verify", "daidala_record_verification"),
+        ("review", 'daidala_submit_artifact(stage: "review")'),
+        ("deliver", "daidala_deliver"),
     ),
 )
 def test_worker_contract_maps_every_stage_to_policy_evidence_operation(
@@ -69,10 +69,10 @@ def test_worker_contract_requires_kanban_handoff_and_recovery_protocol() -> None
     instructions = worker_contract()
 
     required = (
-        "Call `kanban_show` before any file, terminal, or Wingstaff tool",
+        "Call `kanban_show` before any file, terminal, or Daidala tool",
         "every other skill pinned",
-        "wingstaff_record_skill_activation",
-        "wingstaff.handoff/v1",
+        "daidala_record_skill_activation",
+        "daidala.handoff/v1",
         "`skill_activation_digest`, and `active_skills`",
         "`workspace_path` and `baseline_commit`",
         "Before `kanban_block`, call `kanban_comment`",
@@ -83,7 +83,7 @@ def test_worker_contract_requires_kanban_handoff_and_recovery_protocol() -> None
         "approval from a generic unblock",
         "exactly one `kanban_complete` or `kanban_block` call",
         "policy revision, constraint revision and digest",
-        "current Wingstaff status before applying methodology",
+        "current Daidala status before applying methodology",
         "never continue from a superseded card",
         "Apply every global constraint and only the current stage's phase constraints",
         "`constraints_revision`, `constraints_digest`",
@@ -110,7 +110,7 @@ def test_worker_contract_requires_pre_work_activation_and_blocked_protocol() -> 
         "comment with its digest and every blocked skill",
         '`kanban_block(kind: "capability")`',
         "Do not fabricate a successful handoff",
-        "wingstaff:orchestrate` as always required",
+        "daidala:orchestrate` as always required",
         "discover replacement skills",
     )
     for statement in required:

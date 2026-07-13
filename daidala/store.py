@@ -1,4 +1,4 @@
-"""Durable profile-local persistence for Wingstaff policy ledgers."""
+"""Durable profile-local persistence for Daidala policy ledgers."""
 
 from __future__ import annotations
 

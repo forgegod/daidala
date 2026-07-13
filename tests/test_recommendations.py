@@ -73,7 +73,7 @@ def test_current_unapproved_plan_produces_exact_approval_action() -> None:
         WorkflowStage.APPROVAL,
         0,
         "gate-1",
-        "wingstaff:wf-1:0:0:none:approval",
+        "daidala:wf-1:0:0:none:approval",
         board_slug="board",
     )
     state = replace(state, artifacts=(plan,), card_references=(gate,))

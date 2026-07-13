@@ -80,6 +80,29 @@ def test_pip_entrypoint_loads_plugin_module() -> None:
     assert project["project"]["entry-points"]["hermes_agent.plugins"]["daidala"] == "daidala"
 
 
+def test_legacy_package_and_executable_fail_closed(tmp_path: Path) -> None:
+    legacy = "wing" + "staff"
+    imported = subprocess.run(
+        [sys.executable, "-I", "-c", f"import {legacy}"],
+        cwd=tmp_path,
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+    assert imported.returncode != 0
+
+    stale_executable = Path(sys.executable).with_name(legacy)
+    if stale_executable.exists():
+        invoked = subprocess.run(
+            [str(stale_executable), "--help"],
+            cwd=tmp_path,
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+        assert invoked.returncode != 0
+
+
 def test_wheel_contains_plugin_resources_and_module_entrypoint(tmp_path: Path) -> None:
     result = subprocess.run(
         [
@@ -120,3 +143,6 @@ def test_wheel_contains_plugin_resources_and_module_entrypoint(tmp_path: Path) -
 
     assert "daidala = daidala\n" in entry_points
     assert "daidala = daidala:register" not in entry_points
+    legacy = "wing" + "staff"
+    assert not any(name.startswith(f"{legacy}/") for name in names)
+    assert f"{legacy} =" not in entry_points

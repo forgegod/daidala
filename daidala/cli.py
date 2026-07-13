@@ -32,7 +32,7 @@ ServiceFactory = Callable[[], WorkflowService]
 
 
 def register_cli(parser: argparse.ArgumentParser) -> None:
-    """Register the command tree shared by ``wingstaff`` and ``hermes wingstaff``."""
+    """Register the command tree shared by ``daidala`` and ``hermes daidala``."""
     sub = parser.add_subparsers(dest="command", required=True)
 
     init = sub.add_parser("init", help="Preview or initialize the profile-local policy ledger")
@@ -63,7 +63,7 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     _add_constraint_source_arguments(start)
 
     status = sub.add_parser(
-        "status", help="Show Wingstaff policy facts and live Kanban card status"
+        "status", help="Show Daidala policy facts and live Kanban card status"
     )
     status.add_argument("workflow_id")
 
@@ -80,7 +80,7 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     approve.add_argument("plan_digest")
 
     cancel = sub.add_parser(
-        "cancel", help="Archive workflow cards and clean the Wingstaff-owned worktree"
+        "cancel", help="Archive workflow cards and clean the Daidala-owned worktree"
     )
     cancel.add_argument("workflow_id")
     cancel.add_argument("reason")
@@ -242,7 +242,7 @@ def run_command(
 
 
 def _run_init(args: argparse.Namespace) -> int:
-    data_root = resolve_data_root() / "wingstaff"
+    data_root = resolve_data_root() / "daidala"
     if not args.apply:
         _print(
             {
@@ -461,7 +461,7 @@ def build_cli_service(*, command_runner: CommandRunner | None = None) -> Workflo
     registry = ProfileSkillContentRegistry(data_root / "skills")
     runner = command_runner or _run_command
     return WorkflowService(
-        WorkflowStore(data_root / "wingstaff"),
+        WorkflowStore(data_root / "daidala"),
         skill_inventory=registry,
         skill_content_registry=registry,
         kanban=KanbanGraphAdapter(

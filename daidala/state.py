@@ -1,4 +1,4 @@
-"""Immutable Wingstaff policy and artifact ledger types."""
+"""Immutable Daidala policy and artifact ledger types."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from .packs import SkillActivationMode
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
 _REVISION = re.compile(r"^[0-9a-f]{40}$")
 _SKILL_NAME = re.compile(r"^[a-z0-9][a-z0-9-]{0,127}$")
-_ACTIVATION_SCHEMA = "wingstaff.skill-activation/v1"
+_ACTIVATION_SCHEMA = "daidala.skill-activation/v1"
 
 
 class WorkflowStage(StrEnum):
@@ -429,10 +429,10 @@ class WorkflowConstraintsArtifact:
     source: ConstraintSourceProvenance | None = None
 
     def __post_init__(self) -> None:
-        if self.schema != "wingstaff.workflow-constraints-artifact/v1":
+        if self.schema != "daidala.workflow-constraints-artifact/v1":
             raise PolicyViolationError(
                 "constraint artifact schema must be "
-                "'wingstaff.workflow-constraints-artifact/v1'"
+                "'daidala.workflow-constraints-artifact/v1'"
             )
         _require_text(self.workflow_id, "constraint artifact workflow ID")
         if not isinstance(self.identity, WorkflowConstraintsIdentity):
@@ -720,7 +720,7 @@ class WorkflowLedger:
         if self.updated_at < self.created_at:
             raise PolicyViolationError("updated_at cannot be before created_at")
         if self.committed or self.pushed:
-            raise PolicyViolationError("Wingstaff delivery cannot commit or push")
+            raise PolicyViolationError("Daidala delivery cannot commit or push")
 
         if self.constraint_references:
             expected_revisions = list(range(1, len(self.constraint_references) + 1))
@@ -784,7 +784,7 @@ class WorkflowLedger:
             if Path(self.worktree_path) == Path(self.target_repository):
                 raise PolicyViolationError("worktree path must differ from target repository")
             if not self.worktree_owned:
-                raise PolicyViolationError("worktree path requires Wingstaff ownership")
+                raise PolicyViolationError("worktree path requires Daidala ownership")
 
         plan = self.artifact_for(WorkflowStage.PLAN)
         if self.approval is not None:

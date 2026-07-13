@@ -1,6 +1,6 @@
-"""Pure deterministic recommendation derivation for the Wingstaff dashboard.
+"""Pure deterministic recommendation derivation for the Daidala dashboard.
 
-Recommendations are projections of current Wingstaff policy facts and read-only
+Recommendations are projections of current Daidala policy facts and read-only
 live Kanban state into a finite, machine-readable vocabulary. They do not
 dispatch workers, mutate cards, score users, predict completion, or use an
 LLM. The backend owns this complete vocabulary; the skill and UI must not

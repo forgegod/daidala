@@ -240,7 +240,7 @@ def require_pack_skill_revisions(
         raise SkillRevisionError(
             "skill revision mismatch: "
             + "; ".join(mismatches)
-            + f". Plan a controlled update: wingstaff packs update-plan {pack.name}"
+            + f". Plan a controlled update: daidala packs update-plan {pack.name}"
         )
     return requirements
 

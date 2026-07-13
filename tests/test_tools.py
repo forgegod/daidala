@@ -53,9 +53,9 @@ def target_repository(tmp_path: Path) -> Path:
             "-C",
             str(target),
             "-c",
-            "user.name=Wingstaff Tests",
+            "user.name=Daidala Tests",
             "-c",
-            "user.email=wingstaff@example.invalid",
+            "user.email=daidala@example.invalid",
             "commit",
             "-qm",
             "fixture",
@@ -104,7 +104,7 @@ def worker_context(
 
 def seed_planned(service: WorkflowService, target: Path) -> str:
     ledger = service.start(
-        board_slug="wingstaff-test",
+        board_slug="daidala-test",
         target_repository=str(target),
         goal="Fix the failing fixture",
         stage_profiles=STAGE_PROFILES,
@@ -174,7 +174,7 @@ def test_start_and_status_return_policy_ledger_without_status(
     started = call(
         tools.start,
         {
-            "board_slug": "wingstaff-test",
+            "board_slug": "daidala-test",
             "target_repository": str(target_repository),
             "goal": "Add one deterministic behavior",
             "stage_profiles": STAGE_PROFILES,
@@ -185,7 +185,7 @@ def test_start_and_status_return_policy_ledger_without_status(
     assert started["success"] is True
     ledger = started["workflow"]
     assert ledger["workflow_id"] == "workflow-generated"
-    assert ledger["board_slug"] == "wingstaff-test"
+    assert ledger["board_slug"] == "daidala-test"
     assert ledger["baseline_commit"]
     assert ledger["skill_digests"]
     assert {"status", "current_stage", "failure_reason"}.isdisjoint(ledger)
@@ -200,7 +200,7 @@ def test_start_restart_and_approval_create_one_idempotent_graph(
     fake_kanban_host,
 ) -> None:
     arguments = {
-        "board_slug": "wingstaff-test",
+        "board_slug": "daidala-test",
         "target_repository": str(target_repository),
         "goal": "Build one graph",
         "stage_profiles": STAGE_PROFILES,
@@ -267,7 +267,7 @@ def test_start_rejects_dirty_target_without_persisting_status(
     result = call(
         tools.start,
         {
-            "board_slug": "wingstaff-test",
+            "board_slug": "daidala-test",
             "target_repository": str(target_repository),
             "goal": "Reject dirty target",
             "stage_profiles": STAGE_PROFILES,
@@ -285,11 +285,11 @@ def test_tool_start_and_replacement_use_explicit_constraint_content(
     service: WorkflowService,
     target_repository: Path,
 ) -> None:
-    first = "schema: wingstaff.workflow-constraints/v1\nglobal: [Never push.]\n"
+    first = "schema: daidala.workflow-constraints/v1\nglobal: [Never push.]\n"
     started = call(
         tools.start,
         {
-            "board_slug": "wingstaff-test",
+            "board_slug": "daidala-test",
             "target_repository": str(target_repository),
             "goal": "Constrained workflow",
             "stage_profiles": STAGE_PROFILES,
@@ -305,7 +305,7 @@ def test_tool_start_and_replacement_use_explicit_constraint_content(
         expected_current_digest=current,
         content=(
             "global:\n  - Never push.\n"
-            "schema: wingstaff.workflow-constraints/v1\n"
+            "schema: daidala.workflow-constraints/v1\n"
         ),
     )
     assert no_change.policy_revision == 1
@@ -316,7 +316,7 @@ def test_tool_start_and_replacement_use_explicit_constraint_content(
             "workflow_id": "workflow-constraints",
             "expected_current_digest": current,
             "constraints_content": (
-                "schema: wingstaff.workflow-constraints/v1\n"
+                "schema: daidala.workflow-constraints/v1\n"
                 "global: [Never push., Preserve audit history.]\n"
             ),
         },
@@ -358,7 +358,7 @@ def test_cancel_without_owned_worktree_does_not_create_lifecycle_state(
     target_repository: Path,
 ) -> None:
     workflow_id = service.start(
-        board_slug="wingstaff-test",
+        board_slug="daidala-test",
         target_repository=str(target_repository),
         goal="Cancel me",
         stage_profiles=STAGE_PROFILES,
@@ -406,7 +406,7 @@ def test_record_skill_activation_requires_exact_kanban_worker_context(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     workflow_id = service.start(
-        board_slug="wingstaff-test",
+        board_slug="daidala-test",
         target_repository=str(target_repository),
         goal="Assess definition skills",
         stage_profiles=STAGE_PROFILES,
@@ -459,7 +459,7 @@ def test_record_skill_activation_rejects_malformed_and_persists_blocked_superses
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     workflow_id = service.start(
-        board_slug="wingstaff-test",
+        board_slug="daidala-test",
         target_repository=str(target_repository),
         goal="Reassess definition skills",
         stage_profiles=STAGE_PROFILES,
@@ -525,7 +525,7 @@ def test_record_skill_activation_reloads_after_reservation_race(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     workflow_id = service.start(
-        board_slug="wingstaff-test",
+        board_slug="daidala-test",
         target_repository=str(target_repository),
         goal="Retry activation reservation",
         stage_profiles=STAGE_PROFILES,
@@ -581,7 +581,7 @@ def test_start_requires_explicit_board_and_local_repository(
         result = call(
             tools.start,
             {
-                "board_slug": "wingstaff-test",
+                "board_slug": "daidala-test",
                 "target_repository": target,
                 "goal": "invalid target",
                 "stage_profiles": STAGE_PROFILES,
@@ -680,7 +680,7 @@ def test_service_rejects_repository_subdirectory(
     result = call(
         tools.start,
         {
-            "board_slug": "wingstaff-test",
+            "board_slug": "daidala-test",
             "target_repository": str(child),
             "goal": "Reject repository subdirectory",
             "stage_profiles": STAGE_PROFILES,

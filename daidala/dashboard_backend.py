@@ -1,7 +1,7 @@
 """Profile-safe read-only dashboard backend.
 
 The dashboard backend is the thin adapter between the Hermes dashboard
-process and the existing Wingstaff services. It constructs a
+process and the existing Daidala services. It constructs a
 ``WorkflowService`` with the same profile-aware location and public Kanban
 boundary as the existing tool and CLI paths and exposes only the
 machine-readable data the dashboard UI needs. It never imports Hermes
@@ -91,7 +91,7 @@ class DashboardBackend:
             service = build_cli_service()
             return cls(service_factory=lambda: service)
 
-        root = resolve_data_root() / "wingstaff"
+        root = resolve_data_root() / "daidala"
         store = WorkflowStore(root)
         content_registry: SkillContentRegistry = (
             skill_content_registry

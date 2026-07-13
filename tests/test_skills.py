@@ -139,7 +139,7 @@ def test_missing_skill_blocks_tool_start_without_creating_state(
         tools.start(
             {
                 "target_repository": str(tmp_path / "target"),
-                "board_slug": "wingstaff-test",
+                "board_slug": "daidala-test",
                 "goal": "must stop before draft creation",
                 "stage_profiles": STAGE_PROFILES,
                 "workflow_id": "workflow-missing-skills",

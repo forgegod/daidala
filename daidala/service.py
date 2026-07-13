@@ -1,4 +1,4 @@
-"""Application service for Wingstaff policy and artifact operations."""
+"""Application service for Daidala policy and artifact operations."""
 
 from __future__ import annotations
 
@@ -167,7 +167,7 @@ class WorkflowService:
         )
 
     def status(self, workflow_id: str) -> WorkflowLedger:
-        """Return Wingstaff policy facts without reading or copying Kanban status."""
+        """Return Daidala policy facts without reading or copying Kanban status."""
         return self.store.get(workflow_id)
 
     def _resolve_constraint_input(
@@ -197,7 +197,7 @@ class WorkflowService:
         return constraints, ConstraintSourceProvenance(skill_name, skill_digest)
 
     def combined_status(self, workflow_id: str) -> tuple[KanbanCardStatus, ...]:
-        """Read live card status without persisting it in Wingstaff."""
+        """Read live card status without persisting it in Daidala."""
         return self._require_kanban().combined_status(self.store.get(workflow_id))
 
     def approve(self, workflow_id: str, plan_digest: str) -> WorkflowLedger:
@@ -290,7 +290,7 @@ class WorkflowService:
                 digest=constraints.digest,
             )
             artifact = WorkflowConstraintsArtifact(
-                schema="wingstaff.workflow-constraints-artifact/v1",
+                schema="daidala.workflow-constraints-artifact/v1",
                 workflow_id=workflow_id,
                 identity=identity,
                 canonical_content=constraints.canonical_bytes().decode("utf-8"),
@@ -359,7 +359,7 @@ class WorkflowService:
         )
 
     def cancel(self, workflow_id: str, reason: str) -> WorkflowLedger:
-        """Remove a Wingstaff-owned worktree; Kanban owns cancellation state."""
+        """Remove a Daidala-owned worktree; Kanban owns cancellation state."""
         if not isinstance(reason, str) or not reason.strip():
             raise ServiceError("cancellation reason must be a non-empty string")
         observed = self.store.get_with_token(workflow_id)
@@ -446,7 +446,7 @@ class WorkflowService:
         if existing is not None:
             return ledger
         if not ledger.worktree_path or not ledger.worktree_owned:
-            raise ExecutionError("workflow has no Wingstaff-owned implementation worktree")
+            raise ExecutionError("workflow has no Daidala-owned implementation worktree")
         diff = self._workspace.capture_diff(ledger.worktree_path)
         changed_paths = self._workspace.changed_paths(ledger.worktree_path)
         artifact = self._workspace.write_artifact(
@@ -623,7 +623,7 @@ class WorkflowService:
         delivery = ledger.artifact_for(WorkflowStage.DELIVER)
         if delivery is None:
             if not ledger.worktree_path or not ledger.worktree_owned:
-                raise ExecutionError("workflow has no Wingstaff-owned implementation worktree")
+                raise ExecutionError("workflow has no Daidala-owned implementation worktree")
             implementation = self._workspace.read_json_artifact(
                 workflow_id,
                 "implementation-paths.json",
@@ -749,7 +749,7 @@ class WorkflowService:
             stage=stage,
             task_id=task.task_id,
             idempotency_key=(
-                f"wingstaff:{ledger.workflow_id}:{revision}:"
+                f"daidala:{ledger.workflow_id}:{revision}:"
                 f"{ledger.policy_revision}:{constraint_key}:{stage.value}"
             ),
             recorded_at=self._clock(),
@@ -841,7 +841,7 @@ def _activation_manifest(
     ]
     sequence = references[-1].sequence if references else 1
     return ActivationManifest(
-        schema="wingstaff.skill-activation/v1",
+        schema="daidala.skill-activation/v1",
         workflow_id=ledger.workflow_id,
         stage=stage,
         plan_revision=ledger.activation_revision_for(stage),

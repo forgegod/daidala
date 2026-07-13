@@ -1,4 +1,4 @@
-"""Public Hermes Kanban adapter for Wingstaff workflow graphs."""
+"""Public Hermes Kanban adapter for Daidala workflow graphs."""
 
 from __future__ import annotations
 
@@ -97,11 +97,11 @@ class KanbanGraphAdapter:
         )
         constraint_key = ledger.current_constraints_digest or "none"
         idempotency_key = (
-            f"wingstaff:{ledger.workflow_id}:{revision}:{ledger.policy_revision}:"
+            f"daidala:{ledger.workflow_id}:{revision}:{ledger.policy_revision}:"
             f"{constraint_key}:{stage.value}"
         )
         args: dict[str, object] = {
-            "title": f"wingstaff {ledger.workflow_id}: {stage.value}",
+            "title": f"daidala {ledger.workflow_id}: {stage.value}",
             "assignee": ledger.profile_for(stage),
             "body": self._card_body(ledger, stage, constraints),
             "parents": list(parents),
@@ -142,7 +142,7 @@ class KanbanGraphAdapter:
             "kanban_complete",
             {
                 "task_id": card.task_id,
-                "summary": "Wingstaff exact-digest approval recorded",
+                "summary": "Daidala exact-digest approval recorded",
                 "metadata": {
                     "workflow_id": ledger.workflow_id,
                     "stage": WorkflowStage.APPROVAL.value,
@@ -210,7 +210,7 @@ class KanbanGraphAdapter:
                 "kanban_comment",
                 {
                     "task_id": card.task_id,
-                    "body": f"Wingstaff cancellation: {reason}",
+                    "body": f"Daidala cancellation: {reason}",
                     "board": ledger.board_slug,
                 },
             )
@@ -226,7 +226,7 @@ class KanbanGraphAdapter:
         constraints: WorkflowConstraints | None,
     ) -> str:
         lines = [
-            f"Wingstaff workflow: {ledger.workflow_id}",
+            f"Daidala workflow: {ledger.workflow_id}",
             f"Stage: {stage.value}",
             f"Plan revision: {ledger.plan_revision}",
             f"Policy revision: {ledger.policy_revision}",
@@ -260,7 +260,7 @@ class KanbanGraphAdapter:
                     "--- End workflow constraints ---",
                 ]
             )
-        lines.append("Use Wingstaff policy/evidence tools; Hermes Kanban owns lifecycle state.")
+        lines.append("Use Daidala policy/evidence tools; Hermes Kanban owns lifecycle state.")
         body = "\n".join(lines)
         if len(body) > self.MAX_CARD_BODY_CHARS:
             raise KanbanError(
@@ -274,9 +274,9 @@ class KanbanGraphAdapter:
             return []
         selected = next(row for row in pack.stages if row.id == stage.value)
         return [
-            "wingstaff:orchestrate",
+            "daidala:orchestrate",
             *(
-                f"wingstaff:{skill.name}" if skill.bundled else skill.name
+                f"daidala:{skill.name}" if skill.bundled else skill.name
                 for skill in selected.skills
             ),
         ]

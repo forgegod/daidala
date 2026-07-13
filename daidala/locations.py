@@ -1,6 +1,6 @@
-"""Resolve the profile-aware data root for Wingstaff runtime files.
+"""Resolve the profile-aware data root for Daidala runtime files.
 
-Wingstaff never hard-codes ``~/.hermes``. The data root resolves in this order:
+Daidala never hard-codes ``~/.hermes``. The data root resolves in this order:
 
 1. an explicit argument (used by tests);
 2. the active Hermes profile's data root, exposed through the plugin context
@@ -33,7 +33,7 @@ def resolve_data_root(
     context: object | None = None,
     explicit: Path | None = None,
 ) -> Path:
-    """Return the directory under which Wingstaff keeps durable state.
+    """Return the directory under which Daidala keeps durable state.
 
     ``env`` defaults to :data:`os.environ` and is exposed for tests. ``context``
     is the optional Hermes plugin context whose ``data_dir`` attribute
@@ -57,7 +57,7 @@ def resolve_data_root(
         return helper
 
     raise DataRootError(
-        "cannot resolve Wingstaff data root: pass an explicit root, set "
+        "cannot resolve Daidala data root: pass an explicit root, set "
         f"{ENV_OVERRIDE}, or install hermes-cli to use its path helper"
     )
 

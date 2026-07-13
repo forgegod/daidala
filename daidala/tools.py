@@ -26,7 +26,7 @@ def configure_host(dispatch_tool: ToolDispatcher) -> None:
 
 
 def _default_service() -> WorkflowService:
-    root = resolve_data_root() / "wingstaff"
+    root = resolve_data_root() / "daidala"
     kanban = KanbanGraphAdapter(_host_dispatch) if _host_dispatch is not None else None
     return WorkflowService(WorkflowStore(root), kanban=kanban)
 
@@ -172,7 +172,7 @@ def approve(args: dict[str, Any], **kwargs: Any) -> str:
 
 
 def cancel(args: dict[str, Any], **kwargs: Any) -> str:
-    """Clean up Wingstaff-owned worktree state before Kanban archival."""
+    """Clean up Daidala-owned worktree state before Kanban archival."""
     del kwargs
     return _service_handler(
         args,
@@ -201,7 +201,7 @@ def submit_artifact(args: dict[str, Any], **kwargs: Any) -> str:
 
 
 def prepare_implementation(args: dict[str, Any], **kwargs: Any) -> str:
-    """Create the exact-approved Wingstaff worktree."""
+    """Create the exact-approved Daidala worktree."""
     del kwargs
     return _service_handler(
         args,

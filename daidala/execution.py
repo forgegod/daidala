@@ -146,7 +146,7 @@ class ExecutionWorkspace:
         return WorkflowConstraintsArtifact.from_dict(payload)
 
     def read_activation_manifest(self, workflow_id: str, path: str) -> ActivationManifest:
-        """Read one activation manifest only from its Wingstaff-owned artifact root."""
+        """Read one activation manifest only from its Daidala-owned artifact root."""
         artifact = Path(path).resolve()
         expected_parent = (self._workflow_root(workflow_id) / "artifacts").resolve()
         if artifact.parent != expected_parent:
@@ -158,7 +158,7 @@ class ExecutionWorkspace:
         return ActivationManifest.from_dict(payload)
 
     def read_json_artifact(self, workflow_id: str, filename: str) -> dict[str, Any]:
-        """Read a Wingstaff-owned JSON sidecar from the workflow artifact root."""
+        """Read a Daidala-owned JSON sidecar from the workflow artifact root."""
         path = self._workflow_root(workflow_id) / "artifacts" / filename
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
@@ -222,11 +222,11 @@ class ExecutionWorkspace:
         return tuple(sorted(set(tracked) | set(self._untracked_paths(worktree))))
 
     def remove_worktree(self, target_repository: str, worktree_path: str) -> None:
-        """Remove only a worktree owned by this Wingstaff data root."""
+        """Remove only a worktree owned by this Daidala data root."""
         worktree = Path(worktree_path).resolve()
         owned_root = (self.data_root / "worktrees").resolve()
         if worktree.parent != owned_root:
-            raise ExecutionError(f"refusing to remove non-Wingstaff worktree: {worktree}")
+            raise ExecutionError(f"refusing to remove non-Daidala worktree: {worktree}")
         if not worktree.exists():
             return
         _git(Path(target_repository), "worktree", "remove", "--force", str(worktree))

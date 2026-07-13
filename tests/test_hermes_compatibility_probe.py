@@ -92,7 +92,7 @@ def test_probe_parses_supported_host_and_cleans_isolated_home(tmp_path: Path) ->
     assert payload["skill"]["name"] == "policy-probe"
     assert len(payload["skill"]["digest"]) == 64
     assert payload["worker_context"] == {"intact": 8192, "truncated": 8300}
-    assert not list(tmp_path.glob("wingstaff-hermes-compat-*"))
+    assert not list(tmp_path.glob("daidala-hermes-compat-*"))
 
 
 def test_probe_rejects_changed_supported_host_identity(tmp_path: Path) -> None:
@@ -115,4 +115,4 @@ def test_probe_rejects_worker_context_boundary_drift_and_cleans(tmp_path: Path) 
 
     assert result.returncode == 1
     assert "8192-character body was not preserved" in result.stderr
-    assert not list(tmp_path.glob("wingstaff-hermes-compat-*"))
+    assert not list(tmp_path.glob("daidala-hermes-compat-*"))

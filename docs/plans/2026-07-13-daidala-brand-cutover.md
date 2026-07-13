@@ -1,6 +1,6 @@
 # Daidala brand cutover implementation plan
 
-> Status: **Approved for phase-gated execution. Phases 0–1 are complete; Phase 2 is next.**
+> Status: **Approved for phase-gated execution. Phases 0–2 are complete; Phase 3 is next.**
 >
 > This is a hard public rename. Do not add compatibility packages, import shims,
 > CLI aliases, tool aliases, skill aliases, schema fallbacks, or data migration.
@@ -260,6 +260,13 @@ Inspect the wheel and require `daidala/` resources, `daidala-*.dist-info`, the
 `daidala = daidala` Hermes entry point, and no `wingstaff/` package members.
 
 ## Phase 2 — Rename every executable Hermes contract and serialized identity
+
+**Status: Done.** Runtime schemas, bundled skill namespaces, Kanban identities,
+ownership text, worker instructions, compatibility fixtures, and profile-local
+data roots use Daidala exclusively. Regression coverage proves the old package,
+executable, tool prefix, schema, and data root are absent or rejected. The
+focused suite passed with 146 tests and the full phase gate passed with 230
+tests, Ruff, both pack validators, build, Twine, and diff checks.
 
 ### Files
 

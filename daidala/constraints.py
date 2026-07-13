@@ -17,7 +17,7 @@ from yaml.tokens import AliasToken, AnchorToken, TagToken
 from .errors import PolicyViolationError
 from .state import WorkflowStage
 
-CONSTRAINTS_SCHEMA = "wingstaff.workflow-constraints/v1"
+CONSTRAINTS_SCHEMA = "daidala.workflow-constraints/v1"
 MAX_CONSTRAINTS_PER_SCOPE = 16
 MAX_CONSTRAINT_BYTES = 1024
 MAX_CANONICAL_BYTES = 4096

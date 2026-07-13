@@ -1,4 +1,4 @@
-"""Deterministic updates to the Wingstaff policy and artifact ledger."""
+"""Deterministic updates to the Daidala policy and artifact ledger."""
 
 from __future__ import annotations
 
@@ -112,7 +112,7 @@ def record_card(
     revision = _card_revision(ledger, stage)
     constraint_key = ledger.current_constraints_digest or "none"
     expected_key = (
-        f"wingstaff:{ledger.workflow_id}:{revision}:{ledger.policy_revision}:"
+        f"daidala:{ledger.workflow_id}:{revision}:{ledger.policy_revision}:"
         f"{constraint_key}:{stage.value}"
     )
     if idempotency_key != expected_key:
@@ -173,7 +173,7 @@ def record_artifact(
     digest: str,
     recorded_at: datetime,
 ) -> WorkflowLedger:
-    """Record an immutable stage artifact after its Wingstaff policy checks."""
+    """Record an immutable stage artifact after its Daidala policy checks."""
     if stage in {WorkflowStage.APPROVAL, WorkflowStage.VERIFY}:
         raise PolicyViolationError(
             f"stage {stage.value!r} uses approval or verification evidence, not an artifact"
@@ -302,7 +302,7 @@ def record_worktree(
     worktree_path: str,
     recorded_at: datetime,
 ) -> WorkflowLedger:
-    """Record one Wingstaff-owned worktree after exact plan approval."""
+    """Record one Daidala-owned worktree after exact plan approval."""
     if ledger.worktree_path == worktree_path and ledger.worktree_owned:
         return ledger
     if ledger.worktree_path is not None:
@@ -513,7 +513,7 @@ def _require_approval(ledger: WorkflowLedger) -> None:
 
 def _require_worktree(ledger: WorkflowLedger) -> None:
     if ledger.worktree_path is None or not ledger.worktree_owned:
-        raise PolicyViolationError("operation requires a Wingstaff-owned worktree")
+        raise PolicyViolationError("operation requires a Daidala-owned worktree")
 
 
 def _require_artifact(ledger: WorkflowLedger, stage: WorkflowStage) -> None:

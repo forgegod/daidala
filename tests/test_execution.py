@@ -174,9 +174,9 @@ def target_repository(tmp_path: Path) -> Path:
             "-C",
             str(target),
             "-c",
-            "user.name=Wingstaff Tests",
+            "user.name=Daidala Tests",
             "-c",
-            "user.email=wingstaff@example.invalid",
+            "user.email=daidala@example.invalid",
             "commit",
             "-qm",
             "failing fixture",
@@ -213,7 +213,7 @@ def prepare_planned_workflow(
     workflow_id: str,
 ) -> tuple[str, str]:
     state = service.start(
-        board_slug="wingstaff-test",
+        board_slug="daidala-test",
         target_repository=str(target),
         goal="Make the deliberately failing test pass",
         stage_profiles=STAGE_PROFILES,
@@ -274,7 +274,7 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
                 "task_id": card.task_id,
                 "summary": f"{stage.value} evidence recorded",
                 "metadata": {
-                    "schema": "wingstaff.handoff/v1",
+                    "schema": "daidala.handoff/v1",
                     "workflow_id": workflow_id,
                     "plan_revision": ledger.activation_revision_for(stage),
                     "stage": stage.value,
@@ -384,7 +384,7 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
         card = completed.card_for(stage)
         assert card is not None
         assert fake_kanban_host.cards[card.task_id]["completion_metadata"]["schema"] == (
-            "wingstaff.handoff/v1"
+            "daidala.handoff/v1"
         )
 
     categories = {
@@ -410,7 +410,7 @@ def test_blocked_activation_denies_stage_evidence_without_completion_handoff(
     fake_kanban_host,
 ) -> None:
     ledger = service.start(
-        board_slug="wingstaff-test",
+        board_slug="daidala-test",
         target_repository=str(target_repository),
         goal="Prove blocked activation fails closed",
         stage_profiles=STAGE_PROFILES,
@@ -444,7 +444,7 @@ def test_evidence_rejects_wrong_board_and_stale_card_context(
     target_repository: Path,
 ) -> None:
     ledger = service.start(
-        board_slug="wingstaff-test",
+        board_slug="daidala-test",
         target_repository=str(target_repository),
         goal="Reject stale worker evidence",
         stage_profiles=STAGE_PROFILES,
@@ -511,7 +511,7 @@ def test_constraint_replacement_invalidates_and_recreates_graph_recoverably(
     old_worktree = Path(approved.worktree_path)
 
     content = (
-        "schema: wingstaff.workflow-constraints/v1\n"
+        "schema: daidala.workflow-constraints/v1\n"
         "global:\n"
         "  - Never commit or push.\n"
     )
@@ -581,7 +581,7 @@ def test_constraint_replacement_persists_invalidation_before_failed_archival(
         return fake_kanban_host.dispatch(name, args)
 
     service._kanban = KanbanGraphAdapter(fail_archive)
-    content = "schema: wingstaff.workflow-constraints/v1\nglobal: [Never push.]\n"
+    content = "schema: daidala.workflow-constraints/v1\nglobal: [Never push.]\n"
     with pytest.raises(KanbanError, match="exit code 1"):
         service.replace_constraints(
             workflow_id,
@@ -690,7 +690,7 @@ def test_verification_worker_blocks_and_resumes_same_card_and_workspace(
     assert fake_kanban_host.cards[verify_card.task_id]["status"] == "blocked"
 
     restarted = service.start(
-        board_slug="wingstaff-test",
+        board_slug="daidala-test",
         target_repository=str(target_repository),
         goal="Make the deliberately failing test pass",
         stage_profiles=STAGE_PROFILES,
@@ -723,7 +723,7 @@ def test_verification_worker_blocks_and_resumes_same_card_and_workspace(
             "task_id": verify_card.task_id,
             "summary": "verification passed after unblock",
             "metadata": {
-                "schema": "wingstaff.handoff/v1",
+                "schema": "daidala.handoff/v1",
                 "workflow_id": workflow_id,
                 "plan_revision": passed.plan_revision,
                 "stage": "verify",
@@ -751,7 +751,7 @@ def test_capture_requires_real_diff_and_safe_workflow_id(
 ) -> None:
     with pytest.raises(ExecutionError, match="workflow_id"):
         service.start(
-            board_slug="wingstaff-test",
+            board_slug="daidala-test",
             target_repository=str(target_repository),
             goal="unsafe id",
             stage_profiles=STAGE_PROFILES,
@@ -820,7 +820,7 @@ def test_verification_retries_keep_immutable_output_artifacts(
 
 def test_activation_artifact_creation_is_canonical_and_exclusive(tmp_path: Path) -> None:
     manifest = ActivationManifest(
-        schema="wingstaff.skill-activation/v1",
+        schema="daidala.skill-activation/v1",
         workflow_id="workflow-activation",
         stage=WorkflowStage.DEFINE,
         plan_revision=0,
@@ -859,10 +859,10 @@ def test_constraint_artifact_creation_is_exclusive_and_verified(tmp_path: Path) 
     from daidala.constraints import parse_workflow_constraints
 
     constraints = parse_workflow_constraints(
-        "schema: wingstaff.workflow-constraints/v1\nglobal: [Never commit.]\n"
+        "schema: daidala.workflow-constraints/v1\nglobal: [Never commit.]\n"
     )
     artifact = WorkflowConstraintsArtifact(
-        "wingstaff.workflow-constraints-artifact/v1",
+        "daidala.workflow-constraints-artifact/v1",
         "workflow-constraints",
         WorkflowConstraintsIdentity(1, 1, constraints.digest),
         constraints.canonical_bytes().decode(),
