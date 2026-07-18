@@ -6,7 +6,7 @@ workflow packs from projects that are better treated as interoperability layers,
 optional tools, or product references.
 
 The assessment reflects the sources available from 2026-07-11 through
-2026-07-13. A positive fit is
+2026-07-16. A positive fit is
 not an implementation commitment; every bundled adapter still requires a pinned
 revision, license review, exact skill provenance, tests, and explicit human
 approval before implementation.
@@ -45,6 +45,10 @@ security reviews. The Hermes Skills Hub dynamically exposed its catalog but no
 extractable ranking during this assessment, so comparable-project discovery and
 install signals came from the [skills.sh leaderboard](https://skills.sh/), then
 each project's own repository and license were evaluated separately.
+Likewise, the stars and ordering in the
+[Hermes Atlas multi-agent framework list](https://hermesatlas.com/lists/multi-agent-frameworks)
+are discovery metadata, not proof of Hermes compatibility, safety, adoption, or
+architectural fit. Atlas entries were checked against their primary repositories.
 
 ## Decision matrix
 
@@ -60,6 +64,15 @@ each project's own repository and license were evaluated separately.
 | [BMad Method](https://github.com/bmad-code-org/BMAD-METHOD) | 2/5 | Top listed skill: 348 installs | Methodology reference or narrow skill subset | Do not adapt wholesale |
 | [Get Shit Done Skills](https://github.com/ctsstc/get-shit-done-skills) | 1/5 | `gsd`: 2.7K installs | None until tested and licensed | Reject for now |
 | [AWS Kiro](https://kiro.dev/) | 1/5 | Not applicable | Product reference only | Not a pack candidate |
+| [Mission Control](https://github.com/builderz-labs/mission-control) | 1/5 | Hermes Atlas: #1 when assessed | Control-plane product reference | Reject as a dependency |
+| [Agent of Empires](https://github.com/agent-of-empires/agent-of-empires) | 1/5 | Hermes Atlas: #2 when assessed | Session, worktree, and sandbox UX reference | Optional adjacent tool only |
+| [CryptoDmitry Control Room](https://github.com/CryptoDmitry/hermes-agent-control-room) | 1/5 | Hermes Atlas: #3 when assessed | Operations-template reference | Do not integrate |
+| [shannhk Control Room](https://github.com/shannhk/hermes-agent-control-room) | 1/5 | Hermes Atlas: #4 when assessed | Operations-template reference | Do not integrate |
+| [SwarmClaw](https://github.com/swarmclawai/swarmclaw) | 1/5 | Hermes Atlas: #5 when assessed | Competing-runtime reference | Reject as a dependency |
+| [Minions](https://github.com/agent37-platform/minions) | 1/5 | Hermes Atlas: #6 when assessed | Hermes supervision UX reference | Optional adjacent product only |
+| [Hermes Agents Team](https://github.com/linke-ai/hermes-agent-team) | 1/5 | Hermes Atlas: #8 when assessed | Multi-profile team reference | Reject as infrastructure |
+| [Hermes Agent Meta-Harness](https://github.com/howdymary/hermes-agent-metaharness) | 2/5 | Hermes Atlas: #9 when assessed | Evaluator and comparison reference | Watch; no current dependency |
+| [Hermes ACP Orchestrator Skill](https://github.com/Rainhoole/hermes-agent-acp-skill) | 2/5 | Hermes Atlas: #11 when assessed | Delegation-method reference | Evaluate only as an external skill |
 | [Ankh.md](https://github.com/Abruptive/Ankh.md) | 2/5 | Awesome Hermes catalogue: experimental | Project-scoping reference only | Not a pack candidate |
 | [Gladiator](https://github.com/runtimenoteslabs/gladiator) | 1/5 | Awesome Hermes catalogue: experimental | Candidate-comparison reference only | Reject as infrastructure |
 | [Big Iron](https://github.com/supermodeltools/bigiron) | 1/5 | Awesome Hermes catalogue: beta | Structural-evidence reference only | Archived and rejected |
@@ -458,6 +471,102 @@ be promoted only through review and retention approval into existing project
 documentation, a governed skill, or a rebuildable advisory retrieval index.
 Unapproved lessons never enter shared project memory or execute commands.
 
+## Hermes Atlas multi-agent framework comparison
+
+Hermes Atlas describes this list as orchestration tools for running multiple
+Hermes agents together. That category is adjacent to Daidala, but it is not
+Daidala's product category. Daidala does not try to provide a fleet dashboard,
+agent runtime, role topology, task bus, model router, or generic session manager.
+It constrains one repository workflow executed by Hermes and makes methodology,
+approval, repository mutation, and evidence identities auditable.
+
+Two Atlas entries—[Gladiator](https://github.com/runtimenoteslabs/gladiator) and
+[`opencode-hermes-multiagent`](https://github.com/1ilkhamov/opencode-hermes-multiagent)—were
+already covered in the preceding swarm audit. The complete Atlas list produces
+the following comparison:
+
+| Atlas project | Main overlap with Daidala | Decisive difference | Recommendation |
+|---|---|---|---|
+| [Mission Control](https://github.com/builderz-labs/mission-control) | Tasks, review gates, receipts, approvals, skills, schedules, audit, and evaluation surfaces | It is a separate control plane with its own task state, SQLite store, dashboard, REST API, MCP server, scheduler, runtime adapters, and completion approval; Daidala deliberately leaves those concerns with Hermes and binds approval before implementation | Use its operator field-note and receipt UX as product research; do not connect Daidala to its task or policy state |
+| [Agent of Empires](https://github.com/agent-of-empires/agent-of-empires) | Parallel worktrees, optional container isolation, diff review, notifications, and Hermes support | It manages persistent tmux sessions for many coding-agent runtimes and creates its own worktrees; it does not define Daidala's methodology provenance or exact approval/evidence contract | Treat as an optional operator-side launcher or UX reference, never as Daidala's execution authority |
+| [CryptoDmitry Control Room](https://github.com/CryptoDmitry/hermes-agent-control-room) | Agent registries, runbooks, secret maps, specialist routing, and staged adoption | It is a VPS control-room repository with setup and operations skills plus task-bus and loop conventions, not an in-process workflow integrity layer | Reuse the operational lesson—start with one documented agent and separate control from runtime data—but do not add its sidecar control plane |
+| [shannhk Control Room](https://github.com/shannhk/hermes-agent-control-room) | Same control-room, registry, task-bus, and operations-template concepts | It is a closely related template variant rather than independent evidence for a second architecture; its orchestrator and filesystem task bus duplicate Hermes facilities | Treat both Control Room entries as one design family and avoid double-counting their popularity or recommendations |
+| [SwarmClaw](https://github.com/swarmclawai/swarmclaw) | Skills, delegation, schedules, memory, approvals, durable delivery status, and multi-agent operation | It explicitly replaces the agent runtime and owns models, memory, server, dashboard, scheduler, delegation, connectors, and learned skills | Reject as a dependency; its durable delivery and dead-letter diagnostics are useful recovery references only |
+| [Minions](https://github.com/agent37-platform/minions) | Hermes task supervision, review queues, scheduled work, notifications, files, and human sign-off | It maps each task to a Hermes root session but also stores task status in its own SQLite-backed web server; its human gate accepts completion rather than authorizing an exact plan before mutation | Keep separate as an optional supervision product; consider its attention and review-queue UX for the existing Hermes dashboard extension |
+| [`opencode-hermes-multiagent`](https://github.com/1ilkhamov/opencode-hermes-multiagent) | Specialist roles across a software lifecycle | It is an OpenCode configuration with fixed role handoffs, not a Hermes extension, and lacks durable provenance and approval authority | Continue to reject; use only as evidence that conditional specialists can be useful |
+| [Hermes Agents Team](https://github.com/linke-ai/hermes-agent-team) | Hermes profiles, Kanban, staged product/development/test roles, review, and local operation | It adds an HTTP server, MCP bus, ACP launches, polling, status synchronization, agent lifecycle control, and another SQLite store, and requires disabling Hermes gateway dispatch | Reject as infrastructure; its leader/specialist split is already expressible through Hermes delegation without a second control plane |
+| [Hermes Agent Meta-Harness](https://github.com/howdymary/hermes-agent-metaharness) | Frozen baselines, candidate identities, paired comparison, provenance hashes, archives, and improvement search | It optimizes benchmark harness candidates in a standalone outer loop and currently targets a legacy Hermes benchmark surface absent from recent Hermes releases; Daidala governs approved repository change and broader evidence eligibility | Compare schemas and fixtures with Daidala's self-improvement evaluator, but do not depend on it until compatibility and authority boundaries are current |
+| [Gladiator](https://github.com/runtimenoteslabs/gladiator) | Comparable multi-agent strategies and visible telemetry | It adds Paperclip, nested Hermes processes, competing companies, and a projected-stars objective | Continue to reject the runtime and retain only bounded same-baseline comparison principles |
+| [Hermes ACP Orchestrator Skill](https://github.com/Rainhoole/hermes-agent-acp-skill) | Isolated delegation, specialist routing, timeout, and output limits | It is one delegation skill, not a lifecycle or integrity framework, and routes to external coding-agent runtimes in addition to Hermes children | Evaluate as an exact external skill only if its current tool syntax is verified and Daidala/Hermes retain model, tool, approval, and delivery authority |
+
+The list is dominated by control planes and runtime managers. That explains why
+their visible feature sets are broader, but it does not make them substitutes for
+Daidala's narrower integrity boundary. Conversely, Daidala is not a substitute
+for users who need fleet monitoring, persistent terminal sessions, a general
+agent-team UI, cross-runtime dispatch, or an organizational swarm.
+
+### Is Daidala unique enough to exist?
+
+**Yes, within this comparison—but only if it stays narrow.** None of the Atlas
+projects examined combines all of these properties:
+
+- runs in the existing Hermes process instead of introducing a control-plane
+  service or agent runtime;
+- treats Hermes Kanban as the sole operational status, retry, and dispatch
+  authority;
+- maps independently versioned methodologies onto a fixed delivery lifecycle
+  with exact skill provenance;
+- binds human authorization to the exact plan, constraints, baseline, and pack
+  before repository mutation;
+- owns a clean detached worktree and captures content-addressed artifacts and
+  verification evidence without implicitly committing or publishing; and
+- admits `blocked`, `rejected`, `incomparable`, and `no-change` as valid outcomes
+  instead of treating agent activity or task completion as success.
+
+This is a meaningful gap between methodology skills and fleet orchestration:
+Hermes can run and supervise agents, while Daidala can answer which methodology
+and policy were authorized, what exact repository state changed, and what
+evidence makes the result eligible for review or retention. The project is
+therefore reasonable to exist as a Hermes-native governance and evidence plugin,
+not as another "multi-agent framework."
+
+The case weakens if Daidala expands into generic scheduling, role routing, model
+selection, fleet state, memory, dashboards, or cross-runtime execution. Those
+markets already contain broader and more mature implementations. It also weakens
+if the approval and evidence machinery costs more operator effort than the risk it
+removes. Daidala should prove usefulness through auditable workflow outcomes and
+recovery behavior, not feature count or marketplace stars. If Hermes eventually
+provides equivalent provenance, exact approval, and artifact-integrity contracts,
+Daidala should shrink or upstream those mechanics rather than preserve duplicate
+state.
+
+### Recommendations from the Atlas comparison
+
+1. **Position Daidala as workflow integrity, not multi-agent orchestration.** Use
+   "Hermes-native policy, provenance, approval, and evidence" consistently; avoid
+   fleet, swarm, mission-control, or agent-team claims.
+2. **Keep integrations host-mediated.** Compose through Hermes Kanban,
+   delegation, cron, gateway, skills, and the existing dashboard extension. Do
+   not add adapters to another product's task database, scheduler, MCP bus, or
+   status model.
+3. **Borrow operator UX, not runtime ownership.** Attention queues, review
+   receipts, diff inspection, notifications, evaluator comparisons, and recovery
+   diagnostics are useful references for Daidala's optional Hermes dashboard and
+   evidence views.
+4. **Cross-check self-improvement evidence with Meta-Harness.** Compare task-set
+   identity, baseline reuse, candidate/config hashes, trace diagnostics, and
+   incomparability handling. Preserve Daidala's broader approval and retention
+   authority and current-Hermes compatibility.
+5. **Treat delegation recipes as pack inputs only.** The ACP orchestrator skill
+   may be useful after exact revision, syntax, side-effect, and authority tests;
+   it must not choose an external runtime or bypass card-scoped activation by
+   default.
+6. **Validate the narrow product claim.** Measure whether Daidala catches stale
+   approval, provenance drift, unsafe mutation, missing evidence, and failed
+   recovery in realistic repository workflows. If it cannot demonstrate those
+   outcomes with acceptable operator overhead, do not broaden the product to
+   compensate.
+
 ## Recommended sequence
 
 1. **Spike a curated Superpowers pack.** It has the strongest complete lifecycle
@@ -504,4 +613,13 @@ Unapproved lessons never enter shared project memory or execute commands.
 | [Big Iron](https://github.com/supermodeltools/bigiron) | Archived and deprecated status, graph-guided SDLC architecture, external Supermodel dependency, and missing usable repository license |
 | [opencode-hermes-multiagent](https://github.com/1ilkhamov/opencode-hermes-multiagent) | OpenCode agent definitions and pipeline configuration, fixed specialist topology, revision loops, broad context handoffs, and missing root license |
 | [MisakaNet](https://github.com/Ikalus1988/MisakaNet) | Git-backed lesson format, retrieval and contribution model, `LIMITATIONS.md`, security model, LessonReuseBench, and Apache-2.0 license |
+| [Hermes Atlas multi-agent frameworks](https://hermesatlas.com/lists/multi-agent-frameworks) | Curated discovery inventory and mutable ordering; all listed projects were classified against Daidala's product boundary |
+| [Mission Control](https://github.com/builderz-labs/mission-control) | Separate control-plane scope, task and approval state, receipts, schedules, interfaces, runtime adapters, alpha status, and MIT license |
+| [Agent of Empires](https://github.com/agent-of-empires/agent-of-empires) | Hermes-capable session management, tmux persistence, worktrees, container isolation, review UX, HTTP surface, and MIT license |
+| [CryptoDmitry Control Room](https://github.com/CryptoDmitry/hermes-agent-control-room) and [shannhk Control Room](https://github.com/shannhk/hermes-agent-control-room) | Closely related control-room templates, staged adoption, agent registries, operations skills, filesystem task bus, runtime-data separation, and MIT licenses |
+| [SwarmClaw](https://github.com/swarmclawai/swarmclaw) | Full runtime ownership, models, skills, memory, delegation, schedules, dashboard, connectors, recovery signals, and MIT license |
+| [Minions](https://github.com/agent37-platform/minions) | Hermes session supervision, separate task-state database, completion review, schedules, files, and MIT license |
+| [Hermes Agents Team](https://github.com/linke-ai/hermes-agent-team) | Leader/specialist profiles, HTTP/MCP/ACP/Kanban topology, polling and status synchronization, local SQLite state, and MIT license |
+| [Hermes Agent Meta-Harness](https://github.com/howdymary/hermes-agent-metaharness) | Baseline/candidate comparison, provenance hashes, comparability checks, frontier search, legacy Hermes dependency, and MIT license |
+| [Hermes ACP Orchestrator Skill](https://github.com/Rainhoole/hermes-agent-acp-skill) | External delegation skill, context isolation, routing, limits, current example syntax, and MIT license |
 | [Pack reference](03-pack-reference.md), [Authoring packs](04-authoring-packs.md), and [Pack adapters](09-pack-adapters.md) | Daidala schema, engine boundary, implemented mappings, and constraints |

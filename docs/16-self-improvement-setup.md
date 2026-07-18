@@ -12,10 +12,10 @@ push, publication, release, or runtime promotion. Those remain separate gates
 in the [self-improvement flow](15-self-improvement.md).
 
 This guide is the normative source of truth for the Daidala dogfood
-prerequisites and their remediation. The planned CLI checker mirrors the stable
-check IDs in the ready-to-admit table and reports omissions; it cannot add,
-weaken, waive, or silently repair a prerequisite. A passing report is evidence
-for human review, not setup approval or cycle approval.
+prerequisites and their remediation. The implemented read-only CLI checker
+mirrors the stable check IDs in the ready-to-admit table and reports omissions;
+it cannot add, weaken, waive, or silently repair a prerequisite. A passing
+report is evidence for human review, not setup approval or cycle approval.
 
 Authoritative external references:
 
@@ -49,21 +49,25 @@ notification, publication, release, or controller credentials.
 
 ## Current observed state
 
-Observed locally on 2026-07-13 before live setup:
+Observed through non-mutating host inventory on 2026-07-16. The latest retained
+clean `--live` report is still the Phase 5 gate at revision `7068fdf`; it exits
+`2` with only `SI-REPOSITORY` passing. The inventory below records newer host
+availability, not a replacement passing report.
 
 | Prerequisite | State | Evidence |
 |---|---|---|
 | Hermes baseline | Pass | `Hermes Agent v0.18.2 (2026.7.7.2)` |
-| Repository identity | Pass | GitHub reports `forgegod/daidala`, Issues enabled, viewer `ADMIN`; SSH remote matches the manifest. |
-| Daidala development installation | Partial | The standalone command exists in the checkout virtualenv, but the controller profile discovers no non-bundled Daidala plugin. |
-| Controller plugin revision | Blocked | Remote `main` is `dfca66b15d964284f8580d85201cea998ca3456f`; local `HEAD` is `62b776b0eceeee3809aa39a5adcbf3a7cbc451ba`; Phase 2 changes remain uncommitted, so no approved commit contains the current controller. |
+| Repository identity | Partial | Local `HEAD`, `origin/main`, and remote `main` all resolve to `d7b245b31b2da3d312f620d77d29a4b7bd0cb49f`; GitHub reports `forgegod/daidala`, Issues enabled, and viewer `ADMIN`. A new passing report requires a clean checkout after the current documentation work. |
+| Daidala development installation | Partial | The standalone `0.2.0` command exists in the checkout virtualenv, but the controller profile discovers no non-bundled Daidala plugin. |
+| Controller plugin revision | Blocked | Phases 1 through 4 are committed and synchronized to remote `main`, but no exact revision has been approved and installed into the controller profile. |
 | Controller profile | Pass | `/home/raphael/.hermes/profiles/daidala-self-improvement` exists and the sticky profile remains `hermes-vc`. |
 | Dedicated board | Blocked | Only the `default` board exists. |
-| Restricted container | Blocked | The Docker CLI is unavailable in this WSL distro; Docker Desktop WSL integration must be enabled and then verified. |
+| Restricted container | Partial | Docker client and server `29.6.1` are available and the built-in `none` network resolves, but no pinned evaluator image or isolation receipt exists. `SI-EVALUATOR` remains blocked. |
 | GitHub Issues access | Partial | Current account can administer the repository, but no separate least-privilege intake/findings aliases are registered. |
-| GitHub Projects access | Partial | The operator credential can query Projects, but `forgegod` currently has no Project and runtime aliases remain unbound. |
+| GitHub Projects access | Blocked | `gh project list --owner @me` is denied because the operator credential lacks `read:project`, `read:org`, and `read:discussion`; no Project identity or fields are verified. |
 | Attended notification | Blocked | No messaging platform is configured and the gateway is stopped. |
 | Self-improvement labels | Blocked | No `daidala-si:*` labels exist; mutation waits for the least-privilege credential gate. |
+| Trusted runtime state | Blocked | Neither `registration.yaml` nor `prerequisite-evidence.json` exists for `forgegod-daidala`; no active cycle has been admitted. |
 
 Do not admit UC-01 while any required row is blocked.
 
@@ -113,6 +117,11 @@ mounts. Do not pull an arbitrary image merely to make this prerequisite pass.
 If Docker cannot run from WSL, stop; do not replace `restricted-container` with
 the local backend.
 
+The 2026-07-16 host probe confirms Docker client/server `29.6.1` and the built-in
+`none` network. This removes the Docker-availability blocker only. It does not
+prove image pinning, fresh-home isolation, bounded mounts, denied network, or
+credential absence, and therefore does not satisfy `SI-EVALUATOR`.
+
 ## 3. Configure GitHub operator and runtime credentials
 
 This setup uses three distinct credentials: the operator's interactive `gh`
@@ -154,16 +163,19 @@ the unattended controller and is not one of the two runtime aliases.
 Run the interactive authorization:
 
 ```bash
-gh auth refresh --hostname github.com --scopes read:project,project
+gh auth refresh --hostname github.com \
+  --scopes read:project,project,read:org,read:discussion
 ```
 
 Approve the requested scopes in the browser, then verify:
 
 ```bash
 gh auth status
-gh project list --owner forgegod --limit 100 --format json
+test "$(gh api user --jq .login)" = forgegod
+gh project list --owner @me --limit 100 --format json
 ```
 
+GitHub CLI v2.46.0 requires the four listed scopes for the current Project query.
 The output must list the user-owned Project or return an empty JSON list without
 an authorization error. Do not copy the operator token into the controller.
 
@@ -425,11 +437,13 @@ to be published to PyPI: Hermes v0.18.2 supports Git repository installation and
 directory plugins. The persistent controller must load one exact committed
 last-known-good revision, never the mutable working checkout.
 
-Stop here while Phase 2 is uncommitted. Neither remote `main` nor local
-`HEAD` contains the complete current controller implementation. After the Phase
-2 checkpoint is approved and committed, choose exactly one installation path.
-Both paths below were exercised in isolated temporary Hermes homes on v0.18.2;
-discovery and both pack validations passed.
+Phases 1 through 4 are committed, and local plus remote `main` currently resolve
+to `d7b245b31b2da3d312f620d77d29a4b7bd0cb49f`. The controller profile still has
+no Daidala plugin, and this synchronized commit is not automatically an approved
+controller revision. Stop until a human approves one exact 40-character commit,
+then choose exactly one installation path. Both paths below were exercised in
+isolated temporary Hermes homes on v0.18.2; discovery and both pack validations
+passed.
 
 ### 5.1 Install an approved revision from GitHub
 
@@ -627,8 +641,10 @@ its local authority.
 
 ## 10. Run the prerequisite checker
 
-Status: **IMPLEMENTED AND REPOSITORY-TESTED.** The command is diagnostic only;
-the current host result is recorded in the versioned evaluation result.
+Status: **IMPLEMENTED AND REPOSITORY-TESTED.** The command is diagnostic only.
+The versioned evaluation result retains the latest clean live report; the newer
+2026-07-16 inventory above does not replace it because registration and retained
+evidence are absent and the current documentation work is not a clean baseline.
 
 The shared `doctor` command is the only prerequisite checker:
 

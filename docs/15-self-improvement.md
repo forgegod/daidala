@@ -2,23 +2,31 @@
 
 ## Support status
 
-The strict project manifest, trusted registration, cycle identity, metric and
-increment schemas, normalized adapters, immutable manifest snapshots,
-deterministic workflow binding, replay-safe claims, local pending finding
-synchronization, and notification receipt validation are implemented.
-Concrete GitHub and gateway adapters, evaluator execution, cron, model
-comparison, retention, and publication remain blocked or unexercised. Commands
-marked **UNEXERCISED** are design examples, not supported operator procedures.
+Phases 1 through 4 of the reusable protocol are implemented and
+repository-tested. This includes strict project, registration, cycle, metric,
+increment, credential-binding, and prerequisite-report schemas; normalized
+adapter contracts; replay-safe admission; local finding synchronization; fresh
+evaluator homes and owned worktrees; immutable evaluation evidence; comparison
+verdicts; lesson-reuse deltas; cleanup and quarantine; and increment/DOX
+reconciliation.
+
+This is not an operational self-improvement loop yet. Concrete GitHub, gateway,
+and restricted-container execution adapters, the project-onboarding command
+surface, scheduled reconciliation, live model comparison, the first attended
+cycle, terminal retention, and publication remain unimplemented or unexercised.
+Phase 5 is blocked by the live prerequisite gate; Phase 6 cannot start without
+Phase 5 evidence.
 
 Authoritative implementation sources are `daidala/projects.py`,
 `daidala/registrations.py`, `daidala/cycles.py`, `daidala/increments.py`,
-`daidala/adapters.py`, `daidala/controller.py`, and
+`daidala/credentials.py`, `daidala/prerequisites.py`, `daidala/adapters.py`,
+`daidala/controller.py`, `daidala/evaluation.py`, and
 `daidala/reconciliation.py`. The reusable and Daidala-instance plans remain the
 implementation authority for unfinished phases:
 
 - [Reusable protocol plan](plans/2026-07-13-self-improvement-loop.md)
 - [Daidala dogfood plan](plans/2026-07-13-daidala-self-improvement-loop.md)
-- [Versioned Phase 1 result](evaluation-results/v1/daidala-self-improvement.md)
+- [Versioned evaluation result](evaluation-results/v1/daidala-self-improvement.md)
 - [Environment prerequisites](16-self-improvement-setup.md)
 
 ## Purpose and invariant
@@ -562,9 +570,8 @@ owned worktree; candidate code never replaces the currently loaded plugin.
 
 ## Operator procedures
 
-The prerequisite diagnostic is implemented and repository-tested. The remaining
-commands are **UNEXERCISED** and intentionally absent from the getting-started
-path:
+The prerequisite diagnostic is the only implemented self-improvement-specific
+operator command:
 
 ```bash
 # Implemented: local checks; network, gateway, and container checks remain not-run
@@ -576,29 +583,29 @@ hermes -p daidala-self-improvement daidala doctor \
   --registration /home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/registration.yaml \
   --live
 
-# UNEXERCISED: preview project registration without mutation
-daidala projects register --manifest .daidala/project.yaml --dry-run
-
-# UNEXERCISED: inspect an admitted cycle and exact approval tuple
-daidala projects status forgegod-daidala --cycle <cycle-id>
-
-# UNEXERCISED: approve only the displayed current digest
-daidala projects approve forgegod-daidala --cycle <cycle-id> --digest <digest>
-
-# UNEXERCISED: archive admission while preserving evidence
-daidala projects archive forgegod-daidala --dry-run
 ```
 
-Phase 4 must exercise setup preview, manual first run, status, approval, and recovery before
-those commands can become supported. Phase 5 must exercise pause/resume and
-reconciliation. Phase 6 must exercise candidate upgrades. Teardown remains
-destructive and separately approved.
+The planned `projects register`, project-cycle status, exact cycle approval, and
+project archive operations are not merely unexercised: no `projects` command
+tree exists in the current CLI. Do not substitute the generic workflow
+`start`, `status`, `approve`, or `cancel` commands for project admission.
+
+Phase 5 must implement and exercise setup preview, manual first run, project
+status and approval, pause/resume, recovery, and reconciliation before those
+operations can become supported. Phase 6 must exercise candidate upgrades. The
+Phase 4 local evaluator fixtures do not constitute a live restricted-container
+run. Teardown remains destructive and separately approved.
 
 ## Verification and source audit
 
-Phase 1 verification is repository-local: focused schema tests, Ruff, Markdown
-links, pack validation, and DOX reconciliation. It creates no profile, board,
-GitHub object, model call, evaluator, cron, browser, or live finding. The stable
-case matrix distinguishes pure-model passes from unrun integration behavior.
-Later phases must replace `not-run` with exact evidence or `blocked`; they may not
-infer success from this document.
+Phases 1 through 4 are verified repository-locally. Their checkpoint records
+cover 328 tests, Ruff, Lefthook, Markdown links, both pack validations,
+build/Twine/release checks, DOX reconciliation, and graph review. The evaluator
+coverage uses bounded local fixtures and fake boundaries; it creates no live
+profile, board, GitHub object, model call, restricted container, cron job,
+gateway delivery, or finding.
+
+The latest retained clean live prerequisite report remains blocked with only
+`SI-REPOSITORY` passing. Phase 5 and later integration cases must replace
+`not-run` with exact evidence or `blocked`; they may not infer success from the
+repository tests or this document.
