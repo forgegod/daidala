@@ -65,9 +65,10 @@ workflow-pack adapters, and bundled orchestration skills.
 - Self-improvement prerequisite diagnosis extends the shared `doctor` command,
   mirrors the stable check IDs owned by `docs/16-self-improvement-setup.md`,
   emits bounded redacted evidence, and has no fix/apply or setup-mutation mode.
-  It strips ambient `HERMES_HOME` from bounded child commands so native
-  controller-profile invocation observes installation-global sticky-profile and
-  board state exactly like the standalone command.
+  Standalone diagnosis verifies the active profile marker against retained
+  sticky-profile evidence. Native controller-profile diagnosis recognizes its
+  forced `HERMES_HOME`, requires the controller marker, and verifies that the
+  distinct retained sticky profile still exists in the host inventory.
 - Credential aliases resolve only through explicit profile-local `environment`
   bindings. GitHub tokens exist only for the bounded child call as `GH_TOKEN`;
   command output and reports never include token-derived values.

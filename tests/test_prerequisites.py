@@ -187,11 +187,21 @@ class FakeRunner:
         if command[:3] == ("git", "-C", str(plugin_dir)):
             return (0, REVISION) if command[-2:] == ("rev-parse", "HEAD") else (0, "")
         if command == ("hermes", "profile", "list"):
-            return 0, "  daidala-self-improvement\n ◆hermes-vc"
+            active = (
+                "daidala-self-improvement"
+                if environment.get("HERMES_HOME") == str(self.fixture.profile_root)
+                else "hermes-vc"
+            )
+            controller_marker = "◆" if active == "daidala-self-improvement" else " "
+            sticky_marker = "◆" if active == "hermes-vc" else " "
+            return 0, (
+                f" {controller_marker}daidala-self-improvement\n"
+                f" {sticky_marker}hermes-vc"
+            )
         if command == ("hermes", "profile", "show", "daidala-self-improvement"):
             return 0, f"Profile: daidala-self-improvement\nPath:    {self.fixture.profile_root}"
         if command[-4:] == ("plugins", "list", "--no-bundled", "--json"):
-            return 0, json.dumps([{"name": "daidala", "enabled": True, "error": None}])
+            return 0, json.dumps([{"name": "daidala", "status": "enabled"}])
         if command == ("hermes", "kanban", "boards", "list", "--json"):
             return 0, json.dumps(
                 [
@@ -282,7 +292,7 @@ def test_complete_live_diagnosis_passes_without_leaking_or_persisting_tokens(
     assert PrerequisiteReport.from_dict(report.to_dict()) == report
 
 
-def test_native_profile_home_is_not_forwarded_to_nested_host_commands(
+def test_native_profile_invocation_accepts_retained_non_controller_sticky_profile(
     configured_fixture: Fixture,
 ) -> None:
     report, runner = _run(
@@ -291,10 +301,10 @@ def test_native_profile_home_is_not_forwarded_to_nested_host_commands(
     )
 
     assert report.status is CheckStatus.PASS
-    assert all(
-        "HERMES_HOME" not in environment
+    assert any(
+        environment.get("HERMES_HOME") == str(configured_fixture.profile_root)
         for command, environment in runner.calls
-        if command[0] == "hermes"
+        if command == ("hermes", "profile", "list")
     )
 
 

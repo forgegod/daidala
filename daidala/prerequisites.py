@@ -71,6 +71,7 @@ _REQUIRED_DENIED = {
 }
 _SAFE_ENVIRONMENT_NAMES = {
     "HOME",
+    "HERMES_HOME",
     "LANG",
     "LANGUAGE",
     "LC_ALL",
@@ -605,7 +606,19 @@ def _check_profile(context: _DiagnosisContext) -> CheckResult:
     if code != 0:
         return _blocked(definition, "Hermes profile inventory is unavailable")
     active = _active_profile(listing)
-    if active != context.evidence.sticky_profile or active == profile:
+    native_profile_home = context.environ.get("HERMES_HOME")
+    invoked_from_controller = (
+        native_profile_home is not None
+        and Path(native_profile_home).expanduser().resolve() == profile_root.resolve()
+    )
+    if invoked_from_controller:
+        if active != profile or not _profile_is_listed(
+            listing, context.evidence.sticky_profile
+        ):
+            return _blocked(
+                definition, "native profile inventory does not match retained evidence"
+            )
+    elif active != context.evidence.sticky_profile or active == profile:
         return _blocked(definition, "sticky Hermes profile does not match retained evidence")
     code, shown = context.runner(
         ("hermes", "profile", "show", profile), context.safe_environment
@@ -623,7 +636,11 @@ def _check_profile(context: _DiagnosisContext) -> CheckResult:
     except PolicyViolationError as error:
         return _error(definition, str(error))
     plugin = next((row for row in plugins if row.get("name") == "daidala"), None)
-    if plugin is None or plugin.get("enabled") is not True or plugin.get("error") not in {None, ""}:
+    if (
+        plugin is None
+        or plugin.get("status") != "enabled"
+        or plugin.get("error") not in {None, ""}
+    ):
         return _blocked(definition, "Daidala plugin is not enabled and healthy")
     plugin_dir = profile_root / "plugins" / "daidala"
     code, revision = context.runner(
@@ -1054,6 +1071,10 @@ def _active_profile(output: str) -> str | None:
         if match:
             return match.group(1)
     return None
+
+
+def _profile_is_listed(output: str, profile: str) -> bool:
+    return re.search(rf"(?m)^\s*[◆ ]?{re.escape(profile)}(?:\s|$)", output) is not None
 
 
 def _passed(definition: CheckDefinition, *evidence: str) -> CheckResult:
