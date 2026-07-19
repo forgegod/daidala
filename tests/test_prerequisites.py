@@ -226,18 +226,26 @@ class FakeRunner:
         raise AssertionError(f"unexpected command: {command}")
 
 
-def _run(fixture: Fixture, *, live: bool = True, runner: FakeRunner | None = None):
+def _run(
+    fixture: Fixture,
+    *,
+    live: bool = True,
+    runner: FakeRunner | None = None,
+    extra_environ: Mapping[str, str] | None = None,
+):
     selected = runner or FakeRunner(fixture)
+    environ = {
+        "PATH": "/bin",
+        "DAIDALA_GITHUB_INTAKE_TOKEN": "intake-secret",
+        "DAIDALA_GITHUB_FINDINGS_TOKEN": "findings-secret",
+    }
+    environ.update(extra_environ or {})
     report = run_prerequisite_diagnosis(
         project_manifest=fixture.manifest,
         registration=fixture.registration,
         live=live,
         runner=selected,
-        environ={
-            "PATH": "/bin",
-            "DAIDALA_GITHUB_INTAKE_TOKEN": "intake-secret",
-            "DAIDALA_GITHUB_FINDINGS_TOKEN": "findings-secret",
-        },
+        environ=environ,
         current_date=date(2026, 7, 14),
     )
     return report, selected
@@ -272,6 +280,22 @@ def test_complete_live_diagnosis_passes_without_leaking_or_persisting_tokens(
         if command[0] != "gh"
     )
     assert PrerequisiteReport.from_dict(report.to_dict()) == report
+
+
+def test_native_profile_home_is_not_forwarded_to_nested_host_commands(
+    configured_fixture: Fixture,
+) -> None:
+    report, runner = _run(
+        configured_fixture,
+        extra_environ={"HERMES_HOME": str(configured_fixture.profile_root)},
+    )
+
+    assert report.status is CheckStatus.PASS
+    assert all(
+        "HERMES_HOME" not in environment
+        for command, environment in runner.calls
+        if command[0] == "hermes"
+    )
 
 
 def test_non_live_diagnosis_reports_live_checks_not_run_and_remains_blocked(

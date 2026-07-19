@@ -71,7 +71,6 @@ _REQUIRED_DENIED = {
 }
 _SAFE_ENVIRONMENT_NAMES = {
     "HOME",
-    "HERMES_HOME",
     "LANG",
     "LANGUAGE",
     "LC_ALL",
