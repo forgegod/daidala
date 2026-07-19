@@ -42,7 +42,7 @@ Authoritative external references:
 | Evaluator | `restricted-container` |
 | Evaluator network | `denied-by-default` |
 | Supported Hermes baseline | `v0.18.2` |
-| Approved controller revision | `afe1805fca5e27edc2e70ac526a697e76d8890fb` |
+| Selected controller revision | `a91fb200558d5cea253c73c1bf648e516ce541c3` |
 
 The controller may carry model, issue, and notification credentials. A fresh
 evaluator must not clone the controller profile or receive issue mutation,
@@ -57,18 +57,18 @@ retained evidence.
 | Prerequisite | State | Evidence |
 |---|---|---|
 | Hermes baseline | Pass | `Hermes Agent v0.18.2 (2026.7.7.2)` |
-| Repository identity | Pass | Approved revision `afe1805fca5e27edc2e70ac526a697e76d8890fb` is synchronized across local `HEAD`, `origin/main`, and remote `main`. Run the final report only from a clean checkout. |
-| Daidala development installation | Partial | The standalone `0.2.0` command exists in the checkout virtualenv, but the controller profile discovers no non-bundled Daidala plugin. |
-| Controller plugin revision | Partial | Approved revision `afe1805fca5e27edc2e70ac526a697e76d8890fb` is synchronized, contains the evaluator implementation, and passes the repository gate. It is not installed in the controller profile. |
+| Repository identity | Partial | The implementation is checkpointed locally; `origin/main` remains at the prior baseline until publication is separately approved. The final live report requires the trusted remote baseline. |
+| Daidala command surfaces | Pass | Standalone and native controller-profile commands report Daidala `0.2.0`; native pack validation succeeds. |
+| Controller plugin revision | Partial | The controller profile still loads clean detached revision `afe1805fca5e27edc2e70ac526a697e76d8890fb`. Revision `a91fb200558d5cea253c73c1bf648e516ce541c3` contains the corrected capability and evaluator contracts but requires separate installation approval. |
 | Controller profile | Pass | `/home/raphael/.hermes/profiles/daidala-self-improvement` exists and the sticky profile remains `hermes-vc`. |
-| Dedicated board | Blocked | Only the `default` board exists. |
-| Restricted container | Partial | Docker client and server `29.6.1` are available and the built-in `none` network resolves, but no pinned evaluator image or isolation receipt exists. `SI-EVALUATOR` remains blocked. |
-| GitHub runtime credentials | Partial | `GH_TOKEN_DAIDALA_READ_ISSUES` and `GH_TOKEN_DAIDALA_WRITE_ISSUES` are configured in the controller profile environment. Their non-secret alias bindings and retained capability evidence do not exist. |
+| Dedicated board | Pass | Installation-global board `daidala-forgegod-daidala` exists with the exact checkout as default workdir, is empty, and did not replace the current `default` board. |
+| Restricted container | Partial | The dry-run-first restricted executor and actual isolation probe pass with a digest-pinned existing image, denied network, fresh tmpfs home, credential-free child environment, one bounded workspace mount, and a non-secret receipt. Combined evidence under the next approved controller revision remains. |
+| GitHub runtime credentials | Partial | Non-secret alias bindings exist. Both runtime read probes returned GitHub request identities and expirations, and the separately approved findings probe created, verified, and closed one controlled issue. Combined evidence under the next approved controller revision remains. |
 | GitHub operator credential | Pass | `gh-vault run --name ghcli -- gh project list` succeeds, and `GH_TOKEN_DAIDALA_PROJECT_MGMT` is absent from the controller profile. Attended Project authority remains isolated in `gh-vault`. |
-| GitHub Project | Partial | User-owned Project 1 exists at `https://github.com/users/forgegod/projects/1` with node ID `PVT_kwHOAAjENs4Bd2Xo`. It contains only the 13 default fields; the eight required Daidala fields and auto-add workflow are absent. |
-| Attended notification | Partial | Telegram is configured as the controller profile's home platform and the profile gateway is running. No approved attended probe receipt is retained, so `SI-NOTIFICATION` remains blocked. |
-| Self-improvement labels | Blocked | No `daidala-si:*` labels exist; mutation waits for the least-privilege credential gate. |
-| Trusted runtime state | Blocked | `registration.yaml`, `credential-bindings.yaml`, and `prerequisite-evidence.json` do not exist for `forgegod-daidala`; no active cycle has been admitted. |
+| GitHub Project | Pass | Private user-owned Project 1 is linked to `forgegod/daidala`, contains the eight exact Daidala fields in addition to GitHub defaults, and has the optional issue/`daidala-si` auto-add workflow enabled through the GitHub UI. |
+| Attended notification | Partial | Telegram home delivery returned a non-private platform/message receipt through `hermes send`, and the operator confirmed the exact probe content. Retain the receipt in the combined profile-local evidence after the remaining probes pass. |
+| Self-improvement labels | Pass | All 17 exact `daidala-si` base, state, category, and priority labels exist in `forgegod/daidala`. |
+| Trusted runtime state | Partial | Strict `registration.yaml` and `credential-bindings.yaml` exist for `forgegod-daidala`. `prerequisite-evidence.json` remains absent until real credential, notification, and evaluator receipts exist. |
 
 Do not admit UC-01 while any required row is blocked.
 
@@ -80,15 +80,15 @@ in this order; a later step must not be used to waive an earlier blocker.
 | Step | Result | Mutation | Current state |
 |---|---|---|---|
 | 1 | Verify host and repository identity. | None. | Pass; repeat from the final clean checkout. |
-| 2 | Verify Docker availability, then later produce evaluator isolation evidence. | The isolation probe creates a disposable container. | Docker available; receipt blocked. |
-| 3 | Provision one attended operator credential and two least-privilege runtime credentials. | Vault and profile environment only. | Tokens configured; operator token isolated; binding and capability evidence incomplete. |
+| 2 | Verify Docker availability, then produce evaluator isolation evidence. | The isolation probe creates a disposable container. | Restricted-container implementation and actual receipt pass; combined evidence pending. |
+| 3 | Provision one attended operator credential and two least-privilege runtime credentials. | Vault and profile environment only. | Operator token is isolated; both runtime read probes and the controlled findings write probe pass. |
 | 4 | Create the controller profile without changing the sticky profile. | Hermes profile. | Pass. |
-| 5 | Install the selected detached Daidala revision. | Controller plugin directory. | Not started; separate setup approval required. |
-| 6 | Create the dedicated Kanban board. | Hermes board. | Not started; separate setup approval required. |
-| 7 | Configure and verify the attended gateway target. | Profile gateway/home channel. | Gateway running; receipt blocked. |
-| 8 | Create labels and the user-owned GitHub Project. | GitHub Issues and Projects. | Project created; labels, required fields, and auto-add workflow pending. |
-| 9 | Materialize trusted non-secret registration, bindings, and receipts. | Profile-local project files. | Not started. |
-| 10 | Run the read-only live prerequisite checker from a clean checkout. | None. | Blocked by Steps 5-9. |
+| 5 | Install the selected detached Daidala revision. | Controller plugin directory. | Installed revision is clean; a new exact revision must incorporate the corrected intake capability contract before the final gate. |
+| 6 | Create the dedicated Kanban board. | Installation-global Hermes board. | Pass. |
+| 7 | Configure and verify the attended gateway target. | Profile gateway/home channel. | Delivery receipt and operator confirmation pass; combined evidence pending. |
+| 8 | Create labels and the user-owned GitHub Project. | GitHub Issues and Projects. | Required projection and optional attended UI auto-add pass. |
+| 9 | Materialize trusted non-secret registration, bindings, and receipts. | Profile-local project files. | Registration and bindings pass strict parsing; live receipts are blocked. |
+| 10 | Run the read-only live prerequisite checker from a clean checkout. | None. | Blocked by Steps 5 and 9. |
 | 11 | Admit UC-01 manually. | GitHub issue, board, evaluator, and cycle artifacts. | Deliberately deferred until every `SI-*` check passes. |
 
 The operator owns browser authorization, credential creation, attended-channel
@@ -138,16 +138,25 @@ docker version --format '{{.Client.Version}}|{{.Server.Version}}'
 docker network inspect none --format '{{.Name}}|{{.Driver}}'
 ```
 
-The actual evaluator probe must later use a pinned evaluator image,
-`--network none`, a fresh home, explicit mounts, and no controller credential
-mounts. Do not pull an arbitrary image merely to make this prerequisite pass.
-If Docker cannot run from WSL, stop; do not replace `restricted-container` with
-the local backend.
+Use an existing exact image identity. Do not pull an arbitrary image merely to
+make this prerequisite pass. The first command is non-mutating; `--apply` creates
+one disposable container and emits only non-secret evidence:
 
-Docker client/server `29.6.1` and the built-in `none` network are available.
-This satisfies Docker availability only. It does not
-prove that the evaluator excludes controller credentials, rejects disallowed
-mounts, binds the approved image digest, or enforces the document limits.
+```bash
+EVALUATOR_IMAGE='catthehacker/ubuntu@sha256:3220992391c1182a0cfe4c64453511772c54f4c39e960d26a5e327960675982e'
+
+daidala evaluator probe --image "$EVALUATOR_IMAGE"
+daidala evaluator probe --image "$EVALUATOR_IMAGE" --apply
+```
+
+The implementation refuses tags and bare digests. It inspects the exact local
+repository digest and rejects images declaring volumes, then runs as the
+non-root host UID/GID with `--network none`, a read-only root, all capabilities
+dropped, no-new-privileges, one candidate-workspace bind mount, fresh bounded
+tmpfs home and `/tmp`, a 64 KiB output bound, and no inherited controller
+credentials. The runtime probe requires only loopback networking and rejects
+credential-like environment keys. If Docker cannot run from WSL, stop; do not
+replace `restricted-container` with the local backend.
 
 ## 3. Configure GitHub operator and runtime credentials
 
@@ -155,7 +164,8 @@ This setup uses three distinct credentials: one attended operator Project
 credential, one read-only intake credential, and one issue-write findings
 credential. The operator credential is stored in `gh-vault` profile `ghcli`.
 The two runtime values are configured in the controller profile environment;
-their non-secret Daidala bindings and capability evidence remain to be created.
+their non-secret Daidala bindings exist, while capability evidence remains
+blocked until both values pass the probes in Sections 3.2 and 3.3.
 
 The trusted registration names runtime aliases only. It never contains token
 values, and the implementation must verify alias capability without exposing a
@@ -177,8 +187,10 @@ limitation: fine-grained personal access tokens cannot access Projects owned by
 a user account. The minimal practical split is therefore:
 
 - `github-daidala-read-issues`: a classic personal access token with only
-  `read:project`; public issue, label, comment, and repository metadata remain
-  readable without a repository-write scope;
+  `read:project` and `read:org`; the latter is required for reliable `gh project`
+  owner resolution even for this user-owned Project. Public issue, label,
+  comment, and repository metadata remain readable without a repository-write
+  scope;
 - `github-daidala-write-issues`: a fine-grained personal access token whose
   resource owner is `forgegod`, repository selection is only `daidala`, and
   repository permissions are `Metadata: read` and `Issues: read and write`.
@@ -231,7 +243,8 @@ this read-only alias:
 1. Open [Developer settings > Personal access tokens > Tokens (classic)](https://github.com/settings/tokens).
 2. Select **Generate new token > Generate new token (classic)**.
 3. Name it `Daidala issue intake` and select a short expiration.
-4. Select only **`read:project`**.
+4. Select only **`read:project`** and **`read:org`**. `gh project` requires both
+   scopes to resolve the Project owner without authorization errors.
 5. Leave `repo`, `public_repo`, `project`, `workflow`, package, administration,
    and deletion scopes unselected.
 6. Generate the token and save it immediately in your own password manager or
@@ -241,7 +254,8 @@ this read-only alias:
 
 The alias is a Daidala name, not an object created in GitHub. Public repository
 metadata, issues, labels, and comments remain readable without a repository
-scope; `read:project` adds read access to the user-owned Project fields.
+scope; `read:project` adds Project-field access and `read:org` allows reliable
+owner resolution by `gh project`.
 
 To probe the token without adding it to shell history, run this manually in an
 attended shell:
@@ -419,13 +433,13 @@ token, token-derived value, private destination ID, or raw command output.
 {
   "schema": "daidala.prerequisite-evidence/v1",
   "project_id": "forgegod-daidala",
-  "approved_controller_revision": "afe1805fca5e27edc2e70ac526a697e76d8890fb",
+  "approved_controller_revision": "a91fb200558d5cea253c73c1bf648e516ce541c3",
   "sticky_profile": "hermes-vc",
   "credential_capabilities": [
     {
       "alias": "github-daidala-read-issues",
       "capability": "github-intake",
-      "allowed": ["read-project", "read-public-repository"],
+      "allowed": ["read-organization", "read-project", "read-public-repository"],
       "denied": ["contents-write", "administration", "merge", "release", "deployment"],
       "expires_on": "<YYYY-MM-DD>",
       "read_probe_receipt": "<approved-receipt-id>",
@@ -511,17 +525,24 @@ to be published to PyPI: Hermes v0.18.2 supports Git repository installation and
 directory plugins. The persistent controller must load one exact committed
 last-known-good revision, never the mutable working checkout.
 
-The approved controller revision is
-`afe1805fca5e27edc2e70ac526a697e76d8890fb`. It is:
+The selected controller revision is
+`a91fb200558d5cea253c73c1bf648e516ce541c3`. Before installation, obtain separate
+approval for that exact identity. It is:
 
-- synchronized across local `HEAD`, `origin/main`, and remote `main`;
+- reachable from the local repository and eligible for the GitHub path only
+  after separate publication approval;
 - contains the required evaluator and comparison implementation; and
 - verified by the repository gate and detached-clone check.
 
-Revision approval does not authorize installation. The controller profile has
-no Daidala plugin. After separate setup approval, choose exactly one detached
-installation path. Both supported paths pass isolated Hermes v0.18.2 discovery
-and pack validation.
+The controller currently loads the prior detached revision
+`afe1805fca5e27edc2e70ac526a697e76d8890fb`. Revision selection does not
+authorize installation; after separate setup approval, choose exactly one path
+below. Both paths pass isolated Hermes v0.18.2 discovery and pack validation.
+
+The currently installed revision predates the empirically required `read:org`
+intake capability. Do not write capability evidence that omits a granted scope.
+The selected revision corrects that contract; obtain separate installation
+approval before replacing the persistent controller.
 
 ### 5.1 Install an approved revision from GitHub
 
@@ -533,7 +554,7 @@ the persistent controller.
 ```bash
 (
 set -euo pipefail
-approved_revision=afe1805fca5e27edc2e70ac526a697e76d8890fb
+approved_revision=a91fb200558d5cea253c73c1bf648e516ce541c3
 remote=https://github.com/forgegod/daidala.git
 profile_home="$(dirname "$(hermes -p daidala-self-improvement config path)")"
 plugin_dir="$profile_home/plugins/daidala"
@@ -559,7 +580,7 @@ virtualenv into Hermes.
 set -euo pipefail
 profile_home="$(dirname "$(hermes -p daidala-self-improvement config path)")"
 plugin_dir="$profile_home/plugins/daidala"
-approved_revision=afe1805fca5e27edc2e70ac526a697e76d8890fb
+approved_revision=a91fb200558d5cea253c73c1bf648e516ce541c3
 test ! -e "$plugin_dir" && test ! -L "$plugin_dir"
 
 git -C /home/raphael/src/rb/daidala cat-file -e \
@@ -582,7 +603,7 @@ implicitly. If Hermes asks whether Daidala may replace built-in tools, answer
 ```bash
 profile_home="$(dirname "$(hermes -p daidala-self-improvement config path)")"
 plugin_dir="$profile_home/plugins/daidala"
-approved_revision=afe1805fca5e27edc2e70ac526a697e76d8890fb
+approved_revision=a91fb200558d5cea253c73c1bf648e516ce541c3
 
 test "$(git -C "$plugin_dir" rev-parse HEAD)" = "$approved_revision"
 git -C "$plugin_dir" status --short
@@ -598,6 +619,12 @@ A candidate Daidala build must never replace this loaded controller installation
 candidates run only in fresh evaluators.
 
 ## 6. Create the dedicated board
+
+Hermes Kanban boards are installation-global and shared across every profile.
+They live below the Hermes-resolved base home, not inside
+`daidala-self-improvement`. The controller registration stores only the board
+slug. An explicit `-p daidala-self-improvement` therefore lists the same boards
+as an unqualified invocation; profile isolation does not create board isolation.
 
 Create the named board without `--switch`, so the operator's current board is
 not changed:
@@ -635,6 +662,31 @@ From the chosen chat, use `/sethome`, then send a test message and retain the
 returned platform/chat/thread identity as the profile-local destination behind
 alias `attended-daidala`.
 
+Use Hermes' one-shot delivery CLI; do not bypass the adapter with a direct
+Telegram API call. Redirect the JSON because it also contains the private chat
+identity, then print and retain only the non-private platform/message receipt:
+
+```bash
+result="$(mktemp)"
+trap 'rm -f "$result"' EXIT
+hermes -p daidala-self-improvement send --to telegram --json \
+  'Daidala prerequisite probe: forgegod-daidala; no cycle was admitted.' \
+  >"$result"
+python - "$result" <<'PY'
+import json
+import sys
+
+payload = json.load(open(sys.argv[1], encoding="utf-8"))
+if payload.get("success") is not True:
+    raise SystemExit(payload.get("error", "delivery failed"))
+print(f"{payload['platform']}:{payload['message_id']}")
+PY
+```
+
+If Telegram reports `the bot can't send messages to the bot`, the configured
+home target is the bot identity rather than the operator chat. Send `/sethome`
+to the bot from the intended attended chat and rerun the probe.
+
 The alias is not sufficient evidence by itself. Setup passes only when:
 
 - the gateway is running;
@@ -648,14 +700,15 @@ This CLI session is not a gateway delivery target. Local output is acceptable
 only for an observed manual run and does not authorize unattended cron.
 
 Telegram is configured as the controller profile's home platform and the
-systemd gateway is running. Do not record the
-private chat identity in this repository. `SI-NOTIFICATION` remains blocked
-until an approved test delivery returns a receipt ID and that receipt is stored
-only in profile-local prerequisite evidence.
+systemd gateway is running. Do not record the private chat identity in this
+repository. The current delivery returns a platform/message receipt;
+the operator confirmed the exact probe content. `SI-NOTIFICATION` remains
+blocked only until the receipt is written with the other completed profile-local
+prerequisite evidence.
 
 ## 8. Create and verify the GitHub projection
 
-Do this only after the least-privilege aliases and Project scopes pass and after
+Do this only after the attended operator Project credential passes and after
 separate GitHub-mutation approval. Idempotently create the labels required by
 [the Daidala instance plan](plans/2026-07-13-daidala-self-improvement-loop.md),
 verify the committed issue form, and create or locate the dedicated Project.
@@ -675,9 +728,34 @@ Required labels:
   `daidala-si:research-candidate`; and
 - priority labels `daidala-si:priority-1` through `daidala-si:priority-5`.
 
-In GitHub, open **forgegod/daidala > Issues > Labels** and create each exact
-name. Descriptions and colors are presentation only; names are identity. Do not
-create aliases or differently-cased duplicates.
+Create or reconcile them with the attended operator credential. `--force`
+makes the operation idempotent and updates presentation metadata without
+changing label identity:
+
+```bash
+create_label() {
+  gh-vault run --name ghcli -- gh label create "$1" \
+    --repo forgegod/daidala --description "$2" --color "$3" --force
+}
+
+create_label daidala-si 'Daidala self-improvement intake' 5319e7
+create_label daidala-si:ready 'Validated and ready for attended admission' 0e8a16
+create_label daidala-si:claimed 'Claimed by an active Daidala cycle' 1d76db
+create_label daidala-si:blocked 'Blocked pending operator or prerequisite action' b60205
+create_label daidala-si:accepted 'Accepted terminal comparison outcome' 0e8a16
+create_label daidala-si:rejected 'Rejected terminal comparison outcome' b60205
+create_label daidala-si:sync-pending 'Finding awaits remote synchronization' fbca04
+create_label daidala-si:regression 'Regression category' d93f0b
+create_label daidala-si:improvement 'Improvement category' 0e8a16
+create_label daidala-si:compatibility 'Compatibility category' 1d76db
+create_label daidala-si:skill-gap 'Skill-gap category' 5319e7
+create_label daidala-si:research-candidate 'Research-candidate category' c5def5
+create_label daidala-si:priority-1 'Highest priority' b60205
+create_label daidala-si:priority-2 'High priority' d93f0b
+create_label daidala-si:priority-3 'Normal priority' fbca04
+create_label daidala-si:priority-4 'Low priority' c2e0c6
+create_label daidala-si:priority-5 'Lowest priority' ededed
+```
 
 On a fresh installation, verify that no Project with the fixed title exists,
 then create it once:
@@ -692,8 +770,8 @@ gh-vault run --name ghcli -- \
 
 Do not run the create command when the title already exists. The current
 instance is private user-owned Project 1 with node ID
-`PVT_kwHOAAjENs4Bd2Xo`. Open that Project and create these exact lowercase field
-names:
+`PVT_kwHOAAjENs4Bd2Xo`. Link it to the repository, then create these exact
+lowercase field names:
 
 | Field | Type | Options or format |
 |---|---|---|
@@ -706,10 +784,63 @@ names:
 | `workflow-id` | Text | Equal to the deterministic cycle ID. |
 | `terminal-comparison-outcome` | Single select | `retained`, `reverted`, `rejected`, `blocked`, `incomparable`, `no-change` |
 
+The public `gh project` CLI supports the complete required projection. Run each
+field command only when `field-list` shows that the exact name is absent:
+
+```bash
+gh-vault run --name ghcli -- \
+  gh project link 1 --owner forgegod --repo daidala
+
+create_field() {
+  name="$1"
+  type="$2"
+  options="${3:-}"
+  if gh-vault run --name ghcli -- \
+      gh project field-list 1 --owner forgegod --limit 100 --format json \
+      --jq ".fields[] | select(.name == \"$name\") | .name" |
+      grep -Fxq "$name"; then
+    return 0
+  fi
+  if test -n "$options"; then
+    gh-vault run --name ghcli -- \
+      gh project field-create 1 --owner forgegod --name "$name" \
+        --data-type "$type" --single-select-options "$options" --format json
+  else
+    gh-vault run --name ghcli -- \
+      gh project field-create 1 --owner forgegod --name "$name" \
+        --data-type "$type" --format json
+  fi
+}
+
+create_field category SINGLE_SELECT \
+  'regression,improvement,compatibility,skill-gap,research-candidate'
+create_field priority SINGLE_SELECT '1,2,3,4,5'
+create_field readiness SINGLE_SELECT \
+  'not-ready,ready,claimed,blocked,accepted,rejected,sync-pending'
+create_field claim-owner TEXT
+create_field claim-lease-expiry DATE
+create_field cycle-id TEXT
+create_field workflow-id TEXT
+create_field terminal-comparison-outcome SINGLE_SELECT \
+  'retained,reverted,rejected,blocked,incomparable,no-change'
+```
+
 Under the Project's **Workflows**, configure **Auto-add to project** with filter
 `repo:forgegod/daidala is:issue label:daidala-si`, then enable the workflow.
 Auto-add is presentation only: an issue is still ineligible until a maintainer
 adds `daidala-si:ready` and the structured issue body validates.
+
+![Enabled GitHub Project auto-add workflow scoped to Daidala issues with the daidala-si label](github-project-workflows-auto-add.png)
+
+The repository selector in the screenshot is `daidala`, so the visible filter
+`is:issue label:daidala-si` is equivalent to the fully qualified filter above.
+The **On** toggle confirms that the workflow is enabled.
+
+GitHub exposes no public create/update mutation for built-in Project workflows,
+and `gh project` has no workflow command. Do not add a wrapper that claims to
+automate this unavailable boundary. Auto-add is the one attended UI step and is
+not required by `SI-GITHUB-PROJECT`; the checker requires Project identity and
+the eight fields above.
 
 Verify read access without changing Project state:
 
@@ -727,16 +858,16 @@ inventory. Project number and Project node ID are different values; do not use
 one in place of the other.
 
 A label or Project with the expected display name but an unverified remote ID is
-not accepted. Daidala does not yet implement the planned `projects` onboarding
-command or concrete GitHub mutation adapter. Project creation is therefore an
-attended `gh` action, while labels, fields, and auto-add remain separately
-approved manual UI actions until their mutation commands are implemented and
-exercised. The operator credential must never become a runtime alias.
+not accepted. Project, repository-link, label, and field setup use the exercised
+public `gh` commands above; a Daidala wrapper would only duplicate that CLI.
+The operator credential must never become a runtime alias.
 
 ## 9. Materialize trusted registration
 
-After all capability probes pass, write the registration below the controller's
-Hermes-resolved profile root:
+After static authority is approved, write the registration and bindings below
+the controller's Hermes-resolved profile root. The checker needs those files to
+run bounded probes. Write `prerequisite-evidence.json` only after the probes
+return real receipts:
 
 ```text
 /home/raphael/.hermes/profiles/daidala-self-improvement/

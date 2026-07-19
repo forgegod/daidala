@@ -37,7 +37,11 @@ loaded by the controller gateway.
 | 1 — Daidala fixture and deterministic foundation | Done | Manifest, constraints, issue form, strict identities, fake-adapter records, and F01-F18 cases are repository-tested. |
 | 2 — Controller coordination and adapters | Done | Replay-safe coordination, normalized adapter contracts, and fake-boundary regressions are repository-tested. |
 | 3 — Prerequisite doctor and setup confirmation | Done | The read-only prerequisite report, credential-binding contract, and setup confirmation rules are repository-tested. |
-| 4 — Controller bootstrap and manual evaluation | Blocked | Approved revision, profile, Docker, isolated operator credential, runtime-token environment names, gateway, and Project 1 exist. Installation, board, non-secret bindings, Project fields/auto-add, labels, trusted evidence, attended receipt, evaluator receipt, concrete adapters, and separate setup approval remain. UC-01 is prohibited. |
+| 4A — Controller and shared-board bootstrap | Done | The controller loads the last approved detached revision, both packs validate, and the installation-global dedicated board is empty with the exact checkout workdir. The newly selected revision remains separately installation-gated. |
+| 4B — GitHub projection and static registration | Done | Project 1 is repository-linked with all required fields, all exact labels exist, optional attended auto-add is enabled, and strict registration plus non-secret bindings parse. |
+| 4C — Capability and isolation receipts | Blocked | Runtime read/write probes, attended Telegram delivery, and the actual restricted-container isolation probe succeed. Separate approval and installation of selected revision `a91fb200558d5cea253c73c1bf648e516ce541c3` plus combined non-secret evidence remain. |
+| 4D — Live prerequisite gate | Todo | Requires every `SI-*` dependency from 4C to pass from a clean checkout. |
+| 4E — Manual live evaluation | Todo | Requires a passing 4D report and separate UC-01 approval. |
 | 5 — Reconciliation, findings, and pack evaluation | Todo | Requires manual-cycle and replay evidence. |
 | 6 — Version-aware re-evaluation | Todo | Candidate Hermes identity is selected here, not invented in Phase 1. |
 | 7 — Repository gate and documentation | Todo | Requires prior live evidence or exact blockers. |
@@ -486,9 +490,8 @@ approval of this document alone.
 
 ### Phase 2 — Controller coordination and adapters
 
-Execution status: complete in commits `3d22a84` and `5b375f6`, with pack-digest
-admission regression coverage in `3a75a88`. Repository coordination and
-fake-adapter tests are implemented and verified. The operator checklist is
+Repository coordination and fake-adapter tests are implemented and verified.
+The operator checklist is
 [`../16-self-improvement-setup.md`](../16-self-improvement-setup.md).
 
 - Finish project admission, immutable manifest snapshots, deterministic
@@ -522,7 +525,7 @@ secret or private destination data; no profile, board, gateway, GitHub,
 repository, evaluator, or admission state changes; and the report gives the
 operator one complete confirmation of passes and omissions.
 
-### Phase 4 — Controller bootstrap and manual live evaluation
+### Phase 4A — Controller and shared-board bootstrap
 
 - Require a current Phase 3 prerequisite report before setup. A report is
   advisory evidence, not setup approval or cycle approval.
@@ -531,10 +534,44 @@ operator one complete confirmation of passes and omissions.
   editable checkout, uncommitted tree, or mismatched remote head fails setup.
 - After separate setup approval, create the controller profile and board without
   changing the sticky default.
-- Configure and verify attended notification and least-privilege GitHub aliases.
-- Idempotently create and verify labels, issue template, and Project.
-- Record controller and fresh-evaluator Hermes and Daidala identities.
-- Validate plugin, packs, skills, CLI, dashboard, and evaluator readiness.
+- Validate the exact detached plugin, packs, installation-global board identity,
+  unchanged current board, and unchanged sticky profile.
+
+Gate: plugin and board checks pass without admitting a cycle.
+
+### Phase 4B — GitHub projection and static registration
+
+- Idempotently create and verify labels, issue template, repository link, and
+  Project fields through the public `gh` CLI.
+- Keep built-in Project auto-add as optional attended UI presentation because
+  GitHub exposes no public create/update workflow mutation.
+- Materialize strict profile-local registration and non-secret environment
+  bindings without capability receipts or token values.
+
+Gate: remote identities read back exactly and both static files parse.
+
+### Phase 4C — Capability and isolation receipts
+
+- Replace invalid or insufficient runtime credentials and prove the exact
+  read-only intake and issue-only findings boundaries.
+- Produce an attended gateway delivery receipt through the registered adapter.
+- Implement and exercise the restricted-container boundary with a pinned image,
+  denied network, fresh home, absent controller credentials, and bounded mounts.
+- Write prerequisite evidence only from those returned identities and receipts.
+
+Gate: credential, notification, evaluator, controller, board, pack, repository,
+and Project checks pass without cycle admission.
+
+### Phase 4D — Live prerequisite gate
+
+- Run `daidala doctor --live` from the clean registered checkout.
+- Stop on any blocked, not-run, or error row; never edit evidence merely to make
+  the checker green.
+
+Gate: all eleven `SI-*` rows pass with the exact retained evidence.
+
+### Phase 4E — Manual live evaluation
+
 - Admit one controlled issue manually and run UC-01 for both packs.
 - Stop at and exercise the exact plan gate before any implementation card.
 - Run UC-02 only after its separate cycle approval.

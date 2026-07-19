@@ -31,7 +31,10 @@ The first concrete project is defined in
 | 2 — Controller coordination and adapters | Done | Replay-safe admission, immutable manifest snapshots, normalized adapter contracts, and fake-boundary regressions are repository-tested. |
 | 3 — Checklist-driven prerequisite diagnosis | Done | The read-only eleven-check prerequisite report, profile-local credential bindings, and bounded probes are repository-tested. |
 | 4 — Evaluator and comparison | Done | All three modes have local fixture coverage for isolation identity, baseline ordering, comparison, cleanup/quarantine, lesson reuse, and increment reconciliation. |
-| 5 — Project onboarding and reconciliation | Blocked | Approved revision, controller profile, Docker, isolated operator credential, runtime-token environment names, running gateway, and GitHub Project 1 exist. Plugin installation, dedicated board, non-secret bindings, trusted evidence, Project fields/auto-add, labels, attended receipt, evaluator receipt, onboarding commands, concrete adapters, and paused reconciliation remain required. Manual-cycle admission is prohibited. |
+| 5A — Static project onboarding | Done | Exact controller revision, shared board, GitHub labels and fields, repository link, registration, and non-secret bindings exist and verify. |
+| 5B — Live capability receipts | Blocked | Runtime read/write probes, attended Telegram delivery, and restricted-container isolation probing succeed. Separate installation approval for the selected controller revision and combined non-secret evidence remain. |
+| 5C — Live prerequisite gate | Todo | Requires every retained identity and capability from 5B. |
+| 5D — Manual cycle and paused reconciliation | Todo | Requires a passing live gate, separate cycle approval, and replay evidence. |
 | 6 — Repository and host gate | Blocked | Phase 5 evidence does not exist; repository/host acceptance must not run. |
 
 Relevant standing documents are
@@ -781,9 +784,25 @@ produces evidence or an exact blocker.
 
 ### Phase 5 — Project onboarding and reconciliation
 
-- Add dry-run-first project registration and archival commands.
-- Verify profile, board, repository, credential capability, evaluator backend,
-  and notification target.
+#### Phase 5A — Static onboarding
+
+- Use existing Hermes and `gh` commands for board and GitHub projection setup;
+  do not duplicate supported host CLIs.
+- Materialize and strictly parse registration plus non-secret credential
+  bindings before live probes.
+
+#### Phase 5B — Live capability receipts
+
+- Verify credential capability, evaluator backend, and notification target.
+- Retain only real bounded probe identities; never synthesize setup evidence.
+
+#### Phase 5C — Live prerequisite gate
+
+- Run the non-mutating checker from the clean trusted checkout.
+- Require every stable check ID to pass before admission.
+
+#### Phase 5D — Manual cycle and reconciliation
+
 - Add one paused reconciliation job only after a manual cycle passes.
 - Exercise replay, crash, board deletion, adapter outage, and teardown.
 
