@@ -598,14 +598,13 @@ run. Teardown remains destructive and separately approved.
 
 ## Verification and source audit
 
-Phases 1 through 4 are verified repository-locally. Their checkpoint records
-cover 328 tests, Ruff, Lefthook, Markdown links, both pack validations,
-build/Twine/release checks, DOX reconciliation, and graph review. The evaluator
-coverage uses bounded local fixtures and fake boundaries; it creates no live
-profile, board, GitHub object, model call, restricted container, cron job,
-gateway delivery, or finding.
+Repository verification covers the deterministic schemas, admission,
+evaluation, comparison, reconciliation, packs, package contents, and
+documentation contracts. Evaluator coverage uses bounded local fixtures and
+fake boundaries; it proves no live profile, board, GitHub adapter, model call,
+restricted container, cron job, gateway delivery, or finding.
 
-The latest retained clean live prerequisite report remains blocked with only
-`SI-REPOSITORY` passing. Phase 5 and later integration cases must replace
-`not-run` with exact evidence or `blocked`; they may not infer success from the
-repository tests or this document.
+The current live prerequisite state is owned by
+[the setup guide](16-self-improvement-setup.md). Integration cases must replace
+`not-run` with exact evidence or `blocked`; repository tests and documentation
+never imply live success.

@@ -25,13 +25,13 @@ The first concrete project is defined in
 
 ## Execution status
 
-| Phase | Status | Checkpoint |
+| Phase | Status | Evidence |
 |---|---|---|
-| 1 — Schemas and pure identity | Done | Commit `78c9732`; repository-local schemas, Daidala fixture, stable cases, documentation, 273 tests, Ruff, Markdown links, package/release checks, DOX, and post-commit graph review passed 2026-07-13. |
-| 2 — Controller coordination and adapters | Done | Commits `3d22a84`, `5b375f6`, and regression `3a75a88`; repository coordination, fake-adapter tests, 287 tests, Ruff, Lefthook, Markdown links, both pack validations, package/release checks, DOX, and post-commit graph rebuild passed 2026-07-13. |
-| 3 — Checklist-driven prerequisite diagnosis | Done | Commit `31e043b`; 308 tests, Ruff, Lefthook, Markdown links, both pack validations, build/Twine/release checks, incremental graph updates, and the clean-tree blocked live report passed 2026-07-14. |
-| 4 — Evaluator and comparison | Done | Commit `cba9c52`; complete local fixtures ran in all three modes with isolation-receipt identity, durable baseline ordering, clean teardown, dirty-state quarantine, strict comparison and lesson-reuse evidence, increment/DOX reconciliation, 328 tests, Ruff, Lefthook, Markdown links, both pack validations, build/Twine/release checks, independent review, and incremental graph updates passing 2026-07-14. |
-| 5 — Project onboarding and reconciliation | Blocked | The latest retained clean live report `019e7de0` exits `2` with only `SI-REPOSITORY` passing. A 2026-07-16 inventory confirms that the controller profile and Docker daemon now exist, but the controller plugin, dedicated board, trusted registration and evidence, least-privilege GitHub aliases and Project access, labels, attended gateway receipt, evaluator isolation receipt, project onboarding command surface, and paused reconciliation job do not. The mandatory manual-cycle and attended-delivery gate has not occurred. |
+| 1 — Schemas and pure identity | Done | Strict project, registration, cycle, metric, increment, and prerequisite identities are repository-tested. |
+| 2 — Controller coordination and adapters | Done | Replay-safe admission, immutable manifest snapshots, normalized adapter contracts, and fake-boundary regressions are repository-tested. |
+| 3 — Checklist-driven prerequisite diagnosis | Done | The read-only eleven-check prerequisite report, profile-local credential bindings, and bounded probes are repository-tested. |
+| 4 — Evaluator and comparison | Done | All three modes have local fixture coverage for isolation identity, baseline ordering, comparison, cleanup/quarantine, lesson reuse, and increment reconciliation. |
+| 5 — Project onboarding and reconciliation | Blocked | Approved revision, controller profile, Docker, isolated operator credential, runtime-token environment names, running gateway, and GitHub Project 1 exist. Plugin installation, dedicated board, non-secret bindings, trusted evidence, Project fields/auto-add, labels, attended receipt, evaluator receipt, onboarding commands, concrete adapters, and paused reconciliation remain required. Manual-cycle admission is prohibited. |
 | 6 — Repository and host gate | Blocked | Phase 5 evidence does not exist; repository/host acceptance must not run. |
 
 Relevant standing documents are

@@ -56,6 +56,10 @@ Own current architecture documentation, the numbered reading set, and executable
 - Use repository-relative links locally and authoritative upstream URLs for external claims.
 - A prerequisite checker mirrors `16-self-improvement-setup.md`; it never becomes
   an independent checklist or substitutes a passing report for human approval.
+- `16-self-improvement-setup.md` remains the single complete reproduction guide
+  for controller setup, credentials, GitHub projection, gateway, evaluator,
+  trusted evidence, and the ready-to-admit gate. Do not split required operator
+  steps into session history or implementation plans alone.
 
 ## Work Guidance
 

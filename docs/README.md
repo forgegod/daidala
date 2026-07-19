@@ -28,7 +28,7 @@ architecture references.
 | [Autonomous triggering](13-autonomous-triggering.md) | Hermes cron/webhook composition documented but not exercised end to end; implementation still requires exact-digest approval | Observed Hermes v0.18.2 CLI plus Daidala start CLI and tool schemas |
 | [Workflow constraints](14-workflow-constraints.md) | Implemented; workflow-scoped policy invariants, approval binding, replacement, and exact skill-backed reusable sources | `daidala/constraints.py`, `daidala/service.py`, and constraint regressions |
 | [Autonomous self-improvement flow](15-self-improvement.md) | Phases 1-4 implemented and repository-tested, including prerequisite diagnosis, admission coordination, evaluator/comparison evidence, and increment reconciliation; project onboarding, live adapters, attended cycle, retention, and publication remain blocked | Pure and fake-boundary tests, local evaluator fixtures, versioned result, and both implementation plans |
-| [Self-improvement environment prerequisites](16-self-improvement-setup.md) | Normative setup and remediation guide with stable check IDs and implemented read-only CLI checker; Docker is now available, but evaluator-isolation evidence, Project scopes, least-privilege aliases, controller plugin/board/registration, and attended gateway remain blockers | CLI parity and fail-closed tests, non-mutating 2026-07-16 host inventory, both implementation plans, and official Hermes, GitHub CLI, and Docker documentation |
+| [Self-improvement environment prerequisites](16-self-improvement-setup.md) | Complete reproducible setup/configuration and remediation guide with stable check IDs; revision, profile, Docker, credentials, gateway, and Project 1 exist, while plugin/board/bindings/Project fields/labels/receipts remain blocked | CLI parity and fail-closed tests, current non-secret host inventory, both implementation plans, and official Hermes, GitHub CLI, and Docker documentation |
 | Target commit/push | Not part of Daidala runtime | Delivery records both flags as false |
 
 “Implemented” means present in this repository. Compatibility claims are limited
@@ -86,9 +86,9 @@ carry that manifest's digest and active skill names.
     Phase 2 admission, identities, authority, document provenance, planned live flow, and
     Daidala dogfood cases.
 16. [Self-improvement environment prerequisites](16-self-improvement-setup.md) —
-    provision and verify the controller, board, GitHub, gateway, and restricted
-    evaluator boundary before a live cycle; use the planned checker only as a
-    completeness confirmation for this guide.
+    reproduce, provision, and verify the controller, credentials, board, GitHub,
+    gateway, trusted evidence, and restricted evaluator boundary before a live
+    cycle; use the checker only as a completeness confirmation for this guide.
 
 ## Find the right document
 
