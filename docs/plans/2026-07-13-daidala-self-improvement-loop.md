@@ -39,7 +39,7 @@ loaded by the controller gateway.
 | 3 — Prerequisite doctor and setup confirmation | Done | The read-only prerequisite report, credential-binding contract, and setup confirmation rules are repository-tested. |
 | 4A — Controller and shared-board bootstrap | Done | The controller loads the last approved detached revision, both packs validate, and the installation-global dedicated board is empty with the exact checkout workdir. The newly selected revision remains separately installation-gated. |
 | 4B — GitHub projection and static registration | Done | Project 1 is repository-linked with all required fields, all exact labels exist, optional attended auto-add is enabled, and strict registration plus non-secret bindings parse. |
-| 4C — Capability and isolation receipts | Blocked | Runtime read/write probes, attended Telegram delivery, and the actual restricted-container isolation probe succeed. Separate approval and installation of selected revision `1ab84260f6444ba605e388f814a52c168bbafcb5` plus combined non-secret evidence remain. |
+| 4C — Capability and isolation receipts | Blocked | Runtime read/write probes, attended Telegram delivery, and the actual restricted-container isolation probe succeed. Separate approval and installation of selected revision `dcb695356c462a76f2c6912fe5c641fb0c22a0a2` plus final non-secret evidence validation remain. |
 | 4D — Live prerequisite gate | Todo | Requires every `SI-*` dependency from 4C to pass from a clean checkout. |
 | 4E — Manual live evaluation | Todo | Requires a passing 4D report and separate UC-01 approval. |
 | 5 — Reconciliation, findings, and pack evaluation | Todo | Requires manual-cycle and replay evidence. |
