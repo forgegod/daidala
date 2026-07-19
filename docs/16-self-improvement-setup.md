@@ -42,7 +42,7 @@ Authoritative external references:
 | Evaluator | `restricted-container` |
 | Evaluator network | `denied-by-default` |
 | Supported Hermes baseline | `v0.18.2` |
-| Selected controller revision | `a91fb200558d5cea253c73c1bf648e516ce541c3` |
+| Selected controller revision | `1ab84260f6444ba605e388f814a52c168bbafcb5` |
 
 The controller may carry model, issue, and notification credentials. A fresh
 evaluator must not clone the controller profile or receive issue mutation,
@@ -59,7 +59,7 @@ retained evidence.
 | Hermes baseline | Pass | `Hermes Agent v0.18.2 (2026.7.7.2)` |
 | Repository identity | Partial | The implementation is checkpointed locally; `origin/main` remains at the prior baseline until publication is separately approved. The final live report requires the trusted remote baseline. |
 | Daidala command surfaces | Pass | Standalone and native controller-profile commands report Daidala `0.2.0`; native pack validation succeeds. |
-| Controller plugin revision | Partial | The controller profile still loads clean detached revision `afe1805fca5e27edc2e70ac526a697e76d8890fb`. Revision `a91fb200558d5cea253c73c1bf648e516ce541c3` contains the corrected capability and evaluator contracts but requires separate installation approval. |
+| Controller plugin revision | Partial | The controller profile loads clean detached revision `a91fb200558d5cea253c73c1bf648e516ce541c3`. Revision `1ab84260f6444ba605e388f814a52c168bbafcb5` also fixes native sticky-profile diagnosis but requires separate installation approval. |
 | Controller profile | Pass | `/home/raphael/.hermes/profiles/daidala-self-improvement` exists and the sticky profile remains `hermes-vc`. |
 | Dedicated board | Pass | Installation-global board `daidala-forgegod-daidala` exists with the exact checkout as default workdir, is empty, and did not replace the current `default` board. |
 | Restricted container | Partial | The dry-run-first restricted executor and actual isolation probe pass with a digest-pinned existing image, denied network, fresh tmpfs home, credential-free child environment, one bounded workspace mount, and a non-secret receipt. Combined evidence under the next approved controller revision remains. |
@@ -433,7 +433,7 @@ token, token-derived value, private destination ID, or raw command output.
 {
   "schema": "daidala.prerequisite-evidence/v1",
   "project_id": "forgegod-daidala",
-  "approved_controller_revision": "a91fb200558d5cea253c73c1bf648e516ce541c3",
+  "approved_controller_revision": "1ab84260f6444ba605e388f814a52c168bbafcb5",
   "sticky_profile": "hermes-vc",
   "credential_capabilities": [
     {
@@ -526,7 +526,7 @@ directory plugins. The persistent controller must load one exact committed
 last-known-good revision, never the mutable working checkout.
 
 The selected controller revision is
-`a91fb200558d5cea253c73c1bf648e516ce541c3`. Before installation, obtain separate
+`1ab84260f6444ba605e388f814a52c168bbafcb5`. Before installation, obtain separate
 approval for that exact identity. It is:
 
 - reachable from the local repository and eligible for the GitHub path only
@@ -535,7 +535,7 @@ approval for that exact identity. It is:
 - verified by the repository gate and detached-clone check.
 
 The controller currently loads the prior detached revision
-`afe1805fca5e27edc2e70ac526a697e76d8890fb`. Revision selection does not
+`a91fb200558d5cea253c73c1bf648e516ce541c3`. Revision selection does not
 authorize installation; after separate setup approval, choose exactly one path
 below. Both paths pass isolated Hermes v0.18.2 discovery and pack validation.
 
@@ -554,7 +554,7 @@ the persistent controller.
 ```bash
 (
 set -euo pipefail
-approved_revision=a91fb200558d5cea253c73c1bf648e516ce541c3
+approved_revision=1ab84260f6444ba605e388f814a52c168bbafcb5
 remote=https://github.com/forgegod/daidala.git
 profile_home="$(dirname "$(hermes -p daidala-self-improvement config path)")"
 plugin_dir="$profile_home/plugins/daidala"
@@ -580,7 +580,7 @@ virtualenv into Hermes.
 set -euo pipefail
 profile_home="$(dirname "$(hermes -p daidala-self-improvement config path)")"
 plugin_dir="$profile_home/plugins/daidala"
-approved_revision=a91fb200558d5cea253c73c1bf648e516ce541c3
+approved_revision=1ab84260f6444ba605e388f814a52c168bbafcb5
 test ! -e "$plugin_dir" && test ! -L "$plugin_dir"
 
 git -C /home/raphael/src/rb/daidala cat-file -e \
@@ -603,7 +603,7 @@ implicitly. If Hermes asks whether Daidala may replace built-in tools, answer
 ```bash
 profile_home="$(dirname "$(hermes -p daidala-self-improvement config path)")"
 plugin_dir="$profile_home/plugins/daidala"
-approved_revision=a91fb200558d5cea253c73c1bf648e516ce541c3
+approved_revision=1ab84260f6444ba605e388f814a52c168bbafcb5
 
 test "$(git -C "$plugin_dir" rev-parse HEAD)" = "$approved_revision"
 git -C "$plugin_dir" status --short
