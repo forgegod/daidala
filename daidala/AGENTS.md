@@ -24,6 +24,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `prerequisites.py` | Stable self-improvement checklist registry, retained capability evidence, bounded probes, and strict prerequisite reports. |
 | `cycles.py` | Pure self-improvement cycle identity, metric kinds, outcomes, delegation evidence, and lesson-reuse evidence. |
 | `evaluation.py` | Isolation receipts, fresh evaluator homes, isolated candidate environments, immutable metric and lesson-reuse evidence, comparison verdicts, baseline-before-mutation worktrees, cleanup, and quarantine records. |
+| `restricted_container.py` | Digest-pinned Docker execution, credential-free child environments, bounded mounts and output, denied-network setup probes, and isolation receipts. |
 | `increments.py` | Strict increment-document classification, producer provenance, canonical manifest, bounds, and digest. |
 | `adapters.py` | Strict normalized intake, finding, notification, claim, and receipt records plus injectable protocols. |
 | `controller.py` | Replay-safe cycle admission, manifest snapshots, deterministic workflow binding, immutable cycle storage, and receipt validation. |
@@ -33,7 +34,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `schemas.py` | Tool schemas exposed to the model. |
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
 | `packs.py` | Pack loading and deterministic validation. |
-| `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle dispatch, pack operations, and subprocess mutation boundary. |
+| `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle dispatch, pack operations, dry-run-first evaluator probes, and subprocess mutation boundary. |
 | `dashboard_backend.py` | Profile-safe dashboard read model, live Kanban snapshots, constraint previews, and typed compare-and-swap replacement adapter. |
 | `recommendations.py` | Pure finite pending-decision and next-action derivation from ledger facts and live Kanban snapshots. |
 | `setup_wizard.py` | Typed setup preview, confirmation gate, and documented Hermes board/profile inventory commands. |
@@ -67,6 +68,10 @@ workflow-pack adapters, and bundled orchestration skills.
 - Credential aliases resolve only through explicit profile-local `environment`
   bindings. GitHub tokens exist only for the bounded child call as `GH_TOKEN`;
   command output and reports never include token-derived values.
+- GitHub intake capability evidence exactly declares `read-organization`,
+  `read-project`, and `read-public-repository`; the classic PAT requires both
+  `read:org` and `read:project` for reliable user-Project resolution through
+  `gh`.
 - Constraint file and exact policy-skill inputs converge on the shared service
   path. Policy skills require a verified complete-directory digest and exactly
   one fenced `yaml` constraint document after frontmatter.
@@ -83,6 +88,11 @@ workflow-pack adapters, and bundled orchestration skills.
 - Candidate evaluators use a fresh profile-local home and an allowlisted
   environment without controller credentials and require a complete isolation
   receipt whose digest matches the immutable evaluator identity and registration.
+  Restricted-container execution requires an existing canonical
+  `name@sha256:<digest>` image, denied networking, a read-only root, no Linux
+  capabilities, no new privileges, a non-root host UID/GID, exactly one candidate
+  workspace bind mount, fresh bounded tmpfs home and temporary storage, bounded
+  output, and no credential-like container environment keys.
   Candidate identity must differ from the
   loaded controller artifact, durable baseline evidence must match cycle, mode,
   repository revision, limits, controller, and boundary identity before any

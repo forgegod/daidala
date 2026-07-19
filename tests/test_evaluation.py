@@ -300,13 +300,27 @@ def isolation_evidence() -> EvaluatorIsolationEvidence:
     return EvaluatorIsolationEvidence(
         backend="restricted-container",
         network="denied-by-default",
-        image_identity="sha256:" + "6" * 64,
+        image_identity="example/evaluator@sha256:" + "6" * 64,
         fresh_home=True,
         network_denied=True,
         controller_credentials_absent=True,
         bounded_mounts=True,
         receipt_id="isolation-receipt-1",
     )
+
+
+def test_isolation_evidence_requires_canonical_digest_pinned_image() -> None:
+    with pytest.raises(PolicyViolationError, match="name@sha256"):
+        EvaluatorIsolationEvidence(
+            backend="restricted-container",
+            network="denied-by-default",
+            image_identity="sha256:" + "6" * 64,
+            fresh_home=True,
+            network_denied=True,
+            controller_credentials_absent=True,
+            bounded_mounts=True,
+            receipt_id="isolation-receipt-1",
+        )
 
 
 def init_repository(path: Path) -> Path:

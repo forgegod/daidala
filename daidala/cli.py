@@ -12,10 +12,12 @@ from importlib import resources
 from pathlib import Path
 from typing import NoReturn, cast
 
+from .evaluation import EvaluatorIsolationEvidence
 from .kanban import KanbanGraphAdapter
 from .locations import resolve_data_root
 from .packs import PackError, load_pack
 from .prerequisites import DoctorRunner, run_prerequisite_diagnosis
+from .restricted_container import RestrictedContainerExecutor, probe_restricted_container
 from .service import WorkflowService
 from .skills import (
     PackInstallPlan,
@@ -30,6 +32,7 @@ from .store import WorkflowStore
 CommandRunner = Callable[[tuple[str, ...]], tuple[int, str]]
 RevisionResolver = Callable[[str], str]
 ServiceFactory = Callable[[], WorkflowService]
+ContainerProbe = Callable[[str], EvaluatorIsolationEvidence]
 
 
 def register_cli(parser: argparse.ArgumentParser) -> None:
@@ -48,6 +51,24 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
         "--live",
         action="store_true",
         help="Run bounded GitHub, gateway, and container availability probes",
+    )
+
+    evaluator = sub.add_parser(
+        "evaluator", help="Inspect or exercise the restricted-container boundary"
+    )
+    evaluator_sub = evaluator.add_subparsers(dest="evaluator_command", required=True)
+    evaluator_probe = evaluator_sub.add_parser(
+        "probe", help="Plan or run one disposable evaluator-isolation probe"
+    )
+    evaluator_probe.add_argument(
+        "--image",
+        required=True,
+        help="Existing immutable evaluator image as name@sha256:<digest>",
+    )
+    evaluator_probe.add_argument(
+        "--apply",
+        action="store_true",
+        help="Create the disposable denied-network container and emit evidence",
     )
 
     start = sub.add_parser("start", help="Validate inputs and create the initial Kanban graph")
@@ -195,6 +216,7 @@ def main(
     service_factory: ServiceFactory | None = None,
     doctor_runner: DoctorRunner | None = None,
     doctor_environ: Mapping[str, str] | None = None,
+    container_probe: ContainerProbe | None = None,
 ) -> int:
     args = build_parser().parse_args(argv)
     return run_command(
@@ -207,6 +229,7 @@ def main(
         service_factory=service_factory,
         doctor_runner=doctor_runner,
         doctor_environ=doctor_environ,
+        container_probe=container_probe,
     )
 
 
@@ -221,6 +244,7 @@ def run_command(
     service_factory: ServiceFactory | None = None,
     doctor_runner: DoctorRunner | None = None,
     doctor_environ: Mapping[str, str] | None = None,
+    container_probe: ContainerProbe | None = None,
 ) -> int:
     """Execute one parsed command and return its process exit code."""
     try:
@@ -236,6 +260,8 @@ def run_command(
             )
             _print(report.to_dict())
             return report.exit_code
+        if args.command == "evaluator":
+            return _run_evaluator_probe(args, container_probe=container_probe)
         if args.command in {"start", "status", "replace-constraints", "approve", "cancel"}:
             selected_factory = service_factory or (
                 lambda: _default_service(command_runner=command_runner)
@@ -254,6 +280,37 @@ def run_command(
     except Exception as exc:  # noqa: BLE001 - process boundary
         _print({"success": False, "error": type(exc).__name__, "message": str(exc)})
         return 1
+
+
+def _run_evaluator_probe(
+    args: argparse.Namespace,
+    *,
+    container_probe: ContainerProbe | None,
+) -> int:
+    if args.evaluator_command != "probe":
+        raise ValueError(f"unsupported evaluator command: {args.evaluator_command}")
+    if not args.apply:
+        policy = RestrictedContainerExecutor(args.image).policy()
+        _print(
+            {
+                "success": True,
+                "operation": "evaluator-probe",
+                "dry_run": True,
+                "policy": policy,
+            }
+        )
+        return 0
+    selected_probe = container_probe or probe_restricted_container
+    evidence = selected_probe(args.image)
+    _print(
+        {
+            "success": True,
+            "operation": "evaluator-probe",
+            "dry_run": False,
+            "evidence": evidence.to_dict(),
+        }
+    )
+    return 0
 
 
 def _run_init(args: argparse.Namespace) -> int:

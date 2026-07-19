@@ -21,6 +21,7 @@ from .credentials import (
     parse_credential_bindings,
 )
 from .errors import PolicyViolationError
+from .evaluation import validate_pinned_image_identity
 from .packs import load_pack, pack_content_digest
 from .projects import (
     MAX_MANIFEST_BYTES,
@@ -55,7 +56,11 @@ _REQUIRED_PROJECT_FIELDS = {
     "workflow-id",
     "terminal-comparison-outcome",
 }
-_INTAKE_ALLOWED = {"read-project", "read-public-repository"}
+_INTAKE_ALLOWED = {
+    "read-organization",
+    "read-project",
+    "read-public-repository",
+}
 _FINDINGS_ALLOWED = {"metadata-read", "issues-read-write"}
 _REQUIRED_DENIED = {
     "contents-write",
@@ -409,7 +414,7 @@ class PrerequisiteEvidence:
             )
             for key in ("backend", "network"):
                 _require_slug(self.evaluator[key], f"evaluator {key}")
-            _require_text(self.evaluator["image_identity"], "evaluator image identity", 256)
+            validate_pinned_image_identity(self.evaluator["image_identity"])
             for key in (
                 "fresh_home",
                 "network_denied",
@@ -911,6 +916,14 @@ def _check_evaluator(context: _DiagnosisContext) -> CheckResult:
     for command in (
         ("docker", "version", "--format", "{{.Client.Version}}|{{.Server.Version}}"),
         ("docker", "network", "inspect", "none", "--format", "{{.Name}}|{{.Driver}}"),
+        (
+            "docker",
+            "image",
+            "inspect",
+            evaluator["image_identity"],
+            "--format",
+            "{{.Id}}",
+        ),
     ):
         code, _ = context.runner(command, context.safe_environment)
         if code != 0:

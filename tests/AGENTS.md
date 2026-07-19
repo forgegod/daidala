@@ -18,6 +18,9 @@ completeness without touching a real Hermes profile.
   identity and ordering, immutable evidence, deterministic/repeated/
   observational verdicts, controlled lesson-reuse deltas, graph staleness,
   clean teardown, dirty-worktree quarantine, and exact blockers.
+- Restricted-container tests pin image identity, dry-run/apply parity, denied
+  network, fresh tmpfs home, bounded mounts/output, non-root execution,
+  credential exclusion, image-volume rejection, and fail-closed probe output.
 - Increment-reconciliation tests bind planned mutable paths, frozen diffs,
   observed content, artifact and activation identities, producers, and nearest
   owning DOX scope before retention can become eligible.

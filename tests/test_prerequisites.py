@@ -80,7 +80,11 @@ def _evidence() -> dict[str, object]:
             {
                 "alias": "github-daidala-read-issues",
                 "capability": "github-intake",
-                "allowed": ["read-project", "read-public-repository"],
+                "allowed": [
+                    "read-organization",
+                    "read-project",
+                    "read-public-repository",
+                ],
                 "denied": denied,
                 "expires_on": "2026-12-31",
                 "read_probe_receipt": "receipt-intake",
@@ -217,6 +221,8 @@ class FakeRunner:
             return 0, "27.0|27.0"
         if command[:3] == ("docker", "network", "inspect"):
             return 0, "none|null"
+        if command[:3] == ("docker", "image", "inspect"):
+            return 0, "sha256:" + "b" * 64
         raise AssertionError(f"unexpected command: {command}")
 
 
@@ -368,6 +374,31 @@ def test_denied_capability_metadata_fails_before_credential_resolution(
     assert report.exit_code == 2
     assert intake.status is CheckStatus.BLOCKED
     assert "denied capabilities" in (intake.blocker or "")
+    assert not any(
+        command[:3] == ("gh", "issue", "list")
+        and environment is not None
+        and environment.get("GH_TOKEN") == "intake-secret"
+        for command, environment in runner.calls
+    )
+
+
+def test_intake_requires_read_organization_capability_before_credential_resolution(
+    configured_fixture: Fixture,
+) -> None:
+    evidence_path = configured_fixture.registration.with_name("prerequisite-evidence.json")
+    evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+    evidence["credential_capabilities"][0]["allowed"] = [
+        "read-project",
+        "read-public-repository",
+    ]
+    evidence_path.write_text(json.dumps(evidence), encoding="utf-8")
+
+    report, runner = _run(configured_fixture)
+    intake = next(row for row in report.checks if row.check_id == "SI-GITHUB-INTAKE")
+
+    assert report.exit_code == 2
+    assert intake.status is CheckStatus.BLOCKED
+    assert "allowed capabilities" in (intake.blocker or "")
     assert not any(
         command[:3] == ("gh", "issue", "list")
         and environment is not None

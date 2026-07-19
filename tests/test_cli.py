@@ -9,6 +9,7 @@ from typing import Any, cast
 import pytest
 
 from daidala import cli
+from daidala.evaluation import EvaluatorIsolationEvidence
 
 PROFILE_ARGS = [
     "--default-profile",
@@ -20,6 +21,10 @@ PROFILE_ARGS = [
     "--stage-profile",
     "review=reviewer",
 ]
+PINNED_EVALUATOR_IMAGE = (
+    "catthehacker/ubuntu@sha256:"
+    "3220992391c1182a0cfe4c64453511772c54f4c39e960d26a5e327960675982e"
+)
 
 
 @dataclass
@@ -151,6 +156,61 @@ def test_init_apply_creates_profile_local_schema(tmp_path: Path, monkeypatch, ca
     assert Path(payload["database"]).is_file()
     assert Path(payload["database"]).parent == tmp_path / "daidala"
     assert sentinel.read_text(encoding="utf-8") == "legacy"
+
+
+def test_evaluator_probe_is_dry_run_by_default(capsys) -> None:
+    calls: list[str] = []
+
+    def unexpected_probe(image: str) -> EvaluatorIsolationEvidence:
+        calls.append(image)
+        raise AssertionError("dry-run must not start a container")
+
+    code = cli.main(
+        ["evaluator", "probe", "--image", PINNED_EVALUATOR_IMAGE],
+        container_probe=unexpected_probe,
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert code == 0
+    assert calls == []
+    assert payload["success"] is True
+    assert payload["operation"] == "evaluator-probe"
+    assert payload["dry_run"] is True
+    assert payload["policy"]["image_identity"] == PINNED_EVALUATOR_IMAGE
+    assert payload["policy"]["network"] == "none"
+    assert payload["policy"]["controller_environment_inherited"] is False
+
+
+def test_evaluator_probe_apply_is_equivalent_on_standalone_and_native_surfaces(
+    capsys,
+) -> None:
+    calls: list[str] = []
+
+    def probe(image: str) -> EvaluatorIsolationEvidence:
+        calls.append(image)
+        return EvaluatorIsolationEvidence(
+            backend="restricted-container",
+            network="denied-by-default",
+            image_identity=image,
+            fresh_home=True,
+            network_denied=True,
+            controller_credentials_absent=True,
+            bounded_mounts=True,
+            receipt_id="sha256:" + "a" * 64,
+        )
+
+    argv = ["evaluator", "probe", "--image", PINNED_EVALUATOR_IMAGE, "--apply"]
+    standalone_code = cli.main(argv, container_probe=probe)
+    standalone = json.loads(capsys.readouterr().out)
+    native_code = cli.run_command(_host_args(argv), container_probe=probe)
+    native = json.loads(capsys.readouterr().out)
+
+    assert standalone_code == native_code == 0
+    assert calls == [PINNED_EVALUATOR_IMAGE, PINNED_EVALUATOR_IMAGE]
+    assert native == standalone
+    assert standalone["success"] is True
+    assert standalone["dry_run"] is False
+    assert standalone["evidence"]["receipt_id"] == "sha256:" + "a" * 64
 
 
 def test_packs_list_uses_shared_command_tree(capsys) -> None:

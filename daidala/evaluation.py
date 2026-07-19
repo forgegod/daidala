@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 import shutil
 import statistics
 import subprocess
@@ -37,6 +38,18 @@ EVALUATOR_SCHEMA = "daidala.evaluator-identity/v1"
 COMPARISON_SCHEMA = "daidala.comparison-report/v1"
 _CYCLE_PREFIX = "cycle-"
 _ALLOWED_INHERITED_ENV = frozenset({"LANG", "LC_ALL", "PATH", "TZ"})
+_PINNED_IMAGE_PATTERN = re.compile(
+    r"^[a-z0-9](?:[a-z0-9._/-]*[a-z0-9])?@sha256:[0-9a-f]{64}$"
+)
+
+
+def validate_pinned_image_identity(value: object) -> str:
+    """Return one canonical digest-pinned image identity or fail closed."""
+    if not isinstance(value, str) or not _PINNED_IMAGE_PATTERN.fullmatch(value):
+        raise PolicyViolationError(
+            "evaluator image identity must use canonical name@sha256:<digest>"
+        )
+    return value
 
 
 @dataclass(frozen=True)
@@ -772,7 +785,7 @@ class EvaluatorIsolationEvidence:
     def __post_init__(self) -> None:
         if self.backend != "restricted-container" or self.network != "denied-by-default":
             raise PolicyViolationError("evaluator isolation boundary is not approved for v1")
-        _require_text(self.image_identity, "evaluator image identity", 256)
+        validate_pinned_image_identity(self.image_identity)
         _require_text(self.receipt_id, "evaluator isolation receipt ID", 256)
         checks = {
             "fresh home": self.fresh_home,
