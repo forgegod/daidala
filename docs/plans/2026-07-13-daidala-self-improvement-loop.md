@@ -37,14 +37,14 @@ loaded by the controller gateway.
 | 1 — Daidala fixture and deterministic foundation | Done | Manifest, constraints, issue form, strict identities, fake-adapter records, and F01-F18 cases are repository-tested. |
 | 2 — Controller coordination and adapters | Done | Replay-safe coordination, normalized adapter contracts, and fake-boundary regressions are repository-tested. |
 | 3 — Prerequisite doctor and setup confirmation | Done | The read-only prerequisite report, credential-binding contract, and setup confirmation rules are repository-tested. |
-| 4A — Controller and shared-board bootstrap | Done | The controller loads the last approved detached revision, both packs validate, and the installation-global dedicated board is empty with the exact checkout workdir. The newly selected revision remains separately installation-gated. |
+| 4A — Controller and shared-board bootstrap | Done | The controller loads approved detached revision `dcb695356c462a76f2c6912fe5c641fb0c22a0a2`, both packs validate, and the installation-global dedicated board is empty with the exact checkout workdir. |
 | 4B — GitHub projection and static registration | Done | Project 1 is repository-linked with all required fields, all exact labels exist, optional attended auto-add is enabled, and strict registration plus non-secret bindings parse. |
-| 4C — Capability and isolation receipts | Blocked | Runtime read/write probes, attended Telegram delivery, and the actual restricted-container isolation probe succeed. Separate approval and installation of selected revision `dcb695356c462a76f2c6912fe5c641fb0c22a0a2` plus final non-secret evidence validation remain. |
-| 4D — Live prerequisite gate | Todo | Requires every `SI-*` dependency from 4C to pass from a clean checkout. |
-| 4E — Manual live evaluation | Todo | Requires a passing 4D report and separate UC-01 approval. |
-| 5 — Reconciliation, findings, and pack evaluation | Todo | Requires manual-cycle and replay evidence. |
-| 6 — Version-aware re-evaluation | Todo | Candidate Hermes identity is selected here, not invented in Phase 1. |
-| 7 — Repository gate and documentation | Todo | Requires prior live evidence or exact blockers. |
+| 4C — Capability and isolation receipts | Done | Runtime read/write probes, attended Telegram delivery, controlled findings write, and restricted-container isolation receipts are retained as strict non-secret evidence. |
+| 4D — Live prerequisite gate | Done | Native and standalone clean-checkout reports each return all eleven `SI-*` checks as `pass` for controller revision `dcb695356c462a76f2c6912fe5c641fb0c22a0a2`. |
+| 4E — Manual live evaluation | Blocked | The prerequisite gate passes, but UC-01 remains prohibited until separately approved. |
+| 5 — Reconciliation, findings, and pack evaluation | Blocked | Requires approved manual-cycle and replay evidence from 4E. |
+| 6 — Version-aware re-evaluation | Blocked | Requires Phase 5 evidence; candidate Hermes identity is selected here, not invented earlier. |
+| 7 — Repository gate and documentation | Blocked | Requires the preceding live evaluation and comparison evidence. |
 
 ## Registered project
 

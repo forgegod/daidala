@@ -32,10 +32,10 @@ The first concrete project is defined in
 | 3 — Checklist-driven prerequisite diagnosis | Done | The read-only eleven-check prerequisite report, profile-local credential bindings, and bounded probes are repository-tested. |
 | 4 — Evaluator and comparison | Done | All three modes have local fixture coverage for isolation identity, baseline ordering, comparison, cleanup/quarantine, lesson reuse, and increment reconciliation. |
 | 5A — Static project onboarding | Done | Exact controller revision, shared board, GitHub labels and fields, repository link, registration, and non-secret bindings exist and verify. |
-| 5B — Live capability receipts | Blocked | Runtime read/write probes, attended Telegram delivery, and restricted-container isolation probing succeed. Separate installation approval for the selected controller revision and combined non-secret evidence remain. |
-| 5C — Live prerequisite gate | Todo | Requires every retained identity and capability from 5B. |
-| 5D — Manual cycle and paused reconciliation | Todo | Requires a passing live gate, separate cycle approval, and replay evidence. |
-| 6 — Repository and host gate | Blocked | Phase 5 evidence does not exist; repository/host acceptance must not run. |
+| 5B — Live capability receipts | Done | Runtime read/write probes, attended Telegram delivery, controlled findings write, and restricted-container isolation receipts are retained as strict non-secret evidence. |
+| 5C — Live prerequisite gate | Done | Native and standalone clean-checkout reports each return all eleven stable checks as `pass`. |
+| 5D — Manual cycle and paused reconciliation | Blocked | The prerequisite gate passes, but the first cycle remains prohibited until separately approved. |
+| 6 — Repository and host gate | Blocked | Requires manual-cycle and replay evidence from Phase 5D; prior repository checks do not substitute for it. |
 
 Relevant standing documents are
 [Workflow ecosystem market overview](../12-market-overview.md),
