@@ -395,14 +395,15 @@ event-bound receipt validation, and deterministic workflow binding. Admission
 snapshots bind the canonical constraint digest and complete executable-stage
 profile map; workflow dispatch requires the expected baseline before ledger or
 Kanban mutation. The production GitHub issue/claim and Hermes attended-delivery
-adapters are composed only by the dry-run-first project-cycle command and remain
-blocked from live use until the exact source revision, registration v2 migration,
-and dry-run identity are separately approved. The loop never marks its generated
-finding `daidala-si:ready`.
+adapters are composed only by the dry-run-first project-cycle command. Commit
+`311fcae39e4d1e6505b38c015792008315f64e95` is installed detached with
+registration v2 and passes post-install live diagnosis; issue creation, preview
+inspection, and apply remain distinct approvals. The loop never marks its
+generated finding `daidala-si:ready`.
 
 Phase 4 repository coverage uses temporary repositories and fake host
-boundaries. It does not claim that the currently blocked restricted-container,
-attended gateway, credential, or live controller prerequisites have passed.
+boundaries. It remains distinct from the profile-local post-install prerequisite
+report and cannot substitute for live admission evidence.
 
 ## Recovery and reconciliation
 
@@ -505,10 +506,10 @@ GitHub Project membership is presentation only. Eligibility requires base label
 `daidala-si`, exactly one namespaced category, repository priority, structured
 body, and separate maintainer-applied `daidala-si:ready`. The issue template,
 labels, Project, credentials, and prerequisite evidence are configured and
-verified. The supported production adapter and project-cycle source path now
-exists; live issue admission remains blocked until that code is committed,
+verified. The supported production adapter and project-cycle path is committed,
 installed as an exact detached controller revision, migrated to registration v2,
-and previewed successfully.
+and live-diagnosed. Admission now waits for a separately approved controlled
+issue, successful preview inspection, and exact apply approval.
 
 ### Pack-neutral activation
 
@@ -531,8 +532,8 @@ uses bundled `daidala:aidlc-adapter`. The engine contains no pack-name branch.
 
 Cases: `TC-F04-01`, `TC-F05-01`, `TC-F06-01`, `TC-F08-01`, `TC-F08-02`, and
 `TC-F09-01`. Status: blocked before mutation after approval; the production
-admission path is implemented in the working tree but not installed or exercised
-against the live controller.
+admission path is installed and live-diagnosed, but no controlled issue, preview,
+claim, or workflow exists.
 
 ### UC-02 walkthrough
 
@@ -606,10 +607,10 @@ mutation. Do not substitute generic workflow `start`, `status`, `approve`, or
 
 Project registration mutation, project-cycle status, exact cycle approval,
 archive, pause/resume, recovery, and reconciliation remain unsupported. The
-working-tree admission command is not live evidence: it must be committed,
-installed from an exact detached revision, migrated to registration v2, and
-exercised through approved dry-run and apply invocations. Phase 6 must exercise
-candidate upgrades. Teardown remains destructive and separately approved.
+installed command and passing prerequisite report are readiness evidence, not
+admission evidence: approved dry-run and apply invocations must still exercise
+the production boundary. Phase 6 must exercise candidate upgrades. Teardown
+remains destructive and separately approved.
 
 ## Verification and source audit
 

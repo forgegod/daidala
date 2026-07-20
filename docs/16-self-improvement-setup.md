@@ -42,7 +42,7 @@ Authoritative external references:
 | Evaluator | `restricted-container` |
 | Evaluator network | `denied-by-default` |
 | Supported Hermes baseline | `v0.18.2` |
-| Approved and installed controller revision | `dcb695356c462a76f2c6912fe5c641fb0c22a0a2` |
+| Approved and installed controller revision | `311fcae39e4d1e6505b38c015792008315f64e95` |
 
 The controller may carry model, issue, and notification credentials. A fresh
 evaluator must not clone the controller profile or receive issue mutation,
@@ -57,9 +57,9 @@ retained evidence.
 | Prerequisite | State | Evidence |
 |---|---|---|
 | Hermes baseline | Pass | `Hermes Agent v0.18.2 (2026.7.7.2)` |
-| Repository identity | Pass | Both live reports verified canonical repository `forgegod/daidala`, clean local baseline `5b2fb108fe85ff7074e4c6306b252f68d3fd24a1`, and the trusted remote identity. Publication remains separately gated. |
+| Repository identity | Pass | The post-install live report verifies canonical repository `forgegod/daidala`, clean local baseline `311fcae39e4d1e6505b38c015792008315f64e95`, and the trusted remote identity. Publication remains separately gated. |
 | Daidala command surfaces | Pass | Standalone and native controller-profile commands report Daidala `0.2.0`; native pack validation succeeds. |
-| Controller plugin revision | Pass | The controller profile loads clean detached revision `dcb695356c462a76f2c6912fe5c641fb0c22a0a2`; native and standalone diagnosis both verify the same identity. |
+| Controller plugin revision | Pass | The controller profile loads clean detached revision `311fcae39e4d1e6505b38c015792008315f64e95`; post-install live diagnosis verifies the same identity. |
 | Controller profile | Pass | `/home/raphael/.hermes/profiles/daidala-self-improvement` exists and the sticky profile remains `hermes-vc`. |
 | Dedicated board | Pass | Installation-global board `daidala-forgegod-daidala` exists with the exact checkout as default workdir, is empty, and did not replace the current `default` board. |
 | Restricted container | Pass | The dry-run-first restricted executor and actual isolation probe pass with a digest-pinned existing image, denied network, fresh tmpfs home, credential-free child environment, one bounded workspace mount, and retained non-secret receipt. |
@@ -68,7 +68,7 @@ retained evidence.
 | GitHub Project | Pass | Private user-owned Project 1 is linked to `forgegod/daidala`, contains the eight exact Daidala fields in addition to GitHub defaults, and has the optional issue/`daidala-si` auto-add workflow enabled through the GitHub UI. |
 | Attended notification | Pass | Telegram home delivery returned receipt `telegram:10`; the operator confirmed the exact probe content and both live reports validate the retained identity. |
 | Self-improvement labels | Pass | All 17 exact `daidala-si` base, state, category, and priority labels exist in `forgegod/daidala`. |
-| Trusted runtime state | Pass | Strict `registration.yaml`, `credential-bindings.yaml`, and non-secret `prerequisite-evidence.json` parse and pass all native and standalone live checks. |
+| Trusted runtime state | Pass | Strict registration v2, `credential-bindings.yaml`, and non-secret `prerequisite-evidence.json` parse and pass all post-install live checks; the private attended destination remains profile-local. |
 
 Do not admit UC-01 unless every required row passes and the operator separately
 approves that exact cycle.
@@ -84,13 +84,13 @@ in this order; a later step must not be used to waive an earlier blocker.
 | 2 | Verify Docker availability, then produce evaluator isolation evidence. | The isolation probe creates a disposable container. | Pass; the actual isolation receipt is retained and live-validated. |
 | 3 | Provision one attended operator credential and two least-privilege runtime credentials. | Vault and profile environment only. | Operator token is isolated; both runtime read probes and the controlled findings write probe pass. |
 | 4 | Create the controller profile without changing the sticky profile. | Hermes profile. | Pass. |
-| 5 | Install the selected detached Daidala revision. | Controller plugin directory. | Pass at exact detached revision `dcb695356c462a76f2c6912fe5c641fb0c22a0a2`. |
+| 5 | Install the selected detached Daidala revision. | Controller plugin directory. | Pass at exact detached revision `311fcae39e4d1e6505b38c015792008315f64e95`. |
 | 6 | Create the dedicated Kanban board. | Installation-global Hermes board. | Pass. |
 | 7 | Configure and verify the attended gateway target. | Profile gateway/home channel. | Pass; delivery receipt and operator confirmation are retained and live-validated. |
 | 8 | Create labels and the user-owned GitHub Project. | GitHub Issues and Projects. | Required projection and optional attended UI auto-add pass. |
-| 9 | Materialize trusted non-secret registration, bindings, and receipts. | Profile-local project files. | Pass; registration, bindings, and combined evidence validate strictly. |
-| 10 | Run the read-only live prerequisite checker from a clean checkout. | None. | Pass; native and standalone reports each return all eleven `SI-*` checks as `pass`. |
-| 11 | Admit UC-01 manually. | GitHub issue, board, evaluator, and cycle artifacts. | Approved on 2026-07-20. The complete repository gate passes, but live admission remains blocked pending a verified commit, exact detached controller installation, registration v2 migration, and approved dry-run/apply evidence. |
+| 9 | Materialize trusted non-secret registration, bindings, and receipts. | Profile-local project files. | Pass; registration v2 binds the exact private attended destination, and bindings plus combined evidence validate strictly. |
+| 10 | Run the read-only live prerequisite checker from a clean checkout. | None. | Pass; the retained post-install report returns all eleven `SI-*` checks as `pass` at revision `311fcae39e4d1e6505b38c015792008315f64e95`. |
+| 11 | Admit UC-01 manually. | GitHub issue, board, evaluator, and cycle artifacts. | Approved on 2026-07-20. Installation and registration migration pass; no issue exists yet, so dry-run inspection and apply approval remain. |
 
 The operator owns browser authorization, credential creation, attended-channel
 confirmation, setup approval, and later cycle approval. The agent may select a
@@ -434,7 +434,7 @@ token, token-derived value, private destination ID, or raw command output.
 {
   "schema": "daidala.prerequisite-evidence/v1",
   "project_id": "forgegod-daidala",
-  "approved_controller_revision": "dcb695356c462a76f2c6912fe5c641fb0c22a0a2",
+  "approved_controller_revision": "311fcae39e4d1e6505b38c015792008315f64e95",
   "sticky_profile": "hermes-vc",
   "credential_capabilities": [
     {
@@ -527,7 +527,7 @@ directory plugins. The persistent controller must load one exact committed
 last-known-good revision, never the mutable working checkout.
 
 The approved and installed controller revision is
-`dcb695356c462a76f2c6912fe5c641fb0c22a0a2`. Every reproduction or replacement
+`311fcae39e4d1e6505b38c015792008315f64e95`. Every reproduction or replacement
 still requires separate approval for that exact identity. It is:
 
 - reachable from the local repository and eligible for the GitHub path only
@@ -535,10 +535,11 @@ still requires separate approval for that exact identity. It is:
 - contains the required evaluator and comparison implementation; and
 - verified by the repository gate and detached-clone check.
 
-The controller currently loads this exact detached revision. Installation does
-not authorize a cycle. UC-01 received separate operator approval on 2026-07-20
-but remains blocked before mutation until the supported production admission
-path exists. For a fresh reproduction, choose exactly one installation path
+The controller currently loads this exact detached revision, exposes
+`project-cycle admit`, and passes post-install live diagnosis with registration
+v2. Installation does not authorize a cycle. UC-01 received separate operator
+approval on 2026-07-20, but issue creation, dry-run inspection, and apply remain
+distinct gates. For a fresh reproduction, choose exactly one installation path
 below. Both paths pass isolated Hermes v0.18.2 discovery and pack validation.
 
 The installed revision enforces the empirically required `read:org` intake
@@ -555,7 +556,7 @@ the persistent controller.
 ```bash
 (
 set -euo pipefail
-approved_revision=dcb695356c462a76f2c6912fe5c641fb0c22a0a2
+approved_revision=311fcae39e4d1e6505b38c015792008315f64e95
 remote=https://github.com/forgegod/daidala.git
 profile_home="$(dirname "$(hermes -p daidala-self-improvement config path)")"
 plugin_dir="$profile_home/plugins/daidala"
@@ -581,7 +582,7 @@ virtualenv into Hermes.
 set -euo pipefail
 profile_home="$(dirname "$(hermes -p daidala-self-improvement config path)")"
 plugin_dir="$profile_home/plugins/daidala"
-approved_revision=dcb695356c462a76f2c6912fe5c641fb0c22a0a2
+approved_revision=311fcae39e4d1e6505b38c015792008315f64e95
 test ! -e "$plugin_dir" && test ! -L "$plugin_dir"
 
 git -C /home/raphael/src/rb/daidala cat-file -e \
@@ -604,7 +605,7 @@ implicitly. If Hermes asks whether Daidala may replace built-in tools, answer
 ```bash
 profile_home="$(dirname "$(hermes -p daidala-self-improvement config path)")"
 plugin_dir="$profile_home/plugins/daidala"
-approved_revision=dcb695356c462a76f2c6912fe5c641fb0c22a0a2
+approved_revision=311fcae39e4d1e6505b38c015792008315f64e95
 
 test "$(git -C "$plugin_dir" rev-parse HEAD)" = "$approved_revision"
 git -C "$plugin_dir" status --short
@@ -919,9 +920,10 @@ its local authority.
 
 ## 10. Run the prerequisite checker
 
-Status: **IMPLEMENTED AND REPOSITORY-TESTED.** The command is diagnostic only.
-The setup remains blocked until installation, registration, and retained
-receipts are complete and the checkout is clean.
+Status: **IMPLEMENTED, INSTALLED, AND LIVE-VALIDATED.** The command is diagnostic
+only. The current post-install report is
+[`prerequisite-report-d7a02f7cf12ee7290ded16517010c26cb2ed00ba8d211eb2ea2d953cfe6ef906.json`](evaluation-results/v1/prerequisite-report-d7a02f7cf12ee7290ded16517010c26cb2ed00ba8d211eb2ea2d953cfe6ef906.json)
+with the matching SHA-256; it records all eleven checks as `pass`.
 
 The shared `doctor` command is the only prerequisite checker:
 
@@ -989,13 +991,15 @@ If one row fails, record the exact blocker in the versioned evaluation result an
 stop. Do not downgrade the requirement or convert repository tests into live
 evidence.
 
-After installing the separately approved controller revision, migrate the
+After installing a separately approved controller revision, migrate the
 profile-local registration to `daidala.controller-registration/v2` and add the
 exact non-home Hermes `send --to` value as `notifications.destination`, for
 example `telegram:<chat_id>:<thread_id>`. Bare platform names such as `telegram`
 are rejected because their mutable home-channel mapping does not bind the
 approved attended identity. Keep the logical receipt identity in
-`notifications.target`; never commit a private destination.
+`notifications.target`; never commit a private destination. The current
+controller completed this migration on 2026-07-20 and retains the private value
+only in its mode-`0600` registration.
 
 Run admission as a dry run first:
 

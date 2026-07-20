@@ -2,20 +2,17 @@
 
 ## Record status
 
-Phases 1 through 4D are complete. Native and standalone clean-checkout live
-reports pass all eleven stable `SI-*` checks with controller revision
-`dcb695356c462a76f2c6912fe5c641fb0c22a0a2`. The operator approved UC-01 on
-2026-07-20, and the gate was rerun at baseline
-`67b97482a2a864ee9eae973a66e9da405a0cacf0` before admission.
+Phases 1 through 4D are complete. The post-install clean-checkout live report
+passes all eleven stable `SI-*` checks with repository and detached controller
+revision `311fcae39e4d1e6505b38c015792008315f64e95`. The operator approved
+UC-01 on 2026-07-20.
 
-UC-01 remains blocked before mutation: the installed controller has no
-supported project-cycle admission command. The working tree now contains the
-production GitHub intake/claim and attended notification adapters plus a
-dry-run-first command, but that code is not a committed, installed controller
-revision and has not touched live GitHub, gateway, or Kanban state. Generic
-`daidala start` is not project admission. No issue, claim, cycle, workflow, card,
-worktree, evaluator, model call, or repository mutation occurred during the
-approved attempt.
+UC-01 remains blocked before mutation. The committed detached controller now
+exposes the production GitHub intake/claim and attended notification adapters
+through dry-run-first `project-cycle admit`; registration v2 binds the approved
+private destination profile-locally. No controlled issue exists, so preview and
+apply have not run. Generic `daidala start` is not project admission. No issue,
+claim, cycle, workflow, card, worktree, evaluator, or model call occurred.
 
 This document is not evidence that the loop works end to end.
 
@@ -75,13 +72,12 @@ Live cycle rows stay `not-run` until their own gate.
 
 ### UC-01 — approval-gated bug fix and recovery
 
-Status: `blocked`. The operator approved UC-01 on 2026-07-20 and all eleven live
-prerequisite checks pass. Admission stopped before mutation because the installed
-controller lacks the working-tree production path. Commit approval, exact
-detached installation, registration v2 migration, dry-run inspection, and apply
-approval remain outstanding. The temporary calculator fixture, both pack runs,
-exact plan gate, failed verification preservation, and unchanged target checkout
-remain unexercised.
+Status: `blocked`. The operator approved UC-01 on 2026-07-20, the exact detached
+admission controller is installed, registration v2 is migrated, and all eleven
+post-install live prerequisite checks pass. A separately approved controlled
+issue, dry-run inspection, and apply approval remain outstanding. The temporary
+calculator fixture, both pack runs, exact plan gate, failed verification
+preservation, and unchanged target checkout remain unexercised.
 
 ### UC-02 — constraint change and candidate regression
 
@@ -100,24 +96,24 @@ and any later promotion remain human decisions.
 - Committed manifest path: `.daidala/project.yaml`.
 - Phase 3 implementation checkpoint: `31e043be49f19a8f69cfb5eb630fb5b1257abc00`.
 - Phase 4 implementation checkpoint: `cba9c52`.
+- Operational admission checkpoint and installed controller:
+  `311fcae39e4d1e6505b38c015792008315f64e95`.
 - The approved-attempt prerequisite report is
   [`prerequisite-report-15c3a629e5d670012642a137524d3659ccd42bf6b034b2ec6eabd05e3bbd8e70.json`](prerequisite-report-15c3a629e5d670012642a137524d3659ccd42bf6b034b2ec6eabd05e3bbd8e70.json),
   exits `0`, has the matching SHA-256
   `15c3a629e5d670012642a137524d3659ccd42bf6b034b2ec6eabd05e3bbd8e70`,
   and records all eleven checks as `pass`.
-- Native command probes against installed controller revision
-  `dcb695356c462a76f2c6912fe5c641fb0c22a0a2` exit `2` for the project-cycle
-  path; only the generic workflow lifecycle is installed.
-- The uncommitted working tree adds production GitHub and Hermes adapters,
-  mutation-free preview, registration v2 destination binding, exact
-  preview-identity confirmation, and shared native/standalone project-cycle
-  dispatch. Repository tests use bounded fake host boundaries and are not live
-  evidence.
+- The post-install prerequisite report is
+  [`prerequisite-report-d7a02f7cf12ee7290ded16517010c26cb2ed00ba8d211eb2ea2d953cfe6ef906.json`](prerequisite-report-d7a02f7cf12ee7290ded16517010c26cb2ed00ba8d211eb2ea2d953cfe6ef906.json),
+  exits `0`, has matching SHA-256
+  `d7a02f7cf12ee7290ded16517010c26cb2ed00ba8d211eb2ea2d953cfe6ef906`,
+  and records all eleven checks as `pass` at controller revision
+  `311fcae39e4d1e6505b38c015792008315f64e95`.
+- Native command discovery exposes `project-cycle admit`; registration v2 and
+  approved-controller evidence validate with mode-`0600` profile-local files.
+  The private destination is omitted from this record.
 - No issue, claim, admission, workflow, card, worktree, evaluator result,
   retained increment, or version comparison was created by the approved attempt.
-- Incremental graph updates parsed all 26 changed and dependent files without
-  errors; the post-commit hook rebuilt the 1,079-row FTS index. Graph test-gap
-  counts remain observational and cannot replace the repository gate.
 
 ## Redaction statement
 
