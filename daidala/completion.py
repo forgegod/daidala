@@ -56,8 +56,14 @@ class CycleCompletionPreview:
             (self.delivery_digest, "completion delivery digest"),
         ):
             _require_digest(value, label)
-        if not isinstance(self.plan_revision, int) or self.plan_revision < 1:
-            raise PolicyViolationError("completion plan revision must be positive")
+        if (
+            isinstance(self.plan_revision, bool)
+            or not isinstance(self.plan_revision, int)
+            or self.plan_revision < 0
+        ):
+            raise PolicyViolationError(
+                "completion plan revision must be a non-negative integer"
+            )
         if not isinstance(self.verification_digests, tuple) or not self.verification_digests:
             raise PolicyViolationError("completion requires verification evidence")
         for digest in self.verification_digests:

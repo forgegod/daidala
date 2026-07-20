@@ -75,6 +75,15 @@ def test_completion_records_round_trip_and_reject_identity_drift() -> None:
         CycleCompletion.from_dict(raw)
 
 
+def test_completion_preview_accepts_initial_plan_revision() -> None:
+    initial = replace(preview(), plan_revision=0)
+
+    assert CycleCompletionPreview.from_dict(initial.to_dict()) == initial
+    for invalid in (-1, True):
+        with pytest.raises(PolicyViolationError, match="non-negative integer"):
+            replace(preview(), plan_revision=invalid)
+
+
 def test_completion_store_is_immutable_and_preserves_admission(tmp_path: Path) -> None:
     root = tmp_path.resolve()
     cycle_root = root / "projects" / "forgegod-daidala" / "cycles" / CYCLE
