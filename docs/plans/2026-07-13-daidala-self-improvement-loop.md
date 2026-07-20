@@ -41,7 +41,8 @@ loaded by the controller gateway.
 | 4B — GitHub projection and static registration | Done | Project 1 is repository-linked with all required fields, all exact labels exist, optional attended auto-add is enabled, and strict registration plus non-secret bindings parse. |
 | 4C — Capability and isolation receipts | Done | Runtime read/write probes, attended Telegram delivery, controlled findings write, and restricted-container isolation receipts are retained as strict non-secret evidence. |
 | 4D — Live prerequisite gate | Done | Native and standalone clean-checkout reports each return all eleven `SI-*` checks as `pass` for controller revision `dcb695356c462a76f2c6912fe5c641fb0c22a0a2`. |
-| 4E — Manual live evaluation | Blocked | The prerequisite gate passes, but UC-01 remains prohibited until separately approved. |
+| 4E prerequisite — Operational admission path | In progress | The complete repository gate passes; commit approval, exact detached installation, registration v2 migration, and live dry-run/apply evidence remain. |
+| 4E — Manual live evaluation | Blocked | UC-01 was approved on 2026-07-20 and all eleven live checks pass, but the installed controller still lacks the new path; no issue, claim, cycle, workflow, or card was created. |
 | 5 — Reconciliation, findings, and pack evaluation | Blocked | Requires approved manual-cycle and replay evidence from 4E. |
 | 6 — Version-aware re-evaluation | Blocked | Requires Phase 5 evidence; candidate Hermes identity is selected here, not invented earlier. |
 | 7 — Repository gate and documentation | Blocked | Requires the preceding live evaluation and comparison evidence. |
@@ -570,9 +571,38 @@ and Project checks pass without cycle admission.
 
 Gate: all eleven `SI-*` rows pass with the exact retained evidence.
 
+### Phase 4E prerequisite — Operational admission path
+
+The 2026-07-20 approved UC-01 admission attempt stopped before mutation. The
+native and standalone prerequisite gate passed all eleven `SI-*` checks at
+baseline `67b97482a2a864ee9eae973a66e9da405a0cacf0`, but the installed
+controller exposes no project-cycle admission command. The approved working-tree
+implementation now adds mutation-free admission previews, production GitHub
+intake/claim and attended Hermes notification adapters, registration v2 with an
+exact profile-local destination, and shared native/standalone
+`project-cycle admit` dispatch. Apply requires the exact cycle ID and canonical
+intake digest from a fresh preview and reruns live prerequisites before mutation.
+Generic `daidala start` remains prohibited.
+
+Remaining before Phase 4E:
+
+- obtain approval for the exact commit checkpoint and install that committed
+  revision as a clean detached controller;
+- migrate the profile-local registration to v2 without committing the attended
+  destination;
+- run and inspect the production dry run before separately approving apply; and
+- verify replay, failure recovery, and no-mutation behavior at the live
+  boundaries.
+
+Gate: a dry run returns the exact proposed identities without mutation; one
+approved apply run can create a recoverable claim, retained admission and
+notification receipts, and one bound workflow through production adapters.
+
 ### Phase 4E — Manual live evaluation
 
-- Admit one controlled issue manually and run UC-01 for both packs.
+- Admit one separately approved but otherwise equivalent controlled UC-01 issue
+  per pack and run each independently. Distinct item IDs are required until
+  claim release and reconciliation exist; never reuse an active claim.
 - Stop at and exercise the exact plan gate before any implementation card.
 - Run UC-02 only after its separate cycle approval.
 

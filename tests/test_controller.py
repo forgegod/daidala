@@ -33,7 +33,7 @@ def manifest() -> ProjectManifest:
 
 def registration() -> ControllerRegistration:
     return parse_controller_registration(
-        """schema: daidala.controller-registration/v1
+        """schema: daidala.controller-registration/v2
 project_id: forgegod-daidala
 checkout: /srv/daidala
 controller_profile: daidala-self-improvement
@@ -49,6 +49,7 @@ approval:
 notifications:
   adapter: hermes-gateway
   target: attended-daidala
+  destination: telegram:-1001234567890:17585
 evaluator:
   backend: restricted-container
   network: denied-by-default
@@ -241,6 +242,33 @@ def test_duplicate_admission_converges_on_cycle_workflow_and_receipt(tmp_path: P
     assert snapshot.is_file()
     with pytest.raises(PolicyViolationError, match="stage profiles must be a tuple"):
         replace(first[0], stage_profiles=("invalid",))  # type: ignore[arg-type]
+
+
+def test_preview_validates_exact_admission_without_mutating_adapters_or_artifacts(
+    tmp_path: Path,
+) -> None:
+    intake_adapter = FakeIntake(intake())
+    notifications = FakeNotifications()
+    workflow = FakeWorkflow()
+    subject = coordinator(tmp_path, intake_adapter, notifications, workflow)
+
+    preview = subject.preview(
+        manifest=manifest(),
+        registration=registration(),
+        intake=intake(),
+        baseline_revision=BASELINE,
+        stage_profiles=stage_profiles(),
+        constraints_content=(ROOT / ".daidala/constraints.yaml").read_text(),
+    )
+
+    assert preview.cycle.cycle_id == expected_cycle_id()
+    assert preview.workflow_id == expected_cycle_id()
+    assert preview.intake_digest == intake().digest
+    assert preview.to_dict()["dry_run"] is True
+    assert intake_adapter.claim_calls == 0
+    assert notifications.calls == []
+    assert workflow.calls == 0
+    assert not (tmp_path / "projects").exists()
 
 
 def test_pack_content_digest_mismatch_fails_before_adapters_or_artifacts(

@@ -290,6 +290,7 @@ def registration(checkout: Path) -> ControllerRegistration:
         maintainers=("operator",),
         notification_adapter="hermes-gateway",
         notification_target="attended-daidala",
+        notification_destination="telegram:-1001234567890:17585",
         evaluator_backend="restricted-container",
         evaluator_network="denied-by-default",
         limits=RegistrationLimits(1, 12, 3, 3, 3, 3600),

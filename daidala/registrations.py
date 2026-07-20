@@ -22,9 +22,12 @@ from .projects import (
     parse_strict_yaml,
 )
 
-REGISTRATION_SCHEMA = "daidala.controller-registration/v1"
+REGISTRATION_SCHEMA = "daidala.controller-registration/v2"
 MAX_REGISTRATION_BYTES = 32_768
 _REPOSITORY = re.compile(r"^[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}$")
+_HERMES_DESTINATION = re.compile(
+    r"^[a-z][a-z0-9_-]{0,63}:[^\s\x00-\x1f\x7f]{1,447}$"
+)
 
 
 @dataclass(frozen=True)
@@ -81,6 +84,7 @@ class ControllerRegistration:
     maintainers: tuple[str, ...]
     notification_adapter: str
     notification_target: str
+    notification_destination: str
     evaluator_backend: str
     evaluator_network: str
     limits: RegistrationLimits
@@ -114,6 +118,13 @@ class ControllerRegistration:
         if self.notification_adapter != "hermes-gateway":
             raise PolicyViolationError("notification adapter must be 'hermes-gateway'")
         _require_slug(self.notification_target, "notification target alias")
+        if (
+            not isinstance(self.notification_destination, str)
+            or not _HERMES_DESTINATION.fullmatch(self.notification_destination)
+        ):
+            raise PolicyViolationError(
+                "notification destination must be an explicit non-home Hermes send target"
+            )
         if self.evaluator_backend != "restricted-container":
             raise PolicyViolationError("v1 evaluator backend must be 'restricted-container'")
         if self.evaluator_network != "denied-by-default":
@@ -146,6 +157,7 @@ class ControllerRegistration:
             "notifications": {
                 "adapter": self.notification_adapter,
                 "target": self.notification_target,
+                "destination": self.notification_destination,
             },
             "evaluator": {
                 "backend": self.evaluator_backend,
@@ -190,7 +202,9 @@ class ControllerRegistration:
         _require_exact_fields(repository, {"canonical", "verified_remote"}, "repository identity")
         _require_exact_fields(credentials, {"intake", "findings"}, "credentials")
         _require_exact_fields(approval, {"maintainers"}, "approval")
-        _require_exact_fields(notifications, {"adapter", "target"}, "notifications")
+        _require_exact_fields(
+            notifications, {"adapter", "target", "destination"}, "notifications"
+        )
         _require_exact_fields(evaluator, {"backend", "network"}, "evaluator")
         _as_list(approval["maintainers"], "registration maintainers")
         return cls(
@@ -206,6 +220,7 @@ class ControllerRegistration:
             maintainers=_as_tuple(approval["maintainers"], "registration maintainers"),
             notification_adapter=notifications["adapter"],
             notification_target=notifications["target"],
+            notification_destination=notifications["destination"],
             evaluator_backend=evaluator["backend"],
             evaluator_network=evaluator["network"],
             limits=RegistrationLimits.from_dict(raw["limits"]),

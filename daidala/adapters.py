@@ -122,6 +122,15 @@ class IntakeRecord:
             "claim": None if self.claim is None else self.claim.to_dict(),
         }
 
+    def canonical_bytes(self) -> bytes:
+        return json.dumps(
+            self.to_dict(), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+
+    @property
+    def digest(self) -> str:
+        return hashlib.sha256(self.canonical_bytes()).hexdigest()
+
     @classmethod
     def from_dict(cls, raw: Any) -> IntakeRecord:
         fields = {

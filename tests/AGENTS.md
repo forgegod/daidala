@@ -49,6 +49,11 @@ completeness without touching a real Hermes profile.
 - Shared-parser and fake-command tests proving native Hermes and standalone CLI
   service calls, public Kanban command translation, JSON, and exit codes remain
   equivalent.
+- Production-adapter tests use fake `gh` and `hermes send` boundaries to prove
+  strict issue normalization, ready-actor authority, replay-safe claims,
+  credential-minimal child environments, private-destination exclusion, and
+  event-bound receipts. Project-cycle composition tests prove dry-run
+  non-mutation and exact preview-identity rejection before claim or workflow.
 - Strict credential-binding and prerequisite-report tests cover guide/CLI ID
   parity, redaction, pass/blocked/not-run/error aggregation, bounded `GH_TOKEN`
   child environments, and complete, missing, malformed, denied, unavailable,

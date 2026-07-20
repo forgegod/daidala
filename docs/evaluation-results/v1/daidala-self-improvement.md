@@ -2,24 +2,20 @@
 
 ## Record status
 
-Phase 4 adds repository-tested fresh evaluator homes, immutable metric evidence,
-comparison verdicts and controlled lesson-reuse deltas for all three modes,
-isolation-receipt and candidate/controller separation, identity-bound
-baseline-before-mutation ordering, clean teardown, dirty-state quarantine, and
-increment/DOX reconciliation. Phase 3 implements strict credential bindings,
-the stable eleven-check prerequisite registry, redacted reports, bounded live
-probes, and native versus standalone handler parity. A clean-tree `--live` run
-produced one blocked report:
-only `SI-REPOSITORY` passed because trusted registration, controller plugin,
-board, credential capability records, Project evidence, attended receipt, and
-evaluator receipt do not exist. No setup mutation, GitHub write, container run,
-model call, browser run, profile creation, board creation, cron creation, or
-cycle execution occurred.
+Phases 1 through 4D are complete. Native and standalone clean-checkout live
+reports pass all eleven stable `SI-*` checks with controller revision
+`dcb695356c462a76f2c6912fe5c641fb0c22a0a2`. The operator approved UC-01 on
+2026-07-20, and the gate was rerun at baseline
+`67b97482a2a864ee9eae973a66e9da405a0cacf0` before admission.
 
-After the Phase 4 checkpoint, the clean-tree Phase 5 live gate was rerun at
-revision `7068fdf14a01e72f777e7ead0067b2ac3c5545ae`. It again exited `2` with
-only `SI-REPOSITORY` passing. Phases 5 and 6 remain blocked; no onboarding or
-host mutation was attempted.
+UC-01 remains blocked before mutation: the installed controller has no
+supported project-cycle admission command. The working tree now contains the
+production GitHub intake/claim and attended notification adapters plus a
+dry-run-first command, but that code is not a committed, installed controller
+revision and has not touched live GitHub, gateway, or Kanban state. Generic
+`daidala start` is not project admission. No issue, claim, cycle, workflow, card,
+worktree, evaluator, model call, or repository mutation occurred during the
+approved attempt.
 
 This document is not evidence that the loop works end to end.
 
@@ -42,10 +38,10 @@ Repository tests cannot convert a blocked live probe into `pass`.
 | TC-F01-02 | Registration | Bind a valid trusted registration to the manifest; mismatched project, remote, or path fails closed. | Creating a profile or board. | pass |
 | TC-F02-01 | Pack provenance | Validate Addyosmani and AI-DLC source revisions and content digests. | Installing or updating skills. | pass |
 | TC-F02-02 | Pack drift | Change one pinned digest; validation rejects the identity. | Repairing the digest from remote state. | pass |
-| TC-F03-01 | CLI and tools | Compare planned native and standalone project-cycle surfaces. | Registering an untested tool. | not-run |
+| TC-F03-01 | CLI and tools | Compare native and standalone project-cycle parser, dispatch, JSON, exit code, and exact apply identity. | Registering a second or untested handler. | pass |
 | TC-F03-02 | Prerequisite CLI parity | Execute the shared handler through standalone and native parser surfaces; JSON and exit code match. | Adding a second checker executable. | pass |
 | TC-F04-01 | Setup preview | Preview registration and admission without mutation; require literal confirmation for setup. | Profile, board, GitHub, or repository mutation. | not-run |
-| TC-F04-02 | Prerequisite diagnosis | Run the complete stable checklist from a clean checkout; retain exact passes and blockers. | Fixing or creating prerequisite state. | blocked |
+| TC-F04-02 | Prerequisite diagnosis | Run the complete stable checklist from a clean checkout; retain exact passes and blockers. | No setup mutation; fixing or creating prerequisite state. | pass |
 | TC-F05-01 | Define and plan | Persist activation, definition, plan, and handoff identities; create one blocked approval card. | Implementation-card creation. | not-run |
 | TC-F06-01 | Exact approval | Reject wrong or stale tuple; exact approval creates one owned worktree and post-gate graph. | Treating generic Kanban unblock as approval. | not-run |
 | TC-F07-01 | Constraints | Formatting-only replacement is identity-preserving; semantic replacement invalidates stale work. | Deleting historical evidence. | not-run |
@@ -69,18 +65,23 @@ The deterministic `pass` rows are grounded by the pure and fake-adapter tests in
 `tests/test_projects.py`, `tests/test_registrations.py`, `tests/test_adapters.py`,
 `tests/test_controller.py`, `tests/test_reconciliation.py`,
 `tests/test_credentials.py`, `tests/test_prerequisites.py`,
-`tests/test_evaluation.py`, and `tests/test_increments.py`. The current repository
-gate passes 328 tests, Ruff, Lefthook validation, both pack validations, Markdown
-links, build, Twine, release-content, and diff checks. Live cycle rows stay
-`not-run` until their own gate.
+`tests/test_evaluation.py`, `tests/test_live_adapters.py`,
+`tests/test_project_cycles.py`, and `tests/test_increments.py`. The current source
+gate passes 356 tests, Ruff, Lefthook validation, both pack validations, and
+Markdown links, build, Twine, release-content, wheel-member, and diff checks.
+Live cycle rows stay `not-run` until their own gate.
 
 ## Use-case records
 
 ### UC-01 — approval-gated bug fix and recovery
 
-Status: `not-run`. The temporary calculator fixture, both pack runs, exact plan
-gate, failed verification preservation, and unchanged target checkout still
-require a separately approved live cycle.
+Status: `blocked`. The operator approved UC-01 on 2026-07-20 and all eleven live
+prerequisite checks pass. Admission stopped before mutation because the installed
+controller lacks the working-tree production path. Commit approval, exact
+detached installation, registration v2 migration, dry-run inspection, and apply
+approval remain outstanding. The temporary calculator fixture, both pack runs,
+exact plan gate, failed verification preservation, and unchanged target checkout
+remain unexercised.
 
 ### UC-02 — constraint change and candidate regression
 
@@ -99,26 +100,21 @@ and any later promotion remain human decisions.
 - Committed manifest path: `.daidala/project.yaml`.
 - Phase 3 implementation checkpoint: `31e043be49f19a8f69cfb5eb630fb5b1257abc00`.
 - Phase 4 implementation checkpoint: `cba9c52`.
-- The post-Phase-4 live prerequisite report is
-  [`prerequisite-report-019e7de0872f8ec4b840a9d57a5c9fc655165a10043fd372358d8a7ab43f0886.json`](prerequisite-report-019e7de0872f8ec4b840a9d57a5c9fc655165a10043fd372358d8a7ab43f0886.json),
-  exits `2`, and has SHA-256
-  `019e7de0872f8ec4b840a9d57a5c9fc655165a10043fd372358d8a7ab43f0886`.
-- The redacted prerequisite report is
-  [`prerequisite-report-d4e1b3a3498507f9f9c069fc16beb4c81d4eb7c65943d82c5bf96f38497bcc3e.json`](prerequisite-report-d4e1b3a3498507f9f9c069fc16beb4c81d4eb7c65943d82c5bf96f38497bcc3e.json),
-  exits `2`, has SHA-256
-  `d4e1b3a3498507f9f9c069fc16beb4c81d4eb7c65943d82c5bf96f38497bcc3e`,
-  records `SI-REPOSITORY=pass`, and records all ten other checks as `blocked`.
-- Controller profile `daidala-self-improvement` exists, but its native
-  `daidala` command is unavailable because no non-bundled plugin is installed;
-  the dedicated board and trusted registration also do not exist.
-- The Docker CLI is unavailable in this WSL distro, so `restricted-container`
-  remains blocked pending Docker Desktop WSL integration and verification.
-- GitHub repository, Issues, and operator Project queries work, but no Project
-  exists and the runtime issue aliases are not bound or least-privilege verified.
-- No messaging platform is configured and the gateway is stopped, so
-  `attended-daidala` has no verified destination or receipt.
-- No delivery receipt, remote finding identity, evaluator result, retained
-  increment, or version comparison exists yet.
+- The approved-attempt prerequisite report is
+  [`prerequisite-report-15c3a629e5d670012642a137524d3659ccd42bf6b034b2ec6eabd05e3bbd8e70.json`](prerequisite-report-15c3a629e5d670012642a137524d3659ccd42bf6b034b2ec6eabd05e3bbd8e70.json),
+  exits `0`, has the matching SHA-256
+  `15c3a629e5d670012642a137524d3659ccd42bf6b034b2ec6eabd05e3bbd8e70`,
+  and records all eleven checks as `pass`.
+- Native command probes against installed controller revision
+  `dcb695356c462a76f2c6912fe5c641fb0c22a0a2` exit `2` for the project-cycle
+  path; only the generic workflow lifecycle is installed.
+- The uncommitted working tree adds production GitHub and Hermes adapters,
+  mutation-free preview, registration v2 destination binding, exact
+  preview-identity confirmation, and shared native/standalone project-cycle
+  dispatch. Repository tests use bounded fake host boundaries and are not live
+  evidence.
+- No issue, claim, admission, workflow, card, worktree, evaluator result,
+  retained increment, or version comparison was created by the approved attempt.
 - Incremental graph updates parsed all 26 changed and dependent files without
   errors; the post-commit hook rebuilt the 1,079-row FTS index. Graph test-gap
   counts remain observational and cannot replace the repository gate.

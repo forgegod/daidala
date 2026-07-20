@@ -72,6 +72,47 @@ class FakeService:
         return [FakeCardStatus()]
 
 
+@dataclass
+class FakeAdmissionPreview:
+    cycle_id: str = "cycle-" + "b" * 64
+    intake_digest: str = "a" * 64
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema": "daidala.admission-preview/v1",
+            "dry_run": True,
+            "cycle": {"cycle_id": self.cycle_id},
+            "workflow_id": self.cycle_id,
+            "intake_digest": self.intake_digest,
+        }
+
+
+@dataclass
+class FakeProjectCycleResult:
+    preview: FakeAdmissionPreview = field(default_factory=FakeAdmissionPreview)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "dry_run": False,
+            "preview": self.preview.to_dict(),
+            "admission": {"workflow_id": self.preview.cycle_id},
+            "receipt": {"receipt_id": "telegram:10"},
+        }
+
+
+@dataclass
+class FakeProjectCycles:
+    calls: list[tuple[str, dict[str, object]]] = field(default_factory=list)
+
+    def preview(self, **kwargs: object) -> FakeAdmissionPreview:
+        self.calls.append(("preview", kwargs))
+        return FakeAdmissionPreview()
+
+    def admit(self, **kwargs: object) -> FakeProjectCycleResult:
+        self.calls.append(("admit", kwargs))
+        return FakeProjectCycleResult()
+
+
 def _host_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="hermes daidala")
     cli.register_cli(parser)
@@ -80,6 +121,10 @@ def _host_args(argv: list[str]) -> argparse.Namespace:
 
 def _factory(service: FakeService) -> cli.ServiceFactory:
     return cast(cli.ServiceFactory, lambda: service)
+
+
+def _project_cycle_factory(service: FakeProjectCycles) -> cli.ProjectCycleFactory:
+    return cast(cli.ProjectCycleFactory, lambda: service)
 
 
 @pytest.mark.parametrize(
@@ -211,6 +256,98 @@ def test_evaluator_probe_apply_is_equivalent_on_standalone_and_native_surfaces(
     assert standalone["success"] is True
     assert standalone["dry_run"] is False
     assert standalone["evidence"]["receipt_id"] == "sha256:" + "a" * 64
+
+
+def test_project_cycle_admission_is_dry_run_by_default_on_both_surfaces(capsys) -> None:
+    standalone = FakeProjectCycles()
+    native = FakeProjectCycles()
+    argv = [
+        "project-cycle",
+        "admit",
+        "--project-manifest",
+        "/repo/.daidala/project.yaml",
+        "--registration",
+        "/profile/projects/forgegod-daidala/registration.yaml",
+        "--issue",
+        "42",
+        "--default-profile",
+        "daidala-self-improvement",
+        "--pack",
+        "addyosmani",
+    ]
+
+    standalone_code = cli.main(
+        argv, project_cycle_factory=_project_cycle_factory(standalone)
+    )
+    standalone_payload = json.loads(capsys.readouterr().out)
+    native_code = cli.run_command(
+        _host_args(argv), project_cycle_factory=_project_cycle_factory(native)
+    )
+    native_payload = json.loads(capsys.readouterr().out)
+
+    assert standalone_code == native_code == 0
+    assert native.calls == standalone.calls
+    assert native.calls[0][0] == "preview"
+    assert native.calls[0][1]["issue_id"] == "42"
+    assert native_payload == standalone_payload
+    assert native_payload["dry_run"] is True
+    assert native_payload["preview"]["intake_digest"] == "a" * 64
+
+
+def test_project_cycle_apply_requires_and_forwards_exact_preview_identity(capsys) -> None:
+    service = FakeProjectCycles()
+    cycle_id = "cycle-" + "b" * 64
+    argv = [
+        "project-cycle",
+        "admit",
+        "--project-manifest",
+        "/repo/.daidala/project.yaml",
+        "--registration",
+        "/profile/projects/forgegod-daidala/registration.yaml",
+        "--issue",
+        "42",
+        "--default-profile",
+        "daidala-self-improvement",
+        "--apply",
+        "--expected-cycle-id",
+        cycle_id,
+        "--expected-intake-digest",
+        "a" * 64,
+    ]
+
+    code = cli.main(argv, project_cycle_factory=_project_cycle_factory(service))
+    payload = json.loads(capsys.readouterr().out)
+
+    assert code == 0
+    assert service.calls[0][0] == "admit"
+    assert service.calls[0][1]["expected_cycle_id"] == cycle_id
+    assert service.calls[0][1]["expected_intake_digest"] == "a" * 64
+    assert payload["dry_run"] is False
+
+
+def test_project_cycle_apply_without_exact_preview_identity_fails_before_service(capsys) -> None:
+    service = FakeProjectCycles()
+    code = cli.main(
+        [
+            "project-cycle",
+            "admit",
+            "--project-manifest",
+            "/repo/.daidala/project.yaml",
+            "--registration",
+            "/profile/projects/forgegod-daidala/registration.yaml",
+            "--issue",
+            "42",
+            "--default-profile",
+            "daidala-self-improvement",
+            "--apply",
+        ],
+        project_cycle_factory=_project_cycle_factory(service),
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert code == 1
+    assert service.calls == []
+    assert "requires --expected-cycle-id" in payload["message"]
 
 
 def test_packs_list_uses_shared_command_tree(capsys) -> None:

@@ -18,7 +18,7 @@ ROOT = Path(__file__).parents[1]
 
 def registration_content() -> str:
     return """\
-schema: daidala.controller-registration/v1
+schema: daidala.controller-registration/v2
 project_id: forgegod-daidala
 checkout: /srv/daidala
 controller_profile: daidala-self-improvement
@@ -34,6 +34,7 @@ approval:
 notifications:
   adapter: hermes-gateway
   target: attended-daidala
+  destination: telegram:-1001234567890:17585
 
 evaluator:
   backend: restricted-container
@@ -79,6 +80,14 @@ def test_registration_round_trip_manifest_binding_and_profile_storage_path() -> 
                 {"findings": raw["credentials"]["intake"]}
             ),
             "distinct aliases",
+        ),
+        (
+            lambda raw: raw["notifications"].update({"destination": "telegram bad"}),
+            "notification destination",
+        ),
+        (
+            lambda raw: raw["notifications"].update({"destination": "telegram"}),
+            "notification destination",
         ),
     ],
 )

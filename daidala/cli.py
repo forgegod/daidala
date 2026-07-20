@@ -17,6 +17,7 @@ from .kanban import KanbanGraphAdapter
 from .locations import resolve_data_root
 from .packs import PackError, load_pack
 from .prerequisites import DoctorRunner, run_prerequisite_diagnosis
+from .project_cycles import ProjectCycleOperator
 from .restricted_container import RestrictedContainerExecutor, probe_restricted_container
 from .service import WorkflowService
 from .skills import (
@@ -33,6 +34,7 @@ CommandRunner = Callable[[tuple[str, ...]], tuple[int, str]]
 RevisionResolver = Callable[[str], str]
 ServiceFactory = Callable[[], WorkflowService]
 ContainerProbe = Callable[[str], EvaluatorIsolationEvidence]
+ProjectCycleFactory = Callable[[], ProjectCycleOperator]
 
 
 def register_cli(parser: argparse.ArgumentParser) -> None:
@@ -70,6 +72,35 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         help="Create the disposable denied-network container and emit evidence",
     )
+
+    project_cycle = sub.add_parser(
+        "project-cycle", help="Preview or admit one registered self-improvement cycle"
+    )
+    project_cycle_sub = project_cycle.add_subparsers(
+        dest="project_cycle_command", required=True
+    )
+    project_cycle_admit = project_cycle_sub.add_parser(
+        "admit", help="Validate exact admission identity; mutate only with --apply"
+    )
+    project_cycle_admit.add_argument("--project-manifest", required=True, type=Path)
+    project_cycle_admit.add_argument("--registration", required=True, type=Path)
+    project_cycle_admit.add_argument("--issue", required=True, dest="issue_id")
+    project_cycle_admit.add_argument(
+        "--default-profile", dest="profile", required=True
+    )
+    project_cycle_admit.add_argument(
+        "--stage-profile",
+        action="append",
+        default=[],
+        metavar="STAGE=PROFILE",
+    )
+    project_cycle_admit.add_argument("--pack")
+    project_cycle_admit.add_argument(
+        "--claim-lease-seconds", type=int, default=900
+    )
+    project_cycle_admit.add_argument("--apply", action="store_true")
+    project_cycle_admit.add_argument("--expected-cycle-id")
+    project_cycle_admit.add_argument("--expected-intake-digest")
 
     start = sub.add_parser("start", help="Validate inputs and create the initial Kanban graph")
     start.add_argument("target_repository")
@@ -217,6 +248,7 @@ def main(
     doctor_runner: DoctorRunner | None = None,
     doctor_environ: Mapping[str, str] | None = None,
     container_probe: ContainerProbe | None = None,
+    project_cycle_factory: ProjectCycleFactory | None = None,
 ) -> int:
     args = build_parser().parse_args(argv)
     return run_command(
@@ -230,6 +262,7 @@ def main(
         doctor_runner=doctor_runner,
         doctor_environ=doctor_environ,
         container_probe=container_probe,
+        project_cycle_factory=project_cycle_factory,
     )
 
 
@@ -245,6 +278,7 @@ def run_command(
     doctor_runner: DoctorRunner | None = None,
     doctor_environ: Mapping[str, str] | None = None,
     container_probe: ContainerProbe | None = None,
+    project_cycle_factory: ProjectCycleFactory | None = None,
 ) -> int:
     """Execute one parsed command and return its process exit code."""
     try:
@@ -262,6 +296,11 @@ def run_command(
             return report.exit_code
         if args.command == "evaluator":
             return _run_evaluator_probe(args, container_probe=container_probe)
+        if args.command == "project-cycle":
+            selected_project_cycle_factory = (
+                project_cycle_factory or ProjectCycleOperator
+            )
+            return _run_project_cycle(args, selected_project_cycle_factory)
         if args.command in {"start", "status", "replace-constraints", "approve", "cancel"}:
             selected_factory = service_factory or (
                 lambda: _default_service(command_runner=command_runner)
@@ -308,6 +347,52 @@ def _run_evaluator_probe(
             "operation": "evaluator-probe",
             "dry_run": False,
             "evidence": evidence.to_dict(),
+        }
+    )
+    return 0
+
+
+def _run_project_cycle(
+    args: argparse.Namespace, project_cycle_factory: ProjectCycleFactory
+) -> int:
+    if args.project_cycle_command != "admit":
+        raise ValueError(f"unsupported project-cycle command: {args.project_cycle_command}")
+    operator = project_cycle_factory()
+    common = {
+        "project_manifest": args.project_manifest,
+        "registration": args.registration,
+        "issue_id": args.issue_id,
+        "stage_profiles": _parse_stage_profiles(args.profile, args.stage_profile),
+        "pack_name": args.pack,
+        "claim_lease_seconds": args.claim_lease_seconds,
+    }
+    if not args.apply:
+        if args.expected_cycle_id is not None or args.expected_intake_digest is not None:
+            raise ValueError("expected admission identity arguments require --apply")
+        preview = operator.preview(**common)
+        _print(
+            {
+                "success": True,
+                "operation": "project-cycle-admit",
+                "dry_run": True,
+                "preview": preview.to_dict(),
+            }
+        )
+        return 0
+    if args.expected_cycle_id is None or args.expected_intake_digest is None:
+        raise ValueError(
+            "--apply requires --expected-cycle-id and --expected-intake-digest"
+        )
+    result = operator.admit(
+        **common,
+        expected_cycle_id=args.expected_cycle_id,
+        expected_intake_digest=args.expected_intake_digest,
+    )
+    _print(
+        {
+            "success": True,
+            "operation": "project-cycle-admit",
+            **result.to_dict(),
         }
     )
     return 0
@@ -527,13 +612,17 @@ def _default_service(*, command_runner: CommandRunner | None = None) -> Workflow
     return build_cli_service(command_runner=command_runner)
 
 
-def build_cli_service(*, command_runner: CommandRunner | None = None) -> WorkflowService:
+def build_cli_service(
+    *,
+    command_runner: CommandRunner | None = None,
+    data_root: Path | None = None,
+) -> WorkflowService:
     """Build a profile-safe service over documented ``hermes kanban`` commands."""
-    data_root = resolve_data_root()
-    registry = ProfileSkillContentRegistry(data_root / "skills")
+    selected_data_root = data_root or resolve_data_root()
+    registry = ProfileSkillContentRegistry(selected_data_root / "skills")
     runner = command_runner or _run_command
     return WorkflowService(
-        WorkflowStore(data_root / "daidala"),
+        WorkflowStore(selected_data_root / "daidala"),
         skill_inventory=registry,
         skill_content_registry=registry,
         kanban=KanbanGraphAdapter(

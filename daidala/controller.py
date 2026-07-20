@@ -35,6 +35,7 @@ from .state import StageProfile, WorkflowLedger, WorkflowStage
 
 MANIFEST_SNAPSHOT_SCHEMA = "daidala.manifest-snapshot/v1"
 ADMISSION_SCHEMA = "daidala.cycle-admission/v1"
+ADMISSION_PREVIEW_SCHEMA = "daidala.admission-preview/v1"
 _CYCLE_ID = re.compile(r"^cycle-[0-9a-f]{64}$")
 
 
@@ -243,6 +244,57 @@ class CycleAdmission:
         )
 
 
+@dataclass(frozen=True)
+class AdmissionPreview:
+    cycle: CycleIdentity
+    workflow_id: str
+    board: str
+    checkout: str
+    registration_digest: str
+    constraints_digest: str
+    stage_profiles: tuple[StageProfile, ...]
+    intake_digest: str
+    schema: str = ADMISSION_PREVIEW_SCHEMA
+
+    def __post_init__(self) -> None:
+        if self.schema != ADMISSION_PREVIEW_SCHEMA:
+            raise PolicyViolationError(
+                f"admission preview schema must be {ADMISSION_PREVIEW_SCHEMA!r}"
+            )
+        if self.workflow_id != self.cycle.cycle_id:
+            raise PolicyViolationError("admission preview workflow ID must equal the cycle ID")
+        _require_slug(self.board, "admission preview board")
+        if not Path(self.checkout).is_absolute() or str(Path(self.checkout)) != self.checkout:
+            raise PolicyViolationError(
+                "admission preview checkout must be a normalized absolute path"
+            )
+        _require_digest(self.registration_digest, "admission preview registration digest")
+        _require_digest(self.constraints_digest, "admission preview constraints digest")
+        _require_digest(self.intake_digest, "admission preview intake digest")
+        if not isinstance(self.stage_profiles, tuple) or any(
+            not isinstance(row, StageProfile) for row in self.stage_profiles
+        ):
+            raise PolicyViolationError("admission preview stage profiles must be a tuple")
+        if self.stage_profiles != _normalize_stage_profiles(
+            {row.stage.value: row.profile for row in self.stage_profiles}
+        ):
+            raise PolicyViolationError("admission preview stage profiles are not canonical")
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema": self.schema,
+            "dry_run": True,
+            "cycle": self.cycle.to_dict(),
+            "workflow_id": self.workflow_id,
+            "board": self.board,
+            "checkout": self.checkout,
+            "registration_digest": self.registration_digest,
+            "constraints_digest": self.constraints_digest,
+            "stage_profiles": [row.to_dict() for row in self.stage_profiles],
+            "intake_digest": self.intake_digest,
+        }
+
+
 class CycleArtifactStore:
     """Write immutable cycle admission artifacts below a trusted profile data root."""
 
@@ -355,7 +407,7 @@ class AdmissionCoordinator:
         self.notification_adapter = notification_adapter
         self.clock = clock or (lambda: datetime.now(UTC))
 
-    def admit(
+    def preview(
         self,
         *,
         manifest: ProjectManifest,
@@ -368,7 +420,37 @@ class AdmissionCoordinator:
         pack_name: str | None = None,
         candidate_identity: str | None = None,
         claim_lease_seconds: int = 900,
-    ) -> tuple[CycleAdmission, WorkflowLedger, NotificationReceipt]:
+    ) -> AdmissionPreview:
+        """Validate and identify one admission without durable or external mutation."""
+        return self._preview(
+            manifest=manifest,
+            registration=registration,
+            intake=intake,
+            baseline_revision=baseline_revision,
+            stage_profiles=stage_profiles,
+            constraints_content=constraints_content,
+            mode=mode,
+            pack_name=pack_name,
+            candidate_identity=candidate_identity,
+            claim_lease_seconds=claim_lease_seconds,
+            observed_at=self.clock(),
+        )
+
+    def _preview(
+        self,
+        *,
+        manifest: ProjectManifest,
+        registration: ControllerRegistration,
+        intake: IntakeRecord,
+        baseline_revision: str,
+        stage_profiles: dict[str, str],
+        constraints_content: str,
+        mode: CycleMode,
+        pack_name: str | None,
+        candidate_identity: str | None,
+        claim_lease_seconds: int,
+        observed_at: datetime,
+    ) -> AdmissionPreview:
         registration.validate_manifest(manifest)
         constraints = parse_workflow_constraints(constraints_content)
         profiles = _normalize_stage_profiles(stage_profiles)
@@ -404,13 +486,12 @@ class AdmissionCoordinator:
             pack_content_digest=pack.content_digest,
             candidate_identity=candidate_identity,
         )
-        now = self.clock()
         if intake.claim is not None:
             if intake.claim.claimant != cycle.cycle_id:
                 raise PolicyViolationError("intake item is claimed by another owner")
-            if intake.claim.claimed_at > now:
+            if intake.claim.claimed_at > observed_at:
                 raise PolicyViolationError("intake item has a future claim timestamp")
-            if intake.claim.lease_expires_at <= now:
+            if intake.claim.lease_expires_at <= observed_at:
                 raise PolicyViolationError(
                     "expired intake claim requires two-authority reconciliation"
                 )
@@ -419,6 +500,48 @@ class AdmissionCoordinator:
             ).total_seconds()
             if lease_seconds < 60 or lease_seconds > 86_400:
                 raise PolicyViolationError("intake item has an invalid claim lease")
+        return AdmissionPreview(
+            cycle=cycle,
+            workflow_id=cycle.cycle_id,
+            board=registration.board,
+            checkout=registration.checkout,
+            registration_digest=registration.digest,
+            constraints_digest=constraints.digest,
+            stage_profiles=profiles,
+            intake_digest=intake.digest,
+        )
+
+    def admit(
+        self,
+        *,
+        manifest: ProjectManifest,
+        registration: ControllerRegistration,
+        intake: IntakeRecord,
+        baseline_revision: str,
+        stage_profiles: dict[str, str],
+        constraints_content: str,
+        mode: CycleMode = CycleMode.IMPROVE,
+        pack_name: str | None = None,
+        candidate_identity: str | None = None,
+        claim_lease_seconds: int = 900,
+    ) -> tuple[CycleAdmission, WorkflowLedger, NotificationReceipt]:
+        now = self.clock()
+        preview = self._preview(
+            manifest=manifest,
+            registration=registration,
+            intake=intake,
+            baseline_revision=baseline_revision,
+            stage_profiles=stage_profiles,
+            constraints_content=constraints_content,
+            mode=mode,
+            pack_name=pack_name,
+            candidate_identity=candidate_identity,
+            claim_lease_seconds=claim_lease_seconds,
+            observed_at=now,
+        )
+        constraints = parse_workflow_constraints(constraints_content)
+        profiles = preview.stage_profiles
+        cycle = preview.cycle
         snapshot = self.store.materialize_snapshot(cycle, manifest)
         admission = self.store.load_admission(cycle)
         if admission is None:

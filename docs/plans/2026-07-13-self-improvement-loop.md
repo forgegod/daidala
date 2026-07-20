@@ -302,7 +302,7 @@ never committed to the target repository. It maps the untrusted project ID to
 trusted operational facts:
 
 ```yaml
-schema: daidala.controller-registration/v1
+schema: daidala.controller-registration/v2
 project_id: example-owner-example-repository
 checkout: /absolute/path/to/repository
 controller_profile: daidala-example-owner-example-repository
@@ -319,6 +319,7 @@ approval:
 notifications:
   adapter: hermes-gateway
   target: configured-attended-target-alias
+  destination: platform:private-chat-or-channel-identity
 evaluator:
   backend: restricted-container
   network: denied-by-default

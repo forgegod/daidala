@@ -19,7 +19,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `skills.py` | Exact installed-skill inventory, content-digest verification, and mutation-free install planning. |
 | `constraints.py` | Strict workflow-constraint YAML parsing, canonicalization, bounds, and digest identity. |
 | `projects.py` | Strict committed project-manifest parsing, canonical identity, verification declarations, and mutation policy. |
-| `registrations.py` | Trusted profile-local project registration structure, limits, manifest binding, and storage path. |
+| `registrations.py` | Trusted profile-local project registration v2, exact attended-delivery destination, limits, manifest binding, and storage path. |
 | `credentials.py` | Strict alias-to-environment credential bindings with no secret values or resolver inference. |
 | `prerequisites.py` | Stable self-improvement checklist registry, retained capability evidence, bounded probes, and strict prerequisite reports. |
 | `cycles.py` | Pure self-improvement cycle identity, metric kinds, outcomes, delegation evidence, and lesson-reuse evidence. |
@@ -27,14 +27,16 @@ workflow-pack adapters, and bundled orchestration skills.
 | `restricted_container.py` | Digest-pinned Docker execution, credential-free child environments, bounded mounts and output, denied-network setup probes, and isolation receipts. |
 | `increments.py` | Strict increment-document classification, producer provenance, canonical manifest, bounds, and digest. |
 | `adapters.py` | Strict normalized intake, finding, notification, claim, and receipt records plus injectable protocols. |
-| `controller.py` | Replay-safe cycle admission, manifest snapshots, deterministic workflow binding, immutable cycle storage, and receipt validation. |
+| `live_adapters.py` | Bounded production GitHub intake/claim and Hermes attended-delivery adapters with credential-minimal child environments. |
+| `controller.py` | Mutation-free admission preview, replay-safe cycle admission, manifest snapshots, deterministic workflow binding, immutable cycle storage, and receipt validation. |
+| `project_cycles.py` | Dry-run-first production project-cycle composition, prerequisite enforcement, exact identity confirmation, and profile-local runtime wiring. |
 | `reconciliation.py` | Two-authority claim recovery evidence and local pending-to-published finding synchronization. |
 | `execution.py` | Profile-local artifacts, detached worktrees, and diff capture. |
 | `kanban.py` | Public host-boundary adapter for the idempotent, approval-gated Hermes card graph. |
 | `schemas.py` | Tool schemas exposed to the model. |
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
 | `packs.py` | Pack loading and deterministic validation. |
-| `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle dispatch, pack operations, dry-run-first evaluator probes, and subprocess mutation boundary. |
+| `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle dispatch, pack operations, dry-run-first project-cycle admission and evaluator probes, and subprocess mutation boundary. |
 | `dashboard_backend.py` | Profile-safe dashboard read model, live Kanban snapshots, constraint previews, and typed compare-and-swap replacement adapter. |
 | `recommendations.py` | Pure finite pending-decision and next-action derivation from ledger facts and live Kanban snapshots. |
 | `setup_wizard.py` | Typed setup preview, confirmation gate, and documented Hermes board/profile inventory commands. |
@@ -61,7 +63,13 @@ workflow-pack adapters, and bundled orchestration skills.
   is turn isolation and never grants workflow authority.
 - External packs pin a Git source revision, bounded Hermes version, and complete-directory digest per required skill.
 - Standalone CLI inventory comes from the profile skill directory; it never imports Hermes runtime internals.
-- Native and standalone operator commands share one parser and dispatch layer; setup and external installation remain dry-run by default.
+- Native and standalone operator commands share one parser and dispatch layer;
+  setup, external installation, evaluator probes, and project-cycle admission
+  remain dry-run by default.
+- `project-cycle admit --apply` requires the exact cycle ID and canonical intake
+  digest returned by a fresh dry-run. The apply path reruns live prerequisites
+  and rejects changed issue, manifest, pack, constraints, baseline, registration,
+  or stage-profile identity before mutation.
 - Self-improvement prerequisite diagnosis extends the shared `doctor` command,
   mirrors the stable check IDs owned by `docs/16-self-improvement-setup.md`,
   emits bounded redacted evidence, and has no fix/apply or setup-mutation mode.
@@ -107,9 +115,15 @@ workflow-pack adapters, and bundled orchestration skills.
 - Increment reconciliation recomputes repository content from the frozen diff
   and requires approved mutable paths, artifact-ledger identity, finalized
   activation/producer identity, and the nearest owning DOX scope.
-- Adapter code defines strict normalized records and protocols only; concrete
-  network implementations remain separately gated. Admission validates all
-  external claim and event-specific notification data before workflow dispatch.
+- `adapters.py` defines strict normalized records and protocols;
+  `live_adapters.py` owns the separately gated concrete GitHub and Hermes
+  transports. GitHub reads use the intake alias, claim mutations use the
+  findings alias, and attended delivery uses the exact profile-local registration
+  non-home destination while retaining only a non-private receipt. Bare
+  platform home aliases are rejected because they do not bind the attended
+  identity. Admission validates
+  all external claim and event-specific notification data before workflow
+  dispatch.
 - Self-improvement workflow IDs equal deterministic cycle IDs, transitively
   binding the workflow ledger to the immutable canonical manifest snapshot,
   expected baseline, canonical constraints, and complete stage-profile map.

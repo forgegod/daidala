@@ -48,6 +48,9 @@ def test_intake_claim_and_notification_records_are_normalized_and_bounded() -> N
     assert receipt.receipt_id == "receipt-1"
     assert receipt.event_id == "cycle-1:admitted"
     assert IntakeRecord.from_dict(intake.to_dict()) == intake
+    assert len(intake.digest) == 64
+    assert intake.digest == IntakeRecord.from_dict(intake.to_dict()).digest
+    assert intake.digest != replace(intake, goal="Changed goal").digest
     assert ClaimIdentity.from_dict(claim.to_dict()) == claim
     assert NotificationReceipt.from_dict(receipt.to_dict()) == receipt
     with pytest.raises(PolicyViolationError, match="unready"):

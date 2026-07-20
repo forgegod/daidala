@@ -27,7 +27,7 @@ PROJECT_URL = "https://github.com/users/forgegod/projects/1"
 
 def _registration_content(checkout: Path) -> str:
     return f"""\
-schema: daidala.controller-registration/v1
+schema: daidala.controller-registration/v2
 project_id: forgegod-daidala
 checkout: {checkout}
 controller_profile: daidala-self-improvement
@@ -43,6 +43,7 @@ approval:
 notifications:
   adapter: hermes-gateway
   target: attended-daidala
+  destination: telegram:-1001234567890:17585
 evaluator:
   backend: restricted-container
   network: denied-by-default

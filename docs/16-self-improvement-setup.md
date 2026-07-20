@@ -90,7 +90,7 @@ in this order; a later step must not be used to waive an earlier blocker.
 | 8 | Create labels and the user-owned GitHub Project. | GitHub Issues and Projects. | Required projection and optional attended UI auto-add pass. |
 | 9 | Materialize trusted non-secret registration, bindings, and receipts. | Profile-local project files. | Pass; registration, bindings, and combined evidence validate strictly. |
 | 10 | Run the read-only live prerequisite checker from a clean checkout. | None. | Pass; native and standalone reports each return all eleven `SI-*` checks as `pass`. |
-| 11 | Admit UC-01 manually. | GitHub issue, board, evaluator, and cycle artifacts. | Blocked pending separate approval for that exact cycle. |
+| 11 | Admit UC-01 manually. | GitHub issue, board, evaluator, and cycle artifacts. | Approved on 2026-07-20. The complete repository gate passes, but live admission remains blocked pending a verified commit, exact detached controller installation, registration v2 migration, and approved dry-run/apply evidence. |
 
 The operator owns browser authorization, credential creation, attended-channel
 confirmation, setup approval, and later cycle approval. The agent may select a
@@ -536,9 +536,10 @@ still requires separate approval for that exact identity. It is:
 - verified by the repository gate and detached-clone check.
 
 The controller currently loads this exact detached revision. Installation does
-not authorize a cycle; UC-01 remains separately approval-gated. For a fresh
-reproduction, choose exactly one installation path below. Both paths pass
-isolated Hermes v0.18.2 discovery and pack validation.
+not authorize a cycle. UC-01 received separate operator approval on 2026-07-20
+but remains blocked before mutation until the supported production admission
+path exists. For a fresh reproduction, choose exactly one installation path
+below. Both paths pass isolated Hermes v0.18.2 discovery and pack validation.
 
 The installed revision enforces the empirically required `read:org` intake
 capability, and retained live evidence includes `read-organization`. Do not
@@ -669,7 +670,9 @@ identity, then print and retain only the non-private platform/message receipt:
 ```bash
 result="$(mktemp)"
 trap 'rm -f "$result"' EXIT
-hermes -p daidala-self-improvement send --to telegram --json \
+DAIDALA_ATTENDED_DESTINATION='telegram:<chat_id>:<thread_id>'
+hermes -p daidala-self-improvement send \
+  --to "$DAIDALA_ATTENDED_DESTINATION" --json \
   'Daidala prerequisite probe: forgegod-daidala; no cycle was admitted.' \
   >"$result"
 python - "$result" <<'PY'
@@ -881,7 +884,7 @@ Use this exact non-secret shape and replace only the maintainer identity if the
 verified gateway authorization identity differs:
 
 ```yaml
-schema: daidala.controller-registration/v1
+schema: daidala.controller-registration/v2
 project_id: forgegod-daidala
 checkout: /home/raphael/src/rb/daidala
 controller_profile: daidala-self-improvement
@@ -898,6 +901,7 @@ approval:
 notifications:
   adapter: hermes-gateway
   target: attended-daidala
+  destination: telegram:-1001234567890:17585  # replace with the private retained target
 evaluator:
   backend: restricted-container
   network: denied-by-default
@@ -984,3 +988,44 @@ Every row must pass before creating the controlled UC-01 issue or workflow:
 If one row fails, record the exact blocker in the versioned evaluation result and
 stop. Do not downgrade the requirement or convert repository tests into live
 evidence.
+
+After installing the separately approved controller revision, migrate the
+profile-local registration to `daidala.controller-registration/v2` and add the
+exact non-home Hermes `send --to` value as `notifications.destination`, for
+example `telegram:<chat_id>:<thread_id>`. Bare platform names such as `telegram`
+are rejected because their mutable home-channel mapping does not bind the
+approved attended identity. Keep the logical receipt identity in
+`notifications.target`; never commit a private destination.
+
+Run admission as a dry run first:
+
+```bash
+hermes -p daidala-self-improvement daidala project-cycle admit \
+  --project-manifest /home/raphael/src/rb/daidala/.daidala/project.yaml \
+  --registration /home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/registration.yaml \
+  --issue ISSUE_NUMBER \
+  --default-profile daidala-self-improvement \
+  --pack addyosmani
+```
+
+Review the returned cycle ID, intake digest, manifest, pack, baseline,
+constraints, registration, board, checkout, and stage-profile identities. Apply
+only the exact fresh preview:
+
+```bash
+hermes -p daidala-self-improvement daidala project-cycle admit \
+  --project-manifest /home/raphael/src/rb/daidala/.daidala/project.yaml \
+  --registration /home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/registration.yaml \
+  --issue ISSUE_NUMBER \
+  --default-profile daidala-self-improvement \
+  --pack addyosmani \
+  --apply \
+  --expected-cycle-id CYCLE_ID_FROM_PREVIEW \
+  --expected-intake-digest INTAKE_DIGEST_FROM_PREVIEW
+```
+
+The apply invocation reruns all live prerequisites and refetches the issue. Any
+identity change fails before claim or workflow mutation. Generic `daidala start`
+is not project admission. Do not reuse an actively claimed issue for another
+pack; the second pack requires a separately approved equivalent issue until
+claim release and reconciliation are implemented.

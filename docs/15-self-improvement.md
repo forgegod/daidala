@@ -389,14 +389,16 @@ The engine consumes normalized records, not GitHub labels or prose directly.
 - Notification receipts contain the exact event ID, adapter, attended target
   alias, returned receipt ID, and timezone-aware delivery time.
 
-Phase 2 implements strict record serialization, injectable protocols,
+The implementation provides strict record serialization, injectable protocols,
 replay-safe claims, immutable admission snapshots, pending synchronization,
 event-bound receipt validation, and deterministic workflow binding. Admission
 snapshots bind the canonical constraint digest and complete executable-stage
 profile map; workflow dispatch requires the expected baseline before ledger or
-Kanban mutation. Concrete GitHub body/label/Project handling and gateway
-transport remain blocked on the live prerequisites. The loop never marks its
-generated finding `daidala-si:ready`.
+Kanban mutation. The production GitHub issue/claim and Hermes attended-delivery
+adapters are composed only by the dry-run-first project-cycle command and remain
+blocked from live use until the exact source revision, registration v2 migration,
+and dry-run identity are separately approved. The loop never marks its generated
+finding `daidala-si:ready`.
 
 Phase 4 repository coverage uses temporary repositories and fake host
 boundaries. It does not claim that the currently blocked restricted-container,
@@ -501,9 +503,12 @@ sequenceDiagram
 
 GitHub Project membership is presentation only. Eligibility requires base label
 `daidala-si`, exactly one namespaced category, repository priority, structured
-body, and separate maintainer-applied `daidala-si:ready`. The issue template is
-committed; labels, Project, credentials, and live issue mutation are uncreated
-Phase 4 work.
+body, and separate maintainer-applied `daidala-si:ready`. The issue template,
+labels, Project, credentials, and prerequisite evidence are configured and
+verified. The supported production adapter and project-cycle source path now
+exists; live issue admission remains blocked until that code is committed,
+installed as an exact detached controller revision, migrated to registration v2,
+and previewed successfully.
 
 ### Pack-neutral activation
 
@@ -525,7 +530,9 @@ uses bundled `daidala:aidlc-adapter`. The engine contains no pack-name branch.
 7. Confirm the source checkout is unchanged and decide retain/reject from evidence.
 
 Cases: `TC-F04-01`, `TC-F05-01`, `TC-F06-01`, `TC-F08-01`, `TC-F08-02`, and
-`TC-F09-01`. Status: unexercised.
+`TC-F09-01`. Status: blocked before mutation after approval; the production
+admission path is implemented in the working tree but not installed or exercised
+against the live controller.
 
 ### UC-02 walkthrough
 
@@ -570,8 +577,7 @@ owned worktree; candidate code never replaces the currently loaded plugin.
 
 ## Operator procedures
 
-The prerequisite diagnostic is the only implemented self-improvement-specific
-operator command:
+The source tree provides two self-improvement-specific operator commands:
 
 ```bash
 # Implemented: local checks; network, gateway, and container checks remain not-run
@@ -583,18 +589,27 @@ hermes -p daidala-self-improvement daidala doctor \
   --registration /home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/registration.yaml \
   --live
 
+# Dry-run only: returns the exact cycle ID and canonical intake digest
+hermes -p daidala-self-improvement daidala project-cycle admit \
+  --project-manifest /home/raphael/src/rb/daidala/.daidala/project.yaml \
+  --registration /home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/registration.yaml \
+  --issue ISSUE_NUMBER \
+  --default-profile daidala-self-improvement \
+  --pack addyosmani
 ```
 
-The planned `projects register`, project-cycle status, exact cycle approval, and
-project archive operations are not merely unexercised: no `projects` command
-tree exists in the current CLI. Do not substitute the generic workflow
-`start`, `status`, `approve`, or `cancel` commands for project admission.
+`project-cycle admit` is dry-run by default. `--apply` additionally requires the
+exact `--expected-cycle-id` and `--expected-intake-digest` from a fresh dry run;
+the apply invocation reruns all live prerequisites before any claim or workflow
+mutation. Do not substitute generic workflow `start`, `status`, `approve`, or
+`cancel` for project admission.
 
-Phase 5 must implement and exercise setup preview, manual first run, project
-status and approval, pause/resume, recovery, and reconciliation before those
-operations can become supported. Phase 6 must exercise candidate upgrades. The
-Phase 4 local evaluator fixtures do not constitute a live restricted-container
-run. Teardown remains destructive and separately approved.
+Project registration mutation, project-cycle status, exact cycle approval,
+archive, pause/resume, recovery, and reconciliation remain unsupported. The
+working-tree admission command is not live evidence: it must be committed,
+installed from an exact detached revision, migrated to registration v2, and
+exercised through approved dry-run and apply invocations. Phase 6 must exercise
+candidate upgrades. Teardown remains destructive and separately approved.
 
 ## Verification and source audit
 
