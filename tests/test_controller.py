@@ -204,11 +204,15 @@ def coordinator(
     )
 
 
-def admit(coordinator: AdmissionCoordinator):  # type: ignore[no-untyped-def]
+def admit(
+    coordinator: AdmissionCoordinator,
+    *,
+    intake_record: IntakeRecord | None = None,
+):  # type: ignore[no-untyped-def]
     return coordinator.admit(
         manifest=manifest(),
         registration=registration(),
-        intake=intake(),
+        intake=intake_record or intake(),
         baseline_revision=BASELINE,
         stage_profiles=stage_profiles(),
         constraints_content=(ROOT / ".daidala/constraints.yaml").read_text(),
@@ -454,19 +458,45 @@ def test_replay_rejects_changed_constraints_and_stage_profiles(tmp_path: Path) -
     assert workflow.calls == 1
 
 
-def test_expired_stored_claim_blocks_replay(tmp_path: Path) -> None:
+def test_expired_stored_claim_resumes_same_admission_owner(tmp_path: Path) -> None:
     intake_adapter = FakeIntake(intake())
     notifications = FakeNotifications()
     workflow = FakeWorkflow()
     admit(coordinator(tmp_path, intake_adapter, notifications, workflow))
 
-    with pytest.raises(PolicyViolationError, match="expired before reconciliation"):
-        admit(
-            coordinator(
-                tmp_path,
-                intake_adapter,
-                notifications,
-                workflow,
-                clock=NOW + timedelta(minutes=16),
-            )
+    replay = admit(
+        coordinator(
+            tmp_path,
+            intake_adapter,
+            notifications,
+            workflow,
+            clock=NOW + timedelta(minutes=16),
         )
+    )
+
+    assert replay[0].cycle.cycle_id == expected_cycle_id()
+    assert intake_adapter.claim_calls == 1
+    assert len(notifications.calls) == 1
+    assert workflow.calls == 2
+
+
+def test_expired_claim_without_stored_admission_requires_reconciliation(
+    tmp_path: Path,
+) -> None:
+    expired = replace(
+        intake(),
+        claim=ClaimIdentity(
+            claimant=expected_cycle_id(),
+            claimed_at=NOW - timedelta(minutes=16),
+            lease_expires_at=NOW - timedelta(minutes=1),
+        ),
+    )
+    subject = coordinator(
+        tmp_path,
+        FakeIntake(expired),
+        FakeNotifications(),
+        FakeWorkflow(),
+    )
+
+    with pytest.raises(PolicyViolationError, match="two-authority reconciliation"):
+        admit(subject, intake_record=expired)

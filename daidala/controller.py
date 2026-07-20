@@ -491,7 +491,10 @@ class AdmissionCoordinator:
                 raise PolicyViolationError("intake item is claimed by another owner")
             if intake.claim.claimed_at > observed_at:
                 raise PolicyViolationError("intake item has a future claim timestamp")
-            if intake.claim.lease_expires_at <= observed_at:
+            if (
+                intake.claim.lease_expires_at <= observed_at
+                and self.store.load_admission(cycle) is None
+            ):
                 raise PolicyViolationError(
                     "expired intake claim requires two-authority reconciliation"
                 )
@@ -681,10 +684,6 @@ def _validate_replay(
         raise PolicyViolationError("replayed constraints conflict with stored admission")
     if admission.stage_profiles != stage_profiles:
         raise PolicyViolationError("replayed stage profiles conflict with stored admission")
-    if admission.claim.lease_expires_at <= observed_at:
-        raise PolicyViolationError("stored admission claim expired before reconciliation")
-
-
 def _validate_workflow_binding(ledger: WorkflowLedger, admission: CycleAdmission) -> None:
     cycle = admission.cycle
     if ledger.workflow_id != admission.workflow_id:
