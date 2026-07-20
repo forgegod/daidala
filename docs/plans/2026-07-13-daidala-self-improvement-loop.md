@@ -41,8 +41,8 @@ loaded by the controller gateway.
 | 4B — GitHub projection and static registration | Done | Project 1 is repository-linked with all required fields, all exact labels exist, optional attended auto-add is enabled, and strict registration plus non-secret bindings parse. |
 | 4C — Capability and isolation receipts | Done | Runtime read/write probes, attended Telegram delivery, controlled findings write, and restricted-container isolation receipts are retained as strict non-secret evidence. |
 | 4D — Live prerequisite gate | Done | Native and standalone clean-checkout reports each return all eleven `SI-*` checks as `pass` for controller revision `dcb695356c462a76f2c6912fe5c641fb0c22a0a2`. |
-| 4E prerequisite — Operational admission path | In progress | Commit `311fcae39e4d1e6505b38c015792008315f64e95` is installed detached, registration v2 is migrated, and all eleven post-install live checks pass; dry-run and apply evidence remain. |
-| 4E — Manual live evaluation | Blocked | UC-01 is approved and the production path is installed, but no controlled issue exists and dry-run/apply remain separately gated; no claim, cycle, workflow, or card was created. |
+| 4E prerequisite — Operational admission path | Done | Production dry-run and approved apply created one deterministic claim, admission, attended receipt, and workflow without duplicate external or Kanban state. |
+| 4E — Manual live evaluation | In progress | The Addyosmani run reached accepted evidence-only delivery with an improved restricted-container comparison and no commit/push. Terminal completion/claim release and the separate Aidlc run remain gated. |
 | 5 — Reconciliation, findings, and pack evaluation | Blocked | Requires approved manual-cycle and replay evidence from 4E. |
 | 6 — Version-aware re-evaluation | Blocked | Requires Phase 5 evidence; candidate Hermes identity is selected here, not invented earlier. |
 | 7 — Repository gate and documentation | Blocked | Requires the preceding live evaluation and comparison evidence. |
@@ -590,13 +590,11 @@ revision. Apply requires the exact cycle ID and canonical intake digest from a
 fresh preview and reruns live prerequisites before mutation. Generic
 `daidala start` remains prohibited.
 
-Remaining before Phase 4E:
-
-- create one separately approved, otherwise equivalent controlled issue per
-  pack without marking it ready through automation;
-- run and inspect the production dry run before separately approving apply; and
-- verify replay, failure recovery, and no-mutation behavior at the live
-  boundaries.
+The Addyosmani admission dry run and separately approved apply completed. Replay
+preserved one claim comment, one claim label, one attended admission receipt,
+one workflow, and one card graph. Recovery preserved the deterministic cycle
+through failed-admission continuation without weakening unrelated expired-claim
+reconciliation.
 
 Gate: a dry run returns the exact proposed identities without mutation; one
 approved apply run can create a recoverable claim, retained admission and
@@ -604,11 +602,19 @@ notification receipts, and one bound workflow through production adapters.
 
 ### Phase 4E — Manual live evaluation
 
-- Admit one separately approved but otherwise equivalent controlled UC-01 issue
-  per pack and run each independently. Distinct item IDs are required until
-  claim release and reconciliation exist; never reuse an active claim.
+- Complete the delivered Addyosmani cycle through the separately approved,
+  digest-bound terminal completion operation before admitting another cycle.
+- Admit one separately approved but otherwise equivalent Aidlc UC-01 issue and
+  run it independently; never reuse an active claim.
 - Stop at and exercise the exact plan gate before any implementation card.
 - Run UC-02 only after its separate cycle approval.
+
+The Addyosmani run exercised the exact revised-plan digest, one owned worktree,
+immutable two-file implementation scope, diagnostic baseline exit `1`, candidate
+exit `0`, accepted review, and evidence-only delivery with commit and push false.
+The worktree is released and the target checkout remains unchanged. Its issue
+and admission remain active until terminal completion is installed, previewed,
+and separately approved.
 
 Gate: each case has evidence or an exact blocker; no unrelated board, profile,
 browser profile, repository, credential, or private database was touched; the

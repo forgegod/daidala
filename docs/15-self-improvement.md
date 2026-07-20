@@ -266,6 +266,7 @@ store, or default pack. Promotion is a later `improve` cycle.
 | Verify -> review | Verifier | Declared suites complete | Immutable verification evidence | Test-case/run identity | Recovery receipt | `blocked` or `incomparable`. |
 | Review -> decision | Reviewer/Daidala | Frozen scope and complete evidence | Review and comparison | Evidence digests | Decision request | `rejected` or `incomparable`. |
 | Decision -> retention | Authorized human | All required metrics pass, no protected regression | Retention decision | Exact comparison identity | Completion receipt | `retained`, `reverted`, or `no-change`. |
+| Delivered -> completed | Authorized human/Daidala | Done current cards, accepted review and delivery, passing verification, released worktree, no commit/push, exact claim owner and fresh preview digest | Remote completion receipt, attended receipt, immutable completion record | Completion preview digest | `cycle-completed` receipt | `blocked` on drift or uncertain ownership. |
 | Finding -> external | Findings adapter | Separate publication approval | Returned remote ID and URL | Stable finding ID | Publication receipt | Pending on outage. |
 | Active -> archived | Authorized operator | No uncertain ownership | Archive fact, preserved evidence | Project/cycle identity | Archive receipt | `blocked` if active ownership exists. |
 
@@ -388,18 +389,22 @@ The engine consumes normalized records, not GitHub labels or prose directly.
   evidence digest. `published` requires both a returned remote identity and URL.
 - Notification receipts contain the exact event ID, adapter, attended target
   alias, returned receipt ID, and timezone-aware delivery time.
+- Completion previews bind admission, approved plan, passing verification,
+  accepted review and delivery, released worktree, and no-commit/no-push facts.
+  Apply closes the exact claimed issue as completed, removes only its claim
+  label, and retains remote, attended, and terminal records at mode `0600`.
 
 The implementation provides strict record serialization, injectable protocols,
-replay-safe claims, immutable admission snapshots, pending synchronization,
-event-bound receipt validation, and deterministic workflow binding. Admission
+replay-safe claims and completion, immutable admission and completion records,
+pending synchronization, event-bound receipt validation, and deterministic workflow binding. Admission
 snapshots bind the canonical constraint digest and complete executable-stage
 profile map; workflow dispatch requires the expected baseline before ledger or
 Kanban mutation. The production GitHub issue/claim and Hermes attended-delivery
-adapters are composed only by the dry-run-first project-cycle command. Commit
-`311fcae39e4d1e6505b38c015792008315f64e95` is installed detached with
-registration v2 and passes post-install live diagnosis; issue creation, preview
-inspection, and apply remain distinct approvals. The loop never marks its
-generated finding `daidala-si:ready`.
+adapters are composed only by the dry-run-first project-cycle command. Admission
+and completion preview, apply, controller installation, and subsequent cycle
+admission remain distinct approvals. A valid completion releases active-cycle
+ownership without deleting the immutable admission or workflow evidence. The
+loop never marks its generated finding `daidala-si:ready`.
 
 Phase 4 repository coverage uses temporary repositories and fake host
 boundaries. It remains distinct from the profile-local post-install prerequisite
@@ -411,6 +416,7 @@ report and cannot substitute for live admission evidence.
 |---|---|
 | Duplicate admission or cron tick | Resolve the deterministic cycle/workflow; create nothing twice. |
 | Claim created, workflow missing | Retry creation with the same identity. |
+| Issue closed before local completion record | Replay the same digest-bound completion; converge from the retained claim comment and remote receipt without a duplicate comment or notification. |
 | Expired claim | Return to ready only when ledger and board both prove no active owner. |
 | Missing or manually changed board | Block; never recreate association from title or prose. |
 | Evaluator crash before mutation | Preserve durable baseline and record incomplete result. |
