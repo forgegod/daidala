@@ -1,8 +1,9 @@
 # 13 — Autonomous triggering
 
 Daidala does not schedule or monitor work. Autonomous triggering is composed
-from existing Hermes facilities: cron or webhooks select an external item, a
-fresh Hermes agent session invokes `daidala_start`, and the gateway's Kanban
+from existing Hermes facilities: cron or webhooks select an external item, then
+either a fresh Hermes agent session invokes `daidala_start` or a deterministic
+`--no-agent` script invokes the shared Daidala CLI. The gateway's Kanban
 dispatcher runs the resulting cards.
 
 “Autonomous” here means unattended admission, definition, and planning. It does
@@ -20,10 +21,13 @@ flowchart LR
     LI["Linear or Jira tickets"] --> T
     T --> F["allowlist, event filter, deduplication"]
     F --> A["fresh Hermes agent session"]
+    F --> S["deterministic no-agent script"]
 
     subgraph H["Existing Hermes process"]
         A --> W["Daidala plugin<br>daidala_start"]
+        S --> W2["Daidala plugin<br>operator CLI"]
         W --> K["Hermes Kanban<br>define → plan"]
+        W2 --> K
         K --> G["blocked human approval"]
         G -->|"exact plan digest approved"| E["implement → verify → review → deliver"]
     end
@@ -31,7 +35,7 @@ flowchart LR
 
 There is no Daidala scheduler, webhook listener, polling loop, or nested
 `hermes chat` process. The trigger layer is replaceable; all accepted events
-converge on the same `daidala_start` tool and policy boundary.
+converge on the same Daidala workflow and policy boundary.
 
 ## Prerequisites
 
@@ -187,6 +191,29 @@ Keep provider cursors or deduplication records outside the target repository,
 for example under the active Hermes profile's data directory. The Daidala
 workflow ID is the final duplicate guard; a local cursor is only an efficiency
 optimization.
+
+### Daidala self-improvement reconciliation
+
+The Daidala dogfood controller uses the script-only shape rather than the
+agent-driven poller. Its cron job is deterministic and passes `--no-agent`; no
+provider or model is selected or invoked by the reconciliation tick itself.
+Hermes agents and their configured models begin only after admission, when the
+Kanban dispatcher runs the workflow cards.
+
+The profile-local script invokes
+`hermes -p <controller-profile> daidala project-cycle reconcile` twice with
+fixed trusted manifest and registration paths: first as a dry-run, then with
+`--apply --expected-preview-digest <exact-dry-run-digest>`. It prints nothing
+for an idle result and one bounded JSON record for an admitted, replayed,
+active, or blocked result. Malformed output, changed preview identity, adapter
+failure, or notification failure exits nonzero.
+
+Unattended identity is therefore bound by the exact detached controller
+revision, the content digest of the profile-local script, the trusted
+registration, and the CLI reconciliation preview digest. Provider and model
+identity are not cron inputs for this no-agent composition. The script and cron
+remain separately approval-gated and paused until the controlled duplicate-tick
+probe passes.
 
 ## Pattern B: event-driven webhooks
 

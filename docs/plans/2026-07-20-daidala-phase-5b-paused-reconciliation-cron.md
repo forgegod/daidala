@@ -7,7 +7,9 @@ admit at most one maintainer-ready issue and converge on one workflow.
 
 **Status:** in-progress — Phase 0 is complete at merge checkpoint `bdd2baf` and
 Phase 1 is complete at checkpoint `1d6a909`; Phase 2 is complete at the shared
-dry-run-first CLI checkpoint. Controller installation, cron creation, GitHub
+dry-run-first CLI checkpoint `5472cc1`. Phase 3 repository reconciliation and
+the complete release gate are complete at the repository checkpoint.
+Controller installation, cron creation, GitHub
 mutation, and controlled dispatch remain separately approval-gated.
 
 ## Current state
@@ -33,6 +35,8 @@ mutation, and controlled dispatch remain separately approval-gated.
   an isolated enabled-plugin profile. The installed controller profile remains
   on its older admit/complete-only revision until the separately gated Phase 4
   exact-revision installation.
+- The complete repository, packaging, release-content, pack, link, lint, and
+  test gate passes with 388 tests. No controller profile or remote ref changed.
 - `hermes -p daidala-self-improvement cron status` reports a running gateway and
   no active jobs; `hermes -p daidala-self-improvement cron list` reports no
   scheduled jobs.
@@ -76,7 +80,7 @@ before any later phase. The immediate run uses Hermes' at-most-once claim; the
 | 0 | Integrate the exercised controller line | done (`bdd2baf`; 30 focused + 374 full tests) | `git merge-base --is-ancestor 31331e8352208321ae819ad2464396f03207602b HEAD` exits 0; focused recovery tests exit 0. |
 | 1 | Implement deterministic reconciliation | done (24 focused + 384 full tests) | `pytest tests/test_reconciliation.py tests/test_live_adapters.py tests/test_project_cycles.py` exits 0 with selection, replay, recovery, outage, and notification cases. |
 | 2 | Expose the dry-run-first operator surface | done (39 focused + 388 full tests) | Current-source native and standalone `project-cycle reconcile --help` agree; CLI tests exit 0; dry-run fixtures produce no mutation. |
-| 3 | Reconcile contracts and checkpoint the implementation | pending | The complete repository gate exits 0; one reviewed implementation checkpoint exists; no push occurs. |
+| 3 | Reconcile contracts and checkpoint the implementation | done (388 tests + complete release gate) | The complete repository gate exits 0; one reviewed repository checkpoint exists; no push occurs. |
 | 4 | Install and verify the exact controller revision | pending | Native and standalone `doctor --live` report 11/11 pass for the separately approved checkpoint. |
 | 5 | Create the profile-local wrapper and paused cron | pending | `cron list --all` shows exactly one paused named job; `cron runs <job>` is empty; scheduling remains disabled. |
 | 6 | Run and replay one controlled tick | pending | Two completed cron attempts yield one cycle/workflow, no duplicate claim or graph, attended receipts, and a still-paused job. |

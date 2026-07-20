@@ -2,27 +2,31 @@
 
 ## Support status
 
-Phases 1 through 4 of the reusable protocol are implemented and
-repository-tested. This includes strict project, registration, cycle, metric,
-increment, credential-binding, and prerequisite-report schemas; normalized
-adapter contracts; replay-safe admission; local finding synchronization; fresh
-evaluator homes and owned worktrees; immutable evaluation evidence; comparison
-verdicts; lesson-reuse deltas; cleanup and quarantine; and increment/DOX
-reconciliation.
+The reusable deterministic foundation through reconciliation is implemented and
+repository-tested. It includes strict project, registration, cycle, metric,
+increment, credential-binding, prerequisite-report, reconciliation-preview, and
+tick-result schemas; normalized production and fake adapter contracts;
+replay-safe admission and completion; local finding synchronization; fresh
+evaluator homes and owned worktrees; restricted-container execution; immutable
+evaluation evidence; comparison verdicts; lesson-reuse deltas; cleanup and
+quarantine; and increment/DOX reconciliation.
 
-This is not an operational self-improvement loop yet. Concrete GitHub, gateway,
-and restricted-container execution adapters, the project-onboarding command
-surface, scheduled reconciliation, live model comparison, the first attended
-cycle, terminal retention, and publication remain unimplemented or unexercised.
-Phase 5 is blocked by the live prerequisite gate; Phase 6 cannot start without
-Phase 5 evidence.
+Two attended manual cycles exercised the detached controller's admission,
+approval, evaluation, delivery, replay, and terminal completion paths. The
+shared dry-run-first CLI now exposes deterministic reconciliation with an exact
+preview-digest apply gate, but that revision is not installed in the persistent
+controller profile and no reconciliation cron or controlled tick exists. Live
+duplicate-tick recovery, terminal retention, approved finding publication, and
+version-aware comparison remain unexercised or blocked by later approval gates.
 
 Authoritative implementation sources are `daidala/projects.py`,
 `daidala/registrations.py`, `daidala/cycles.py`, `daidala/increments.py`,
 `daidala/credentials.py`, `daidala/prerequisites.py`, `daidala/adapters.py`,
-`daidala/controller.py`, `daidala/evaluation.py`, and
-`daidala/reconciliation.py`. The reusable and Daidala-instance plans remain the
-implementation authority for unfinished phases:
+`daidala/live_adapters.py`, `daidala/controller.py`,
+`daidala/project_cycles.py`, `daidala/completion.py`,
+`daidala/evaluation.py`, and `daidala/reconciliation.py`. The reusable and
+Daidala-instance plans remain the implementation authority for unfinished
+phases:
 
 - [Reusable protocol plan](plans/2026-07-13-self-improvement-loop.md)
 - [Daidala dogfood plan](plans/2026-07-13-daidala-self-improvement-loop.md)
@@ -406,9 +410,10 @@ admission remain distinct approvals. A valid completion releases active-cycle
 ownership without deleting the immutable admission or workflow evidence. The
 loop never marks its generated finding `daidala-si:ready`.
 
-Phase 4 repository coverage uses temporary repositories and fake host
-boundaries. It remains distinct from the profile-local post-install prerequisite
-report and cannot substitute for live admission evidence.
+Repository coverage uses temporary repositories and fake host boundaries. The
+two retained attended cycles separately supply live admission and completion
+evidence; neither repository tests nor those manual cycles supply controlled
+reconciliation-tick evidence.
 
 ## Recovery and reconciliation
 
@@ -463,7 +468,7 @@ flowchart TD
 
 ## Daidala dogfood instance
 
-The first project is `forgegod-daidala`. Planned persistent identities are:
+The first project is `forgegod-daidala`. Its persistent identities are:
 
 - profile `daidala-self-improvement`;
 - board `daidala-forgegod-daidala`;
