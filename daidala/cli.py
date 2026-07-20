@@ -18,7 +18,14 @@ from .locations import resolve_data_root
 from .packs import PackError, load_pack
 from .prerequisites import DoctorRunner, run_prerequisite_diagnosis
 from .project_cycles import ProjectCycleOperator
-from .restricted_container import RestrictedContainerExecutor, probe_restricted_container
+from .restricted_container import (
+    RestrictedContainerEvidence,
+    RestrictedContainerExecutor,
+    RestrictedContainerRequest,
+    load_restricted_container_request,
+    probe_restricted_container,
+    run_restricted_container_request,
+)
 from .service import WorkflowService
 from .skills import (
     PackInstallPlan,
@@ -34,6 +41,9 @@ CommandRunner = Callable[[tuple[str, ...]], tuple[int, str]]
 RevisionResolver = Callable[[str], str]
 ServiceFactory = Callable[[], WorkflowService]
 ContainerProbe = Callable[[str], EvaluatorIsolationEvidence]
+ContainerRequestRunner = Callable[
+    [RestrictedContainerRequest, Path], tuple[RestrictedContainerEvidence, Path]
+]
 ProjectCycleFactory = Callable[[], ProjectCycleOperator]
 
 
@@ -71,6 +81,15 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
         "--apply",
         action="store_true",
         help="Create the disposable denied-network container and emit evidence",
+    )
+    evaluator_run = evaluator_sub.add_parser(
+        "run", help="Plan or run one strict evaluator request and retain evidence"
+    )
+    evaluator_run.add_argument("--request", required=True, type=Path)
+    evaluator_run.add_argument(
+        "--apply",
+        action="store_true",
+        help="Run the request and retain immutable content-addressed evidence",
     )
 
     project_cycle = sub.add_parser(
@@ -248,6 +267,7 @@ def main(
     doctor_runner: DoctorRunner | None = None,
     doctor_environ: Mapping[str, str] | None = None,
     container_probe: ContainerProbe | None = None,
+    container_request_runner: ContainerRequestRunner | None = None,
     project_cycle_factory: ProjectCycleFactory | None = None,
 ) -> int:
     args = build_parser().parse_args(argv)
@@ -262,6 +282,7 @@ def main(
         doctor_runner=doctor_runner,
         doctor_environ=doctor_environ,
         container_probe=container_probe,
+        container_request_runner=container_request_runner,
         project_cycle_factory=project_cycle_factory,
     )
 
@@ -278,6 +299,7 @@ def run_command(
     doctor_runner: DoctorRunner | None = None,
     doctor_environ: Mapping[str, str] | None = None,
     container_probe: ContainerProbe | None = None,
+    container_request_runner: ContainerRequestRunner | None = None,
     project_cycle_factory: ProjectCycleFactory | None = None,
 ) -> int:
     """Execute one parsed command and return its process exit code."""
@@ -295,7 +317,11 @@ def run_command(
             _print(report.to_dict())
             return report.exit_code
         if args.command == "evaluator":
-            return _run_evaluator_probe(args, container_probe=container_probe)
+            return _run_evaluator(
+                args,
+                container_probe=container_probe,
+                container_request_runner=container_request_runner,
+            )
         if args.command == "project-cycle":
             selected_project_cycle_factory = (
                 project_cycle_factory or ProjectCycleOperator
@@ -321,11 +347,42 @@ def run_command(
         return 1
 
 
-def _run_evaluator_probe(
+def _run_evaluator(
     args: argparse.Namespace,
     *,
     container_probe: ContainerProbe | None,
+    container_request_runner: ContainerRequestRunner | None,
 ) -> int:
+    if args.evaluator_command == "run":
+        request = load_restricted_container_request(args.request)
+        if not args.apply:
+            _print(
+                {
+                    "success": True,
+                    "operation": "evaluator-run",
+                    "dry_run": True,
+                    "request_digest": request.digest,
+                    "request": request.to_dict(),
+                    "policy": RestrictedContainerExecutor(
+                        request.image_identity
+                    ).policy(),
+                }
+            )
+            return 0
+        selected_runner = container_request_runner or run_restricted_container_request
+        evidence, path = selected_runner(request, resolve_data_root())
+        matched = evidence.exit_code == evidence.expected_exit_code
+        _print(
+            {
+                "success": matched,
+                "operation": "evaluator-run",
+                "dry_run": False,
+                "evidence_digest": evidence.digest,
+                "evidence_path": str(path),
+                "evidence": evidence.to_dict(),
+            }
+        )
+        return 0 if matched else 1
     if args.evaluator_command != "probe":
         raise ValueError(f"unsupported evaluator command: {args.evaluator_command}")
     if not args.apply:
