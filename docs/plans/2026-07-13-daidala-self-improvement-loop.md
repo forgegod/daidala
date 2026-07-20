@@ -32,8 +32,8 @@ loaded by the controller gateway.
 
 ## Execution status
 
-**Status:** Phase 4F-A pending explicit approval; Addyosmani UC-01 and its
-terminal completion are done.
+**Status:** Phase 4F-A done; Phase 4F-B admission apply is explicitly approved
+for the exact fresh preview and is next.
 
 | Phase | Status | Evidence |
 |---|---|---|
@@ -46,8 +46,8 @@ terminal completion are done.
 | 4D — Live prerequisite gate | done | Post-completion `doctor --live` reports all eleven `SI-*` checks as `pass`, including `SI-ACTIVE-CYCLE`, with controller revision `89d7bf3f5e3be8f166979dcef92c338e6fb23370`. |
 | 4E prerequisite — Operational admission and completion paths | done | Dry-run-first admission and completion, exact digest gates, replay-safe issue closure, claim release, attended notification, immutable receipts, and completion-aware active ownership are installed and exercised. |
 | 4E — Addyosmani UC-01 live evaluation | done | Cycle `cycle-21158b4320bf09968915110abdfeb32ac2a0c833acfe90a99bf340936c148f55` reached accepted evidence-only delivery and completion; issue #2 is closed as completed and the claim is released. |
-| 4F-A — Aidlc intake rescope and fresh preview | pending | Issue #3 authorizes the full Aidlc lifecycle; a fresh preview produces new exact cycle and intake identities without mutation; explicit apply approval is recorded. |
-| 4F-B — Aidlc admission and plan gate | blocked | Requires 4F-A; one exact apply and replay create one claim, admission, notification, and workflow that stops at the plan approval card without a worktree. |
+| 4F-A — Aidlc intake rescope and fresh preview | done (preview evidence `5ba8cbf0`; exact apply approved) | Issue #3 authorizes the full Aidlc lifecycle; fresh preview identity `cycle-a0c383ccc264b1bb1a3d78b20d1b5a87936a378dcbc77beec0476fc3740bd75f` and intake digest `377e2976bd1f5998a5bfc9b1c9df92aed53232099f4769330191a72fda8d4b1a` are retained without mutation and explicitly approved for apply. |
+| 4F-B — Aidlc admission and plan gate | pending | One exact approved apply and replay create one claim, admission, notification, and workflow that stops at the plan approval card without a worktree. |
 | 4F-C — Aidlc execution and evidence-only delivery | blocked | Requires an exact approved plan digest; restricted baseline/candidate evidence, accepted review, delivery with commit/push false, and released worktree ownership agree. |
 | 4F-D — Aidlc terminal completion | blocked | Requires 4F-C; completion closes issue #3, releases only its claim, replays without duplication, and returns all eleven live prerequisite checks to `pass`. |
 | 5 — Reconciliation, findings, and pack evaluation | blocked | Requires completed, independently verifiable Addyosmani and Aidlc UC-01 evidence from 4E and 4F. |
@@ -71,17 +71,25 @@ a named prerequisite is incomplete.
   closed issue #2 as completed, removed only `daidala-si:claimed`, delivered
   attended receipt `telegram:20`, and converged identically on replay.
 - Controlled issue #3 is open, unclaimed, and projected as Aidlc-ready. Its
-  current body authorizes preview only, so it is not eligible for admission
-  apply until Phase 4F-A replaces that scope under explicit approval.
-- The retained preview for issue #3 proposed workflow identity
+  exact approved body SHA-256
+  `042974bd30e4b193e388c8626bed397a1951620848b68c7684a774004b79a7e7`
+  now authorizes the separately gated full Aidlc lifecycle.
+- The superseded preview for issue #3 proposed workflow identity
   `cycle-a5acefda9b2c85f63a1b447fb1deb6e095f0c5f49441fe39f574c582d249cff4`
   and intake digest
   `1c761c6367cfc8a05598acbfb966e8d1183e05bd5df8f9355227d73764538e07`.
-  Changing the issue invalidates both identities; they are evidence of the
-  no-mutation preview, never authorization for the future apply.
+  The issue rescope invalidated both identities; they remain immutable preview
+  evidence and must never be applied.
+- Two byte-identical fresh previews propose workflow identity
+  `cycle-a0c383ccc264b1bb1a3d78b20d1b5a87936a378dcbc77beec0476fc3740bd75f`
+  and intake digest
+  `377e2976bd1f5998a5bfc9b1c9df92aed53232099f4769330191a72fda8d4b1a`.
+  Before/after snapshots prove the issue, Project item, policy ledger,
+  admissions, Kanban, checkout, worktrees, and evaluator artifacts were
+  unchanged by preview; admission apply remains unapproved.
 - No Aidlc claim, admission, workflow, Kanban graph, worktree, evaluator run,
   commit, or push exists. The registered checkout remains at
-  `72ac8c5567358a6ad8fd40baaf37d5a4db17284e`.
+  `76ccd86f8cdf455662bbad158b7bf6dd812271b3`.
 
 ## Registered project
 
@@ -642,6 +650,13 @@ checkout remains unchanged.
 
 **Goal:** Convert issue #3 from a preview-only control into the separately
 approved Aidlc UC-01 execution intake without admitting it.
+
+Current checkpoint: steps 1-7 are done with protected verification SHA-256
+`5ba8cbf0a017a13ab5e7b5540223733a3c04cae6355d8f7c8eee1cd2e2aeba2f`;
+the operator explicitly approved workflow identity
+`cycle-a0c383ccc264b1bb1a3d78b20d1b5a87936a378dcbc77beec0476fc3740bd75f`
+and intake digest
+`377e2976bd1f5998a5bfc9b1c9df92aed53232099f4769330191a72fda8d4b1a`.
 
 Steps:
 
