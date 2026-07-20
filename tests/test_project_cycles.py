@@ -4,12 +4,13 @@ import json
 from collections.abc import Mapping
 from pathlib import Path
 from types import SimpleNamespace
+from typing import cast
 
 import pytest
 
 from daidala.errors import PolicyViolationError
-from daidala.prerequisites import CheckStatus
-from daidala.project_cycles import ProjectCycleOperator
+from daidala.prerequisites import CheckStatus, PrerequisiteReport
+from daidala.project_cycles import ProjectCycleOperator, _diagnosis_allows_replay
 from daidala.state import WorkflowStage
 
 ROOT = Path(__file__).parents[1]
@@ -251,3 +252,29 @@ def test_project_cycle_apply_rejects_stale_preview_before_workflow_or_claim(
         call[0][:3] in {("gh", "issue", "comment"), ("gh", "issue", "edit")}
         for call in runtime.calls
     )
+
+
+def test_prerequisites_allow_only_matching_admission_replay() -> None:
+    active_admission = SimpleNamespace(
+        check_id="SI-ACTIVE-CYCLE",
+        status=CheckStatus.BLOCKED,
+        blocker="Daidala cycle admission ownership exists",
+    )
+    report = cast(
+        PrerequisiteReport,
+        SimpleNamespace(status=CheckStatus.BLOCKED, checks=(active_admission,)),
+    )
+
+    assert _diagnosis_allows_replay(report, has_matching_replay=True)
+    assert not _diagnosis_allows_replay(report, has_matching_replay=False)
+
+    active_board = SimpleNamespace(
+        check_id="SI-ACTIVE-CYCLE",
+        status=CheckStatus.BLOCKED,
+        blocker="registered board has active task ownership",
+    )
+    board_report = cast(
+        PrerequisiteReport,
+        SimpleNamespace(status=CheckStatus.BLOCKED, checks=(active_board,)),
+    )
+    assert not _diagnosis_allows_replay(board_report, has_matching_replay=True)

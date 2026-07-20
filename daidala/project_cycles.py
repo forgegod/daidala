@@ -216,10 +216,6 @@ class ProjectCycleOperator:
             runner=self.runner,
             environ=self.environ,
         )
-        if report.status is not CheckStatus.PASS:
-            raise PolicyViolationError(
-                "live prerequisite diagnosis must pass before project-cycle admission"
-            )
         baseline_revision = self._baseline(registration)
         checkout = Path(registration.checkout).resolve(strict=True)
         constraints_path = (checkout / manifest.default_constraints_source).resolve(strict=True)
@@ -265,6 +261,19 @@ class ProjectCycleOperator:
             pack_name=pack_name,
             claim_lease_seconds=claim_lease_seconds,
         )
+        stored_admission = CycleArtifactStore(profile_root).load_admission(preview.cycle)
+        has_matching_replay = (
+            stored_admission is not None
+            and intake.claim is not None
+            and intake.claim.claimant == preview.cycle.cycle_id
+        )
+        if not _diagnosis_allows_replay(
+            report,
+            has_matching_replay=has_matching_replay,
+        ):
+            raise PolicyViolationError(
+                "live prerequisite diagnosis must pass before project-cycle admission"
+            )
         return _PreparedProjectCycle(
             profile_root=profile_root,
             manifest=manifest,
@@ -319,6 +328,23 @@ class ProjectCycleOperator:
         if code != 0:
             raise PolicyViolationError(f"{label} failed with exit code {code}")
         return output
+
+
+def _diagnosis_allows_replay(
+    report: PrerequisiteReport,
+    *,
+    has_matching_replay: bool,
+) -> bool:
+    if report.status is CheckStatus.PASS:
+        return True
+    non_pass = [row for row in report.checks if row.status is not CheckStatus.PASS]
+    return (
+        has_matching_replay
+        and len(non_pass) == 1
+        and non_pass[0].check_id == "SI-ACTIVE-CYCLE"
+        and non_pass[0].status is CheckStatus.BLOCKED
+        and non_pass[0].blocker == "Daidala cycle admission ownership exists"
+    )
 
 
 class _PreviewOnlyWorkflow:
