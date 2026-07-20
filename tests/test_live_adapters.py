@@ -110,18 +110,6 @@ class GitHubRunner:
                         ]
                     }
                 )
-            if command[-1] == "number,url,labels,state,stateReason":
-                return 0, json.dumps(
-                    {
-                        "number": 42,
-                        "url": "https://github.com/forgegod/daidala/issues/42",
-                        "state": self.state,
-                        "stateReason": self.state_reason,
-                        "labels": [
-                            {"name": label} for label in sorted(self.labels)
-                        ],
-                    }
-                )
             payload = {
                 "number": 42,
                 "url": "https://github.com/forgegod/daidala/issues/42",
@@ -139,6 +127,25 @@ class GitHubRunner:
                 ],
             }
             return 0, json.dumps(payload)
+        if command == (
+            "gh",
+            "api",
+            "--method",
+            "GET",
+            "repos/forgegod/daidala/issues/42",
+        ):
+            return 0, json.dumps(
+                {
+                    "number": 42,
+                    "html_url": "https://github.com/forgegod/daidala/issues/42",
+                    "state": self.state.lower(),
+                    "state_reason": (
+                        None if self.state_reason is None else self.state_reason.lower()
+                    ),
+                    "labels": [{"name": label} for label in sorted(self.labels)],
+                    "extra_api_field": "ignored",
+                }
+            )
         if command[:3] == ("gh", "api", "--paginate") and command[3].endswith(
             "/events?per_page=100"
         ):

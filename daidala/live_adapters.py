@@ -286,32 +286,42 @@ class GitHubIssueIntakeAdapter:
         issue = self._run_json(
             (
                 "gh",
-                "issue",
-                "view",
-                item_id,
-                "--repo",
-                self.repository,
-                "--json",
-                "number,url,labels,state,stateReason",
+                "api",
+                "--method",
+                "GET",
+                f"repos/{self.repository}/issues/{item_id}",
             ),
             alias=self.read_credential_alias,
             label="GitHub completion issue",
         )
-        fields = {"number", "url", "labels", "state", "stateReason"}
-        if not isinstance(issue, dict) or set(issue) != fields:
+        fields = {"number", "html_url", "labels", "state", "state_reason"}
+        if not isinstance(issue, dict) or not fields.issubset(issue):
             raise PolicyViolationError("GitHub completion issue fields are invalid")
         if str(issue["number"]) != item_id:
             raise PolicyViolationError("GitHub completion issue number is invalid")
         expected_url = f"https://github.com/{self.repository}/issues/{item_id}"
-        if issue["url"] != expected_url:
+        if issue["html_url"] != expected_url:
             raise PolicyViolationError("GitHub completion issue URL is invalid")
         labels = _parse_labels(issue["labels"])
         if "daidala-si" not in labels:
             raise PolicyViolationError("GitHub completion issue is missing the base label")
+        state = issue["state"]
+        state_reason = issue["state_reason"]
+        if not isinstance(state, str) or not (
+            state_reason is None or isinstance(state_reason, str)
+        ):
+            raise PolicyViolationError("GitHub completion issue state is invalid")
+        normalized_issue = {
+            "number": issue["number"],
+            "url": issue["html_url"],
+            "labels": issue["labels"],
+            "state": state.upper(),
+            "stateReason": None if state_reason is None else state_reason.upper(),
+        }
         claim = _claim_from_comments(
             self._api_pages(item_id, "comments"), self.authorized_actors
         )
-        return cast(dict[str, Any], issue), labels, claim
+        return normalized_issue, labels, claim
 
     def _normalize_issue(self, item_id: str, issue: dict[str, Any]) -> IntakeRecord:
         expected_fields = {"number", "url", "title", "body", "labels", "state"}
