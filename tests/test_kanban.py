@@ -356,6 +356,30 @@ def test_deleted_assignee_remains_visible_in_live_card_status() -> None:
     assert status[0].status == "ready"
 
 
+def test_show_accepts_native_unwrapped_kanban_payload() -> None:
+    host = FakeHost()
+    adapter = KanbanGraphAdapter(host.dispatch)
+    ledger = make_ledger()
+    define = adapter.ensure_card(
+        ledger,
+        load_pack("addyosmani"),
+        stage=WorkflowStage.DEFINE,
+    )
+    ledger = record_host_card(ledger, WorkflowStage.DEFINE, define.task_id, 1)
+
+    def native_dispatch(name: str, args: dict[str, object]) -> str:
+        assert name == "kanban_show"
+        return json.dumps({"task": host.cards[str(args["task_id"])]})
+
+    status = KanbanGraphAdapter(native_dispatch).show_card(
+        ledger,
+        WorkflowStage.DEFINE,
+    )
+
+    assert status.task_id == define.task_id
+    assert status.status == "ready"
+
+
 def test_approval_and_post_gate_graph_use_blocked_gate_and_shared_worktree() -> None:
     host = FakeHost()
     adapter = KanbanGraphAdapter(host.dispatch)
