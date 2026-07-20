@@ -126,6 +126,8 @@ class ClaimRecoveryEvidence:
 @dataclass(frozen=True)
 class ReconciliationPreview:
     project_id: str
+    board: str
+    controller_profile: str
     manifest_digest: str
     registration_digest: str
     outcome: ReconciliationOutcome
@@ -142,6 +144,8 @@ class ReconciliationPreview:
         if self.schema != RECONCILIATION_PREVIEW_SCHEMA:
             raise PolicyViolationError("reconciliation preview schema is invalid")
         _require_slug(self.project_id, "reconciliation project ID")
+        _require_slug(self.board, "reconciliation board")
+        _require_slug(self.controller_profile, "reconciliation controller profile")
         _require_digest(self.manifest_digest, "reconciliation manifest digest")
         _require_digest(self.registration_digest, "reconciliation registration digest")
         if not isinstance(self.outcome, ReconciliationOutcome):
@@ -191,6 +195,8 @@ class ReconciliationPreview:
         return {
             "schema": self.schema,
             "project_id": self.project_id,
+            "board": self.board,
+            "controller_profile": self.controller_profile,
             "manifest_digest": self.manifest_digest,
             "registration_digest": self.registration_digest,
             "outcome": self.outcome.value,
@@ -220,6 +226,8 @@ class ReconciliationPreview:
             {
                 "schema",
                 "project_id",
+                "board",
+                "controller_profile",
                 "manifest_digest",
                 "registration_digest",
                 "outcome",
@@ -240,6 +248,8 @@ class ReconciliationPreview:
         return cls(
             schema=raw["schema"],
             project_id=raw["project_id"],
+            board=raw["board"],
+            controller_profile=raw["controller_profile"],
             manifest_digest=raw["manifest_digest"],
             registration_digest=raw["registration_digest"],
             outcome=outcome,
@@ -307,6 +317,7 @@ class ReconciliationResult:
                 raise PolicyViolationError("claim recovery receipt is not event-bound")
         elif event_ids:
             raise PolicyViolationError("non-notifying reconciliation contains receipts")
+
 
     def to_dict(self) -> dict[str, object]:
         return {

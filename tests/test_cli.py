@@ -3,13 +3,20 @@ from __future__ import annotations
 import argparse
 import json
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
 import pytest
 
 from daidala import cli
+from daidala.adapters import NotificationReceipt
 from daidala.evaluation import EvaluatorIsolationEvidence
+from daidala.reconciliation import (
+    ReconciliationOutcome,
+    ReconciliationPreview,
+    ReconciliationResult,
+)
 from daidala.restricted_container import (
     RestrictedContainerEvidence,
     RestrictedContainerRequest,
@@ -29,6 +36,7 @@ PINNED_EVALUATOR_IMAGE = (
     "catthehacker/ubuntu@sha256:"
     "3220992391c1182a0cfe4c64453511772c54f4c39e960d26a5e327960675982e"
 )
+RECONCILIATION_CYCLE = "cycle-" + "e" * 64
 
 
 @dataclass
@@ -127,6 +135,39 @@ class FakeCompletionResult:
         }
 
 
+def _reconciliation_preview() -> ReconciliationPreview:
+    return ReconciliationPreview(
+        project_id="forgegod-daidala",
+        board="daidala-self-improvement",
+        controller_profile="daidala-self-improvement",
+        manifest_digest="a" * 64,
+        registration_digest="b" * 64,
+        outcome=ReconciliationOutcome.ADMISSION_PREVIEW,
+        candidate_count=2,
+        cycle_id=RECONCILIATION_CYCLE,
+        workflow_id=RECONCILIATION_CYCLE,
+        intake_item_id="42",
+        intake_digest="c" * 64,
+    )
+
+
+def _reconciliation_result() -> ReconciliationResult:
+    preview = _reconciliation_preview()
+    return ReconciliationResult(
+        preview=preview,
+        outcome=ReconciliationOutcome.ADMITTED,
+        notification_receipts=(
+            NotificationReceipt(
+                event_id=f"{RECONCILIATION_CYCLE}:admitted",
+                adapter="hermes-gateway",
+                target_alias="attended-daidala",
+                receipt_id="telegram:11",
+                delivered_at=datetime(2026, 7, 20, 20, 0, tzinfo=UTC),
+            ),
+        ),
+    )
+
+
 @dataclass
 class FakeProjectCycles:
     calls: list[tuple[str, dict[str, object]]] = field(default_factory=list)
@@ -147,6 +188,16 @@ class FakeProjectCycles:
         self.calls.append(("complete", kwargs))
         return FakeCompletionResult()
 
+    def preview_reconciliation(self, **kwargs: object) -> ReconciliationPreview:
+        self.calls.append(("preview_reconciliation", kwargs))
+        return _reconciliation_preview()
+
+    def reconcile(self, **kwargs: object) -> ReconciliationResult:
+        self.calls.append(("reconcile", kwargs))
+        if kwargs["expected_preview_digest"] != _reconciliation_preview().digest:
+            raise ValueError("expected reconciliation preview digest is stale")
+        return _reconciliation_result()
+
 
 def _host_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="hermes daidala")
@@ -160,6 +211,27 @@ def _factory(service: FakeService) -> cli.ServiceFactory:
 
 def _project_cycle_factory(service: FakeProjectCycles) -> cli.ProjectCycleFactory:
     return cast(cli.ProjectCycleFactory, lambda: service)
+
+
+def _reconcile_argv() -> list[str]:
+    return [
+        "project-cycle",
+        "reconcile",
+        "--project-manifest",
+        "/repo/.daidala/project.yaml",
+        "--registration",
+        "/profile/projects/forgegod-daidala/registration.yaml",
+        "--default-profile",
+        "daidala-self-improvement",
+        "--stage-profile",
+        "review=reviewer",
+        "--pack",
+        "addyosmani",
+        "--candidate-limit",
+        "7",
+        "--claim-lease-seconds",
+        "600",
+    ]
 
 
 @pytest.mark.parametrize(
@@ -437,6 +509,122 @@ def test_project_cycle_apply_without_exact_preview_identity_fails_before_service
     assert code == 1
     assert service.calls == []
     assert "requires --expected-cycle-id" in payload["message"]
+
+
+def test_reconciliation_help_is_equivalent_on_standalone_and_native_surfaces(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(SystemExit) as standalone_exit:
+        cli.build_parser(prog="daidala").parse_args(
+            ["project-cycle", "reconcile", "--help"]
+        )
+    standalone = capsys.readouterr().out
+    native_parser = argparse.ArgumentParser(prog="hermes daidala")
+    cli.register_cli(native_parser)
+    with pytest.raises(SystemExit) as native_exit:
+        native_parser.parse_args(["project-cycle", "reconcile", "--help"])
+    native = capsys.readouterr().out
+
+    assert standalone_exit.value.code == native_exit.value.code == 0
+    expected_options = {
+        "--project-manifest",
+        "--registration",
+        "--default-profile",
+        "--stage-profile",
+        "--pack",
+        "--candidate-limit",
+        "--claim-lease-seconds",
+        "--apply",
+        "--expected-preview-digest",
+    }
+    for option in expected_options:
+        assert option in standalone
+        assert option in native
+
+
+def test_reconciliation_is_dry_run_by_default_on_both_surfaces(capsys) -> None:
+    standalone = FakeProjectCycles()
+    native = FakeProjectCycles()
+    argv = _reconcile_argv()
+
+    standalone_code = cli.main(
+        argv, project_cycle_factory=_project_cycle_factory(standalone)
+    )
+    standalone_payload = json.loads(capsys.readouterr().out)
+    native_code = cli.run_command(
+        _host_args(argv), project_cycle_factory=_project_cycle_factory(native)
+    )
+    native_payload = json.loads(capsys.readouterr().out)
+
+    assert standalone_code == native_code == 0
+    assert native.calls == standalone.calls
+    assert native.calls[0][0] == "preview_reconciliation"
+    assert native.calls[0][1]["candidate_limit"] == 7
+    assert native.calls[0][1]["claim_lease_seconds"] == 600
+    assert native_payload == standalone_payload
+    assert native_payload["dry_run"] is True
+    assert native_payload["preview_digest"] == _reconciliation_preview().digest
+    assert native_payload["selected_issue_id"] == "42"
+    assert native_payload["board"] == "daidala-self-improvement"
+    assert native_payload["current_stage"] is None
+    assert native_payload["receipt_ids"] == []
+    assert native_payload["inspection_command"] == (
+        f"hermes -p daidala-self-improvement daidala status {RECONCILIATION_CYCLE}"
+    )
+
+
+def test_reconciliation_apply_requires_and_forwards_exact_preview_digest(capsys) -> None:
+    service = FakeProjectCycles()
+    base = [*_reconcile_argv(), "--apply"]
+
+    missing_code = cli.main(
+        base, project_cycle_factory=_project_cycle_factory(service)
+    )
+    missing = json.loads(capsys.readouterr().out)
+    assert missing_code == 1
+    assert service.calls == []
+    assert "requires --expected-preview-digest" in missing["message"]
+
+    stale_code = cli.main(
+        [*base, "--expected-preview-digest", "0" * 64],
+        project_cycle_factory=_project_cycle_factory(service),
+    )
+    stale = json.loads(capsys.readouterr().out)
+    assert stale_code == 1
+    assert service.calls[-1][0] == "reconcile"
+    assert "stale" in stale["message"]
+
+    code = cli.main(
+        [*base, "--expected-preview-digest", _reconciliation_preview().digest],
+        project_cycle_factory=_project_cycle_factory(service),
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert code == 0
+    assert service.calls[-1][0] == "reconcile"
+    assert service.calls[-1][1]["expected_preview_digest"] == (
+        _reconciliation_preview().digest
+    )
+    assert payload["dry_run"] is False
+    assert payload["outcome"] == "admitted"
+    assert payload["receipt_ids"] == ["telegram:11"]
+
+
+def test_reconciliation_expected_digest_is_rejected_without_apply(capsys) -> None:
+    service = FakeProjectCycles()
+    code = cli.main(
+        [
+            *_reconcile_argv(),
+            "--expected-preview-digest",
+            _reconciliation_preview().digest,
+        ],
+        project_cycle_factory=_project_cycle_factory(service),
+    )
+
+    payload = json.loads(capsys.readouterr().out)
+    assert code == 1
+    assert service.calls == []
+    assert "requires --apply" in payload["message"]
 
 
 def test_project_cycle_completion_is_dry_run_by_default_on_both_surfaces(capsys) -> None:

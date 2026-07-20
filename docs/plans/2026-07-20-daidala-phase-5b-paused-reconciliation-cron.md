@@ -6,9 +6,9 @@ job that remains paused, and retain evidence that two controlled invocations
 admit at most one maintainer-ready issue and converge on one workflow.
 
 **Status:** in-progress — Phase 0 is complete at merge checkpoint `bdd2baf` and
-Phase 1 is complete at the deterministic-reconciliation checkpoint; Phase 2 is
-unstarted, and controller installation, cron creation, GitHub mutation, and
-controlled dispatch remain separately approval-gated.
+Phase 1 is complete at checkpoint `1d6a909`; Phase 2 is complete at the shared
+dry-run-first CLI checkpoint. Controller installation, cron creation, GitHub
+mutation, and controlled dispatch remain separately approval-gated.
 
 ## Current state
 
@@ -27,7 +27,12 @@ controlled dispatch remain separately approval-gated.
   prerequisite interpretation, completion-aware active ownership, stable
   one-item selection, admission replay, and two-authority claim recovery.
 - `daidala/live_adapters.py` now inventories ready and claimed issues and uses
-  audited, replay-safe claim release. No CLI command exposes reconciliation yet.
+  audited, replay-safe claim release. The shared CLI exposes reconciliation as
+  dry-run by default and requires an exact preview digest for apply.
+- Current source exposes equivalent standalone and native reconciliation help in
+  an isolated enabled-plugin profile. The installed controller profile remains
+  on its older admit/complete-only revision until the separately gated Phase 4
+  exact-revision installation.
 - `hermes -p daidala-self-improvement cron status` reports a running gateway and
   no active jobs; `hermes -p daidala-self-improvement cron list` reports no
   scheduled jobs.
@@ -70,7 +75,7 @@ before any later phase. The immediate run uses Hermes' at-most-once claim; the
 |---|---|---|---|
 | 0 | Integrate the exercised controller line | done (`bdd2baf`; 30 focused + 374 full tests) | `git merge-base --is-ancestor 31331e8352208321ae819ad2464396f03207602b HEAD` exits 0; focused recovery tests exit 0. |
 | 1 | Implement deterministic reconciliation | done (24 focused + 384 full tests) | `pytest tests/test_reconciliation.py tests/test_live_adapters.py tests/test_project_cycles.py` exits 0 with selection, replay, recovery, outage, and notification cases. |
-| 2 | Expose the dry-run-first operator surface | pending | Native and standalone `project-cycle reconcile --help` agree; CLI tests exit 0; dry-run fixtures produce no mutation. |
+| 2 | Expose the dry-run-first operator surface | done (39 focused + 388 full tests) | Current-source native and standalone `project-cycle reconcile --help` agree; CLI tests exit 0; dry-run fixtures produce no mutation. |
 | 3 | Reconcile contracts and checkpoint the implementation | pending | The complete repository gate exits 0; one reviewed implementation checkpoint exists; no push occurs. |
 | 4 | Install and verify the exact controller revision | pending | Native and standalone `doctor --live` report 11/11 pass for the separately approved checkpoint. |
 | 5 | Create the profile-local wrapper and paused cron | pending | `cron list --all` shows exactly one paused named job; `cron runs <job>` is empty; scheduling remains disabled. |
@@ -171,9 +176,10 @@ Steps:
    `--apply --expected-preview-digest <digest>` for mutation, then rerun all live
    reads and reject drift before claim, workflow, or notification effects.
 3. Return bounded JSON with the outcome, selected issue identity when present,
-   cycle/workflow IDs, board, current stage, receipt identity, and exact
-   profile-scoped inspection command. Never emit credential values, private
-   destination data, issue bodies, or unbounded host output.
+   cycle/workflow IDs, board, current stage when proven (otherwise `null`),
+   receipt identity, and exact profile-scoped inspection command. Never emit
+   credential values, private destination data, issue bodies, or unbounded host
+   output.
 4. Add shared-parser tests in `tests/test_cli.py` and operator tests in
    `tests/test_project_cycles.py` for standalone/native parity, dry-run
    non-mutation, missing expected digest, stale digest, exit codes, and structured
@@ -181,8 +187,9 @@ Steps:
 5. Do not register a new model-facing tool unless a later use case needs one;
    Phase 5B uses a deterministic no-agent cron script and the operator CLI.
 
-Verification gate: both `daidala project-cycle reconcile --help` and
-`hermes daidala project-cycle reconcile --help` expose equivalent arguments;
+Verification gate: both `daidala project-cycle reconcile --help` and an
+isolated current-source `hermes daidala project-cycle reconcile --help` expose
+equivalent arguments;
 `pytest tests/test_cli.py tests/test_project_cycles.py` exits 0; a fake-boundary
 dry-run leaves issue, board, ledger, notification, and tick-store state
 unchanged.

@@ -16,6 +16,9 @@ completeness without touching a real Hermes profile.
 - Reconciliation tests use fake inventories and command boundaries to prove
   stable issue ordering, no-candidate convergence, bounded claim recovery,
   immutable tick replay, and fail-closed inventory or notification errors.
+- Shared CLI tests prove standalone/native reconciliation argument parity,
+  dry-run default behavior, exact preview-digest apply gates, bounded output,
+  and nonzero stale or missing-identity exits without live profile mutation.
 - Fresh-evaluator tests cover all three cycle modes, candidate/controller
   separation, isolation receipts, credential-free homes, durable baseline
   identity and ordering, immutable evidence, deterministic/repeated/

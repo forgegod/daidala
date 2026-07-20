@@ -18,6 +18,7 @@ from .locations import resolve_data_root
 from .packs import PackError, load_pack
 from .prerequisites import DoctorRunner, run_prerequisite_diagnosis
 from .project_cycles import ProjectCycleOperator
+from .reconciliation import ReconciliationPreview, ReconciliationResult
 from .restricted_container import (
     RestrictedContainerEvidence,
     RestrictedContainerExecutor,
@@ -120,6 +121,27 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     project_cycle_admit.add_argument("--apply", action="store_true")
     project_cycle_admit.add_argument("--expected-cycle-id")
     project_cycle_admit.add_argument("--expected-intake-digest")
+    project_cycle_reconcile = project_cycle_sub.add_parser(
+        "reconcile", help="Preview deterministic intake reconciliation; mutate only with --apply"
+    )
+    project_cycle_reconcile.add_argument("--project-manifest", required=True, type=Path)
+    project_cycle_reconcile.add_argument("--registration", required=True, type=Path)
+    project_cycle_reconcile.add_argument(
+        "--default-profile", dest="profile", required=True
+    )
+    project_cycle_reconcile.add_argument(
+        "--stage-profile",
+        action="append",
+        default=[],
+        metavar="STAGE=PROFILE",
+    )
+    project_cycle_reconcile.add_argument("--pack")
+    project_cycle_reconcile.add_argument("--candidate-limit", type=int, default=100)
+    project_cycle_reconcile.add_argument(
+        "--claim-lease-seconds", type=int, default=900
+    )
+    project_cycle_reconcile.add_argument("--apply", action="store_true")
+    project_cycle_reconcile.add_argument("--expected-preview-digest")
     project_cycle_complete = project_cycle_sub.add_parser(
         "complete", help="Preview or complete one delivered cycle"
     )
@@ -420,6 +442,44 @@ def _run_evaluator(
 def _run_project_cycle(
     args: argparse.Namespace, project_cycle_factory: ProjectCycleFactory
 ) -> int:
+    if args.project_cycle_command == "reconcile":
+        operator = project_cycle_factory()
+        common = {
+            "project_manifest": args.project_manifest,
+            "registration": args.registration,
+            "stage_profiles": _parse_stage_profiles(args.profile, args.stage_profile),
+            "pack_name": args.pack,
+            "candidate_limit": args.candidate_limit,
+            "claim_lease_seconds": args.claim_lease_seconds,
+        }
+        if not args.apply:
+            if args.expected_preview_digest is not None:
+                raise ValueError("expected reconciliation preview digest requires --apply")
+            preview = operator.preview_reconciliation(**common)
+            _print(
+                _reconciliation_output(
+                    preview=preview,
+                    result=None,
+                    project_manifest=args.project_manifest,
+                    registration=args.registration,
+                )
+            )
+            return 0
+        if args.expected_preview_digest is None:
+            raise ValueError("--apply requires --expected-preview-digest")
+        result = operator.reconcile(
+            **common,
+            expected_preview_digest=args.expected_preview_digest,
+        )
+        _print(
+            _reconciliation_output(
+                preview=result.preview,
+                result=result,
+                project_manifest=args.project_manifest,
+                registration=args.registration,
+            )
+        )
+        return 0
     if args.project_cycle_command == "complete":
         operator = project_cycle_factory()
         common = {
@@ -496,6 +556,59 @@ def _run_project_cycle(
         }
     )
     return 0
+
+
+def _reconciliation_output(
+    *,
+    preview: ReconciliationPreview,
+    result: ReconciliationResult | None,
+    project_manifest: Path,
+    registration: Path,
+) -> dict[str, object]:
+    workflow_id = preview.workflow_id
+    if workflow_id is None:
+        inspection = shlex.join(
+            (
+                "hermes",
+                "-p",
+                preview.controller_profile,
+                "daidala",
+                "doctor",
+                "--project-manifest",
+                str(project_manifest),
+                "--registration",
+                str(registration),
+                "--live",
+            )
+        )
+    else:
+        inspection = shlex.join(
+            (
+                "hermes",
+                "-p",
+                preview.controller_profile,
+                "daidala",
+                "status",
+                workflow_id,
+            )
+        )
+    return {
+        "success": True,
+        "operation": "project-cycle-reconcile",
+        "dry_run": result is None,
+        "preview_digest": preview.digest,
+        "outcome": preview.outcome.value if result is None else result.outcome.value,
+        "selected_issue_id": preview.intake_item_id,
+        "cycle_id": preview.cycle_id,
+        "workflow_id": workflow_id,
+        "board": preview.board,
+        "current_stage": None,
+        "receipt_ids": (
+            [] if result is None else [row.receipt_id for row in result.notification_receipts]
+        ),
+        "inspection_command": inspection,
+        "preview": preview.to_dict(),
+    }
 
 
 def _run_init(args: argparse.Namespace) -> int:

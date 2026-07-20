@@ -114,6 +114,8 @@ def test_reconciliation_result_round_trip_and_store_are_content_addressed(
 ) -> None:
     preview = ReconciliationPreview(
         project_id="forgegod-daidala",
+        board="daidala-self-improvement",
+        controller_profile="daidala-self-improvement",
         manifest_digest="b" * 64,
         registration_digest="c" * 64,
         outcome=ReconciliationOutcome.BLOCKED,
@@ -161,6 +163,8 @@ def test_reconciliation_recovery_preview_requires_exact_recoverable_identity() -
 
     preview = ReconciliationPreview(
         project_id="forgegod-daidala",
+        board="daidala-self-improvement",
+        controller_profile="daidala-self-improvement",
         manifest_digest="b" * 64,
         registration_digest="c" * 64,
         outcome=ReconciliationOutcome.ADMISSION_PREVIEW,

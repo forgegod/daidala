@@ -299,12 +299,16 @@ class ProjectCycleOperator:
             validate_notification_receipt(receipt, prepared.registration, event_id)
             receipts.append(receipt)
             result = ReconciliationResult(
-                preview, ReconciliationOutcome.BLOCKED, tuple(receipts)
+                preview=preview,
+                outcome=ReconciliationOutcome.BLOCKED,
+                notification_receipts=tuple(receipts),
             )
             store.save(result)
             return result
         if preview.outcome is ReconciliationOutcome.IDLE:
-            result = ReconciliationResult(preview, ReconciliationOutcome.IDLE)
+            result = ReconciliationResult(
+                preview=preview, outcome=ReconciliationOutcome.IDLE
+            )
             store.save(result)
             return result
         if prepared.intake is None:
@@ -356,7 +360,11 @@ class ProjectCycleOperator:
             if preview.outcome is ReconciliationOutcome.ACTIVE_CYCLE
             else ReconciliationOutcome.ADMITTED
         )
-        result = ReconciliationResult(preview, outcome, tuple(receipts))
+        result = ReconciliationResult(
+            preview=preview,
+            outcome=outcome,
+            notification_receipts=tuple(receipts),
+        )
         store.save(result)
         return result
 
@@ -492,6 +500,8 @@ class ProjectCycleOperator:
             return prepared(
                 ReconciliationPreview(
                     project_id=manifest.project_id,
+                    board=registration.board,
+                    controller_profile=registration.controller_profile,
                     manifest_digest=manifest.digest,
                     registration_digest=registration.digest,
                     outcome=ReconciliationOutcome.BLOCKED,
@@ -531,6 +541,8 @@ class ProjectCycleOperator:
             return prepared(
                 ReconciliationPreview(
                     project_id=manifest.project_id,
+                    board=registration.board,
+                    controller_profile=registration.controller_profile,
                     manifest_digest=manifest.digest,
                     registration_digest=registration.digest,
                     outcome=ReconciliationOutcome.ACTIVE_CYCLE,
@@ -568,6 +580,8 @@ class ProjectCycleOperator:
                 return prepared(
                     ReconciliationPreview(
                         project_id=manifest.project_id,
+                        board=registration.board,
+                        controller_profile=registration.controller_profile,
                         manifest_digest=manifest.digest,
                         registration_digest=registration.digest,
                         outcome=ReconciliationOutcome.BLOCKED,
@@ -608,6 +622,8 @@ class ProjectCycleOperator:
             return prepared(
                 ReconciliationPreview(
                     project_id=manifest.project_id,
+                    board=registration.board,
+                    controller_profile=registration.controller_profile,
                     manifest_digest=manifest.digest,
                     registration_digest=registration.digest,
                     outcome=ReconciliationOutcome.IDLE,
@@ -953,6 +969,8 @@ def _reconciliation_admission_preview(
 ) -> ReconciliationPreview:
     return ReconciliationPreview(
         project_id=manifest.project_id,
+        board=registration.board,
+        controller_profile=registration.controller_profile,
         manifest_digest=manifest.digest,
         registration_digest=registration.digest,
         outcome=ReconciliationOutcome.ADMISSION_PREVIEW,
