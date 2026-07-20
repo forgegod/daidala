@@ -56,5 +56,14 @@ def test_stable_case_matrix_materializes_every_f01_through_f18_area() -> None:
 
     assert areas == set(range(1, 19))
     assert "No setup mutation" in result
-    assert "not evidence that the loop works end to end" in result
     assert "Status: `not-run`" in result
+
+
+def test_result_record_reconciles_completed_uc01_pack_runs() -> None:
+    result = (ROOT / "docs/evaluation-results/v1/daidala-self-improvement.md").read_text()
+
+    assert "cycle-21158b4320bf09968915110abdfeb32ac2a0c833acfe90a99bf340936c148f55" in result
+    assert "cycle-98afe833a63afdbfce7a16bcd9741d4475e46cfb47013c2982cbe3ad04653c26" in result
+    assert "Pack comparison: `incomparable`" in result
+    assert "No preferred pack is selected" in result
+    assert "UC-01 remains blocked before mutation" not in result

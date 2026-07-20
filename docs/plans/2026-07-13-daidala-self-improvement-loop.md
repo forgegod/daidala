@@ -32,8 +32,9 @@ loaded by the controller gateway.
 
 ## Execution status
 
-**Status:** Phase 4F is complete; Phase 5 reconciliation and pack evaluation is
-next and remains unstarted.
+**Status:** Phase 5A evidence reconciliation is complete with an
+`incomparable` cross-pack outcome. Phase 5B paused-cron work is next and remains
+unstarted pending separate approval.
 
 | Phase | Status | Evidence |
 |---|---|---|
@@ -50,8 +51,11 @@ next and remains unstarted.
 | 4F-B — Aidlc admission and plan gate | done | Exact admission and replay converged with attended receipt `telegram:21`; definition and planning stopped at approved plan digest `22a1a91ce4a0872296020d3744714be4252187462f34bc4cd1e482f1d583986c`. |
 | 4F-C — Aidlc execution and evidence-only delivery | done | Restricted baseline `80bb8cf7` failed with `1 != 2`; candidate `6f97e6d2` passed both approved tests; review returned `improved`; delivery recorded commit/push false and released worktree ownership. |
 | 4F-D — Aidlc terminal completion | done | Completion digest `250756b4021b92e7b9ef74214febfab1d5891baf908ca3650acb473505eb1101` closed issue #3, released its claim, delivered `telegram:23`, converged on replay, and returned doctor to 11/11. |
-| 5 — Reconciliation, findings, and pack evaluation | pending | Completed, independently verifiable Addyosmani and Aidlc UC-01 evidence from 4E and 4F is ready for comparison. |
-| 6 — Version-aware re-evaluation | blocked | Requires Phase 5 evidence; candidate Hermes identity is selected here, not invented earlier. |
+| 5A — UC-01 evidence reconciliation | done | All retained plan, baseline, candidate, review, delivery, and completion hashes match; both workflows are terminal, but different repository baselines and candidate test fixtures make pack comparison `incomparable`. |
+| 5B — Paused reconciliation cron and controlled tick | pending | Requires separate approval; no cron was created, run, or enabled by Phase 5A. |
+| 5C — Approved improvement and findings synchronization | blocked | Requires Phase 5B replay evidence plus separate cycle, retention, and publication approvals. |
+| 5D — UC-03 pack evaluation | blocked | Requires one canonical paired fixture, one frozen baseline, one approved candidate skill set, and separate cycle approval. |
+| 6 — Version-aware re-evaluation | blocked | Requires the approved Phase 5 work; candidate Hermes identity is selected here, not invented earlier. |
 | 7 — Repository gate and documentation | blocked | Requires the preceding live evaluation and comparison evidence. |
 
 Mark a phase `in-progress` while running it, `done` only after its gate passes
@@ -86,6 +90,15 @@ a named prerequisite is incomplete.
   No owned worktree remains; the registered checkout and main branch remain
   clean, while the immutable Aidlc cycle baseline remains
   `66e3ad03b70a99bffa67c16596b6cd59fc0967d2`.
+- Phase 5A recomputed the retained Addyosmani and Aidlc plan, baseline,
+  candidate, review, delivery, and completion hashes. Every named file matches
+  its content address.
+- The restricted image and command agree, but Addyosmani binds repository
+  baseline `72ac8c5567358a6ad8fd40baaf37d5a4db17284e` and one candidate test while
+  Aidlc binds baseline `66e3ad03b70a99bffa67c16596b6cd59fc0967d2` and two candidate tests. The
+  missing canonical fixture prevents a measured pack preference.
+- No preferred pack, retained change, cron job, new cycle, or remote finding was
+  created during reconciliation.
 
 ## Registered project
 
@@ -790,23 +803,60 @@ replayed without mutation, and returned live doctor to 11/11.
 
 ### Phase 5 — Reconciliation, findings, and pack evaluation
 
-- Reconcile the completed Addyosmani and Aidlc UC-01 evidence before selecting a
-  preferred pack or proposing retention. Reject comparison if fixture, plan,
-  evaluator, verification, or delivery identities are not comparable.
-- Create the reconciliation cron job paused.
-- Run and replay one controlled tick; enable scheduling only after selection,
-  deduplication, recovery, and attended notification pass.
-- Select at most one structured maintainer-ready issue.
-- Run one approved improvement and preserve baseline/candidate evidence.
-- Run UC-03 with at most one candidate skill set.
-- Retain, reject, or revert from measured results.
-- Synchronize findings with returned GitHub identities while leaving new issues
-  unready.
+#### Phase 5A — UC-01 evidence reconciliation
 
-Gate: the two UC-01 runs are independently complete and comparably reconciled;
-duplicate ticks create no duplicate workflows; every retained change resolves
-its cited case without weakening another gate; failures and approval waits reach
-the attended channel.
+- Recompute the retained Addyosmani and Aidlc UC-01 plan, restricted baseline,
+  restricted candidate, review, delivery, and completion hashes.
+- Verify independent lifecycle completion, issue closure, claim and worktree
+  release, attended receipts, and evidence-only delivery.
+- Compare fixture, plan, evaluator, verification, delivery, and repository
+  identities before selecting a preferred pack or proposing retention.
+- Record `incomparable` rather than inferring a pack effect when any required
+  comparison identity differs.
+- Update the versioned result record without creating a cron, GitHub mutation,
+  new cycle, retained change, publication, or controller promotion.
+
+Observed gate: all twelve primary artifact hashes match and both workflows are
+independently terminal. The restricted image, command, changed-path set, baseline
+failure, and conservative delivery policy agree. Comparison eligibility fails
+because the repository baselines differ and Addyosmani has one candidate test
+while Aidlc has the required focused and adjacent tests. No preferred pack is
+selected.
+
+#### Phase 5B — Paused reconciliation cron and controlled tick
+
+- Create the reconciliation cron job paused only after separate approval.
+- Run and replay one controlled tick only after separate dispatch approval.
+- Keep scheduling disabled until selection, deduplication, recovery, and
+  attended notification pass.
+- Select at most one structured maintainer-ready issue and create no duplicate
+  workflow.
+
+Gate: duplicate ticks converge, failures and approval waits reach the attended
+channel, and scheduling remains disabled until separately approved.
+
+#### Phase 5C — Approved improvement and findings synchronization
+
+- Run at most one separately approved improvement and preserve comparable
+  baseline/candidate evidence.
+- Retain, reject, or revert only from measured results and separate retention
+  approval.
+- Synchronize actionable findings only after separate publication approval and
+  a returned GitHub identity; leave generated issues unready.
+
+Gate: every retained change resolves its cited case without weakening another
+gate, and adapter replay creates no duplicate finding.
+
+#### Phase 5D — UC-03 pack evaluation
+
+- Freeze one repository baseline and one canonical fixture for both compared
+  packs before either run.
+- Use at most one separately approved candidate skill set.
+- Require identical evaluator, verification, limits, and metric identities; any
+  drift produces `incomparable`.
+
+Gate: a pack conclusion is supported by a valid paired comparison; no project
+default changes automatically.
 
 ### Phase 6 — Version-aware re-evaluation
 
