@@ -34,7 +34,8 @@ loaded by the controller gateway.
 
 **Status:** Phase 5A evidence reconciliation is complete with an
 `incomparable` cross-pack outcome. Phase 5B paused-cron work is next and remains
-unstarted pending separate approval.
+unstarted pending separate approval. Its resumable execution design is saved in
+[`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 
 | Phase | Status | Evidence |
 |---|---|---|
@@ -824,6 +825,9 @@ while Aidlc has the required focused and adjacent tests. No preferred pack is
 selected.
 
 #### Phase 5B — Paused reconciliation cron and controlled tick
+
+Detailed execution plan:
+[`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 
 - Create the reconciliation cron job paused only after separate approval.
 - Run and replay one controlled tick only after separate dispatch approval.
