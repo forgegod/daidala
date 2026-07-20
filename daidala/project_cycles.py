@@ -6,7 +6,8 @@ import json
 import os
 import re
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from datetime import UTC, datetime
 from pathlib import Path
 
 from .adapters import IntakeRecord, NotificationReceipt
@@ -23,6 +24,7 @@ from .controller import (
     CycleAdmission,
     CycleArtifactStore,
     WorkflowStarter,
+    validate_notification_receipt,
 )
 from .credentials import (
     MAX_CREDENTIAL_BINDINGS_BYTES,
@@ -37,8 +39,20 @@ from .live_adapters import (
     run_runtime_command,
     safe_runtime_environment,
 )
-from .prerequisites import CheckStatus, PrerequisiteReport, run_prerequisite_diagnosis
+from .prerequisites import (
+    CheckStatus,
+    PrerequisiteReport,
+    active_admission_paths,
+    run_prerequisite_diagnosis,
+)
 from .projects import MAX_MANIFEST_BYTES, ProjectManifest, parse_project_manifest
+from .reconciliation import (
+    ClaimRecoveryEvidence,
+    ReconciliationOutcome,
+    ReconciliationPreview,
+    ReconciliationResult,
+    ReconciliationTickStore,
+)
 from .registrations import (
     MAX_REGISTRATION_BYTES,
     ControllerRegistration,
@@ -125,6 +139,22 @@ class _PreparedCompletion:
     preview: CycleCompletionPreview
 
 
+@dataclass(frozen=True)
+class _PreparedReconciliation:
+    profile_root: Path
+    manifest: ProjectManifest
+    registration: ControllerRegistration
+    intake_adapter: GitHubIssueIntakeAdapter
+    notification_adapter: HermesGatewayNotificationAdapter
+    baseline_revision: str
+    stage_profiles: dict[str, str]
+    constraints_content: str
+    pack_name: str | None
+    claim_lease_seconds: int
+    intake: IntakeRecord | None
+    preview: ReconciliationPreview
+
+
 class ProjectCycleOperator:
     """Run prerequisite diagnosis, preview exact identity, then admit on apply."""
 
@@ -207,6 +237,129 @@ class ProjectCycleOperator:
         )
         return ProjectCycleResult(prepared.preview, admission, ledger, receipt)
 
+    def preview_reconciliation(
+        self,
+        *,
+        project_manifest: Path,
+        registration: Path,
+        stage_profiles: dict[str, str],
+        pack_name: str | None = None,
+        claim_lease_seconds: int = 900,
+        candidate_limit: int = 100,
+    ) -> ReconciliationPreview:
+        return self._prepare_reconciliation(
+            project_manifest=project_manifest,
+            registration_file=registration,
+            stage_profiles=stage_profiles,
+            pack_name=pack_name,
+            claim_lease_seconds=claim_lease_seconds,
+            candidate_limit=candidate_limit,
+        ).preview
+
+    def reconcile(
+        self,
+        *,
+        project_manifest: Path,
+        registration: Path,
+        stage_profiles: dict[str, str],
+        expected_preview_digest: str,
+        pack_name: str | None = None,
+        claim_lease_seconds: int = 900,
+        candidate_limit: int = 100,
+    ) -> ReconciliationResult:
+        prepared = self._prepare_reconciliation(
+            project_manifest=project_manifest,
+            registration_file=registration,
+            stage_profiles=stage_profiles,
+            pack_name=pack_name,
+            claim_lease_seconds=claim_lease_seconds,
+            candidate_limit=candidate_limit,
+        )
+        preview = prepared.preview
+        if preview.digest != expected_preview_digest:
+            raise PolicyViolationError(
+                "expected reconciliation preview digest does not match current state"
+            )
+        store = ReconciliationTickStore(prepared.profile_root)
+        stored = store.load(preview)
+        if stored is not None:
+            return stored
+        receipts: list[NotificationReceipt] = []
+        if preview.outcome is ReconciliationOutcome.BLOCKED:
+            event_id = f"reconciliation-{preview.digest}:blocked"
+            receipt = prepared.notification_adapter.deliver(
+                {
+                    "event_id": event_id,
+                    "event": "reconciliation-blocked",
+                    "project_id": preview.project_id,
+                    "preview_digest": preview.digest,
+                    "blocker": preview.blocker,
+                }
+            )
+            validate_notification_receipt(receipt, prepared.registration, event_id)
+            receipts.append(receipt)
+            result = ReconciliationResult(
+                preview, ReconciliationOutcome.BLOCKED, tuple(receipts)
+            )
+            store.save(result)
+            return result
+        if preview.outcome is ReconciliationOutcome.IDLE:
+            result = ReconciliationResult(preview, ReconciliationOutcome.IDLE)
+            store.save(result)
+            return result
+        if prepared.intake is None:
+            raise PolicyViolationError("reconciliation cycle outcome omitted intake identity")
+        intake = prepared.intake
+        if preview.recovery is not None:
+            preview.recovery.require_recoverable()
+            if intake.claim is None:
+                raise PolicyViolationError("claim recovery omitted the active claim")
+            intake = prepared.intake_adapter.release_claim(intake.item_id, intake.claim)
+            if intake.digest != preview.intake_digest:
+                raise PolicyViolationError("released intake does not match reconciliation preview")
+            event_id = f"{preview.cycle_id}:claim-recovered"
+            receipt = prepared.notification_adapter.deliver(
+                {
+                    "event_id": event_id,
+                    "event": "claim-recovered",
+                    "project_id": preview.project_id,
+                    "cycle_id": preview.cycle_id,
+                    "workflow_id": preview.workflow_id,
+                    "intake_item_id": preview.intake_item_id,
+                    "preview_digest": preview.digest,
+                }
+            )
+            validate_notification_receipt(receipt, prepared.registration, event_id)
+            receipts.append(receipt)
+        workflow = self.workflow_factory(prepared.profile_root, self.runner, self.environ)
+        coordinator = AdmissionCoordinator(
+            store=CycleArtifactStore(prepared.profile_root),
+            workflow=workflow,
+            intake_adapter=prepared.intake_adapter,
+            notification_adapter=prepared.notification_adapter,
+        )
+        admission, _ledger, receipt = coordinator.admit(
+            manifest=prepared.manifest,
+            registration=prepared.registration,
+            intake=intake,
+            baseline_revision=prepared.baseline_revision,
+            stage_profiles=prepared.stage_profiles,
+            constraints_content=prepared.constraints_content,
+            pack_name=prepared.pack_name,
+            claim_lease_seconds=prepared.claim_lease_seconds,
+        )
+        if admission.cycle.cycle_id != preview.cycle_id:
+            raise PolicyViolationError("reconciliation admission changed cycle identity")
+        receipts.append(receipt)
+        outcome = (
+            ReconciliationOutcome.REPLAYED
+            if preview.outcome is ReconciliationOutcome.ACTIVE_CYCLE
+            else ReconciliationOutcome.ADMITTED
+        )
+        result = ReconciliationResult(preview, outcome, tuple(receipts))
+        store.save(result)
+        return result
+
     def preview_completion(
         self,
         *,
@@ -243,6 +396,274 @@ class ProjectCycleOperator:
             notification_adapter=prepared.notification_adapter,
         ).complete(prepared.preview, prepared.registration)
         return ProjectCycleCompletionResult(prepared.preview, completion)
+
+    def _prepare_reconciliation(
+        self,
+        *,
+        project_manifest: Path,
+        registration_file: Path,
+        stage_profiles: dict[str, str],
+        pack_name: str | None,
+        claim_lease_seconds: int,
+        candidate_limit: int,
+    ) -> _PreparedReconciliation:
+        if (
+            isinstance(candidate_limit, bool)
+            or not isinstance(candidate_limit, int)
+            or not 1 <= candidate_limit <= 100
+        ):
+            raise PolicyViolationError("reconciliation candidate limit must be between 1 and 100")
+        manifest_path = project_manifest.expanduser().resolve(strict=True)
+        registration_file = registration_file.expanduser().resolve(strict=True)
+        manifest = parse_project_manifest(
+            _read_bounded(manifest_path, "project manifest", MAX_MANIFEST_BYTES)
+        )
+        registration = parse_controller_registration(
+            _read_bounded(
+                registration_file, "controller registration", MAX_REGISTRATION_BYTES
+            )
+        )
+        registration.validate_manifest(manifest)
+        profile_root = registration_file.parents[2]
+        if registration_path(profile_root, registration.project_id) != registration_file:
+            raise PolicyViolationError(
+                "controller registration is outside its profile-local project path"
+            )
+        bindings = parse_credential_bindings(
+            _read_bounded(
+                credential_bindings_path(registration_file),
+                "credential bindings",
+                MAX_CREDENTIAL_BINDINGS_BYTES,
+            )
+        )
+        report = self.diagnose(
+            project_manifest=manifest_path,
+            registration=registration_file,
+            live=True,
+            runner=self.runner,
+            environ=self.environ,
+        )
+        baseline_revision = self._baseline(registration)
+        checkout = Path(registration.checkout).resolve(strict=True)
+        constraints_path = (checkout / manifest.default_constraints_source).resolve(strict=True)
+        try:
+            constraints_path.relative_to(checkout)
+        except ValueError as error:
+            raise PolicyViolationError("default constraints path escapes checkout") from error
+        constraints_content = _read_bounded(
+            constraints_path, "workflow constraints", MAX_CONSTRAINTS_BYTES
+        )
+        intake_adapter = GitHubIssueIntakeAdapter(
+            repository=registration.repository_canonical,
+            read_credential_alias=registration.intake_credential,
+            write_credential_alias=registration.findings_credential,
+            credential_bindings=bindings,
+            authorized_actors=registration.maintainers,
+            runner=self.runner,
+            environ=self.environ,
+        )
+        notification_adapter = HermesGatewayNotificationAdapter(
+            profile=registration.controller_profile,
+            target_alias=registration.notification_target,
+            destination=registration.notification_destination,
+            runner=self.runner,
+            environ=self.environ,
+        )
+
+        def prepared(
+            preview: ReconciliationPreview, intake: IntakeRecord | None = None
+        ) -> _PreparedReconciliation:
+            return _PreparedReconciliation(
+                profile_root=profile_root,
+                manifest=manifest,
+                registration=registration,
+                intake_adapter=intake_adapter,
+                notification_adapter=notification_adapter,
+                baseline_revision=baseline_revision,
+                stage_profiles=stage_profiles,
+                constraints_content=constraints_content,
+                pack_name=pack_name,
+                claim_lease_seconds=claim_lease_seconds,
+                intake=intake,
+                preview=preview,
+            )
+
+        def blocked(blocker: str, candidate_count: int = 0) -> _PreparedReconciliation:
+            return prepared(
+                ReconciliationPreview(
+                    project_id=manifest.project_id,
+                    manifest_digest=manifest.digest,
+                    registration_digest=registration.digest,
+                    outcome=ReconciliationOutcome.BLOCKED,
+                    candidate_count=candidate_count,
+                    blocker=blocker[:512],
+                )
+            )
+
+        non_pass = tuple(
+            row for row in getattr(report, "checks", ()) if row.status is not CheckStatus.PASS
+        )
+        active_cycle_only = (
+            len(non_pass) == 1
+            and non_pass[0].check_id == "SI-ACTIVE-CYCLE"
+            and non_pass[0].status is CheckStatus.BLOCKED
+        )
+        if report.status is not CheckStatus.PASS and not active_cycle_only:
+            details = "; ".join(
+                f"{row.check_id}: {row.blocker or row.status.value}" for row in non_pass
+            )
+            return blocked(details or "live prerequisite diagnosis did not pass")
+
+        active_paths = active_admission_paths(registration_file.parent / "cycles")
+        if len(active_paths) > 1:
+            return blocked("multiple active cycle admissions violate project policy")
+        if active_paths:
+            admission = CycleAdmission.from_dict(
+                json.loads(
+                    _read_bounded(
+                        active_paths[0], "active cycle admission", MAX_CONSTRAINTS_BYTES
+                    )
+                )
+            )
+            intake = intake_adapter.fetch(admission.intake.item_id)
+            if intake.claim is None or intake.claim.claimant != admission.cycle.cycle_id:
+                raise PolicyViolationError("active cycle intake claim does not match admission")
+            return prepared(
+                ReconciliationPreview(
+                    project_id=manifest.project_id,
+                    manifest_digest=manifest.digest,
+                    registration_digest=registration.digest,
+                    outcome=ReconciliationOutcome.ACTIVE_CYCLE,
+                    candidate_count=0,
+                    cycle_id=admission.cycle.cycle_id,
+                    workflow_id=admission.workflow_id,
+                    intake_item_id=intake.item_id,
+                    intake_digest=intake.digest,
+                ),
+                intake,
+            )
+        if report.status is not CheckStatus.PASS:
+            return blocked(
+                non_pass[0].blocker
+                or "registered board ownership is active or unavailable"
+            )
+        claimed = sorted(
+            intake_adapter.fetch_claimed(limit=candidate_limit),
+            key=lambda row: int(row.item_id),
+        )
+        if claimed:
+            intake = claimed[0]
+            if intake.claim is None:
+                raise PolicyViolationError("claimed intake inventory omitted claim identity")
+            recovery = ClaimRecoveryEvidence(
+                cycle_id=intake.claim.claimant,
+                intake_item_id=intake.item_id,
+                claimant=intake.claim.claimant,
+                observed_at=datetime.now(UTC),
+                lease_expires_at=intake.claim.lease_expires_at,
+                daidala_has_active_owner=False,
+                board_has_active_owner=False,
+            )
+            if not recovery.recoverable:
+                return prepared(
+                    ReconciliationPreview(
+                        project_id=manifest.project_id,
+                        manifest_digest=manifest.digest,
+                        registration_digest=registration.digest,
+                        outcome=ReconciliationOutcome.BLOCKED,
+                        candidate_count=len(claimed),
+                        blocker=f"intake item {intake.item_id} has an unexpired claim",
+                    ),
+                    intake,
+                )
+            candidate = replace(intake, claim=None)
+            admission_preview = self._admission_preview(
+                profile_root,
+                manifest,
+                registration,
+                intake_adapter,
+                notification_adapter,
+                candidate,
+                baseline_revision,
+                stage_profiles,
+                constraints_content,
+                pack_name,
+                claim_lease_seconds,
+            )
+            return prepared(
+                _reconciliation_admission_preview(
+                    manifest,
+                    registration,
+                    admission_preview,
+                    len(claimed),
+                    recovery,
+                ),
+                intake,
+            )
+        ready = sorted(
+            intake_adapter.fetch_ready(limit=candidate_limit),
+            key=lambda row: int(row.item_id),
+        )
+        if not ready:
+            return prepared(
+                ReconciliationPreview(
+                    project_id=manifest.project_id,
+                    manifest_digest=manifest.digest,
+                    registration_digest=registration.digest,
+                    outcome=ReconciliationOutcome.IDLE,
+                    candidate_count=0,
+                )
+            )
+        intake = ready[0]
+        admission_preview = self._admission_preview(
+            profile_root,
+            manifest,
+            registration,
+            intake_adapter,
+            notification_adapter,
+            intake,
+            baseline_revision,
+            stage_profiles,
+            constraints_content,
+            pack_name,
+            claim_lease_seconds,
+        )
+        return prepared(
+            _reconciliation_admission_preview(
+                manifest, registration, admission_preview, len(ready), None
+            ),
+            intake,
+        )
+
+    @staticmethod
+    def _admission_preview(
+        profile_root: Path,
+        manifest: ProjectManifest,
+        registration: ControllerRegistration,
+        intake_adapter: GitHubIssueIntakeAdapter,
+        notification_adapter: HermesGatewayNotificationAdapter,
+        intake: IntakeRecord,
+        baseline_revision: str,
+        stage_profiles: dict[str, str],
+        constraints_content: str,
+        pack_name: str | None,
+        claim_lease_seconds: int,
+    ) -> AdmissionPreview:
+        return AdmissionCoordinator(
+            store=CycleArtifactStore(profile_root),
+            workflow=_PreviewOnlyWorkflow(),
+            intake_adapter=intake_adapter,
+            notification_adapter=notification_adapter,
+        ).preview(
+            manifest=manifest,
+            registration=registration,
+            intake=intake,
+            baseline_revision=baseline_revision,
+            stage_profiles=stage_profiles,
+            constraints_content=constraints_content,
+            pack_name=pack_name,
+            claim_lease_seconds=claim_lease_seconds,
+        )
 
     def _prepare_completion(
         self,
@@ -521,6 +942,27 @@ class ProjectCycleOperator:
         if code != 0:
             raise PolicyViolationError(f"{label} failed with exit code {code}")
         return output
+
+
+def _reconciliation_admission_preview(
+    manifest: ProjectManifest,
+    registration: ControllerRegistration,
+    admission: AdmissionPreview,
+    candidate_count: int,
+    recovery: ClaimRecoveryEvidence | None,
+) -> ReconciliationPreview:
+    return ReconciliationPreview(
+        project_id=manifest.project_id,
+        manifest_digest=manifest.digest,
+        registration_digest=registration.digest,
+        outcome=ReconciliationOutcome.ADMISSION_PREVIEW,
+        candidate_count=candidate_count,
+        cycle_id=admission.cycle.cycle_id,
+        workflow_id=admission.workflow_id,
+        intake_item_id=admission.cycle.intake_item_id,
+        intake_digest=admission.intake_digest,
+        recovery=recovery,
+    )
 
 
 def _diagnosis_allows_replay(

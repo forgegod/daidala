@@ -26,12 +26,12 @@ workflow-pack adapters, and bundled orchestration skills.
 | `evaluation.py` | Isolation receipts, fresh evaluator homes, isolated candidate environments, immutable metric and lesson-reuse evidence, comparison verdicts, baseline-before-mutation worktrees, cleanup, and quarantine records. |
 | `restricted_container.py` | Digest-pinned Docker execution, credential-free child environments, bounded request fixtures, command evidence, denied-network setup probes, and isolation receipts. |
 | `increments.py` | Strict increment-document classification, producer provenance, canonical manifest, bounds, and digest. |
-| `adapters.py` | Strict normalized intake, finding, notification, claim, completion, and receipt records plus injectable protocols. |
-| `live_adapters.py` | Bounded production GitHub intake/claim/completion and Hermes attended-delivery adapters with credential-minimal child environments. |
+| `adapters.py` | Strict normalized intake, finding, notification, claim, claim-release, completion, and receipt records plus injectable protocols. |
+| `live_adapters.py` | Bounded production GitHub ready/claimed inventory, replay-safe claim/release/completion, and Hermes attended-delivery adapters with credential-minimal child environments. |
 | `completion.py` | Digest-bound delivered-cycle previews, replay-safe remote and attended receipts, immutable mode-`0600` completion records, and completion coordination. |
 | `controller.py` | Mutation-free admission preview, replay-safe cycle admission, manifest snapshots, deterministic workflow binding, immutable cycle storage, and receipt validation. |
-| `project_cycles.py` | Dry-run-first production project-cycle admission/completion, prerequisite enforcement, exact identity confirmation, and profile-local runtime wiring. |
-| `reconciliation.py` | Two-authority claim recovery evidence and local pending-to-published finding synchronization. |
+| `project_cycles.py` | Dry-run-first production project-cycle admission/completion/reconciliation, prerequisite enforcement, stable one-item selection, exact identity confirmation, and profile-local runtime wiring. |
+| `reconciliation.py` | Two-authority claim recovery evidence, strict reconciliation previews/results, mode-`0600` content-addressed tick records, and local pending-to-published finding synchronization. |
 | `execution.py` | Profile-local artifacts, detached worktrees, and diff capture. |
 | `kanban.py` | Public host-boundary adapter for the idempotent, approval-gated Hermes card graph. |
 | `schemas.py` | Tool schemas exposed to the model. |

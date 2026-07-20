@@ -1005,7 +1005,7 @@ def _check_active_cycle(context: _DiagnosisContext) -> CheckResult:
     project_root = context.registration_path.parent
     cycles_root = project_root / "cycles"
     try:
-        active_admissions = _active_admission_paths(cycles_root)
+        active_admissions = active_admission_paths(cycles_root)
     except PolicyViolationError as error:
         return _error(definition, str(error))
     if active_admissions:
@@ -1013,7 +1013,7 @@ def _check_active_cycle(context: _DiagnosisContext) -> CheckResult:
     return _passed(definition, "no board, admission, worktree, evaluator, or claim owner found")
 
 
-def _active_admission_paths(cycles_root: Path) -> tuple[Path, ...]:
+def active_admission_paths(cycles_root: Path) -> tuple[Path, ...]:
     if not cycles_root.is_dir():
         return ()
     active: list[Path] = []

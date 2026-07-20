@@ -27,6 +27,7 @@ RuntimeRunner = Callable[[tuple[str, ...], Mapping[str, str]], tuple[int, str]]
 MAX_ADAPTER_OUTPUT_BYTES = 1_048_576
 MAX_NOTIFICATION_BYTES = 8_192
 _CLAIM_MARKER = "<!-- daidala-claim/v1 -->"
+_CLAIM_RELEASE_MARKER = "<!-- daidala-claim-release/v1 -->"
 _DIGEST = re.compile(r"(?<![0-9a-fA-F])([0-9a-fA-F]{64})(?![0-9a-fA-F])")
 _ISSUE_ID = re.compile(r"^[1-9][0-9]{0,19}$")
 _HERMES_DESTINATION = re.compile(
@@ -97,8 +98,14 @@ class GitHubIssueIntakeAdapter:
             _require_text(actor, "GitHub authorized actor", 256)
 
     def fetch_ready(self, *, limit: int) -> tuple[IntakeRecord, ...]:
+        return self._fetch_inventory(_READY_LABEL, limit)
+
+    def fetch_claimed(self, *, limit: int) -> tuple[IntakeRecord, ...]:
+        return self._fetch_inventory(_CLAIMED_LABEL, limit)
+
+    def _fetch_inventory(self, label_name: str, limit: int) -> tuple[IntakeRecord, ...]:
         if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
-            raise PolicyViolationError("GitHub ready-item limit must be between 1 and 100")
+            raise PolicyViolationError("GitHub issue inventory limit must be between 1 and 100")
         payload = self._run_json(
             (
                 "gh",
@@ -111,22 +118,24 @@ class GitHubIssueIntakeAdapter:
                 "--label",
                 "daidala-si",
                 "--label",
-                _READY_LABEL,
+                label_name,
                 "--limit",
                 str(limit),
                 "--json",
                 "number",
             ),
             alias=self.read_credential_alias,
-            label="GitHub ready issue inventory",
+            label="GitHub issue inventory",
         )
         if not isinstance(payload, list):
-            raise PolicyViolationError("GitHub ready issue inventory must be a JSON list")
+            raise PolicyViolationError("GitHub issue inventory must be a JSON list")
         item_ids: list[str] = []
         for row in payload:
             if not isinstance(row, dict) or isinstance(row.get("number"), bool):
-                raise PolicyViolationError("GitHub ready issue inventory is invalid")
+                raise PolicyViolationError("GitHub issue inventory is invalid")
             item_ids.append(str(row["number"]))
+        if len(set(item_ids)) != len(item_ids):
+            raise PolicyViolationError("GitHub issue inventory contains duplicate identities")
         return tuple(self.fetch(item_id) for item_id in item_ids)
 
     def fetch(self, item_id: str) -> IntakeRecord:
@@ -198,6 +207,56 @@ class GitHubIssueIntakeAdapter:
         if claimed.claim != claim:
             raise PolicyViolationError("GitHub claim did not converge on the requested identity")
         return claimed
+
+    def release_claim(self, item_id: str, claim: ClaimIdentity) -> IntakeRecord:
+        _require_issue_id(item_id)
+        if not isinstance(claim, ClaimIdentity):
+            raise PolicyViolationError("GitHub claim release requires a normalized claim")
+        current = self.fetch(item_id)
+        if current.claim is None and current.ready:
+            return current
+        if current.claim != claim:
+            raise PolicyViolationError("GitHub claim release owner does not match")
+        self._run_text(
+            (
+                "gh",
+                "issue",
+                "edit",
+                item_id,
+                "--repo",
+                self.repository,
+                "--add-label",
+                _READY_LABEL,
+                "--remove-label",
+                _CLAIMED_LABEL,
+            ),
+            alias=self.write_credential_alias,
+            label="GitHub claim release labels",
+        )
+        body = (
+            f"{_CLAIM_RELEASE_MARKER}\n"
+            "```json\n"
+            + json.dumps(claim.to_dict(), sort_keys=True, separators=(",", ":"))
+            + "\n```"
+        )
+        self._run_text(
+            (
+                "gh",
+                "issue",
+                "comment",
+                item_id,
+                "--repo",
+                self.repository,
+                "--body",
+                body,
+            ),
+            alias=self.write_credential_alias,
+            label="GitHub claim release comment",
+        )
+        released = self.fetch(item_id)
+        if released.claim is not None or not released.ready:
+            raise PolicyViolationError("GitHub claim release did not converge")
+        return released
 
     def complete(self, item_id: str, cycle_id: str) -> IntakeCompletionReceipt:
         _require_issue_id(item_id)
@@ -600,17 +659,27 @@ def _ready_actor(events: list[dict[str, Any]]) -> str:
 def _claim_from_comments(
     comments: list[dict[str, Any]], authorized_actors: tuple[str, ...]
 ) -> ClaimIdentity | None:
-    claims: list[ClaimIdentity] = []
+    active: ClaimIdentity | None = None
     for comment in comments:
         body = comment.get("body")
-        if not isinstance(body, str) or _CLAIM_MARKER not in body:
+        if not isinstance(body, str):
+            continue
+        marker = next(
+            (
+                row
+                for row in (_CLAIM_MARKER, _CLAIM_RELEASE_MARKER)
+                if row in body
+            ),
+            None,
+        )
+        if marker is None:
             continue
         user = comment.get("user")
         actor = user.get("login") if isinstance(user, dict) else None
         if actor not in authorized_actors:
             raise PolicyViolationError("GitHub claim comment actor is not authorized")
         match = re.fullmatch(
-            rf"{re.escape(_CLAIM_MARKER)}\n```json\n(.+)\n```", body, re.DOTALL
+            rf"{re.escape(marker)}\n```json\n(.+)\n```", body, re.DOTALL
         )
         if match is None:
             raise PolicyViolationError("GitHub claim comment is malformed")
@@ -618,12 +687,16 @@ def _claim_from_comments(
             raw = json.loads(match.group(1))
         except json.JSONDecodeError as error:
             raise PolicyViolationError("GitHub claim comment contains invalid JSON") from error
-        claims.append(ClaimIdentity.from_dict(raw))
-    if not claims:
-        return None
-    if any(claim != claims[0] for claim in claims[1:]):
-        raise PolicyViolationError("GitHub issue contains conflicting claims")
-    return claims[0]
+        claim = ClaimIdentity.from_dict(raw)
+        if marker == _CLAIM_MARKER:
+            if active is not None and active != claim:
+                raise PolicyViolationError("GitHub issue contains conflicting claims")
+            active = claim
+        else:
+            if active != claim:
+                raise PolicyViolationError("GitHub claim release does not match active claim")
+            active = None
+    return active
 
 
 def safe_runtime_environment(environ: Mapping[str, str]) -> dict[str, str]:

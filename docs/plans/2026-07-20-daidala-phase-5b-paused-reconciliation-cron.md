@@ -5,9 +5,10 @@ exact detached Daidala controller revision, create one profile-local Hermes cron
 job that remains paused, and retain evidence that two controlled invocations
 admit at most one maintainer-ready issue and converge on one workflow.
 
-**Status:** in-progress — Phase 0 is complete at the integration checkpoint;
-Phase 1 remains unstarted, and controller installation, cron creation, GitHub
-mutation, and controlled dispatch remain separately approval-gated.
+**Status:** in-progress — Phase 0 is complete at merge checkpoint `bdd2baf` and
+Phase 1 is complete at the deterministic-reconciliation checkpoint; Phase 2 is
+unstarted, and controller installation, cron creation, GitHub mutation, and
+controlled dispatch remain separately approval-gated.
 
 ## Current state
 
@@ -21,14 +22,12 @@ mutation, and controlled dispatch remain separately approval-gated.
 - Phase 5A is complete and Phase 5B is in progress in
   `docs/plans/2026-07-13-daidala-self-improvement-loop.md:33-56`; no cron, new
   cycle, retained change, or remote finding has been created by Phase 5B.
-- `daidala/reconciliation.py:20-142` has strict claim-recovery and pending-finding
-  primitives, but their only current callers are tests in
-  `tests/test_reconciliation.py:64-101`; there is no runtime reconciliation-tick
-  coordinator or CLI command.
-- `daidala/live_adapters.py:97-128` can fetch bounded ready issues, and
-  `daidala/project_cycles.py:94-174` can preview or admit one explicitly named
-  issue. No current surface deterministically selects one candidate, interprets
-  an active cycle, or composes two-authority claim recovery.
+- `daidala/reconciliation.py` now owns strict previews/results and immutable
+  mode-`0600` tick evidence; `daidala/project_cycles.py` composes explicit
+  prerequisite interpretation, completion-aware active ownership, stable
+  one-item selection, admission replay, and two-authority claim recovery.
+- `daidala/live_adapters.py` now inventories ready and claimed issues and uses
+  audited, replay-safe claim release. No CLI command exposes reconciliation yet.
 - `hermes -p daidala-self-improvement cron status` reports a running gateway and
   no active jobs; `hermes -p daidala-self-improvement cron list` reports no
   scheduled jobs.
@@ -69,8 +68,8 @@ before any later phase. The immediate run uses Hermes' at-most-once claim; the
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Integrate the exercised controller line | done (30 focused + 374 full tests; merge checkpoint) | `git merge-base --is-ancestor 31331e8352208321ae819ad2464396f03207602b HEAD` exits 0; focused recovery tests exit 0. |
-| 1 | Implement deterministic reconciliation | pending | `pytest tests/test_reconciliation.py tests/test_live_adapters.py tests/test_project_cycles.py` exits 0 with selection, replay, recovery, outage, and notification cases. |
+| 0 | Integrate the exercised controller line | done (`bdd2baf`; 30 focused + 374 full tests) | `git merge-base --is-ancestor 31331e8352208321ae819ad2464396f03207602b HEAD` exits 0; focused recovery tests exit 0. |
+| 1 | Implement deterministic reconciliation | done (24 focused + 384 full tests) | `pytest tests/test_reconciliation.py tests/test_live_adapters.py tests/test_project_cycles.py` exits 0 with selection, replay, recovery, outage, and notification cases. |
 | 2 | Expose the dry-run-first operator surface | pending | Native and standalone `project-cycle reconcile --help` agree; CLI tests exit 0; dry-run fixtures produce no mutation. |
 | 3 | Reconcile contracts and checkpoint the implementation | pending | The complete repository gate exits 0; one reviewed implementation checkpoint exists; no push occurs. |
 | 4 | Install and verify the exact controller revision | pending | Native and standalone `doctor --live` report 11/11 pass for the separately approved checkpoint. |
@@ -136,9 +135,11 @@ Steps:
 4. Extend `daidala/live_adapters.py` only where the coordinator needs bounded
    claimed-item inventory or replay-safe release. Keep GitHub reads on the intake
    alias and mutations on the findings alias.
-5. Send event-bound attended notifications for admission, approval wait, blocker,
-   and recovery. Validate returned receipts before retaining them; a delivery
-   failure is a failed tick, not success.
+5. Reuse the admission coordinator's event-bound admission notification and send
+   reconciliation-owned blocker and recovery notifications. Approval-wait
+   notification remains workflow-owned because reconciliation cannot announce a
+   plan gate before the workflow reaches it. Validate returned receipts before
+   retaining them; a delivery failure is a failed tick, not success.
 6. Add positive, policy-violation, replay, persistence, and boundary-failure
    tests in `tests/test_reconciliation.py`, `tests/test_project_cycles.py`, and
    `tests/test_live_adapters.py`. Include no candidate, multiple candidates,

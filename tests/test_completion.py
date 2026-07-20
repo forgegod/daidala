@@ -16,7 +16,7 @@ from daidala.completion import (
     CycleCompletionPreview,
 )
 from daidala.errors import PolicyViolationError
-from daidala.prerequisites import _active_admission_paths
+from daidala.prerequisites import active_admission_paths
 
 NOW = datetime(2026, 7, 20, 10, 0, tzinfo=UTC)
 CYCLE = "cycle-" + "a" * 64
@@ -163,7 +163,7 @@ def test_only_valid_matching_completion_releases_admission_ownership(
     admission = cycle_root / "admission.json"
     admission.write_text("{}", encoding="utf-8")
 
-    assert _active_admission_paths(cycles_root) == (admission,)
+    assert active_admission_paths(cycles_root) == (admission,)
 
     matching_preview = replace(
         preview(), admission_digest=hashlib.sha256(admission.read_bytes()).hexdigest()
@@ -176,9 +176,9 @@ def test_only_valid_matching_completion_releases_admission_ownership(
     )
     CompletionArtifactStore(root).save_completion(completion)
 
-    assert _active_admission_paths(cycles_root) == ()
+    assert active_admission_paths(cycles_root) == ()
 
     raw = (cycle_root / "completion.json").read_text(encoding="utf-8")
     (cycle_root / "completion.json").write_text(raw + "x", encoding="utf-8")
     with pytest.raises(PolicyViolationError, match="cannot release"):
-        _active_admission_paths(cycles_root)
+        active_admission_paths(cycles_root)

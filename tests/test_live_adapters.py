@@ -170,6 +170,8 @@ class GitHubRunner:
         if command[:3] == ("gh", "issue", "edit"):
             if "--remove-label" in command and command[-1] == CLAIMED:
                 self.labels.discard(CLAIMED)
+                if "--add-label" in command:
+                    self.labels.add(READY)
             else:
                 self.labels.discard(READY)
                 self.labels.add(CLAIMED)
@@ -244,6 +246,34 @@ def test_github_claim_is_replay_safe_and_uses_only_write_binding_for_mutation() 
     assert all(env["GH_TOKEN"] == "write-secret" for _, env in mutation_calls)
     assert len(runner.comments) == 1
     assert claim.claimant in runner.comments[0]["body"]
+
+
+def test_github_claim_release_is_audited_replay_safe_and_restores_ready() -> None:
+    runner = GitHubRunner()
+    adapter = github_adapter(runner)
+    claim = ClaimIdentity(
+        "cycle-" + "b" * 64,
+        NOW - timedelta(minutes=30),
+        NOW - timedelta(minutes=15),
+    )
+    adapter.claim("42", claim)
+
+    released = adapter.release_claim("42", claim)
+    replayed = adapter.release_claim("42", claim)
+
+    assert replayed == released
+    assert released.claim is None
+    assert released.ready is True
+    assert READY in runner.labels
+    assert CLAIMED not in runner.labels
+    assert len(runner.comments) == 2
+    assert "daidala-claim-release/v1" in runner.comments[-1]["body"]
+
+    reclaimed = adapter.claim(
+        "42", ClaimIdentity("cycle-" + "c" * 64, NOW, NOW + timedelta(minutes=15))
+    )
+    assert reclaimed.claim is not None
+    assert reclaimed.claim.claimant == "cycle-" + "c" * 64
 
 
 def test_github_completion_closes_releases_and_converges_without_comment() -> None:
