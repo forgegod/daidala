@@ -29,11 +29,14 @@ class ObservedLedger:
 class WorkflowStore:
     """Thin SQLite store keyed by ``workflow_id`` with optimistic updates."""
 
-    def __init__(self, data_root: Path) -> None:
+    def __init__(self, data_root: Path, *, initialize: bool = True) -> None:
         self._data_root = Path(data_root)
-        self._data_root.mkdir(parents=True, exist_ok=True)
         self._db_path = self._data_root / _DB_FILE
-        self._init_schema()
+        if initialize:
+            self._data_root.mkdir(parents=True, exist_ok=True)
+            self._init_schema()
+        elif not self._db_path.is_file():
+            raise StoreError("policy ledger does not exist")
 
     @property
     def data_root(self) -> Path:

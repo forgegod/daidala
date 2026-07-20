@@ -120,6 +120,14 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     project_cycle_admit.add_argument("--apply", action="store_true")
     project_cycle_admit.add_argument("--expected-cycle-id")
     project_cycle_admit.add_argument("--expected-intake-digest")
+    project_cycle_complete = project_cycle_sub.add_parser(
+        "complete", help="Preview or complete one delivered cycle"
+    )
+    project_cycle_complete.add_argument("--project-manifest", required=True, type=Path)
+    project_cycle_complete.add_argument("--registration", required=True, type=Path)
+    project_cycle_complete.add_argument("--cycle-id", required=True)
+    project_cycle_complete.add_argument("--apply", action="store_true")
+    project_cycle_complete.add_argument("--expected-preview-digest")
 
     start = sub.add_parser("start", help="Validate inputs and create the initial Kanban graph")
     start.add_argument("target_repository")
@@ -412,6 +420,41 @@ def _run_evaluator(
 def _run_project_cycle(
     args: argparse.Namespace, project_cycle_factory: ProjectCycleFactory
 ) -> int:
+    if args.project_cycle_command == "complete":
+        operator = project_cycle_factory()
+        common = {
+            "project_manifest": args.project_manifest,
+            "registration": args.registration,
+            "cycle_id": args.cycle_id,
+        }
+        if not args.apply:
+            if args.expected_preview_digest is not None:
+                raise ValueError("expected completion preview digest requires --apply")
+            preview = operator.preview_completion(**common)
+            _print(
+                {
+                    "success": True,
+                    "operation": "project-cycle-complete",
+                    "dry_run": True,
+                    "preview_digest": preview.digest,
+                    "preview": preview.to_dict(),
+                }
+            )
+            return 0
+        if args.expected_preview_digest is None:
+            raise ValueError("--apply requires --expected-preview-digest")
+        result = operator.complete(
+            **common,
+            expected_preview_digest=args.expected_preview_digest,
+        )
+        _print(
+            {
+                "success": True,
+                "operation": "project-cycle-complete",
+                **result.to_dict(),
+            }
+        )
+        return 0
     if args.project_cycle_command != "admit":
         raise ValueError(f"unsupported project-cycle command: {args.project_cycle_command}")
     operator = project_cycle_factory()

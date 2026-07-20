@@ -85,6 +85,7 @@ class GitHubRunner:
         }
         self.comments: list[dict[str, Any]] = []
         self.state = "OPEN"
+        self.state_reason: str | None = None
         self.commands: list[tuple[tuple[str, ...], dict[str, str]]] = []
 
     def __call__(
@@ -107,6 +108,18 @@ class GitHubRunner:
                             }
                             for label in sorted(self.labels)
                         ]
+                    }
+                )
+            if command[-1] == "number,url,labels,state,stateReason":
+                return 0, json.dumps(
+                    {
+                        "number": 42,
+                        "url": "https://github.com/forgegod/daidala/issues/42",
+                        "state": self.state,
+                        "stateReason": self.state_reason,
+                        "labels": [
+                            {"name": label} for label in sorted(self.labels)
+                        ],
                     }
                 )
             payload = {
@@ -148,9 +161,16 @@ class GitHubRunner:
             self.comments.append({"body": body, "user": {"login": "forgegod"}})
             return 0, "https://github.com/forgegod/daidala/issues/42#issuecomment-1"
         if command[:3] == ("gh", "issue", "edit"):
-            self.labels.discard(READY)
-            self.labels.add(CLAIMED)
+            if "--remove-label" in command and command[-1] == CLAIMED:
+                self.labels.discard(CLAIMED)
+            else:
+                self.labels.discard(READY)
+                self.labels.add(CLAIMED)
             return 0, "https://github.com/forgegod/daidala/issues/42"
+        if command[:3] == ("gh", "issue", "close"):
+            self.state = "CLOSED"
+            self.state_reason = "COMPLETED"
+            return 0, "Closed issue forgegod/daidala#42"
         raise AssertionError(f"unexpected command: {command}")
 
 
@@ -168,6 +188,7 @@ def github_adapter(runner: GitHubRunner) -> GitHubIssueIntakeAdapter:
             "GH_READ_TOKEN": "read-secret",
             "GH_WRITE_TOKEN": "write-secret",
         },
+        clock=lambda: NOW,
     )
 
 
@@ -216,6 +237,59 @@ def test_github_claim_is_replay_safe_and_uses_only_write_binding_for_mutation() 
     assert all(env["GH_TOKEN"] == "write-secret" for _, env in mutation_calls)
     assert len(runner.comments) == 1
     assert claim.claimant in runner.comments[0]["body"]
+
+
+def test_github_completion_closes_releases_and_converges_without_comment() -> None:
+    runner = GitHubRunner()
+    adapter = github_adapter(runner)
+    cycle_id = "cycle-" + "b" * 64
+    claim = ClaimIdentity(cycle_id, NOW, NOW + timedelta(minutes=15))
+    adapter.claim("42", claim)
+
+    first = adapter.complete("42", cycle_id)
+    second = adapter.complete("42", cycle_id)
+
+    assert first == second
+    assert first.state == "closed"
+    assert first.claim_released is True
+    assert runner.state == "CLOSED"
+    assert runner.state_reason == "COMPLETED"
+    assert CLAIMED not in runner.labels
+    assert len(runner.comments) == 1
+    mutations = [
+        command[:3]
+        for command, _ in runner.commands
+        if command[:3]
+        in {
+            ("gh", "issue", "comment"),
+            ("gh", "issue", "edit"),
+            ("gh", "issue", "close"),
+        }
+    ]
+    assert mutations == [
+        ("gh", "issue", "comment"),
+        ("gh", "issue", "edit"),
+        ("gh", "issue", "close"),
+        ("gh", "issue", "edit"),
+    ]
+
+
+def test_github_completion_rejects_another_claim_owner_before_mutation() -> None:
+    runner = GitHubRunner()
+    adapter = github_adapter(runner)
+    adapter.claim(
+        "42",
+        ClaimIdentity("cycle-" + "b" * 64, NOW, NOW + timedelta(minutes=15)),
+    )
+    before = len(runner.commands)
+
+    with pytest.raises(PolicyViolationError, match="claim owner"):
+        adapter.complete("42", "cycle-" + "c" * 64)
+
+    assert all(
+        command[:3] not in {("gh", "issue", "close"), ("gh", "issue", "edit")}
+        for command, _ in runner.commands[before:]
+    )
 
 
 def test_github_intake_rejects_missing_separate_ready_actor() -> None:

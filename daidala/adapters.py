@@ -305,10 +305,94 @@ class NotificationReceipt:
         )
 
 
+@dataclass(frozen=True)
+class IntakeCompletionReceipt:
+    adapter: str
+    item_id: str
+    cycle_id: str
+    source_url: str
+    state: str
+    state_reason: str
+    claim_released: bool
+    completed_at: datetime
+
+    def __post_init__(self) -> None:
+        _require_slug(self.adapter, "completion adapter")
+        _require_text(self.item_id, "completion item ID", 256)
+        _require_text(self.cycle_id, "completion cycle ID", 256)
+        _require_text(self.source_url, "completion source URL", 1_024)
+        if not self.source_url.startswith("https://"):
+            raise PolicyViolationError("completion source URL must use HTTPS")
+        if self.state != "closed" or self.state_reason != "completed":
+            raise PolicyViolationError("completion receipt must close the item as completed")
+        if self.claim_released is not True:
+            raise PolicyViolationError("completion receipt must release the claim")
+        if not isinstance(self.completed_at, datetime) or self.completed_at.tzinfo is None:
+            raise PolicyViolationError("completion timestamp must be timezone-aware")
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "adapter": self.adapter,
+            "item_id": self.item_id,
+            "cycle_id": self.cycle_id,
+            "source_url": self.source_url,
+            "state": self.state,
+            "state_reason": self.state_reason,
+            "claim_released": self.claim_released,
+            "completed_at": self.completed_at.isoformat(),
+        }
+
+    def canonical_bytes(self) -> bytes:
+        return json.dumps(
+            self.to_dict(), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+
+    @property
+    def digest(self) -> str:
+        return hashlib.sha256(self.canonical_bytes()).hexdigest()
+
+    @classmethod
+    def from_dict(cls, raw: Any) -> IntakeCompletionReceipt:
+        _require_fields(
+            raw,
+            {
+                "adapter",
+                "item_id",
+                "cycle_id",
+                "source_url",
+                "state",
+                "state_reason",
+                "claim_released",
+                "completed_at",
+            },
+            "intake completion receipt",
+        )
+        try:
+            completed_at = datetime.fromisoformat(raw["completed_at"])
+        except (TypeError, ValueError) as error:
+            raise PolicyViolationError(
+                "completion timestamp must be an ISO-8601 string"
+            ) from error
+        return cls(
+            adapter=raw["adapter"],
+            item_id=raw["item_id"],
+            cycle_id=raw["cycle_id"],
+            source_url=raw["source_url"],
+            state=raw["state"],
+            state_reason=raw["state_reason"],
+            claim_released=raw["claim_released"],
+            completed_at=completed_at,
+        )
+
+
 class IntakeAdapter(Protocol):
     def fetch_ready(self, *, limit: int) -> tuple[IntakeRecord, ...]: ...
 
     def claim(self, item_id: str, claim: ClaimIdentity) -> IntakeRecord: ...
+
+    def validate_completion(self, item_id: str, cycle_id: str) -> None: ...
+
+    def complete(self, item_id: str, cycle_id: str) -> IntakeCompletionReceipt: ...
 
 
 class FindingsAdapter(Protocol):

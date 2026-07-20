@@ -14,6 +14,7 @@ from typing import Any, cast
 from .adapters import (
     ClaimIdentity,
     IntakeCategory,
+    IntakeCompletionReceipt,
     IntakeRecord,
     NotificationReceipt,
 )
@@ -75,6 +76,7 @@ class GitHubIssueIntakeAdapter:
     authorized_actors: tuple[str, ...]
     runner: RuntimeRunner = field(default_factory=lambda: run_runtime_command)
     environ: Mapping[str, str] = field(default_factory=lambda: dict(os.environ))
+    clock: Callable[[], datetime] = field(default_factory=lambda: lambda: datetime.now(UTC))
 
     def __post_init__(self) -> None:
         if not re.fullmatch(
@@ -196,6 +198,120 @@ class GitHubIssueIntakeAdapter:
         if claimed.claim != claim:
             raise PolicyViolationError("GitHub claim did not converge on the requested identity")
         return claimed
+
+    def complete(self, item_id: str, cycle_id: str) -> IntakeCompletionReceipt:
+        _require_issue_id(item_id)
+        _require_text(cycle_id, "completion cycle ID", 256)
+        issue, labels, claim = self._completion_issue(item_id)
+        self._validate_completion_state(issue, labels, claim, cycle_id)
+        state = issue["state"]
+        reason = issue["stateReason"]
+        if state == "OPEN":
+            self._run_text(
+                (
+                    "gh",
+                    "issue",
+                    "close",
+                    item_id,
+                    "--repo",
+                    self.repository,
+                    "--reason",
+                    "completed",
+                ),
+                alias=self.write_credential_alias,
+                label="GitHub issue completion",
+            )
+        elif state != "CLOSED" or reason != "COMPLETED":
+            raise PolicyViolationError("GitHub issue is not eligible for completed closure")
+        if _CLAIMED_LABEL in labels:
+            self._run_text(
+                (
+                    "gh",
+                    "issue",
+                    "edit",
+                    item_id,
+                    "--repo",
+                    self.repository,
+                    "--remove-label",
+                    _CLAIMED_LABEL,
+                ),
+                alias=self.write_credential_alias,
+                label="GitHub completion claim release",
+            )
+        completed, final_labels, final_claim = self._completion_issue(item_id)
+        if (
+            completed["state"] != "CLOSED"
+            or completed["stateReason"] != "COMPLETED"
+            or _CLAIMED_LABEL in final_labels
+            or final_claim is None
+            or final_claim.claimant != cycle_id
+        ):
+            raise PolicyViolationError("GitHub issue completion did not converge")
+        return IntakeCompletionReceipt(
+            adapter="github-issues",
+            item_id=item_id,
+            cycle_id=cycle_id,
+            source_url=f"https://github.com/{self.repository}/issues/{item_id}",
+            state="closed",
+            state_reason="completed",
+            claim_released=True,
+            completed_at=self.clock(),
+        )
+
+    def validate_completion(self, item_id: str, cycle_id: str) -> None:
+        _require_issue_id(item_id)
+        _require_text(cycle_id, "completion cycle ID", 256)
+        issue, labels, claim = self._completion_issue(item_id)
+        self._validate_completion_state(issue, labels, claim, cycle_id)
+
+    @staticmethod
+    def _validate_completion_state(
+        issue: dict[str, Any],
+        labels: set[str],
+        claim: ClaimIdentity | None,
+        cycle_id: str,
+    ) -> None:
+        if claim is None or claim.claimant != cycle_id:
+            raise PolicyViolationError("GitHub completion claim owner does not match cycle")
+        if issue["state"] == "OPEN" and _CLAIMED_LABEL not in labels:
+            raise PolicyViolationError("open GitHub completion issue must retain its claim")
+        if issue["state"] == "OPEN":
+            return
+        if issue["state"] != "CLOSED" or issue["stateReason"] != "COMPLETED":
+            raise PolicyViolationError("GitHub issue is not eligible for completed closure")
+
+    def _completion_issue(
+        self, item_id: str
+    ) -> tuple[dict[str, Any], set[str], ClaimIdentity | None]:
+        issue = self._run_json(
+            (
+                "gh",
+                "issue",
+                "view",
+                item_id,
+                "--repo",
+                self.repository,
+                "--json",
+                "number,url,labels,state,stateReason",
+            ),
+            alias=self.read_credential_alias,
+            label="GitHub completion issue",
+        )
+        fields = {"number", "url", "labels", "state", "stateReason"}
+        if not isinstance(issue, dict) or set(issue) != fields:
+            raise PolicyViolationError("GitHub completion issue fields are invalid")
+        if str(issue["number"]) != item_id:
+            raise PolicyViolationError("GitHub completion issue number is invalid")
+        expected_url = f"https://github.com/{self.repository}/issues/{item_id}"
+        if issue["url"] != expected_url:
+            raise PolicyViolationError("GitHub completion issue URL is invalid")
+        labels = _parse_labels(issue["labels"])
+        if "daidala-si" not in labels:
+            raise PolicyViolationError("GitHub completion issue is missing the base label")
+        claim = _claim_from_comments(
+            self._api_pages(item_id, "comments"), self.authorized_actors
+        )
+        return cast(dict[str, Any], issue), labels, claim
 
     def _normalize_issue(self, item_id: str, issue: dict[str, Any]) -> IntakeRecord:
         expected_fields = {"number", "url", "title", "body", "labels", "state"}

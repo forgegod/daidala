@@ -105,6 +105,29 @@ class FakeProjectCycleResult:
 
 
 @dataclass
+class FakeCompletionPreview:
+    digest: str = "c" * 64
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema": "daidala.cycle-completion-preview/v1",
+            "cycle_id": "cycle-" + "b" * 64,
+        }
+
+
+@dataclass
+class FakeCompletionResult:
+    preview: FakeCompletionPreview = field(default_factory=FakeCompletionPreview)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "dry_run": False,
+            "preview_digest": self.preview.digest,
+            "completion_digest": "d" * 64,
+        }
+
+
+@dataclass
 class FakeProjectCycles:
     calls: list[tuple[str, dict[str, object]]] = field(default_factory=list)
 
@@ -115,6 +138,14 @@ class FakeProjectCycles:
     def admit(self, **kwargs: object) -> FakeProjectCycleResult:
         self.calls.append(("admit", kwargs))
         return FakeProjectCycleResult()
+
+    def preview_completion(self, **kwargs: object) -> FakeCompletionPreview:
+        self.calls.append(("preview_completion", kwargs))
+        return FakeCompletionPreview()
+
+    def complete(self, **kwargs: object) -> FakeCompletionResult:
+        self.calls.append(("complete", kwargs))
+        return FakeCompletionResult()
 
 
 def _host_args(argv: list[str]) -> argparse.Namespace:
@@ -406,6 +437,85 @@ def test_project_cycle_apply_without_exact_preview_identity_fails_before_service
     assert code == 1
     assert service.calls == []
     assert "requires --expected-cycle-id" in payload["message"]
+
+
+def test_project_cycle_completion_is_dry_run_by_default_on_both_surfaces(capsys) -> None:
+    standalone = FakeProjectCycles()
+    native = FakeProjectCycles()
+    cycle_id = "cycle-" + "b" * 64
+    argv = [
+        "project-cycle",
+        "complete",
+        "--project-manifest",
+        "/repo/.daidala/project.yaml",
+        "--registration",
+        "/profile/projects/forgegod-daidala/registration.yaml",
+        "--cycle-id",
+        cycle_id,
+    ]
+
+    standalone_code = cli.main(
+        argv, project_cycle_factory=_project_cycle_factory(standalone)
+    )
+    standalone_payload = json.loads(capsys.readouterr().out)
+    native_code = cli.run_command(
+        _host_args(argv), project_cycle_factory=_project_cycle_factory(native)
+    )
+    native_payload = json.loads(capsys.readouterr().out)
+
+    assert standalone_code == native_code == 0
+    assert native.calls == standalone.calls
+    assert native.calls == [
+        (
+            "preview_completion",
+            {
+                "project_manifest": Path("/repo/.daidala/project.yaml"),
+                "registration": Path(
+                    "/profile/projects/forgegod-daidala/registration.yaml"
+                ),
+                "cycle_id": cycle_id,
+            },
+        )
+    ]
+    assert native_payload == standalone_payload
+    assert native_payload["dry_run"] is True
+    assert native_payload["preview_digest"] == "c" * 64
+
+
+def test_project_cycle_completion_apply_requires_exact_preview_digest(capsys) -> None:
+    service = FakeProjectCycles()
+    cycle_id = "cycle-" + "b" * 64
+    base = [
+        "project-cycle",
+        "complete",
+        "--project-manifest",
+        "/repo/.daidala/project.yaml",
+        "--registration",
+        "/profile/projects/forgegod-daidala/registration.yaml",
+        "--cycle-id",
+        cycle_id,
+        "--apply",
+    ]
+
+    missing_code = cli.main(
+        base, project_cycle_factory=_project_cycle_factory(service)
+    )
+    missing_payload = json.loads(capsys.readouterr().out)
+    assert missing_code == 1
+    assert service.calls == []
+    assert "requires --expected-preview-digest" in missing_payload["message"]
+
+    code = cli.main(
+        [*base, "--expected-preview-digest", "c" * 64],
+        project_cycle_factory=_project_cycle_factory(service),
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert code == 0
+    assert service.calls[0][0] == "complete"
+    assert service.calls[0][1]["expected_preview_digest"] == "c" * 64
+    assert payload["dry_run"] is False
+    assert payload["completion_digest"] == "d" * 64
 
 
 def test_packs_list_uses_shared_command_tree(capsys) -> None:
