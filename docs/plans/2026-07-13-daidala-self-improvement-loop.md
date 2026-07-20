@@ -32,25 +32,25 @@ loaded by the controller gateway.
 
 ## Execution status
 
-**Status:** Phase 4F-A done; Phase 4F-B admission apply is explicitly approved
-for the exact fresh preview and is next.
+**Status:** Phase 4F is complete; Phase 5 reconciliation and pack evaluation is
+next and remains unstarted.
 
 | Phase | Status | Evidence |
 |---|---|---|
 | 1 — Daidala fixture and deterministic foundation | done | Manifest, constraints, issue form, strict identities, fake-adapter records, and F01-F18 cases are repository-tested. |
 | 2 — Controller coordination and adapters | done | Replay-safe coordination, normalized adapter contracts, and fake-boundary regressions are repository-tested. |
 | 3 — Prerequisite doctor and setup confirmation | done | The read-only prerequisite report, credential-binding contract, and setup confirmation rules are repository-tested. |
-| 4A — Controller and shared-board bootstrap | done | The controller profile and shared board remain valid; current approved detached controller revision `89d7bf3f5e3be8f166979dcef92c338e6fb23370` is clean and both packs validate. |
+| 4A — Controller and shared-board bootstrap | done | The controller profile and shared board remain valid; approved detached controller revision `31331e8352208321ae819ad2464396f03207602b` is clean and both packs validate. |
 | 4B — GitHub projection and static registration | done | Project 1 is repository-linked with all required fields, all exact labels exist, optional attended auto-add is enabled, and strict registration plus non-secret bindings parse. |
 | 4C — Capability and isolation receipts | done | Runtime read/write probes, attended Telegram delivery, controlled findings write, and restricted-container isolation receipts are retained as strict non-secret evidence. |
-| 4D — Live prerequisite gate | done | Post-completion `doctor --live` reports all eleven `SI-*` checks as `pass`, including `SI-ACTIVE-CYCLE`, with controller revision `89d7bf3f5e3be8f166979dcef92c338e6fb23370`. |
+| 4D — Live prerequisite gate | done | Post-completion `doctor --live` reports all eleven `SI-*` checks as `pass`, including `SI-ACTIVE-CYCLE`, with controller revision `31331e8352208321ae819ad2464396f03207602b`. |
 | 4E prerequisite — Operational admission and completion paths | done | Dry-run-first admission and completion, exact digest gates, replay-safe issue closure, claim release, attended notification, immutable receipts, and completion-aware active ownership are installed and exercised. |
 | 4E — Addyosmani UC-01 live evaluation | done | Cycle `cycle-21158b4320bf09968915110abdfeb32ac2a0c833acfe90a99bf340936c148f55` reached accepted evidence-only delivery and completion; issue #2 is closed as completed and the claim is released. |
-| 4F-A — Aidlc intake rescope and fresh preview | done (preview evidence `5ba8cbf0`; exact apply approved) | Issue #3 authorizes the full Aidlc lifecycle; fresh preview identity `cycle-a0c383ccc264b1bb1a3d78b20d1b5a87936a378dcbc77beec0476fc3740bd75f` and intake digest `377e2976bd1f5998a5bfc9b1c9df92aed53232099f4769330191a72fda8d4b1a` are retained without mutation and explicitly approved for apply. |
-| 4F-B — Aidlc admission and plan gate | pending | One exact approved apply and replay create one claim, admission, notification, and workflow that stops at the plan approval card without a worktree. |
-| 4F-C — Aidlc execution and evidence-only delivery | blocked | Requires an exact approved plan digest; restricted baseline/candidate evidence, accepted review, delivery with commit/push false, and released worktree ownership agree. |
-| 4F-D — Aidlc terminal completion | blocked | Requires 4F-C; completion closes issue #3, releases only its claim, replays without duplication, and returns all eleven live prerequisite checks to `pass`. |
-| 5 — Reconciliation, findings, and pack evaluation | blocked | Requires completed, independently verifiable Addyosmani and Aidlc UC-01 evidence from 4E and 4F. |
+| 4F-A — Aidlc intake rescope and fresh preview | done | Issue #3 authorized the full Aidlc lifecycle; final fresh preview identity `cycle-98afe833a63afdbfce7a16bcd9741d4475e46cfb47013c2982cbe3ad04653c26` and intake digest `377e2976bd1f5998a5bfc9b1c9df92aed53232099f4769330191a72fda8d4b1a` were retained without mutation and explicitly approved. |
+| 4F-B — Aidlc admission and plan gate | done | Exact admission and replay converged with attended receipt `telegram:21`; definition and planning stopped at approved plan digest `22a1a91ce4a0872296020d3744714be4252187462f34bc4cd1e482f1d583986c`. |
+| 4F-C — Aidlc execution and evidence-only delivery | done | Restricted baseline `80bb8cf7` failed with `1 != 2`; candidate `6f97e6d2` passed both approved tests; review returned `improved`; delivery recorded commit/push false and released worktree ownership. |
+| 4F-D — Aidlc terminal completion | done | Completion digest `250756b4021b92e7b9ef74214febfab1d5891baf908ca3650acb473505eb1101` closed issue #3, released its claim, delivered `telegram:23`, converged on replay, and returned doctor to 11/11. |
+| 5 — Reconciliation, findings, and pack evaluation | pending | Completed, independently verifiable Addyosmani and Aidlc UC-01 evidence from 4E and 4F is ready for comparison. |
 | 6 — Version-aware re-evaluation | blocked | Requires Phase 5 evidence; candidate Hermes identity is selected here, not invented earlier. |
 | 7 — Repository gate and documentation | blocked | Requires the preceding live evaluation and comparison evidence. |
 
@@ -61,8 +61,9 @@ a named prerequisite is incomplete.
 ## Current operational state
 
 - The persistent controller loads clean detached revision
-  `89d7bf3f5e3be8f166979dcef92c338e6fb23370`; protected prerequisite evidence
-  records the same revision at mode `0600`.
+  `31331e8352208321ae819ad2464396f03207602b`; protected prerequisite evidence
+  records the same revision at mode `0600`. Recovery commit `31331e8` aligns
+  terminal completion with the engine's valid initial plan revision `0`.
 - Addyosmani cycle
   `cycle-21158b4320bf09968915110abdfeb32ac2a0c833acfe90a99bf340936c148f55`
   retains accepted review and evidence-only delivery with commit and push false.
@@ -70,26 +71,21 @@ a named prerequisite is incomplete.
   `56ba5dced96190df7325bad48ae8fbcf0e324db04f1e606189b00b4fe286998d`
   closed issue #2 as completed, removed only `daidala-si:claimed`, delivered
   attended receipt `telegram:20`, and converged identically on replay.
-- Controlled issue #3 is open, unclaimed, and projected as Aidlc-ready. Its
-  exact approved body SHA-256
-  `042974bd30e4b193e388c8626bed397a1951620848b68c7684a774004b79a7e7`
-  now authorizes the separately gated full Aidlc lifecycle.
-- The superseded preview for issue #3 proposed workflow identity
-  `cycle-a5acefda9b2c85f63a1b447fb1deb6e095f0c5f49441fe39f574c582d249cff4`
-  and intake digest
-  `1c761c6367cfc8a05598acbfb966e8d1183e05bd5df8f9355227d73764538e07`.
-  The issue rescope invalidated both identities; they remain immutable preview
-  evidence and must never be applied.
-- Two byte-identical fresh previews propose workflow identity
-  `cycle-a0c383ccc264b1bb1a3d78b20d1b5a87936a378dcbc77beec0476fc3740bd75f`
-  and intake digest
-  `377e2976bd1f5998a5bfc9b1c9df92aed53232099f4769330191a72fda8d4b1a`.
-  Before/after snapshots prove the issue, Project item, policy ledger,
-  admissions, Kanban, checkout, worktrees, and evaluator artifacts were
-  unchanged by preview; admission apply remains unapproved.
-- No Aidlc claim, admission, workflow, Kanban graph, worktree, evaluator run,
-  commit, or push exists. The registered checkout remains at
-  `76ccd86f8cdf455662bbad158b7bf6dd812271b3`.
+- Aidlc cycle
+  `cycle-98afe833a63afdbfce7a16bcd9741d4475e46cfb47013c2982cbe3ad04653c26`
+  binds baseline `66e3ad03b70a99bffa67c16596b6cd59fc0967d2`, plan digest
+  `22a1a91ce4a0872296020d3744714be4252187462f34bc4cd1e482f1d583986c`,
+  restricted baseline/candidate evidence `80bb8cf7` / `6f97e6d2`, accepted
+  review digest `8bbe5196`, and delivery digest `3647d6c1`.
+- Completion digest
+  `250756b4021b92e7b9ef74214febfab1d5891baf908ca3650acb473505eb1101`
+  closed issue #3 with reason `completed`, removed only
+  `daidala-si:claimed`, cleared claim/cycle/workflow Project fields, delivered
+  attended receipt `telegram:23`, and converged identically on replay.
+- Both UC-01 workflows retain mode-`0600` evidence with commit and push false.
+  No owned worktree remains; the registered checkout and main branch remain
+  clean, while the immutable Aidlc cycle baseline remains
+  `66e3ad03b70a99bffa67c16596b6cd59fc0967d2`.
 
 ## Registered project
 
@@ -651,12 +647,12 @@ checkout remains unchanged.
 **Goal:** Convert issue #3 from a preview-only control into the separately
 approved Aidlc UC-01 execution intake without admitting it.
 
-Current checkpoint: steps 1-7 are done with protected verification SHA-256
-`5ba8cbf0a017a13ab5e7b5540223733a3c04cae6355d8f7c8eee1cd2e2aeba2f`;
-the operator explicitly approved workflow identity
-`cycle-a0c383ccc264b1bb1a3d78b20d1b5a87936a378dcbc77beec0476fc3740bd75f`
+Observed gate: steps 1-7 passed for final workflow identity
+`cycle-98afe833a63afdbfce7a16bcd9741d4475e46cfb47013c2982cbe3ad04653c26`
 and intake digest
 `377e2976bd1f5998a5bfc9b1c9df92aed53232099f4769330191a72fda8d4b1a`.
+Protected final-preview verification SHA-256 is
+`5188982c6bdb94c2f6dd82afe02fb70e066ad8f0f95c206121a1e904ddf2deba`.
 
 Steps:
 
@@ -713,6 +709,11 @@ Verification gate: admission and apply replay converge; issue, claim, admission,
 notification, workflow, and current plan identities agree; the approval card is
 blocked; and repository/worktree/evaluator state remains untouched.
 
+Observed gate: admission and replay converged with attended receipt
+`telegram:21`; one claim and one seven-card workflow were created; definition
+and planning stopped before worktree creation at exact plan digest
+`22a1a91ce4a0872296020d3744714be4252187462f34bc4cd1e482f1d583986c`.
+
 ### Phase 4F-C — Aidlc execution and evidence-only delivery
 
 **Goal:** Exercise the same UC-01 fixture through Aidlc without retaining or
@@ -744,6 +745,11 @@ candidate evidence produce an explicit comparable outcome; review and delivery
 are accepted; commit/push are false; worktree ownership is released; and no
 retention, publication, or controller promotion occurred.
 
+Observed gate: restricted baseline evidence `80bb8cf7` reproduced `1 != 2`;
+candidate evidence `6f97e6d2` passed exactly two tests; review digest `8bbe5196`
+accepted the `improved` result; delivery digest `3647d6c1` recorded
+`committed: false` and `pushed: false`; the owned worktree was released.
+
 ### Phase 4F-D — Aidlc terminal completion
 
 **Goal:** Release Aidlc active ownership while preserving every immutable cycle
@@ -771,6 +777,16 @@ Steps:
 Verification gate: issue #3, immutable cycle artifacts, completion replay,
 attended receipt, doctor 11/11, checkout state, and the frozen two-pack input set
 agree; no commit, push, retention, publication, or third workflow occurred.
+
+Observed gate: completion preview
+`905b734fee29f5ac4358e331e6a0fff03c9f6620503a1fae23a5a7f04ee0b2b5`
+required recovery commit `31331e8` because the completion schema contradicted
+the engine's valid initial plan revision `0`. Exact approved controller revision
+`31331e8352208321ae819ad2464396f03207602b` passed 373 tests and two identical
+live previews before installation. Completion digest
+`250756b4021b92e7b9ef74214febfab1d5891baf908ca3650acb473505eb1101`
+then closed issue #3, cleared its claim projection, delivered `telegram:23`,
+replayed without mutation, and returned live doctor to 11/11.
 
 ### Phase 5 — Reconciliation, findings, and pack evaluation
 
