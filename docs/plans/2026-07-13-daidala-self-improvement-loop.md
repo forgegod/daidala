@@ -33,8 +33,9 @@ loaded by the controller gateway.
 ## Execution status
 
 **Status:** Phase 5A evidence reconciliation is complete with an
-`incomparable` cross-pack outcome. Phase 5B paused-cron work is next and remains
-unstarted pending separate approval. Its resumable execution design is saved in
+`incomparable` cross-pack outcome. Phase 5B is in progress: its controller-line
+integration gate has passed, while deterministic reconciliation remains
+unstarted. Its resumable execution design is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 
 | Phase | Status | Evidence |
@@ -53,7 +54,7 @@ unstarted pending separate approval. Its resumable execution design is saved in
 | 4F-C — Aidlc execution and evidence-only delivery | done | Restricted baseline `80bb8cf7` failed with `1 != 2`; candidate `6f97e6d2` passed both approved tests; review returned `improved`; delivery recorded commit/push false and released worktree ownership. |
 | 4F-D — Aidlc terminal completion | done | Completion digest `250756b4021b92e7b9ef74214febfab1d5891baf908ca3650acb473505eb1101` closed issue #3, released its claim, delivered `telegram:23`, converged on replay, and returned doctor to 11/11. |
 | 5A — UC-01 evidence reconciliation | done | All retained plan, baseline, candidate, review, delivery, and completion hashes match; both workflows are terminal, but different repository baselines and candidate test fixtures make pack comparison `incomparable`. |
-| 5B — Paused reconciliation cron and controlled tick | pending | Requires separate approval; no cron was created, run, or enabled by Phase 5A. |
+| 5B — Paused reconciliation cron and controlled tick | in-progress | Controller-line integration passed 30 focused and 374 full tests; deterministic reconciliation is next, and no cron has been created, run, or enabled. |
 | 5C — Approved improvement and findings synchronization | blocked | Requires Phase 5B replay evidence plus separate cycle, retention, and publication approvals. |
 | 5D — UC-03 pack evaluation | blocked | Requires one canonical paired fixture, one frozen baseline, one approved candidate skill set, and separate cycle approval. |
 | 6 — Version-aware re-evaluation | blocked | Requires the approved Phase 5 work; candidate Hermes identity is selected here, not invented earlier. |

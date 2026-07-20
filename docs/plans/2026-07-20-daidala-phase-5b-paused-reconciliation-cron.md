@@ -5,25 +5,22 @@ exact detached Daidala controller revision, create one profile-local Hermes cron
 job that remains paused, and retain evidence that two controlled invocations
 admit at most one maintainer-ready issue and converge on one workflow.
 
-**Status:** pending — plan saved; implementation, controller installation, cron
-creation, GitHub mutation, and controlled dispatch each remain separately
-approval-gated.
+**Status:** in-progress — Phase 0 is complete at the integration checkpoint;
+Phase 1 remains unstarted, and controller installation, cron creation, GitHub
+mutation, and controlled dispatch remain separately approval-gated.
 
 ## Current state
 
-- `main` and `origin/main` are clean at `97a4034`; `git status --short --branch`
-  and `git log -1 --oneline` prove the repository checkpoint.
-- The live controller uses detached revision
-  `31331e8352208321ae819ad2464396f03207602b`, but
-  `git merge-base --is-ancestor 31331e8352208321ae819ad2464396f03207602b main`
-  exits nonzero. `git rev-list --left-right --count
-  main...recovery/self-improvement-admission-replay` reports four main-only and
-  eleven recovery-only commits. The recovery line contains the exercised
-  admission replay, evaluator request, and cycle-completion code that is absent
-  from `main`.
-- Phase 5A is complete and Phase 5B is unstarted in
-  `docs/plans/2026-07-13-daidala-self-improvement-loop.md:33-55`; no cron, new
-  cycle, retained change, or remote finding was created by reconciliation.
+- `main` retains the approved Phase 5B plan checkpoint `033325f`; the
+  `feat/phase-5b-reconciliation` integration checkpoint contains both current
+  `main` and detached live-controller revision
+  `31331e8352208321ae819ad2464396f03207602b` in its ancestry.
+- The integrated recovery line contributes the exercised admission replay,
+  evaluator request, and cycle-completion implementation and tests without
+  replacing the later Phase 4F/5A evidence on `main`.
+- Phase 5A is complete and Phase 5B is in progress in
+  `docs/plans/2026-07-13-daidala-self-improvement-loop.md:33-56`; no cron, new
+  cycle, retained change, or remote finding has been created by Phase 5B.
 - `daidala/reconciliation.py:20-142` has strict claim-recovery and pending-finding
   primitives, but their only current callers are tests in
   `tests/test_reconciliation.py:64-101`; there is no runtime reconciliation-tick
@@ -72,7 +69,7 @@ before any later phase. The immediate run uses Hermes' at-most-once claim; the
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Integrate the exercised controller line | pending | `git merge-base --is-ancestor 31331e8352208321ae819ad2464396f03207602b HEAD` exits 0; focused recovery tests exit 0. |
+| 0 | Integrate the exercised controller line | done (30 focused + 374 full tests; merge checkpoint) | `git merge-base --is-ancestor 31331e8352208321ae819ad2464396f03207602b HEAD` exits 0; focused recovery tests exit 0. |
 | 1 | Implement deterministic reconciliation | pending | `pytest tests/test_reconciliation.py tests/test_live_adapters.py tests/test_project_cycles.py` exits 0 with selection, replay, recovery, outage, and notification cases. |
 | 2 | Expose the dry-run-first operator surface | pending | Native and standalone `project-cycle reconcile --help` agree; CLI tests exit 0; dry-run fixtures produce no mutation. |
 | 3 | Reconcile contracts and checkpoint the implementation | pending | The complete repository gate exits 0; one reviewed implementation checkpoint exists; no push occurs. |

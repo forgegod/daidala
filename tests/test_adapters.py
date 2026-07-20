@@ -9,6 +9,7 @@ from daidala.adapters import (
     ClaimIdentity,
     FindingRecord,
     IntakeCategory,
+    IntakeCompletionReceipt,
     IntakeRecord,
     NotificationReceipt,
     PublicationState,
@@ -124,3 +125,27 @@ def test_adapter_serialization_rejects_unknown_fields() -> None:
 
     with pytest.raises(PolicyViolationError, match="fields mismatch"):
         IntakeRecord.from_dict(raw)
+
+
+def test_completion_receipt_is_strict_bounded_and_content_addressed() -> None:
+    receipt = IntakeCompletionReceipt(
+        adapter="github-issues",
+        item_id="42",
+        cycle_id="cycle-" + "a" * 64,
+        source_url="https://github.com/forgegod/daidala/issues/42",
+        state="closed",
+        state_reason="completed",
+        claim_released=True,
+        completed_at=NOW,
+    )
+
+    assert IntakeCompletionReceipt.from_dict(receipt.to_dict()) == receipt
+    assert len(receipt.digest) == 64
+    with pytest.raises(PolicyViolationError, match="close the item"):
+        replace(receipt, state="open")
+    with pytest.raises(PolicyViolationError, match="release the claim"):
+        replace(receipt, claim_released=False)
+    raw = receipt.to_dict()
+    raw["credential"] = "forbidden"
+    with pytest.raises(PolicyViolationError, match="fields mismatch"):
+        IntakeCompletionReceipt.from_dict(raw)

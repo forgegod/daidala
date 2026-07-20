@@ -286,8 +286,12 @@ class KanbanGraphAdapter:
             payload = json.loads(self.dispatch_tool(name, args))
         except (TypeError, json.JSONDecodeError) as error:
             raise KanbanError(f"{name} returned invalid JSON") from error
-        if not isinstance(payload, dict) or payload.get("ok") is not True:
-            message = payload.get("error") if isinstance(payload, dict) else None
+        if not isinstance(payload, dict):
+            raise KanbanError(f"{name} returned invalid JSON")
+        if payload.get("ok") is False or (
+            "ok" not in payload and "error" in payload
+        ):
+            message = payload.get("error")
             raise KanbanError(f"{name} failed: {message or 'unknown error'}")
         return payload
 

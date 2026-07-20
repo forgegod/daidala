@@ -14,6 +14,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any, cast
 
+from .completion import CycleCompletion
 from .credentials import (
     MAX_CREDENTIAL_BINDINGS_BYTES,
     CredentialBindings,
@@ -1003,9 +1004,43 @@ def _check_active_cycle(context: _DiagnosisContext) -> CheckResult:
         return _blocked(definition, "registered board has active task ownership")
     project_root = context.registration_path.parent
     cycles_root = project_root / "cycles"
-    if cycles_root.is_dir() and any(cycles_root.glob("cycle-*/admission.json")):
+    try:
+        active_admissions = _active_admission_paths(cycles_root)
+    except PolicyViolationError as error:
+        return _error(definition, str(error))
+    if active_admissions:
         return _blocked(definition, "Daidala cycle admission ownership exists")
     return _passed(definition, "no board, admission, worktree, evaluator, or claim owner found")
+
+
+def _active_admission_paths(cycles_root: Path) -> tuple[Path, ...]:
+    if not cycles_root.is_dir():
+        return ()
+    active: list[Path] = []
+    for admission_path in sorted(cycles_root.glob("cycle-*/admission.json")):
+        completion_path = admission_path.with_name("completion.json")
+        if not completion_path.is_file():
+            active.append(admission_path)
+            continue
+        try:
+            completion = CycleCompletion.from_dict(
+                json.loads(completion_path.read_text(encoding="utf-8"))
+            )
+        except (OSError, json.JSONDecodeError, PolicyViolationError) as error:
+            raise PolicyViolationError(
+                "stored cycle completion cannot release admission ownership"
+            ) from error
+        cycle_id = admission_path.parent.name
+        admission_digest = hashlib.sha256(admission_path.read_bytes()).hexdigest()
+        if (
+            completion.preview.cycle_id != cycle_id
+            or completion.preview.workflow_id != cycle_id
+            or completion.preview.admission_digest != admission_digest
+        ):
+            raise PolicyViolationError(
+                "stored cycle completion does not match admission ownership"
+            )
+    return tuple(active)
 
 
 def _credential_capability(

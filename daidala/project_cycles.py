@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 from collections.abc import Callable, Mapping
@@ -9,6 +10,13 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .adapters import IntakeRecord, NotificationReceipt
+from .completion import (
+    CompletionArtifactStore,
+    CompletionCoordinator,
+    CycleCompletion,
+    CycleCompletionPreview,
+    build_completion_preview,
+)
 from .controller import (
     AdmissionCoordinator,
     AdmissionPreview,
@@ -37,7 +45,8 @@ from .registrations import (
     parse_controller_registration,
     registration_path,
 )
-from .state import WorkflowLedger
+from .state import WorkflowLedger, WorkflowStage
+from .store import WorkflowStore
 
 MAX_CONSTRAINTS_BYTES = 1_048_576
 _REVISION = re.compile(r"^[0-9a-f]{40}$")
@@ -76,6 +85,21 @@ class ProjectCycleResult:
 
 
 @dataclass(frozen=True)
+class ProjectCycleCompletionResult:
+    preview: CycleCompletionPreview
+    completion: CycleCompletion
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "dry_run": False,
+            "preview": self.preview.to_dict(),
+            "preview_digest": self.preview.digest,
+            "completion": self.completion.to_dict(),
+            "completion_digest": self.completion.digest,
+        }
+
+
+@dataclass(frozen=True)
 class _PreparedProjectCycle:
     profile_root: Path
     manifest: ProjectManifest
@@ -89,6 +113,16 @@ class _PreparedProjectCycle:
     intake_adapter: GitHubIssueIntakeAdapter
     notification_adapter: HermesGatewayNotificationAdapter
     preview: AdmissionPreview
+
+
+@dataclass(frozen=True)
+class _PreparedCompletion:
+    profile_root: Path
+    registration: ControllerRegistration
+    admission: CycleAdmission
+    intake_adapter: GitHubIssueIntakeAdapter
+    notification_adapter: HermesGatewayNotificationAdapter
+    preview: CycleCompletionPreview
 
 
 class ProjectCycleOperator:
@@ -173,6 +207,165 @@ class ProjectCycleOperator:
         )
         return ProjectCycleResult(prepared.preview, admission, ledger, receipt)
 
+    def preview_completion(
+        self,
+        *,
+        project_manifest: Path,
+        registration: Path,
+        cycle_id: str,
+    ) -> CycleCompletionPreview:
+        return self._prepare_completion(
+            project_manifest=project_manifest,
+            registration_file=registration,
+            cycle_id=cycle_id,
+        ).preview
+
+    def complete(
+        self,
+        *,
+        project_manifest: Path,
+        registration: Path,
+        cycle_id: str,
+        expected_preview_digest: str,
+    ) -> ProjectCycleCompletionResult:
+        prepared = self._prepare_completion(
+            project_manifest=project_manifest,
+            registration_file=registration,
+            cycle_id=cycle_id,
+        )
+        if prepared.preview.digest != expected_preview_digest:
+            raise PolicyViolationError(
+                "expected completion preview digest does not match current state"
+            )
+        completion = CompletionCoordinator(
+            store=CompletionArtifactStore(prepared.profile_root),
+            intake_adapter=prepared.intake_adapter,
+            notification_adapter=prepared.notification_adapter,
+        ).complete(prepared.preview, prepared.registration)
+        return ProjectCycleCompletionResult(prepared.preview, completion)
+
+    def _prepare_completion(
+        self,
+        *,
+        project_manifest: Path,
+        registration_file: Path,
+        cycle_id: str,
+    ) -> _PreparedCompletion:
+        manifest_path = project_manifest.expanduser().resolve(strict=True)
+        registration_file = registration_file.expanduser().resolve(strict=True)
+        manifest = parse_project_manifest(
+            _read_bounded(manifest_path, "project manifest", MAX_MANIFEST_BYTES)
+        )
+        registration = parse_controller_registration(
+            _read_bounded(
+                registration_file, "controller registration", MAX_REGISTRATION_BYTES
+            )
+        )
+        registration.validate_manifest(manifest)
+        profile_root = registration_file.parents[2]
+        if registration_path(profile_root, registration.project_id) != registration_file:
+            raise PolicyViolationError(
+                "controller registration is outside its profile-local project path"
+            )
+        cycle_root = (
+            profile_root
+            / "projects"
+            / registration.project_id
+            / "cycles"
+            / cycle_id
+        )
+        admission = CycleAdmission.from_dict(
+            json.loads(
+                _read_bounded(
+                    cycle_root / "admission.json",
+                    "cycle admission",
+                    MAX_CONSTRAINTS_BYTES,
+                )
+            )
+        )
+        if admission.cycle.cycle_id != cycle_id:
+            raise PolicyViolationError("stored admission does not match completion cycle")
+        ledger = WorkflowStore(profile_root / "daidala", initialize=False).get(cycle_id)
+        self._require_completed_cards(registration, admission, ledger)
+        bindings = parse_credential_bindings(
+            _read_bounded(
+                credential_bindings_path(registration_file),
+                "credential bindings",
+                MAX_CREDENTIAL_BINDINGS_BYTES,
+            )
+        )
+        intake_adapter = GitHubIssueIntakeAdapter(
+            repository=registration.repository_canonical,
+            read_credential_alias=registration.intake_credential,
+            write_credential_alias=registration.findings_credential,
+            credential_bindings=bindings,
+            authorized_actors=registration.maintainers,
+            runner=self.runner,
+            environ=self.environ,
+        )
+        intake_adapter.validate_completion(admission.intake.item_id, cycle_id)
+        notification_adapter = HermesGatewayNotificationAdapter(
+            profile=registration.controller_profile,
+            target_alias=registration.notification_target,
+            destination=registration.notification_destination,
+            runner=self.runner,
+            environ=self.environ,
+        )
+        return _PreparedCompletion(
+            profile_root=profile_root,
+            registration=registration,
+            admission=admission,
+            intake_adapter=intake_adapter,
+            notification_adapter=notification_adapter,
+            preview=build_completion_preview(admission, ledger),
+        )
+
+    def _require_completed_cards(
+        self,
+        registration: ControllerRegistration,
+        admission: CycleAdmission,
+        ledger: WorkflowLedger,
+    ) -> None:
+        environment = safe_runtime_environment(self.environ)
+        for stage in (
+            WorkflowStage.APPROVAL,
+            WorkflowStage.IMPLEMENT,
+            WorkflowStage.VERIFY,
+            WorkflowStage.REVIEW,
+            WorkflowStage.DELIVER,
+        ):
+            card = ledger.card_for(stage)
+            if card is None:
+                raise PolicyViolationError(
+                    f"completion requires the current {stage.value} card"
+                )
+            output = self._run(
+                (
+                    "hermes",
+                    "-p",
+                    registration.controller_profile,
+                    "kanban",
+                    "--board",
+                    admission.board,
+                    "show",
+                    card.task_id,
+                    "--json",
+                ),
+                environment,
+                f"completion {stage.value} card",
+            )
+            try:
+                payload = json.loads(output)
+            except json.JSONDecodeError as error:
+                raise PolicyViolationError(
+                    f"completion {stage.value} card returned invalid JSON"
+                ) from error
+            task = payload.get("task") if isinstance(payload, dict) else None
+            if not isinstance(task, dict) or task.get("status") != "done":
+                raise PolicyViolationError(
+                    f"completion requires a done {stage.value} card"
+                )
+
     def _prepare(
         self,
         *,
@@ -216,10 +409,6 @@ class ProjectCycleOperator:
             runner=self.runner,
             environ=self.environ,
         )
-        if report.status is not CheckStatus.PASS:
-            raise PolicyViolationError(
-                "live prerequisite diagnosis must pass before project-cycle admission"
-            )
         baseline_revision = self._baseline(registration)
         checkout = Path(registration.checkout).resolve(strict=True)
         constraints_path = (checkout / manifest.default_constraints_source).resolve(strict=True)
@@ -265,6 +454,19 @@ class ProjectCycleOperator:
             pack_name=pack_name,
             claim_lease_seconds=claim_lease_seconds,
         )
+        stored_admission = CycleArtifactStore(profile_root).load_admission(preview.cycle)
+        has_matching_replay = (
+            stored_admission is not None
+            and intake.claim is not None
+            and intake.claim.claimant == preview.cycle.cycle_id
+        )
+        if not _diagnosis_allows_replay(
+            report,
+            has_matching_replay=has_matching_replay,
+        ):
+            raise PolicyViolationError(
+                "live prerequisite diagnosis must pass before project-cycle admission"
+            )
         return _PreparedProjectCycle(
             profile_root=profile_root,
             manifest=manifest,
@@ -319,6 +521,23 @@ class ProjectCycleOperator:
         if code != 0:
             raise PolicyViolationError(f"{label} failed with exit code {code}")
         return output
+
+
+def _diagnosis_allows_replay(
+    report: PrerequisiteReport,
+    *,
+    has_matching_replay: bool,
+) -> bool:
+    if report.status is CheckStatus.PASS:
+        return True
+    non_pass = [row for row in report.checks if row.status is not CheckStatus.PASS]
+    return (
+        has_matching_replay
+        and len(non_pass) == 1
+        and non_pass[0].check_id == "SI-ACTIVE-CYCLE"
+        and non_pass[0].status is CheckStatus.BLOCKED
+        and non_pass[0].blocker == "Daidala cycle admission ownership exists"
+    )
 
 
 class _PreviewOnlyWorkflow:

@@ -3,11 +3,14 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import pytest
 
 from daidala.restricted_container import (
     ContainerIsolationError,
+    RestrictedContainerExecutor,
+    RestrictedContainerRequest,
     probe_restricted_container,
 )
 
@@ -177,7 +180,114 @@ def test_probe_rejects_failed_container_and_oversized_output() -> None:
     failed = FakeRunner([(0, IMAGE_INSPECTION), (17, "probe failed")])
     with pytest.raises(ContainerIsolationError, match="exited with 17"):
         probe_restricted_container(IMAGE, runner=failed, environ={"PATH": "/usr/bin"})
-
     oversized = FakeRunner([(0, IMAGE_INSPECTION), (0, "x" * 65_537)])
     with pytest.raises(ContainerIsolationError, match="output exceeds"):
         probe_restricted_container(IMAGE, runner=oversized, environ={"PATH": "/usr/bin"})
+
+
+def _request_files() -> list[tuple[str, str]]:
+    fixture_src = (
+        "from calculator import answer\n\n\n"
+        "class TestAnswer(unittest.TestCase):\n"
+        "    def test_answer(self):\n"
+        "        self.assertEqual(answer(), 2)\n"
+    )
+    return [
+        ("calculator.py", "def answer():\n    return 1\n"),
+        ("test_calculator.py", fixture_src),
+    ]
+
+
+def _build_request() -> RestrictedContainerRequest:
+    from daidala.restricted_container import RestrictedContainerRequest
+
+    return RestrictedContainerRequest(
+        workflow_id="cycle-" + "0" * 64,
+        role="baseline",
+        repository_revision="9" * 40,
+        image_identity=IMAGE,
+        files=tuple(_request_files()),
+        command=("/bin/sh", "-c", "python3 -m unittest test_calculator.py"),
+        expected_exit_code=1,
+    )
+
+
+def test_request_loads_and_rejects_malformed_payload(tmp_path: Path) -> None:
+    from daidala.restricted_container import load_restricted_container_request
+
+    request = _build_request()
+    payload_path = tmp_path / "request.json"
+    payload_path.write_text(json.dumps(request.to_dict()), encoding="utf-8")
+
+    loaded = load_restricted_container_request(payload_path)
+    assert loaded == request
+    assert loaded.digest == request.digest
+
+    bad = tmp_path / "bad.json"
+    bad.write_text(json.dumps({"schema": "wrong"}), encoding="utf-8")
+    with pytest.raises(ContainerIsolationError, match="fields are invalid"):
+        load_restricted_container_request(bad)
+    overflow = tmp_path / "overflow.json"
+    overflow.write_text("x" * (1_048_577), encoding="utf-8")
+    with pytest.raises(ContainerIsolationError, match="exceeds 1048576 bytes"):
+        load_restricted_container_request(overflow)
+
+
+def test_request_run_retains_immutable_evidence_and_rejects_drift(tmp_path: Path) -> None:
+    from daidala.restricted_container import run_restricted_container_request
+
+    class SequencedRunner:
+        def __init__(self, fixtures: list[tuple[int, str]]) -> None:
+            self.fixtures = list(fixtures)
+            self.calls: list[tuple[tuple[str, ...], Mapping[str, str]]] = []
+
+        def __call__(
+            self, command: tuple[str, ...], environment: Mapping[str, str]
+        ) -> tuple[int, str]:
+            self.calls.append((command, dict(environment)))
+            return self.fixtures.pop(0)
+
+    runner = SequencedRunner(
+        [
+            (0, IMAGE_INSPECTION),
+            (
+                1,
+                "F\n======================================================================\n"
+                "FAIL: test_answer (test_calculator.TestAnswer)\n"
+                "--------------------------------------------------------------------\n"
+                "AssertionError: 1 != 2\n",
+            ),
+            (0, IMAGE_INSPECTION),
+            (0, "Ran 1 test\nOK"),
+        ]
+    )
+    executor = RestrictedContainerExecutor(
+        IMAGE, runner=runner, environ={"PATH": "/usr/bin"}, uid=1000, gid=1000
+    )
+    evidence, path = run_restricted_container_request(
+        _build_request(),
+        tmp_path.resolve(),
+        executor=executor,
+    )
+    assert evidence.exit_code == 1
+    assert evidence.expected_exit_code == 1
+    assert evidence.role == "baseline"
+    assert evidence.repository_revision == "9" * 40
+    assert evidence.image_id == f"sha256:{DIGEST}"
+    assert path.read_bytes() == json.dumps(
+        evidence.to_dict(), sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    mismatched = RestrictedContainerRequest(
+        workflow_id="cycle-" + "0" * 64,
+        role="candidate",
+        repository_revision="9" * 40,
+        image_identity=IMAGE,
+        files=tuple(_request_files()),
+        command=("/bin/sh", "-c", "python3 -m unittest test_calculator.py"),
+        expected_exit_code=0,
+    )
+    evidence_candidate, _ = run_restricted_container_request(
+        mismatched, tmp_path.resolve(), executor=executor
+    )
+    assert evidence_candidate.exit_code == 0
+    assert evidence_candidate.expected_exit_code == 0

@@ -108,6 +108,18 @@ def test_store_creates_fresh_policy_ledger_schema(data_root: Path) -> None:
     assert not (data_root / "workflows.sqlite3").exists()
 
 
+def test_store_read_only_open_never_initializes_missing_ledger(data_root: Path) -> None:
+    with pytest.raises(StoreError, match="does not exist"):
+        WorkflowStore(data_root, initialize=False)
+
+    assert not data_root.exists()
+
+    initialized = WorkflowStore(data_root)
+    reopened = WorkflowStore(data_root, initialize=False)
+
+    assert reopened.db_path == initialized.db_path
+
+
 def test_create_get_update_and_list_round_trip(data_root: Path) -> None:
     store = WorkflowStore(data_root)
     ledger = make_ledger()

@@ -1034,5 +1034,37 @@ hermes -p daidala-self-improvement daidala project-cycle admit \
 The apply invocation reruns all live prerequisites and refetches the issue. Any
 identity change fails before claim or workflow mutation. Generic `daidala start`
 is not project admission. Do not reuse an actively claimed issue for another
-pack; the second pack requires a separately approved equivalent issue until
-claim release and reconciliation are implemented.
+pack. Complete the delivered cycle and release its active ownership first.
+
+After every current post-gate card is done, review and delivery are accepted,
+passing verification is retained, the owned worktree is released, and the
+ledger records both `committed: false` and `pushed: false`, preview completion:
+
+```bash
+hermes -p daidala-self-improvement daidala project-cycle complete \
+  --project-manifest /home/raphael/src/rb/daidala/.daidala/project.yaml \
+  --registration /home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/registration.yaml \
+  --cycle-id CYCLE_ID
+```
+
+This preview reads the existing policy ledger without creating or migrating a
+database. Review its admission, plan, verification, review, delivery, issue,
+claim, and no-commit/no-push identities. Apply only the exact fresh digest:
+
+```bash
+hermes -p daidala-self-improvement daidala project-cycle complete \
+  --project-manifest /home/raphael/src/rb/daidala/.daidala/project.yaml \
+  --registration /home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/registration.yaml \
+  --cycle-id CYCLE_ID \
+  --apply \
+  --expected-preview-digest PREVIEW_DIGEST
+```
+
+Completion closes the exact issue with reason `completed`, removes only
+`daidala-si:claimed`, sends the event-bound attended notification, and retains
+remote, notification, and final completion records at mode `0600`. Replay
+converges without duplicate comments or notifications. Admission, workflow,
+Kanban, evaluator, review, and delivery history remain immutable. Only a valid
+completion whose cycle, workflow, and admission digest match releases
+`SI-ACTIVE-CYCLE`; missing, malformed, or cross-cycle records fail closed. Run
+`doctor --live` again before previewing a separately approved next intake.

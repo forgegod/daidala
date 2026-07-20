@@ -14,29 +14,30 @@ workflow-pack adapters, and bundled orchestration skills.
 | `state.py` | Immutable policy ledger, artifact evidence, Kanban identifiers, skill activation manifests, and strict serialization. |
 | `workflow.py` | Deterministic policy checks and ledger updates; no operational status transitions. |
 | `locations.py` | Profile-aware data-root resolution; never hard-codes `~/.hermes`. |
-| `store.py` | SQLite-backed policy-ledger persistence with optimistic concurrency. |
+| `store.py` | SQLite-backed policy-ledger persistence with optimistic concurrency and explicit read-only opening for mutation-free previews. |
 | `service.py` | Repository preflight, approval-gated graph, artifact, worktree, and ledger coordination. |
 | `skills.py` | Exact installed-skill inventory, content-digest verification, and mutation-free install planning. |
 | `constraints.py` | Strict workflow-constraint YAML parsing, canonicalization, bounds, and digest identity. |
 | `projects.py` | Strict committed project-manifest parsing, canonical identity, verification declarations, and mutation policy. |
 | `registrations.py` | Trusted profile-local project registration v2, exact attended-delivery destination, limits, manifest binding, and storage path. |
 | `credentials.py` | Strict alias-to-environment credential bindings with no secret values or resolver inference. |
-| `prerequisites.py` | Stable self-improvement checklist registry, retained capability evidence, bounded probes, and strict prerequisite reports. |
+| `prerequisites.py` | Stable self-improvement checklist registry, retained capability evidence, bounded probes, completion-aware active ownership, and strict prerequisite reports. |
 | `cycles.py` | Pure self-improvement cycle identity, metric kinds, outcomes, delegation evidence, and lesson-reuse evidence. |
 | `evaluation.py` | Isolation receipts, fresh evaluator homes, isolated candidate environments, immutable metric and lesson-reuse evidence, comparison verdicts, baseline-before-mutation worktrees, cleanup, and quarantine records. |
-| `restricted_container.py` | Digest-pinned Docker execution, credential-free child environments, bounded mounts and output, denied-network setup probes, and isolation receipts. |
+| `restricted_container.py` | Digest-pinned Docker execution, credential-free child environments, bounded request fixtures, command evidence, denied-network setup probes, and isolation receipts. |
 | `increments.py` | Strict increment-document classification, producer provenance, canonical manifest, bounds, and digest. |
-| `adapters.py` | Strict normalized intake, finding, notification, claim, and receipt records plus injectable protocols. |
-| `live_adapters.py` | Bounded production GitHub intake/claim and Hermes attended-delivery adapters with credential-minimal child environments. |
+| `adapters.py` | Strict normalized intake, finding, notification, claim, completion, and receipt records plus injectable protocols. |
+| `live_adapters.py` | Bounded production GitHub intake/claim/completion and Hermes attended-delivery adapters with credential-minimal child environments. |
+| `completion.py` | Digest-bound delivered-cycle previews, replay-safe remote and attended receipts, immutable mode-`0600` completion records, and completion coordination. |
 | `controller.py` | Mutation-free admission preview, replay-safe cycle admission, manifest snapshots, deterministic workflow binding, immutable cycle storage, and receipt validation. |
-| `project_cycles.py` | Dry-run-first production project-cycle composition, prerequisite enforcement, exact identity confirmation, and profile-local runtime wiring. |
+| `project_cycles.py` | Dry-run-first production project-cycle admission/completion, prerequisite enforcement, exact identity confirmation, and profile-local runtime wiring. |
 | `reconciliation.py` | Two-authority claim recovery evidence and local pending-to-published finding synchronization. |
 | `execution.py` | Profile-local artifacts, detached worktrees, and diff capture. |
 | `kanban.py` | Public host-boundary adapter for the idempotent, approval-gated Hermes card graph. |
 | `schemas.py` | Tool schemas exposed to the model. |
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
 | `packs.py` | Pack loading and deterministic validation. |
-| `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle dispatch, pack operations, dry-run-first project-cycle admission and evaluator probes, and subprocess mutation boundary. |
+| `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle dispatch, pack operations, dry-run-first project-cycle admission/completion and evaluator operations, and subprocess mutation boundary. |
 | `dashboard_backend.py` | Profile-safe dashboard read model, live Kanban snapshots, constraint previews, and typed compare-and-swap replacement adapter. |
 | `recommendations.py` | Pure finite pending-decision and next-action derivation from ledger facts and live Kanban snapshots. |
 | `setup_wizard.py` | Typed setup preview, confirmation gate, and documented Hermes board/profile inventory commands. |
@@ -70,6 +71,17 @@ workflow-pack adapters, and bundled orchestration skills.
   digest returned by a fresh dry-run. The apply path reruns live prerequisites
   and rejects changed issue, manifest, pack, constraints, baseline, registration,
   or stage-profile identity before mutation.
+- `project-cycle complete` is read-only by default and opens the policy ledger
+  without schema initialization. Apply requires the exact fresh preview digest,
+  done current post-gate cards, accepted review and delivery artifacts, passing
+  verification, released worktree ownership, `committed: false`, `pushed: false`,
+  and the exact stored claim owner. It closes the issue as completed, removes
+  only the claim label, retains remote and attended receipts plus the terminal
+  completion at mode `0600`, and converges without duplicate comments or sends.
+- `SI-ACTIVE-CYCLE` releases admission ownership only for a strict completion
+  record whose cycle, workflow, and admission digest match the immutable
+  admission. Missing, malformed, or cross-cycle completion remains blocking or
+  errors closed; historical admission and workflow evidence is never deleted.
 - Self-improvement prerequisite diagnosis extends the shared `doctor` command,
   mirrors the stable check IDs owned by `docs/16-self-improvement-setup.md`,
   emits bounded redacted evidence, and has no fix/apply or setup-mutation mode.
@@ -105,6 +117,11 @@ workflow-pack adapters, and bundled orchestration skills.
   capabilities, no new privileges, a non-root host UID/GID, exactly one candidate
   workspace bind mount, fresh bounded tmpfs home and temporary storage, bounded
   output, and no credential-like container environment keys.
+- `evaluator run` accepts only the strict bounded request schema, validates inline
+  fixture paths and content before mounting, remains dry-run by default, and on
+  `--apply` retains the exact image, command, expected and observed exit, bounded
+  output, and fixture identity as content-addressed mode-`0600` evidence under
+  the owning profile-local workflow artifact directory.
   Candidate identity must differ from the
   loaded controller artifact, durable baseline evidence must match cycle, mode,
   repository revision, limits, controller, and boundary identity before any
@@ -117,8 +134,8 @@ workflow-pack adapters, and bundled orchestration skills.
   activation/producer identity, and the nearest owning DOX scope.
 - `adapters.py` defines strict normalized records and protocols;
   `live_adapters.py` owns the separately gated concrete GitHub and Hermes
-  transports. GitHub reads use the intake alias, claim mutations use the
-  findings alias, and attended delivery uses the exact profile-local registration
+  transports. GitHub reads use the intake alias, claim and completion mutations
+  use the findings alias, and attended delivery uses the exact profile-local registration
   non-home destination while retaining only a non-private receipt. Bare
   platform home aliases are rejected because they do not bind the attended
   identity. Admission validates
