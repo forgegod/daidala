@@ -11,9 +11,7 @@ from daidala.restricted_container import (
     ContainerIsolationError,
     RestrictedContainerExecutor,
     RestrictedContainerRequest,
-    load_restricted_container_request,
     probe_restricted_container,
-    run_restricted_container_request,
 )
 
 DIGEST = "3220992391c1182a0cfe4c64453511772c54f4c39e960d26a5e327960675982e"
@@ -188,13 +186,19 @@ def test_probe_rejects_failed_container_and_oversized_output() -> None:
 
 
 def _request_files() -> list[tuple[str, str]]:
+    fixture_src = (
+        "from calculator import answer\n\n\n"
+        "class TestAnswer(unittest.TestCase):\n"
+        "    def test_answer(self):\n"
+        "        self.assertEqual(answer(), 2)\n"
+    )
     return [
         ("calculator.py", "def answer():\n    return 1\n"),
-        ("test_calculator.py", "from calculator import answer\n\n\ndef test_answer():\n    assert answer() == 2\n"),
+        ("test_calculator.py", fixture_src),
     ]
 
 
-def _build_request() -> "RestrictedContainerRequest":
+def _build_request() -> RestrictedContainerRequest:
     from daidala.restricted_container import RestrictedContainerRequest
 
     return RestrictedContainerRequest(
@@ -209,10 +213,7 @@ def _build_request() -> "RestrictedContainerRequest":
 
 
 def test_request_loads_and_rejects_malformed_payload(tmp_path: Path) -> None:
-    from daidala.restricted_container import (
-        RestrictedContainerRequest,
-        load_restricted_container_request,
-    )
+    from daidala.restricted_container import load_restricted_container_request
 
     request = _build_request()
     payload_path = tmp_path / "request.json"
@@ -233,10 +234,7 @@ def test_request_loads_and_rejects_malformed_payload(tmp_path: Path) -> None:
 
 
 def test_request_run_retains_immutable_evidence_and_rejects_drift(tmp_path: Path) -> None:
-    from daidala.restricted_container import (
-        RestrictedContainerRequest,
-        run_restricted_container_request,
-    )
+    from daidala.restricted_container import run_restricted_container_request
 
     class SequencedRunner:
         def __init__(self, fixtures: list[tuple[int, str]]) -> None:
@@ -254,13 +252,18 @@ def test_request_run_retains_immutable_evidence_and_rejects_drift(tmp_path: Path
             (0, IMAGE_INSPECTION),
             (
                 1,
-                "F\n======================================================================\nFAIL: test_answer (test_calculator.TestAnswer)\n--------------------------------------------------------------------\nAssertionError: 1 != 2\n",
+                "F\n======================================================================\n"
+                "FAIL: test_answer (test_calculator.TestAnswer)\n"
+                "--------------------------------------------------------------------\n"
+                "AssertionError: 1 != 2\n",
             ),
             (0, IMAGE_INSPECTION),
             (0, "Ran 1 test\nOK"),
         ]
     )
-    executor = RestrictedContainerExecutor(IMAGE, runner=runner, environ={"PATH": "/usr/bin"}, uid=1000, gid=1000)
+    executor = RestrictedContainerExecutor(
+        IMAGE, runner=runner, environ={"PATH": "/usr/bin"}, uid=1000, gid=1000
+    )
     evidence, path = run_restricted_container_request(
         _build_request(),
         tmp_path.resolve(),

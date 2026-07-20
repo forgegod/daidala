@@ -580,11 +580,11 @@ def _write_once(path: Path, payload: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
         descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    except FileExistsError:
+    except FileExistsError as error:
         if path.read_bytes() != payload:
             raise ContainerIsolationError(
                 "restricted-container evidence path conflicts with existing content"
-            )
+            ) from error
         return
     try:
         with os.fdopen(descriptor, "wb") as handle:
