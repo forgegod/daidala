@@ -292,24 +292,29 @@ class GitHubIssueIntakeAdapter:
         return _CLAIMED_LABEL in _parse_labels(issue["labels"])
 
     def _api_pages(self, item_id: str, resource: str) -> list[dict[str, Any]]:
-        payload = self._run_json(
+        output = self._run_text(
             (
                 "gh",
                 "api",
                 "--paginate",
-                "--slurp",
                 f"repos/{self.repository}/issues/{item_id}/{resource}?per_page=100",
+                "--jq",
+                ".[]",
             ),
             alias=self.read_credential_alias,
             label=f"GitHub issue {resource}",
         )
-        if not isinstance(payload, list):
-            raise PolicyViolationError(f"GitHub issue {resource} must be paginated JSON")
         rows: list[dict[str, Any]] = []
-        for page in payload:
-            if not isinstance(page, list) or any(not isinstance(row, dict) for row in page):
-                raise PolicyViolationError(f"GitHub issue {resource} pages are invalid")
-            rows.extend(cast(list[dict[str, Any]], page))
+        for line in output.splitlines():
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError as error:
+                raise PolicyViolationError(
+                    f"GitHub issue {resource} returned invalid paginated JSON"
+                ) from error
+            if not isinstance(row, dict):
+                raise PolicyViolationError(f"GitHub issue {resource} row is invalid")
+            rows.append(cast(dict[str, Any], row))
         return rows
 
     def _run_json(self, command: tuple[str, ...], *, alias: str, label: str) -> Any:

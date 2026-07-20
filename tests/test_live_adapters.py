@@ -126,25 +126,23 @@ class GitHubRunner:
                 ],
             }
             return 0, json.dumps(payload)
-        if command[:3] == ("gh", "api", "--paginate") and command[-1].endswith(
+        if command[:3] == ("gh", "api", "--paginate") and command[3].endswith(
             "/events?per_page=100"
         ):
+            assert command[-2:] == ("--jq", ".[]")
             return 0, json.dumps(
-                [
-                    [
-                        {
-                            "event": "labeled",
-                            "label": {"name": READY},
-                            "actor": {"login": "forgegod"},
-                            "created_at": "2026-07-20T10:00:00Z",
-                        }
-                    ]
-                ]
+                {
+                    "event": "labeled",
+                    "label": {"name": READY},
+                    "actor": {"login": "forgegod"},
+                    "created_at": "2026-07-20T10:00:00Z",
+                }
             )
-        if command[:3] == ("gh", "api", "--paginate") and command[-1].endswith(
+        if command[:3] == ("gh", "api", "--paginate") and command[3].endswith(
             "/comments?per_page=100"
         ):
-            return 0, json.dumps([self.comments])
+            assert command[-2:] == ("--jq", ".[]")
+            return 0, "\n".join(json.dumps(comment) for comment in self.comments)
         if command[:3] == ("gh", "issue", "comment"):
             body = command[command.index("--body") + 1]
             self.comments.append({"body": body, "user": {"login": "forgegod"}})
@@ -226,8 +224,8 @@ def test_github_intake_rejects_missing_separate_ready_actor() -> None:
     def no_events(
         command: tuple[str, ...], environment: Mapping[str, str]
     ) -> tuple[int, str]:
-        if command[-1].endswith("/events?per_page=100"):
-            return 0, "[[]]"
+        if len(command) > 3 and command[3].endswith("/events?per_page=100"):
+            return 0, ""
         return runner(command, environment)
 
     adapter = GitHubIssueIntakeAdapter(

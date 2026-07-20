@@ -93,22 +93,19 @@ class Runtime:
                     ],
                 }
             )
-        if command[:4] == ("gh", "api", "--paginate", "--slurp"):
+        if command[:3] == ("gh", "api", "--paginate"):
             assert env["GH_TOKEN"] == "read-token"
-            if command[-1].endswith("/events?per_page=100"):
+            assert command[-2:] == ("--jq", ".[]")
+            if command[3].endswith("/events?per_page=100"):
                 return 0, json.dumps(
-                    [
-                        [
-                            {
-                                "event": "labeled",
-                                "label": {"name": "daidala-si:ready"},
-                                "actor": {"login": "forgegod"},
-                            }
-                        ]
-                    ]
+                    {
+                        "event": "labeled",
+                        "label": {"name": "daidala-si:ready"},
+                        "actor": {"login": "forgegod"},
+                    }
                 )
-            if command[-1].endswith("/comments?per_page=100"):
-                return 0, "[[]]"
+            if command[3].endswith("/comments?per_page=100"):
+                return 0, ""
         raise AssertionError(f"unexpected command: {command}")
 
 
