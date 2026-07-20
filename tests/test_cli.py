@@ -10,6 +10,10 @@ import pytest
 
 from daidala import cli
 from daidala.evaluation import EvaluatorIsolationEvidence
+from daidala.restricted_container import (
+    RestrictedContainerEvidence,
+    RestrictedContainerRequest,
+)
 
 PROFILE_ARGS = [
     "--default-profile",
@@ -256,6 +260,60 @@ def test_evaluator_probe_apply_is_equivalent_on_standalone_and_native_surfaces(
     assert standalone["success"] is True
     assert standalone["dry_run"] is False
     assert standalone["evidence"]["receipt_id"] == "sha256:" + "a" * 64
+
+
+def test_evaluator_run_apply_uses_profile_local_daidala_root(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    workflow_id = "cycle-" + "0" * 64
+    request = RestrictedContainerRequest(
+        workflow_id=workflow_id,
+        role="baseline",
+        repository_revision="1" * 40,
+        image_identity=PINNED_EVALUATOR_IMAGE,
+        files=(("test.py", "raise SystemExit(1)\n"),),
+        command=("python3", "test.py"),
+        expected_exit_code=1,
+    )
+    request_path = tmp_path / "request.json"
+    request_path.write_text(json.dumps(request.to_dict()), encoding="utf-8")
+    calls: list[Path] = []
+
+    def run_request(
+        observed: RestrictedContainerRequest,
+        data_root: Path,
+    ) -> tuple[RestrictedContainerEvidence, Path]:
+        assert observed == request
+        calls.append(data_root)
+        evidence = RestrictedContainerEvidence(
+            request_digest=request.digest,
+            workflow_id=workflow_id,
+            role="baseline",
+            repository_revision="1" * 40,
+            image_identity=PINNED_EVALUATOR_IMAGE,
+            image_id="sha256:" + "2" * 64,
+            fixture_digest="3" * 64,
+            command=request.command,
+            expected_exit_code=1,
+            exit_code=1,
+            output="expected failure",
+            output_digest="4" * 64,
+        )
+        return evidence, data_root / "evidence.json"
+
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    code = cli.main(
+        ["evaluator", "run", "--request", str(request_path), "--apply"],
+        container_request_runner=run_request,
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert code == 0
+    assert calls == [(tmp_path / "daidala").resolve()]
+    assert payload["success"] is True
+    assert payload["evidence"]["exit_code"] == 1
 
 
 def test_project_cycle_admission_is_dry_run_by_default_on_both_surfaces(capsys) -> None:

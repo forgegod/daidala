@@ -370,7 +370,7 @@ def _run_evaluator(
             )
             return 0
         selected_runner = container_request_runner or run_restricted_container_request
-        evidence, path = selected_runner(request, resolve_data_root())
+        evidence, path = selected_runner(request, resolve_data_root() / "daidala")
         matched = evidence.exit_code == evidence.expected_exit_code
         _print(
             {
