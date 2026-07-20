@@ -24,7 +24,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `prerequisites.py` | Stable self-improvement checklist registry, retained capability evidence, bounded probes, and strict prerequisite reports. |
 | `cycles.py` | Pure self-improvement cycle identity, metric kinds, outcomes, delegation evidence, and lesson-reuse evidence. |
 | `evaluation.py` | Isolation receipts, fresh evaluator homes, isolated candidate environments, immutable metric and lesson-reuse evidence, comparison verdicts, baseline-before-mutation worktrees, cleanup, and quarantine records. |
-| `restricted_container.py` | Digest-pinned Docker execution, credential-free child environments, bounded mounts and output, denied-network setup probes, and isolation receipts. |
+| `restricted_container.py` | Digest-pinned Docker execution, credential-free child environments, bounded request fixtures, command evidence, denied-network setup probes, and isolation receipts. |
 | `increments.py` | Strict increment-document classification, producer provenance, canonical manifest, bounds, and digest. |
 | `adapters.py` | Strict normalized intake, finding, notification, claim, and receipt records plus injectable protocols. |
 | `live_adapters.py` | Bounded production GitHub intake/claim and Hermes attended-delivery adapters with credential-minimal child environments. |
@@ -36,7 +36,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `schemas.py` | Tool schemas exposed to the model. |
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
 | `packs.py` | Pack loading and deterministic validation. |
-| `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle dispatch, pack operations, dry-run-first project-cycle admission and evaluator probes, and subprocess mutation boundary. |
+| `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle dispatch, pack operations, dry-run-first project-cycle admission and evaluator operations, and subprocess mutation boundary. |
 | `dashboard_backend.py` | Profile-safe dashboard read model, live Kanban snapshots, constraint previews, and typed compare-and-swap replacement adapter. |
 | `recommendations.py` | Pure finite pending-decision and next-action derivation from ledger facts and live Kanban snapshots. |
 | `setup_wizard.py` | Typed setup preview, confirmation gate, and documented Hermes board/profile inventory commands. |
@@ -105,6 +105,11 @@ workflow-pack adapters, and bundled orchestration skills.
   capabilities, no new privileges, a non-root host UID/GID, exactly one candidate
   workspace bind mount, fresh bounded tmpfs home and temporary storage, bounded
   output, and no credential-like container environment keys.
+- `evaluator run` accepts only the strict bounded request schema, validates inline
+  fixture paths and content before mounting, remains dry-run by default, and on
+  `--apply` retains the exact image, command, expected and observed exit, bounded
+  output, and fixture identity as content-addressed mode-`0600` evidence under
+  the owning profile-local workflow artifact directory.
   Candidate identity must differ from the
   loaded controller artifact, durable baseline evidence must match cycle, mode,
   repository revision, limits, controller, and boundary identity before any
