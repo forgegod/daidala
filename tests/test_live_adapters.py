@@ -97,7 +97,17 @@ class GitHubRunner:
         if command[:3] == ("gh", "issue", "view"):
             if command[-1] == "labels":
                 return 0, json.dumps(
-                    {"labels": [{"name": label} for label in sorted(self.labels)]}
+                    {
+                        "labels": [
+                            {
+                                "color": "ffffff",
+                                "description": "",
+                                "id": f"LA_{label}",
+                                "name": label,
+                            }
+                            for label in sorted(self.labels)
+                        ]
+                    }
                 )
             payload = {
                 "number": 42,
@@ -105,7 +115,15 @@ class GitHubRunner:
                 "title": "[Daidala SI] Fix temporary calculator",
                 "body": issue_body(),
                 "state": self.state,
-                "labels": [{"name": label} for label in sorted(self.labels)],
+                "labels": [
+                    {
+                        "color": "ffffff",
+                        "description": "",
+                        "id": f"LA_{label}",
+                        "name": label,
+                    }
+                    for label in sorted(self.labels)
+                ],
             }
             return 0, json.dumps(payload)
         if command[:3] == ("gh", "api", "--paginate") and command[-1].endswith(

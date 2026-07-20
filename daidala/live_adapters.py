@@ -404,8 +404,10 @@ def _parse_labels(raw: Any) -> set[str]:
         raise PolicyViolationError("GitHub issue labels must be a list")
     labels: set[str] = set()
     for row in raw:
-        if not isinstance(row, dict) or set(row) != {"name"} or not isinstance(
-            row["name"], str
+        if (
+            not isinstance(row, dict)
+            or not isinstance(row.get("name"), str)
+            or not row["name"]
         ):
             raise PolicyViolationError("GitHub issue label entry is invalid")
         labels.add(row["name"])
