@@ -14,9 +14,10 @@ quarantine; and increment/DOX reconciliation.
 Two attended manual cycles exercised the detached controller's admission,
 approval, evaluation, delivery, replay, and terminal completion paths. The
 shared dry-run-first CLI exposes deterministic reconciliation with an exact
-preview-digest apply gate. Source now also implements digest-bound cancellation;
-it is not yet installed in the persistent controller. Exact detached revision
-`80dd73e` remains installed. One matching no-agent reconciliation cron is paused
+preview-digest apply gate. Exact detached revision `550671c` is now installed in
+the persistent controller and exposes digest-bound cancellation through native
+and standalone command surfaces. One matching no-agent reconciliation cron is
+paused
 on its intended 15-minute schedule after two separately approved controlled runs
 proved admission/replay convergence on one active cycle. That cycle remains at
 the plan approval boundary. Terminal retention, approved finding publication,

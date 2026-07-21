@@ -42,7 +42,7 @@ Authoritative external references:
 | Evaluator | `restricted-container` |
 | Evaluator network | `denied-by-default` |
 | Supported Hermes baseline | `v0.18.2` |
-| Approved and installed controller revision | `80dd73efa9a4e462304b71ba157b5e5c0172b793` |
+| Approved and installed controller revision | `550671c19e5434fbe183140214ca12b4a047692d` |
 
 The controller may carry model, issue, and notification credentials. A fresh
 evaluator must not clone the controller profile or receive issue mutation,
@@ -59,7 +59,7 @@ retained evidence.
 | Hermes baseline | Pass | `Hermes Agent v0.18.2 (2026.7.7.2)` |
 | Repository identity | Pass | The post-completion live report verifies canonical repository `forgegod/daidala`, a clean local checkout, and the trusted remote identity. The completed Aidlc cycle remains bound to baseline `66e3ad03b70a99bffa67c16596b6cd59fc0967d2`; publication remains separately gated. |
 | Daidala command surfaces | Pass | Standalone and native controller-profile commands report Daidala `0.2.0`; native pack validation succeeds. |
-| Controller plugin revision | Pass | The controller profile loads clean detached revision `80dd73efa9a4e462304b71ba157b5e5c0172b793`; native and standalone live diagnosis verify the same identity. |
+| Controller plugin revision | Pass | The controller profile loads clean detached revision `550671c19e5434fbe183140214ca12b4a047692d`; native and standalone live diagnosis verify the same identity. |
 | Controller profile | Pass | `/home/raphael/.hermes/profiles/daidala-self-improvement` exists and the sticky profile remains `hermes-vc`. |
 | Reconciliation cron | Pass | Exactly one profile-local no-agent job uses the digest-matched wrapper, `every 15m` with infinite repeat, and the registered checkout; it is paused after two successful controlled executions that converged on one cycle. |
 | Dedicated board | Pass | Installation-global board `daidala-forgegod-daidala` exists with the exact checkout as default workdir; both controlled UC-01 workflows are terminal and it did not replace the current `default` board. |
@@ -85,7 +85,7 @@ in this order; a later step must not be used to waive an earlier blocker.
 | 2 | Verify Docker availability, then produce evaluator isolation evidence. | The isolation probe creates a disposable container. | Pass; Docker integration is available and both live reports reproduce the retained evaluator boundary. |
 | 3 | Provision one attended operator credential and two least-privilege runtime credentials. | Vault and profile environment only. | Operator token is isolated; both runtime read probes and the controlled findings write probe pass. |
 | 4 | Create the controller profile without changing the sticky profile. | Hermes profile. | Pass. |
-| 5 | Install the selected detached Daidala revision. | Controller plugin directory. | Pass at exact detached revision `80dd73efa9a4e462304b71ba157b5e5c0172b793`. |
+| 5 | Install the selected detached Daidala revision. | Controller plugin directory. | Pass at exact detached revision `550671c19e5434fbe183140214ca12b4a047692d`. |
 | 6 | Create the dedicated Kanban board. | Installation-global Hermes board. | Pass. |
 | 7 | Configure and verify the attended gateway target. | Profile gateway/home channel. | Pass; delivery receipt and operator confirmation are retained and live-validated. |
 | 8 | Create labels and the user-owned GitHub Project. | GitHub Issues and Projects. | Required projection and optional attended UI auto-add pass. |
@@ -436,7 +436,7 @@ token, token-derived value, private destination ID, or raw command output.
 {
   "schema": "daidala.prerequisite-evidence/v1",
   "project_id": "forgegod-daidala",
-  "approved_controller_revision": "80dd73efa9a4e462304b71ba157b5e5c0172b793",
+  "approved_controller_revision": "550671c19e5434fbe183140214ca12b4a047692d",
   "sticky_profile": "hermes-vc",
   "credential_capabilities": [
     {
@@ -529,7 +529,7 @@ directory plugins. The persistent controller must load one exact committed
 last-known-good revision, never the mutable working checkout.
 
 The approved and installed controller revision is
-`80dd73efa9a4e462304b71ba157b5e5c0172b793`. Every reproduction or replacement
+`550671c19e5434fbe183140214ca12b4a047692d`. Every reproduction or replacement
 still requires separate approval for that exact identity. It is:
 
 - reachable from the local repository and eligible for the GitHub path only
@@ -538,11 +538,10 @@ still requires separate approval for that exact identity. It is:
 - verified by the repository gate and detached-clone check.
 
 The controller currently loads this exact detached revision, exposes
-`project-cycle admit`, `project-cycle reconcile`, and `project-cycle complete`,
+`project-cycle admit`, `project-cycle reconcile`, `project-cycle complete`, and
+`project-cycle cancel`,
 and passes native and standalone live diagnosis with registration v2.
 Installation never authorizes a cycle.
-The repository source adds `project-cycle cancel`; do not use it operationally
-until that exact source revision passes the same detached-installation gate.
 For a fresh reproduction, choose exactly one installation path below. The local
 detached-clone path is required until publication of the selected revision is
 separately approved. Both paths must pass isolated Hermes v0.18.2 discovery and
@@ -558,7 +557,7 @@ Use this path only while the selected commit remains reachable from the public r
 PyPI publication is not required. `hermes plugins install forgegod/daidala`
 tracks the repository branch and cannot pin a commit, so it is not accepted for
 the persistent controller. Revision
-`80dd73efa9a4e462304b71ba157b5e5c0172b793` is currently unpushed, so this path
+`550671c19e5434fbe183140214ca12b4a047692d` is currently unpushed, so this path
 is unavailable unless that exact commit receives separate publication approval.
 
 ```bash
@@ -590,7 +589,7 @@ virtualenv into Hermes.
 set -euo pipefail
 profile_home="$(dirname "$(hermes -p daidala-self-improvement config path)")"
 plugin_dir="$profile_home/plugins/daidala"
-approved_revision=80dd73efa9a4e462304b71ba157b5e5c0172b793
+approved_revision=550671c19e5434fbe183140214ca12b4a047692d
 test ! -e "$plugin_dir" && test ! -L "$plugin_dir"
 
 git -C /home/raphael/src/rb/daidala cat-file -e \
@@ -611,10 +610,16 @@ implicitly. If Hermes asks whether Daidala may replace built-in tools, answer
 To replace an existing approved detached revision, clone and verify the new
 revision under `$profile_home/plugin-staging/`, and retain the previous checkout
 under `$profile_home/plugin-rollbacks/`. Stop the profile gateway, move only the
-verified checkout into `$profile_home/plugins/daidala`, then restart and run the
-complete gate. On any failure, stop the gateway, move the failed candidate back
-outside `plugins/`, restore the rollback checkout, restart, and verify the old
-revision again.
+verified checkout into `$profile_home/plugins/daidala`, and atomically update
+`approved_controller_revision` in `prerequisite-evidence.json` plus
+`controller_revision` in `reconciliation-cron.json` while preserving mode
+`0600`. Back up both evidence files beside the retained checkout before the
+swap. Then restart and run the complete gate. When one active cycle is expected,
+invoke doctor inside an explicit conditional and accept exit code 2 only when
+`SI-ACTIVE-CYCLE` is the sole non-pass check; an `ERR` trap must not treat that
+expected result as an installation failure. On any actual failure, stop the
+gateway, move the failed candidate back outside `plugins/`, restore the previous
+checkout and both evidence files, restart, and verify the old revision again.
 
 Never place staging, backup, failed, or rollback checkouts anywhere below
 `$profile_home/plugins/`. Hermes discovers plugin manifests in sibling
@@ -626,7 +631,7 @@ discovered checkout can silently override `$profile_home/plugins/daidala`.
 ```bash
 profile_home="$(dirname "$(hermes -p daidala-self-improvement config path)")"
 plugin_dir="$profile_home/plugins/daidala"
-approved_revision=80dd73efa9a4e462304b71ba157b5e5c0172b793
+approved_revision=550671c19e5434fbe183140214ca12b4a047692d
 
 test "$(git -C "$plugin_dir" rev-parse HEAD)" = "$approved_revision"
 git -C "$plugin_dir" status --short

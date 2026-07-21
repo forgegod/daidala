@@ -5,9 +5,10 @@ exact detached Daidala controller revision, create one profile-local Hermes cron
 job that remains paused, and retain evidence that two controlled invocations
 admit at most one maintainer-ready issue and converge on one workflow.
 
-**Status:** blocked — the original reconciliation scope through Phase 6 and the
-Phase 7 deterministic closeout implementation are complete. Phase 8 remains
-separately installation- and cancellation-approval-gated. Phase 0 is complete at
+**Status:** in-progress — the original reconciliation scope through Phase 6 and
+the Phase 7 deterministic closeout implementation are complete. Phase 8
+installed exact revision `550671c`; live cancellation remains separately
+exact-digest approval-gated. Phase 0 is complete at
 merge checkpoint `bdd2baf` and
 Phase 1 is complete at checkpoint `1d6a909`; Phase 2 is complete at the shared
 dry-run-first CLI checkpoint `5472cc1`. Phase 3 repository reconciliation and
@@ -32,8 +33,8 @@ again; later workflow stages remain separately approval-gated.
   active probe cycle; it created no retained change or remote finding.
 - Current source implements dry-run-first, digest-bound cancellation for that
   terminal probe closeout. It passes the complete repository and release gate
-  but is not installed or applied; detached controller revision `80dd73e`
-  remains unchanged.
+  and is installed at detached controller revision `550671c`; cancellation has
+  not been applied.
 - `daidala/reconciliation.py` now owns strict previews/results and immutable
   mode-`0600` tick evidence; `daidala/project_cycles.py` composes explicit
   prerequisite interpretation, terminal-record-aware active ownership, stable
@@ -42,10 +43,10 @@ again; later workflow stages remain separately approval-gated.
   audited, replay-safe claim release. The shared CLI exposes reconciliation as
   dry-run by default and requires an exact preview digest for apply.
 - Current source and the installed controller expose equivalent standalone and
-  native reconciliation help. The controller profile runs exact clean detached
-  revision `80dd73e`.
+  native reconciliation and cancellation help. The controller profile runs
+  exact clean detached revision `550671c`.
 - The complete repository, packaging, release-content, pack, link, lint, and
-  test gate passes with 388 tests. Native and standalone installation diagnosis
+  test gate passes with 398 tests. Native and standalone installation diagnosis
   passed all eleven checks after Docker integration was restored. Current live
   diagnosis intentionally reports only `SI-ACTIVE-CYCLE` blocked while the probe
   workflow waits at its plan approval boundary; no remote ref changed.
@@ -65,7 +66,7 @@ again; later workflow stages remain separately approval-gated.
 
 ## Risk call-out
 
-The controller remains pinned to exact detached revision `80dd73e` even as
+The controller remains pinned to exact detached revision `550671c` even as
 documentation checkpoints advance the working branch. Staging, failed, and
 rollback checkouts stay outside the profile plugin scan root so no duplicate
 Daidala manifest can override the active controller.
@@ -98,7 +99,7 @@ before any later phase. The immediate run uses Hermes' at-most-once claim; the
 | 5 | Create the profile-local wrapper and paused cron | done | `cron list --all` shows exactly one paused no-agent named job with infinite repeat; its script digest matches profile-local evidence. |
 | 6 | Run and replay one controlled tick | done | Two completed executions yield one claim, cycle, workflow graph, and attended receipt; immutable outcomes are `admitted` then `replayed`, and the job is paused on `every 15m`. |
 | 7 | Implement deterministic terminal cancellation | done (58 focused + 398 full tests; complete release gate) | Focused cancellation, adapter, project-cycle, CLI, and active-ownership tests pass; the full repository and release gate pass. |
-| 8 | Install and apply the exact probe cancellation | pending | The separately approved detached revision passes rollback-protected installation; a fresh cancellation digest is separately approved and converges issue, workflow, notification, and terminal evidence. |
+| 8 | Install and apply the exact probe cancellation | in-progress (installation passed at `550671c`) | Native/standalone help and active-cycle-only diagnosis pass; a fresh cancellation digest still requires separate approval before issue, workflow, notification, or terminal mutation. |
 
 Mark a phase `in-progress` while running it, `done (<sha-or-evidence>)` once its
 gate passes, and `pending` otherwise.
