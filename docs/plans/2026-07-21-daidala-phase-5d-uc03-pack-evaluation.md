@@ -5,13 +5,13 @@ Produce one valid, sequential `evaluate-pack` comparison of the pinned default
 baseline, one canonical package-resource migration fixture, identical evaluator
 and model-routing identities, and separately approved live cycles.
 
-**Status:** in-progress — Phase 0 is complete with 416 tests and the complete
-repository/release gate passing. Phase 1 froze packet
-[`c0cdfefb`](2026-07-21-daidala-phase-5d-uc03-experiment.json) after local
-contract, fixture, issue, command, image, and pack preflight. Exact packet
-approval, issue creation, controller installation, live cycle admission, plan
-approval, cleanup, finding publication, retention, push, release, and promotion
-remain separate.
+**Status:** in-progress — Phases 0 and 1 are complete. Packet
+[`c0cdfefb`](2026-07-21-daidala-phase-5d-uc03-experiment.json) is frozen at
+checkpoint `fa626f6`; exact detached controller `3ce1bfc` is installed with
+rollback `2595bf5`; issues #9/#10 are byte-identical and unready; both diagnosis
+routes pass 11/11 with reconciliation paused and no active cycle. Phase 2
+readiness, admission, plan approval, cleanup, retention, push, release,
+publication, and promotion remain separate.
 
 **Parent plan:**
 [`2026-07-13-daidala-self-improvement-loop.md`](2026-07-13-daidala-self-improvement-loop.md)
@@ -21,8 +21,8 @@ remain separate.
 ## Current state
 
 - Parent Phase 5C-R is complete at repository checkpoint `8f6ff7c`; exact
-  detached controller `2595bf5` remains installed, reconciliation is paused, and
-  native plus standalone diagnosis last passed 11/11.
+  detached controller `3ce1bfc` is installed with rollback `2595bf5`,
+  reconciliation is paused, and native plus standalone diagnosis pass 11/11.
 - The versioned evaluation record agrees with the approved remediation evidence:
   controller `2595bf5`, ledger-owned approval, immutable revision artifacts,
   `TC-F06-01`/`TC-F07-01` pass, and issues #6/#7 completed.
@@ -56,7 +56,7 @@ worktree, or ledger state by inspection.
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
 | 0 | Restore evidence authority and expose exact comparison admission | done (416 tests + complete release gate) | Focused project-cycle/CLI tests and the complete repository/release gate pass; current source exposes `--mode evaluate-pack --candidate-identity`; no live state changes. |
-| 1 | Freeze the paired experiment and install the exact controller | in-progress | One canonical experiment packet binds fixture bytes, baseline, packs, candidate, routing, limits, evaluator image, commands, metrics, and two approved intake bodies; exact detached installation passes native/standalone help parity and 11/11 diagnosis. |
+| 1 | Freeze the paired experiment and install the exact controller | done (packet `c0cdfefb`; controller `3ce1bfc`; issues #9/#10) | Packet and nested digests verify; controller/help/packs agree; native/standalone diagnosis pass 11/11; cron is paused; issues are exact and unready; no cycle or owned worktree exists. |
 | 2 | Run the Addyosmani control workflow | pending | One separately approved `evaluate-pack` cycle using `addyosmani` reaches accepted evidence-only delivery and terminal cleanup with the frozen fixture and no retention, commit, or push. |
 | 3 | Run the Aidlc candidate workflow | pending | One separately approved `evaluate-pack` cycle using `aidlc` reaches accepted evidence-only delivery and terminal cleanup with identities equal to Phase 2 except the selected pack. |
 | 4 | Compare, reconcile, and close Phase 5D | pending | Deterministic comparison eligibility passes or records `incomparable` for an exact missing identity; the result record and plans agree; no default, manifest, skill installation, controller, or remote ref changes automatically. |
@@ -202,12 +202,18 @@ Prepared approval packet:
   normalized goal inputs are equal and unready; baseline and representative
   migrated behavior exit 0; migration policy exits 0; evaluator image is local;
   both packs validate
-- live precondition: controller `2595bf5`, checkout `3ce1bfc`, paused cron, no
-  active cycle or owned worktree, and native 11/11 diagnosis
+- pre-install live precondition: controller `2595bf5`, checkout `3ce1bfc`, paused
+  cron, no active cycle or owned worktree, and native 11/11 diagnosis
 
-The normative setup guide now agrees with that live precondition. No controller,
-gateway, profile evidence, GitHub issue, Kanban task, cron job, worktree,
-attended destination, or remote ref changed while preparing the packet.
+The approved Phase 1 apply installed controller `3ce1bfc` through a verified
+local detached clone, retained clean rollback `2595bf5`, atomically rebound both
+mode-`0600` controller evidence files, restarted the gateway, and created exact
+open issues #9/#10 without ready or claimed labels/events. Standalone and native
+help expose strict comparison admission; both packs validate; both live diagnosis
+routes pass 11/11; reconciliation job `1847b1b1e14b` is paused; no cycle or owned
+worktree exists. No readiness, admission, plan approval, attended delivery,
+retention, commit/push of experiment output, finding publication, release,
+promotion, or remote-ref change occurred.
 
 ## Phase 2 — Run the Addyosmani control workflow
 
