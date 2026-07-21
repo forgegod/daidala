@@ -231,6 +231,21 @@ class WorkflowService:
         """Record a new plan revision and invalidate approval."""
         observed = self.store.get_with_token(workflow_id)
         previous = observed.ledger
+        expected_relative_path = self._workspace.stage_artifact_relative_path(
+            stage=WorkflowStage.PLAN,
+            policy_revision=previous.policy_revision,
+            plan_revision=previous.plan_revision + 1,
+            filename="plan.md",
+        )
+        expected_path = self._workspace.artifact_path(workflow_id, expected_relative_path)
+        if Path(path).resolve() != Path(expected_path).resolve():
+            raise ServiceError("replacement plan path does not match its revision identity")
+        try:
+            stored_digest = hashlib.sha256(Path(expected_path).read_bytes()).hexdigest()
+        except OSError as error:
+            raise ServiceError("replacement plan artifact cannot be read") from error
+        if digest != stored_digest:
+            raise ServiceError("replacement plan digest does not match artifact content")
         invalidated = invalidate_approval(previous, invalidated_at=self._clock())
         if invalidated is not previous:
             previous = self.store.update(
@@ -405,7 +420,13 @@ class WorkflowService:
             WorkflowStage.PLAN: "plan.md",
             WorkflowStage.REVIEW: "review.md",
         }[stage]
-        artifact = self._workspace.write_artifact(workflow_id, filename, content)
+        relative_path = self._workspace.stage_artifact_relative_path(
+            stage=stage,
+            policy_revision=observed.ledger.policy_revision,
+            plan_revision=observed.ledger.plan_revision,
+            filename=filename,
+        )
+        artifact = self._workspace.write_artifact(workflow_id, relative_path, content)
         updated = record_artifact(
             observed.ledger,
             stage=stage,
@@ -456,12 +477,22 @@ class WorkflowService:
         changed_paths = self._workspace.changed_paths(ledger.worktree_path)
         artifact = self._workspace.write_artifact(
             workflow_id,
-            "implementation.diff",
+            self._workspace.stage_artifact_relative_path(
+                stage=WorkflowStage.IMPLEMENT,
+                policy_revision=ledger.policy_revision,
+                plan_revision=ledger.plan_revision,
+                filename="implementation.diff",
+            ),
             diff,
         )
         self._workspace.write_json_artifact(
             workflow_id,
-            "implementation-paths.json",
+            self._workspace.stage_artifact_relative_path(
+                stage=WorkflowStage.IMPLEMENT,
+                policy_revision=ledger.policy_revision,
+                plan_revision=ledger.plan_revision,
+                filename="implementation-paths.json",
+            ),
             {"changed_paths": list(changed_paths)},
         )
         updated = record_artifact(
@@ -495,7 +526,12 @@ class WorkflowService:
         output_digest = hashlib.sha256(output.encode("utf-8")).hexdigest()
         artifact = self._workspace.write_artifact(
             workflow_id,
-            f"verification-{output_digest}.txt",
+            self._workspace.stage_artifact_relative_path(
+                stage=WorkflowStage.VERIFY,
+                policy_revision=observed.ledger.policy_revision,
+                plan_revision=observed.ledger.plan_revision,
+                filename=f"verification-{output_digest}.txt",
+            ),
             output,
         )
         updated = record_verification(
@@ -631,7 +667,12 @@ class WorkflowService:
                 raise ExecutionError("workflow has no Daidala-owned implementation worktree")
             implementation = self._workspace.read_json_artifact(
                 workflow_id,
-                "implementation-paths.json",
+                self._workspace.stage_artifact_relative_path(
+                    stage=WorkflowStage.IMPLEMENT,
+                    policy_revision=ledger.policy_revision,
+                    plan_revision=ledger.plan_revision,
+                    filename="implementation-paths.json",
+                ),
             )
             changed_paths = implementation.get("changed_paths")
             if not isinstance(changed_paths, list) or not all(
@@ -650,7 +691,12 @@ class WorkflowService:
             }
             artifact = self._workspace.write_json_artifact(
                 workflow_id,
-                "delivery.json",
+                self._workspace.stage_artifact_relative_path(
+                    stage=WorkflowStage.DELIVER,
+                    policy_revision=ledger.policy_revision,
+                    plan_revision=ledger.plan_revision,
+                    filename="delivery.json",
+                ),
                 payload,
             )
             ledger = record_artifact(

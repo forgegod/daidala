@@ -101,12 +101,36 @@ in this order; a later step must not be used to waive an earlier blocker.
 | 12 | Create the approved script-only reconciliation job, then run the separately approved duplicate-tick probe. | Profile-local wrapper, non-secret digest evidence, immutable tick results, and Hermes cron metadata. | Pass; outcomes are `admitted` then `replayed` for one cycle and receipt; exactly one no-agent job is paused on `every 15m` with infinite repeat. |
 | 13 | Apply the separately approved terminal probe cancellation. | GitHub issue, workflow cards, attended notification, and mode-`0600` cancellation receipts. | Pass at preview `9deb8cef`; issue #4 is closed not planned, both cards are archived, replay converges, and native plus standalone diagnosis pass 11/11. |
 | 14 | Run one separately selected Phase 5C improvement through measurement and retention. | Published issue, workflow artifacts, owned worktrees, and one approved target diff. | Pass; implementation `401f3dfe` is retained, completion `f9f5566e` closed issue #5 completed, both diagnosis routes pass 11/11, and the cron remains paused. |
-| 15 | Verify and separately decide whether to retain the non-executable approval-gate candidate. | Retained controller revision and rollback evidence; live workflow remains separately gated. | Pass for installation `9f380a6` with 11/11 diagnosis and paused cron; issues #6 and #7 remain unready and the controlled approval probe is pending. |
+| 15 | Verify and separately decide whether to retain the non-executable approval-gate candidate. | Retained controller revision and rollback evidence; live workflow remains separately gated. | Pass for installation `9f380a6` with 11/11 diagnosis and paused cron; direct probe `tc-f06-direct-approval-probe-v2` rejected worker approval without mutation, created the exact post-gate graph only after attended approval, then cancelled cleanly. Issue #6 is closed completed; issue #7 remains unready. |
 
 The operator owns browser authorization, credential creation, attended-channel
 confirmation, setup approval, and later cycle approval. The agent may select a
 verified revision and perform approved mechanical setup, but it must not infer
 credentials, invent receipts, or silently start UC-01.
+
+### Inspect revision-addressed workflow artifacts
+
+A controller revision that supports immutable stage evidence stores it under:
+
+```text
+<profile-data-root>/daidala/workflows/<workflow-id>/artifacts/
+  policy-<zero-padded-revision>/
+    define.md
+    plan-<zero-padded-revision>/
+      plan.md
+      implementation.diff
+      implementation-paths.json
+      verification-<sha256>.txt
+      review.md
+      delivery.json
+```
+
+Use the ledger's exact artifact path and digest when inspecting evidence. An
+identical retry converges on the existing bytes. A retry with different bytes
+at the same revision path is a conflict: stop and inspect the ledger and file;
+do not overwrite, delete, rename, copy forward, or create a `current`/`latest`
+alias. Missing historical artifacts are blockers and are never reconstructed
+from another revision.
 
 ## 1. Run the non-mutating preflight
 

@@ -9,6 +9,7 @@ import pytest
 
 from daidala import schemas, tools
 from daidala.errors import PolicyViolationError
+from daidala.execution import ExecutionWorkspace
 from daidala.kanban import KanbanGraphAdapter
 from daidala.packs import load_pack
 from daidala.service import ServiceError, WorkflowService
@@ -401,13 +402,48 @@ def test_approve_binds_exact_digest_and_service_replacement_invalidates_it(
     assert approved["success"] is True
     assert approved["workflow"]["approval"]["plan_digest"] == plan.digest
 
+    before_replacement = service.status(workflow_id)
+    with pytest.raises(ServiceError, match="revision identity"):
+        service.replace_plan(
+            workflow_id,
+            path=plan.path,
+            digest=plan.digest,
+        )
+    assert service.status(workflow_id) == before_replacement
+
+    workspace = ExecutionWorkspace(service.store.data_root)
+    replacement_path = workspace.stage_artifact_relative_path(
+        stage=WorkflowStage.PLAN,
+        policy_revision=0,
+        plan_revision=1,
+        filename="plan.md",
+    )
+    replacement_artifact = workspace.write_artifact(
+        workflow_id,
+        replacement_path,
+        "# Plan v2\n",
+    )
+    with pytest.raises(ServiceError, match="digest"):
+        service.replace_plan(
+            workflow_id,
+            path=replacement_artifact.path,
+            digest="0" * 64,
+        )
+    assert service.status(workflow_id) == before_replacement
     replacement = service.replace_plan(
         workflow_id,
-        path="artifacts/plan-v2.md",
-        digest="plan-v2",
+        path=replacement_artifact.path,
+        digest=replacement_artifact.digest,
     )
     assert replacement.plan_revision == 1
     assert replacement.approval is None
+    assert Path(plan.path).read_text(encoding="utf-8") == "# Plan\n"
+    current_plan = replacement.artifact_for(WorkflowStage.PLAN)
+    assert current_plan is not None
+    assert current_plan.digest == replacement_artifact.digest
+    assert Path(current_plan.path).relative_to(
+        service.store.data_root / "workflows" / workflow_id
+    ).as_posix() == "artifacts/policy-0000/plan-0001/plan.md"
     with pytest.raises(PolicyViolationError, match="approval"):
         service.prepare_implementation(workflow_id)
 

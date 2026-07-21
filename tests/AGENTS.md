@@ -71,6 +71,9 @@ completeness without touching a real Hermes profile.
   child environments, and complete, missing, malformed, denied, unavailable,
   and partial host states.
 - Temporary Git worktree tests for the approved end-to-end executable slice.
+- Revision-addressed artifact tests cover policy and plan supersession, exact
+  ledger references, historical-byte retention, create-or-verify replay,
+  conflicting content, unsafe relative paths, and symlink rejection.
 - Cross-pack fixture tests proving Addyosmani and AI-DLC use the same engine path
   and leave activation-gated structured handoff history across all executable
   cards.
@@ -111,6 +114,9 @@ completeness without touching a real Hermes profile.
 - Tool and CLI constraint-source coverage must prove inline/file parity, exact
   skill-directory digest verification, strict single-fence extraction, and
   identical standalone/native service dispatch.
+- Artifact persistence coverage must prove every stage resolves its current
+  policy/plan directory and that retries never overwrite or infer historical
+  evidence.
 - Every new packaged resource requires a wheel-content assertion.
 
 ## Verification

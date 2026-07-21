@@ -51,8 +51,9 @@ received attended approval. Phase 1 then produced repository-verified candidate
 digest `ddef04b37f011c4d5b9062c2c7344152f1d44900a834f0e551a2c0e30d78b1ce`;
 retention and exact detached controller installation at `9f380a6` are complete,
 controlled evidence retains `TC-F06-01` as `pass`, issue #6 is closed completed,
-and native and standalone diagnosis pass 11/11. Increment B is next and remains
-separately gated.
+and native and standalone diagnosis pass 11/11. Increment B is repository-
+verified at candidate diff `4babce8a` under exact scope digest `d531546d`;
+retention and installation remain separately gated.
 The resumable execution record is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 The two failed Phase 5C control cases are explicit follow-up actions in
@@ -77,7 +78,7 @@ The two failed Phase 5C control cases are explicit follow-up actions in
 | 5B — Paused reconciliation cron and controlled tick | done | Two approved executions produced `admitted` then `replayed` for one issue, claim, cycle, graph, and attended receipt. The no-agent job is paused on `every 15m`; no worktree, approval, commit, or push exists. |
 | 5B-C — Deterministic probe cancellation | done | Exact detached revision `550671c`, approved preview `9deb8cef`, terminal digest `99fe86b3`, receipt `telegram:37`, identical replay, archived cards, and 11/11 diagnosis prove deterministic closeout. |
 | 5C — Approved improvement and findings synchronization | done | Issue #5 retained strict v2 controller-revision evidence; completion `f9f5566e` released the claim and delivered `telegram:44`. The two control findings were ranged into Phase 5C-R. |
-| 5C-R — Control-plane findings remediation | in-progress | Child Phase 2 is complete: controller `9f380a6`, controlled manifest `0db444d6`, closed issue #6, 11/11 diagnosis, clean repository, and paused cron retain `TC-F06-01` as `pass`. Increment B is next. |
+| 5C-R — Control-plane findings remediation | in-progress | Child Phase 3 candidate `4babce8a` passes 411 tests and the complete gate under scope `d531546d`; Increment B retention, installation, and controlled evidence remain separately gated. |
 | 5D — UC-03 pack evaluation | blocked | Requires Phase 5C-R done, one canonical paired fixture, one frozen baseline, one approved candidate skill set, and separate cycle approval. |
 | 6 — Version-aware re-evaluation | blocked | Requires the approved Phase 5 work; candidate Hermes identity is selected here, not invented earlier. |
 | 7 — Repository gate and documentation | blocked | Requires the preceding live evaluation and comparison evidence. |

@@ -33,7 +33,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `controller.py` | Mutation-free admission preview, replay-safe cycle admission, manifest snapshots, deterministic workflow binding, immutable cycle storage, and receipt validation. |
 | `project_cycles.py` | Dry-run-first production project-cycle admission/completion/cancellation/reconciliation, prerequisite enforcement, stable one-item selection, exact identity confirmation, and profile-local runtime wiring. |
 | `reconciliation.py` | Two-authority claim recovery evidence, strict reconciliation previews/results, mode-`0600` content-addressed tick records, and local pending-to-published finding synchronization. |
-| `execution.py` | Profile-local artifacts, detached worktrees, and diff capture. |
+| `execution.py` | Immutable revision-addressed profile-local artifacts, detached worktrees, and diff capture. |
 | `kanban.py` | Public host-boundary adapter for the idempotent, approval-gated Hermes card graph. |
 | `schemas.py` | Tool schemas exposed to the model. |
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
@@ -239,6 +239,12 @@ fails locally rather than in production.
   recreates a fresh define-to-plan graph under the new policy revision.
 - Stage artifacts and activation chains are policy-revision scoped so regenerated
   definition and plan evidence cannot resolve to a historical policy revision.
+- Definition artifacts live under one zero-padded policy revision; plan and all
+  post-plan artifacts additionally live under one zero-padded plan revision.
+  Generic text and JSON writes are create-or-verify: identical replay converges,
+  while changed bytes, unsafe relative paths, and symlink aliases fail closed.
+  The ledger stores the exact path and digest; no mutable current/latest alias or
+  historical-artifact inference is permitted.
 - The policy store uses one fresh schema and does not inspect or migrate the
   unreleased workflow-state database.
 - The engine never substitutes guessed data when a model, skill, or verifier fails.

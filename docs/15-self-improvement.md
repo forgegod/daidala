@@ -14,16 +14,19 @@ quarantine; and increment/DOX reconciliation.
 Three attended manual cycles exercised the detached controller's admission,
 approval, evaluation, delivery, replay, and terminal completion paths. The
 shared dry-run-first CLI exposes deterministic reconciliation with an exact
-preview-digest apply gate. Exact detached revision `9d9f4f6` is now installed in
-the persistent controller and exposes digest-bound cancellation and completion
+preview-digest apply gate. Exact detached revision `9f380a6` is installed in
+the persistent controller and exposes ledger-native attended approval plus
+digest-bound cancellation and completion
 through native and standalone command surfaces. One matching no-agent
 reconciliation cron is paused on its intended 15-minute schedule after two
 separately approved controlled runs proved admission/replay convergence on one
 cycle. Separately approved cancellation closed issue #4 not planned. Phase 5C
 then retained the controller-revision evidence increment, completed published
 issue #5 with attended receipt `telegram:44`, and returned both diagnosis routes
-to 11/11. Version-aware comparison and publication of the two new control-plane
-findings remain blocked by later approval gates.
+to 11/11. The controlled approval probe then closed issue #6 completed without
+running an implementation worker. Immutable workflow-artifact remediation for
+issue #7 is repository-verified; retention and installation remain separately
+gated.
 
 Authoritative implementation sources are `daidala/projects.py`,
 `daidala/registrations.py`, `daidala/cycles.py`, `daidala/increments.py`,
@@ -189,6 +192,31 @@ Concrete invalidation examples:
 | Change Addyosmani to AI-DLC | New pack identity and cycle/approval. |
 | Change baseline commit | New cycle. |
 | Change candidate Daidala or Hermes artifact | New comparison cycle and approval. |
+
+### Revision-addressed workflow artifacts
+
+Workflow stage evidence is stored below the profile-local workflow artifact
+root with explicit zero-padded revision identity:
+
+```text
+artifacts/policy-0002/define.md
+artifacts/policy-0002/plan-0003/plan.md
+artifacts/policy-0002/plan-0003/implementation.diff
+artifacts/policy-0002/plan-0003/implementation-paths.json
+artifacts/policy-0002/plan-0003/verification-<sha256>.txt
+artifacts/policy-0002/plan-0003/review.md
+artifacts/policy-0002/plan-0003/delivery.json
+```
+
+Definitions are scoped to the policy revision. Plans and every post-plan stage
+are scoped to both policy and plan revision. The ledger records the exact path
+and SHA-256 digest for each current and historical reference.
+
+Text and JSON stage writes are create-or-verify. Replaying identical bytes at
+the same revision path returns the existing artifact; different bytes at that
+path are a conflict and stop before ledger mutation. Daidala does not create a
+mutable `current`/`latest` file or symlink, copy old fixed-name files forward,
+or infer missing historical evidence.
 
 ## Modes
 

@@ -248,6 +248,11 @@ def run_fixture_tests(worktree: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
+def artifact_relative_path(service: WorkflowService, workflow_id: str, path: str) -> str:
+    root = service.store.data_root / "workflows" / workflow_id
+    return Path(path).relative_to(root).as_posix()
+
+
 def test_thin_workflow_delivers_verified_uncommitted_diff(
     service: FixtureWorkflowService,
     target_repository: Path,
@@ -293,6 +298,12 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
     definition = planned.artifact_for(WorkflowStage.DEFINE)
     plan = planned.artifact_for(WorkflowStage.PLAN)
     assert definition is not None and plan is not None
+    assert artifact_relative_path(service, workflow_id, definition.path) == (
+        "artifacts/policy-0000/define.md"
+    )
+    assert artifact_relative_path(service, workflow_id, plan.path) == (
+        "artifacts/policy-0000/plan-0000/plan.md"
+    )
     assert planned.card_for(WorkflowStage.APPROVAL) is None
     assert len(fake_kanban_host.cards) == 2
     complete_stage(WorkflowStage.DEFINE, definition.digest)
@@ -316,6 +327,11 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
     verifying = service.capture_implementation(workflow_id)
     implementation = verifying.artifact_for(WorkflowStage.IMPLEMENT)
     assert implementation is not None
+    assert artifact_relative_path(service, workflow_id, implementation.path) == (
+        "artifacts/policy-0000/plan-0000/implementation.diff"
+    )
+    assert implementation.path.endswith("/implementation.diff")
+    assert Path(implementation.path).with_name("implementation-paths.json").is_file()
     complete_stage(WorkflowStage.IMPLEMENT, implementation.digest)
     diff = Path(implementation.path).read_text(encoding="utf-8")
     assert "return 2" in diff
@@ -331,6 +347,11 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
         output=verification.stdout + verification.stderr,
     )
     assert reviewing.verification_evidence[-1].exit_code == 0
+    assert artifact_relative_path(
+        service,
+        workflow_id,
+        reviewing.verification_evidence[-1].output_reference,
+    ).startswith("artifacts/policy-0000/plan-0000/verification-")
     complete_stage(
         WorkflowStage.VERIFY,
         reviewing.verification_evidence[-1].output_digest,
@@ -344,6 +365,9 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
     )
     review = reviewed.artifact_for(WorkflowStage.REVIEW)
     assert review is not None
+    assert artifact_relative_path(service, workflow_id, review.path) == (
+        "artifacts/policy-0000/plan-0000/review.md"
+    )
     complete_stage(WorkflowStage.REVIEW, review.digest)
     worktree_head = subprocess.run(
         ["git", "-C", str(worktree), "rev-parse", "HEAD"],
@@ -356,6 +380,9 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
 
     delivery = completed.artifact_for(WorkflowStage.DELIVER)
     assert delivery is not None
+    assert artifact_relative_path(service, workflow_id, delivery.path) == (
+        "artifacts/policy-0000/plan-0000/delivery.json"
+    )
     complete_stage(WorkflowStage.DELIVER, delivery.digest)
     payload = json.loads(Path(delivery.path).read_text(encoding="utf-8"))
     assert payload["changed_paths"] == ["calculator.py", "notes.txt"]
@@ -509,6 +536,9 @@ def test_constraint_replacement_invalidates_and_recreates_graph_recoverably(
     approved = service.approve(workflow_id, plan_digest)
     old_cards = {card.task_id for card in approved.card_references}
     old_artifacts = approved.artifacts
+    old_artifact_bytes = {
+        artifact.path: Path(artifact.path).read_bytes() for artifact in old_artifacts
+    }
     assert approved.worktree_path is not None
     old_worktree = Path(approved.worktree_path)
 
@@ -559,7 +589,22 @@ def test_constraint_replacement_invalidates_and_recreates_graph_recoverably(
         content="# Revised plan\n",
     )
     plan = planned.artifact_for(WorkflowStage.PLAN)
-    assert plan is not None
+    definition = planned.artifact_for(WorkflowStage.DEFINE)
+    assert definition is not None and plan is not None
+    assert artifact_relative_path(service, workflow_id, definition.path) == (
+        "artifacts/policy-0001/define.md"
+    )
+    assert artifact_relative_path(service, workflow_id, plan.path) == (
+        "artifacts/policy-0001/plan-0000/plan.md"
+    )
+    assert all(
+        Path(path).read_bytes() == content
+        for path, content in old_artifact_bytes.items()
+    )
+    artifact_root = service.store.data_root / "workflows" / workflow_id / "artifacts"
+    assert not (artifact_root / "define.md").exists()
+    assert not (artifact_root / "plan.md").exists()
+    assert not any(path.is_symlink() for path in artifact_root.rglob("*"))
     reapproved = service.approve(workflow_id, plan.digest)
     assert reapproved.approval is not None
     assert reapproved.approval.constraints_revision == 1
@@ -876,3 +921,87 @@ def test_constraint_artifact_creation_is_exclusive_and_verified(tmp_path: Path) 
     assert workspace.read_constraints_artifact("workflow-constraints", stored.path) == artifact
     with pytest.raises(ExecutionError, match="already exists"):
         workspace.write_constraints_artifact("workflow-constraints", artifact)
+
+
+def test_revision_artifact_paths_are_validated_immutable_and_replay_safe(
+    tmp_path: Path,
+) -> None:
+    workspace = ExecutionWorkspace(tmp_path / "data")
+    relative = workspace.stage_artifact_relative_path(
+        stage=WorkflowStage.PLAN,
+        policy_revision=2,
+        plan_revision=3,
+        filename="plan.md",
+    )
+
+    assert relative == "policy-0002/plan-0003/plan.md"
+    with pytest.raises(ExecutionError, match="not executable"):
+        workspace.stage_artifact_relative_path(
+            stage=WorkflowStage.APPROVAL,
+            policy_revision=2,
+            plan_revision=3,
+            filename="approval.md",
+        )
+    with pytest.raises(ExecutionError, match="non-negative"):
+        workspace.stage_artifact_relative_path(
+            stage=WorkflowStage.PLAN,
+            policy_revision=-1,
+            plan_revision=3,
+            filename="plan.md",
+        )
+    with pytest.raises(ExecutionError, match="one relative path segment"):
+        workspace.stage_artifact_relative_path(
+            stage=WorkflowStage.PLAN,
+            policy_revision=2,
+            plan_revision=3,
+            filename="nested/plan.md",
+        )
+    first = workspace.write_artifact("workflow-artifacts", relative, "# Plan\n")
+    replayed = workspace.write_artifact("workflow-artifacts", relative, "# Plan\n")
+
+    assert replayed == first
+    assert Path(first.path).read_text(encoding="utf-8") == "# Plan\n"
+    assert not tuple(Path(first.path).parent.glob(".daidala-artifact-*"))
+    with pytest.raises(ExecutionError, match="content conflicts"):
+        workspace.write_artifact("workflow-artifacts", relative, "# Changed\n")
+    assert Path(first.path).read_text(encoding="utf-8") == "# Plan\n"
+
+    json_relative = workspace.stage_artifact_relative_path(
+        stage=WorkflowStage.DELIVER,
+        policy_revision=2,
+        plan_revision=3,
+        filename="delivery.json",
+    )
+    json_first = workspace.write_json_artifact(
+        "workflow-artifacts", json_relative, {"committed": False}
+    )
+    assert workspace.write_json_artifact(
+        "workflow-artifacts", json_relative, {"committed": False}
+    ) == json_first
+    with pytest.raises(ExecutionError, match="content conflicts"):
+        workspace.write_json_artifact(
+            "workflow-artifacts", json_relative, {"committed": True}
+        )
+
+    linked = Path(workspace.artifact_path("workflow-artifacts", "linked.md"))
+    linked.parent.mkdir(parents=True, exist_ok=True)
+    linked.symlink_to(first.path)
+    with pytest.raises(ExecutionError, match="symlink"):
+        workspace.write_artifact("workflow-artifacts", "linked.md", "# Plan\n")
+
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    workflow_link = tmp_path / "data" / "workflows" / "workflow-symlink"
+    workflow_link.symlink_to(outside, target_is_directory=True)
+    with pytest.raises(ExecutionError, match="root contains a symlink"):
+        workspace.write_artifact("workflow-symlink", "blocked.md", "blocked")
+
+    for malformed in (
+        "",
+        "/absolute.md",
+        "../escape.md",
+        "a/../../escape.md",
+        "a" * 513,
+    ):
+        with pytest.raises(ExecutionError, match="relative path"):
+            workspace.write_artifact("workflow-artifacts", malformed, "blocked")

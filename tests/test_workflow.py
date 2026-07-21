@@ -166,14 +166,14 @@ def make_planned() -> WorkflowLedger:
     ledger = record_artifact(
         with_activation(make_ledger(), WorkflowStage.DEFINE),
         stage=WorkflowStage.DEFINE,
-        path="artifacts/define.md",
+        path="artifacts/policy-0000/define.md",
         digest="define-v1",
         recorded_at=NOW + timedelta(minutes=1),
     )
     return record_artifact(
         with_activation(ledger, WorkflowStage.PLAN),
         stage=WorkflowStage.PLAN,
-        path="artifacts/plan.md",
+        path="artifacts/policy-0000/plan-0000/plan.md",
         digest="plan-v1",
         recorded_at=NOW + timedelta(minutes=2),
     )
@@ -284,7 +284,7 @@ def test_approval_is_exact_and_plan_replacement_invalidates_it() -> None:
     )
     replacement = replace_plan(
         approved,
-        path="artifacts/plan-v2.md",
+        path="artifacts/policy-0000/plan-0001/plan.md",
         digest="plan-v2",
         replaced_at=NOW + timedelta(minutes=4),
     )
@@ -293,6 +293,14 @@ def test_approval_is_exact_and_plan_replacement_invalidates_it() -> None:
     assert replacement.current_plan_digest == "plan-v2"
     assert replacement.approval is None
     assert replacement.verification_evidence == ()
+    assert [
+        artifact.path
+        for artifact in replacement.artifacts
+        if artifact.stage is WorkflowStage.PLAN
+    ] == [
+        "artifacts/policy-0000/plan-0000/plan.md",
+        "artifacts/policy-0000/plan-0001/plan.md",
+    ]
 
 
 def test_card_mapping_is_idempotent_and_rejects_conflicts() -> None:

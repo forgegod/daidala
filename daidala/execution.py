@@ -4,16 +4,19 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import subprocess
+import tempfile
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 from .errors import WorkflowError
-from .state import ActivationManifest, WorkflowConstraintsArtifact
+from .state import ActivationManifest, WorkflowConstraintsArtifact, WorkflowStage
 
 _WORKFLOW_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+_ARTIFACT_RELATIVE_PATH_MAX = 512
 
 
 class ExecutionError(WorkflowError):
@@ -39,26 +42,84 @@ class ExecutionWorkspace:
     def write_artifact(
         self,
         workflow_id: str,
-        filename: str,
+        relative_path: str,
         content: str,
     ) -> StoredArtifact:
-        directory = self._workflow_root(workflow_id) / "artifacts"
-        directory.mkdir(parents=True, exist_ok=True)
-        path = directory / filename
-        path.write_text(content, encoding="utf-8")
+        if not isinstance(content, str):
+            raise ExecutionError("workflow artifact content must be text")
+        path = self._artifact_path(workflow_id, relative_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        encoded = content.encode("utf-8")
+        temporary_path: Path | None = None
+        try:
+            descriptor, temporary = tempfile.mkstemp(
+                dir=path.parent,
+                prefix=".daidala-artifact-",
+            )
+            temporary_path = Path(temporary)
+            with os.fdopen(descriptor, "wb") as stream:
+                stream.write(encoded)
+            try:
+                os.link(temporary_path, path)
+            except FileExistsError as exists_error:
+                self._verify_existing_artifact(
+                    path,
+                    relative_path=relative_path,
+                    expected=encoded,
+                    exists_error=exists_error,
+                )
+        except OSError as error:
+            raise ExecutionError(
+                f"cannot create workflow artifact {relative_path!r}"
+            ) from error
+        finally:
+            if temporary_path is not None:
+                temporary_path.unlink(missing_ok=True)
         return StoredArtifact(
             path=str(path),
-            digest=hashlib.sha256(content.encode("utf-8")).hexdigest(),
+            digest=hashlib.sha256(encoded).hexdigest(),
         )
 
     def write_json_artifact(
         self,
         workflow_id: str,
-        filename: str,
+        relative_path: str,
         payload: dict[str, Any],
     ) -> StoredArtifact:
         content = json.dumps(payload, indent=2, sort_keys=True) + "\n"
-        return self.write_artifact(workflow_id, filename, content)
+        return self.write_artifact(workflow_id, relative_path, content)
+
+    def stage_artifact_relative_path(
+        self,
+        *,
+        stage: WorkflowStage,
+        policy_revision: int,
+        plan_revision: int,
+        filename: str,
+    ) -> str:
+        """Return one validated policy/plan-scoped stage artifact path."""
+        if not isinstance(stage, WorkflowStage) or stage is WorkflowStage.APPROVAL:
+            raise ExecutionError("workflow artifact stage is not executable")
+        for name, revision in (
+            ("policy", policy_revision),
+            ("plan", plan_revision),
+        ):
+            if isinstance(revision, bool) or not isinstance(revision, int) or revision < 0:
+                raise ExecutionError(f"workflow artifact {name} revision must be non-negative")
+        leaf = self._safe_artifact_relative_path(filename)
+        if len(leaf.parts) != 1:
+            raise ExecutionError("workflow artifact filename must be one relative path segment")
+        policy = f"policy-{policy_revision:04d}"
+        relative = (
+            PurePosixPath(policy, filename)
+            if stage is WorkflowStage.DEFINE
+            else PurePosixPath(policy, f"plan-{plan_revision:04d}", filename)
+        )
+        return self._safe_artifact_relative_path(relative.as_posix()).as_posix()
+
+    def artifact_path(self, workflow_id: str, relative_path: str) -> str:
+        """Return the validated absolute path for one workflow artifact."""
+        return str(self._artifact_path(workflow_id, relative_path))
 
     def write_activation_manifest(
         self,
@@ -157,15 +218,15 @@ class ExecutionWorkspace:
             raise ExecutionError("cannot read activation manifest") from error
         return ActivationManifest.from_dict(payload)
 
-    def read_json_artifact(self, workflow_id: str, filename: str) -> dict[str, Any]:
+    def read_json_artifact(self, workflow_id: str, relative_path: str) -> dict[str, Any]:
         """Read a Daidala-owned JSON sidecar from the workflow artifact root."""
-        path = self._workflow_root(workflow_id) / "artifacts" / filename
+        path = self._artifact_path(workflow_id, relative_path)
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as error:
-            raise ExecutionError(f"cannot read workflow artifact {filename!r}") from error
+            raise ExecutionError(f"cannot read workflow artifact {relative_path!r}") from error
         if not isinstance(payload, dict):
-            raise ExecutionError(f"workflow artifact {filename!r} must be an object")
+            raise ExecutionError(f"workflow artifact {relative_path!r} must be an object")
         return payload
 
     def create_worktree(
@@ -237,6 +298,64 @@ class ExecutionWorkspace:
 
     def _workflow_root(self, workflow_id: str) -> Path:
         return self.data_root / "workflows" / self._safe_id(workflow_id)
+
+    def _artifact_path(self, workflow_id: str, relative_path: str) -> Path:
+        relative = self._safe_artifact_relative_path(relative_path)
+        unresolved_root = self._workflow_root(workflow_id) / "artifacts"
+        current = unresolved_root
+        while current != self.data_root:
+            if current.is_symlink():
+                raise ExecutionError("workflow artifact root contains a symlink")
+            current = current.parent
+        root = unresolved_root.resolve()
+        path = root.joinpath(*relative.parts)
+        current = path
+        while current != root:
+            if current.is_symlink():
+                raise ExecutionError("workflow artifact relative path contains a symlink")
+            current = current.parent
+        resolved = path.resolve(strict=False)
+        if resolved != root and root not in resolved.parents:
+            raise ExecutionError("workflow artifact relative path escapes its workflow root")
+        return path
+
+    @staticmethod
+    def _verify_existing_artifact(
+        path: Path,
+        *,
+        relative_path: str,
+        expected: bytes,
+        exists_error: FileExistsError,
+    ) -> None:
+        try:
+            existing = path.read_bytes()
+        except OSError as read_error:
+            raise ExecutionError(
+                f"cannot verify workflow artifact {relative_path!r}"
+            ) from read_error
+        if existing != expected:
+            raise ExecutionError(
+                f"workflow artifact content conflicts: {relative_path!r}"
+            ) from exists_error
+
+    @staticmethod
+    def _safe_artifact_relative_path(relative_path: str) -> PurePosixPath:
+        if (
+            not isinstance(relative_path, str)
+            or not relative_path
+            or len(relative_path) > _ARTIFACT_RELATIVE_PATH_MAX
+            or "\\" in relative_path
+            or "\x00" in relative_path
+        ):
+            raise ExecutionError("workflow artifact relative path is malformed or oversized")
+        path = PurePosixPath(relative_path)
+        if (
+            path.is_absolute()
+            or path.as_posix() != relative_path
+            or any(part in {"", ".", ".."} for part in path.parts)
+        ):
+            raise ExecutionError("workflow artifact relative path is malformed or unsafe")
+        return path
 
     @staticmethod
     def _safe_id(workflow_id: str) -> str:
