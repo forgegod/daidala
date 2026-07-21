@@ -111,7 +111,9 @@ Status: `not-run`. The operator selected the pinned current/default
 comparison-admission prerequisite passes the complete repository gate. Exact
 packet `c0cdfefb6740752d96dd2864f751c5fda25292bb26d889764e593fccf2c8645e`
 is locally preflighted; detached controller `3ce1bfc` is installed; exact open
-issues #9/#10 have byte-identical payloads and no ready/claimed labels or events.
+issue #9 is the `current-control`/`addyosmani` run and issue #10 is the
+`candidate`/`aidlc` run. They have byte-identical payloads and no ready/claimed
+labels or events; selected pack remains admission-bound rather than issue-bound.
 Cycles, plans, cleanup, retention, publication, push, release, and promotion
 remain separately gated in the
 [Phase 5D child plan](../../plans/2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md).

@@ -208,7 +208,10 @@ Prepared approval packet:
 The approved Phase 1 apply installed controller `3ce1bfc` through a verified
 local detached clone, retained clean rollback `2595bf5`, atomically rebound both
 mode-`0600` controller evidence files, restarted the gateway, and created exact
-open issues #9/#10 without ready or claimed labels/events. Standalone and native
+open issue #9 for packet role `current-control`/selected pack `addyosmani` and
+issue #10 for packet role `candidate`/selected pack `aidlc`, without ready or
+claimed labels/events. Their GitHub payloads remain byte-identical; selected pack
+is bound only at admission. Standalone and native
 help expose strict comparison admission; both packs validate; both live diagnosis
 routes pass 11/11; reconciliation job `1847b1b1e14b` is paused; no cycle or owned
 worktree exists. No readiness, admission, plan approval, attended delivery,
