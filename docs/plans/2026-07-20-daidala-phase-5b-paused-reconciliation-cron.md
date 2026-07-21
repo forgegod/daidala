@@ -5,15 +5,16 @@ exact detached Daidala controller revision, create one profile-local Hermes cron
 job that remains paused, and retain evidence that two controlled invocations
 admit at most one maintainer-ready issue and converge on one workflow.
 
-**Status:** in-progress — Phase 0 is complete at merge checkpoint `bdd2baf` and
+**Status:** complete — Phase 0 is complete at merge checkpoint `bdd2baf` and
 Phase 1 is complete at checkpoint `1d6a909`; Phase 2 is complete at the shared
 dry-run-first CLI checkpoint `5472cc1`. Phase 3 repository reconciliation and
 the complete release gate are complete at the repository checkpoint.
 Phase 4 is complete: the controller runs clean detached revision `80dd73e`,
-native and standalone live diagnosis pass 11/11, and rollback revision
-`31331e8` remains retained outside the plugin scan root. Phase 5 is complete
-with one verified paused no-agent job and no execution attempts. GitHub mutation
-and controlled dispatch remain separately approval-gated.
+native and standalone live diagnosis passed 11/11 before admission, and rollback
+revision `31331e8` remains retained outside the plugin scan root. Phases 5 and 6 are
+complete: two separately approved job runs produced one admission and one replay
+for the same issue, claim, cycle, graph, and attended receipt. The job is paused
+again; later workflow stages remain separately approval-gated.
 
 ## Current state
 
@@ -24,9 +25,8 @@ and controlled dispatch remain separately approval-gated.
 - The integrated recovery line contributes the exercised admission replay,
   evaluator request, and cycle-completion implementation and tests without
   replacing the later Phase 4F/5A evidence on `main`.
-- Phase 5A is complete and Phase 5B is in progress in
-  `docs/plans/2026-07-13-daidala-self-improvement-loop.md:33-56`; no cron, new
-  cycle, retained change, or remote finding has been created by Phase 5B.
+- Phase 5A and Phase 5B are complete. Phase 5B created one paused cron and one
+  active probe cycle; it created no retained change or remote finding.
 - `daidala/reconciliation.py` now owns strict previews/results and immutable
   mode-`0600` tick evidence; `daidala/project_cycles.py` composes explicit
   prerequisite interpretation, completion-aware active ownership, stable
@@ -38,17 +38,19 @@ and controlled dispatch remain separately approval-gated.
   native reconciliation help. The controller profile runs exact clean detached
   revision `80dd73e`.
 - The complete repository, packaging, release-content, pack, link, lint, and
-  test gate passes with 388 tests. Native and standalone live diagnosis both
-  pass all eleven checks after Docker integration was restored; no remote ref
-  changed.
+  test gate passes with 388 tests. Native and standalone installation diagnosis
+  passed all eleven checks after Docker integration was restored. Current live
+  diagnosis intentionally reports only `SI-ACTIVE-CYCLE` blocked while the probe
+  workflow waits at its plan approval boundary; no remote ref changed.
 - `hermes -p daidala-self-improvement cron status` reports a running gateway and
   no active jobs. `cron list --all` reports exactly one paused no-agent job named
   `daidala-forgegod-daidala-reconciliation` on `every 15m`; its repeat is
-  infinite, script digest matches profile-local evidence, and run history is
-  empty.
-- The read-only query `gh-vault run --name ghcli -- gh issue list --repo
-  forgegod/daidala --state open --label daidala-si ...` currently returns an
-  empty list, so a controlled live tick has no existing issue to admit.
+  infinite, its script digest matches profile-local evidence, and exactly two
+  successful direct executions are retained.
+- Issue #4 has one claim comment and one claimed label. Its two content-addressed
+  tick results are `admitted` then `replayed`; both bind the same cycle and
+  attended receipt. The workflow has one two-card graph, no approval or worktree,
+  and records commit and push as false.
 - Hermes v0.18.2 supports create, pause, edit, run, and durable run history, but
   `hermes cron create --help` exposes no atomic create-paused option. A manual
   run also refuses a paused job (`tools/cronjob_tools.py:604-637` in the
@@ -86,8 +88,8 @@ before any later phase. The immediate run uses Hermes' at-most-once claim; the
 | 2 | Expose the dry-run-first operator surface | done (39 focused + 388 full tests) | Current-source native and standalone `project-cycle reconcile --help` agree; CLI tests exit 0; dry-run fixtures produce no mutation. |
 | 3 | Reconcile contracts and checkpoint the implementation | done (388 tests + complete release gate) | The complete repository gate exits 0; one reviewed repository checkpoint exists; no push occurs. |
 | 4 | Install and verify the exact controller revision | done (`80dd73e`; native + standalone 11/11) | Clean detached identity, both packs, reconciliation CLI, gateway restart, and both live reports pass; `31331e8` rollback remains outside the scan root and cron remains empty. |
-| 5 | Create the profile-local wrapper and paused cron | done (paused, no attempts) | `cron list --all` shows exactly one paused no-agent named job with infinite repeat; `cron runs <job>` is empty; the script digest matches profile-local evidence. |
-| 6 | Run and replay one controlled tick | pending | Two completed cron attempts yield one cycle/workflow, no duplicate claim or graph, attended receipts, and a still-paused job. |
+| 5 | Create the profile-local wrapper and paused cron | done | `cron list --all` shows exactly one paused no-agent named job with infinite repeat; its script digest matches profile-local evidence. |
+| 6 | Run and replay one controlled tick | done | Two completed executions yield one claim, cycle, workflow graph, and attended receipt; immutable outcomes are `admitted` then `replayed`, and the job is paused on `every 15m`. |
 
 Mark a phase `in-progress` while running it, `done (<sha-or-evidence>)` once its
 gate passes, and `pending` otherwise.

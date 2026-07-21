@@ -212,9 +212,10 @@ Unattended identity is therefore bound by the exact detached controller
 revision, the content digest of the profile-local script, the trusted
 registration, and the CLI reconciliation preview digest. Provider and model
 identity are not cron inputs for this no-agent composition. One digest-matched
-profile-local job now exists in paused no-agent mode with no execution attempts;
-running it remains separately approval-gated until the controlled duplicate-tick
-probe passes.
+profile-local job now exists in paused no-agent mode. Two separately approved
+direct runs produced `admitted` then `replayed` for one cycle without a duplicate
+claim, graph, or admission receipt. The job is paused again; unattended resume
+and later workflow stages remain separately approval-gated.
 
 ## Pattern B: event-driven webhooks
 

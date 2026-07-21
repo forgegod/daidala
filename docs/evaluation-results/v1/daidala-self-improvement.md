@@ -2,19 +2,22 @@
 
 ## Record status
 
-Phases 1 through 4F and Phase 5A reconciliation are complete. Detached
-controller revision `31331e8352208321ae819ad2464396f03207602b` completed one
-Addyosmani and one Aidlc UC-01 workflow. Both issues are closed as completed,
-their claims and owned worktrees are released, attended completion receipts are
-retained, and both deliveries record `committed: false` and `pushed: false`.
+Phases 1 through 4F, Phase 5A reconciliation, and the controlled Phase 5B
+reconciliation tick are complete. Detached controller revision
+`80dd73efa9a4e462304b71ba157b5e5c0172b793` completed one Addyosmani and one
+Aidlc UC-01 workflow, then admitted and replayed one separately approved
+reconciliation probe. The earlier issues remain closed and released. Probe issue
+#4 remains claimed by one active workflow at its plan approval boundary, with no
+worktree, approval, commit, or push.
 
 Each workflow independently changed only `calculator.py` and
 `test_calculator.py`, reproduced `AssertionError: 1 != 2` in the restricted
 baseline, passed its approved restricted candidate, and received an accepted
 `improved` review. The cross-pack comparison is nevertheless `incomparable`:
 the workflows used different repository baselines and different candidate test
-fixtures. No preferred pack, retained change, reconciliation cron, new cycle,
-or published finding is authorized by this record.
+fixtures. No preferred pack, retained change, or published finding is authorized
+by the Phase 5A comparison. Phase 5B authorizes only the retained paused cron and
+its one controlled active cycle.
 
 Limits: [`experiment-limits.yaml`](experiment-limits.yaml).
 Protocol: [`../../15-self-improvement.md`](../../15-self-improvement.md).
@@ -52,7 +55,7 @@ Repository tests cannot convert a blocked live probe into `pass`.
 | TC-F13-02 | Finding synchronization | Deduplicate stable finding identity and require a returned identity and URL before `published`. | Applying `daidala-si:ready` to generated findings. | pass |
 | TC-F14-01 | Version comparison | Compare exact supported and candidate Daidala/Hermes identities. | Updating the active runtime. | not-run |
 | TC-F15-01 | Controller isolation | Load candidate artifacts only in a fresh evaluator. | Candidate plugin loading in the persistent controller. | pass |
-| TC-F16-01 | Reconciliation | Duplicate ticks converge; missing board, dirty worktree, or uncertain claim blocks. | Recreating state from titles or prose. | not-run |
+| TC-F16-01 | Reconciliation | Duplicate ticks converge; missing board, dirty worktree, or uncertain claim blocks. | Recreating state from titles or prose. | pass |
 | TC-F17-01 | Metrics | Required deterministic and repeated thresholds govern retention eligibility; missing evidence is `incomparable`. | Retention from observational evidence alone. | pass |
 | TC-F18-01 | Producer provenance | Reject unknown skill producers, digest drift, duplicate entry IDs, and stale activation identity. | Worker self-assertion of an unactivated skill. | pass |
 | TC-F18-02 | Document promotion | Reject ephemeral scratch, undeclared repository paths, oversized documents, and invalid dispositions. | Promotion by Kanban comment or file existence. | pass |
@@ -65,9 +68,9 @@ in `tests/test_projects.py`, `tests/test_registrations.py`,
 `tests/test_prerequisites.py`, `tests/test_evaluation.py`,
 `tests/test_live_adapters.py`, `tests/test_project_cycles.py`, and
 `tests/test_increments.py`. Live rows marked `pass` are additionally grounded by
-the content-addressed UC-01 artifacts below. TC-F08-02 and TC-F16-01 remain
-`not-run`: the workflows did not exercise same-card verification recovery or a
-controlled reconciliation tick.
+the content-addressed UC-01 artifacts below. TC-F16-01 also has the controlled
+live evidence below. TC-F08-02 remains `not-run`: the workflows did not exercise
+same-card verification recovery.
 
 ## Use-case records
 
@@ -129,13 +132,39 @@ and adjacent tests for both packs. Until then, pack selection and retention are
 blocked. A local actionable finding is recorded here as publication pending; no
 GitHub finding was created or updated during reconciliation.
 
+## Phase 5B controlled reconciliation tick
+
+- **Goal:** prove that two separately approved cron invocations converge on one
+  claim, cycle, workflow graph, and attended admission event.
+- **Preconditions:** clean detached controller `80dd73e`, native and standalone
+  11/11 diagnosis, digest-matched no-agent wrapper, one paused job with no run
+  history, and maintainer-ready issue #4 as the only candidate.
+- **Procedure:** approve preview
+  `de26b48d6e77e8b496defdd44e48ffd1e861a77976dee36ffe3e97053a406b20`,
+  execute and re-pause once; then separately approve active-cycle preview
+  `ade8a3a8bb5fe3f859f9b8298f8d4635445c4e8667769fc13fbb580b5412dd55`,
+  execute and re-pause again.
+- **Expected:** first outcome `admitted`, second outcome `replayed`, with one
+  claim comment, one workflow graph, and no duplicate admission notification.
+- **Prohibited:** autonomous schedule escape, duplicate claim or graph, worktree,
+  approval, implementation, commit, push, release, publication, or private
+  destination disclosure.
+- **Observed:** execution IDs `b668e16ad75142b38b576c53fa7ae961` and
+  `9cd24ef3c1204192ae0109fdde3709e6` completed. Both mode-`0600` tick records bind
+  cycle `cycle-1b2ab9b45a3e066498e2f79d1bb9c30b9ca26dffb0c6a5d965990551e8bdf9d6`;
+  outcomes are `admitted` then `replayed`, and both reference attended receipt
+  `telegram:30`. Issue #4 has one claim comment, the workflow has two cards, and
+  the plan card is blocked without approval or a worktree. The job is paused on
+  `every 15m` with infinite repeat; the repository remains clean.
+- **Status:** `pass`.
+
 ## Identities, receipts, findings, and blockers
 
 - Project: `forgegod-daidala`.
 - Committed manifest path: `.daidala/project.yaml`.
 - Phase 3 implementation checkpoint: `31e043be49f19a8f69cfb5eb630fb5b1257abc00`.
 - Phase 4 implementation checkpoint: `cba9c52`.
-- Installed detached controller: `31331e8352208321ae819ad2464396f03207602b`.
+- Installed detached controller: `80dd73efa9a4e462304b71ba157b5e5c0172b793`.
 - The approved-attempt prerequisite report is
   [`prerequisite-report-15c3a629e5d670012642a137524d3659ccd42bf6b034b2ec6eabd05e3bbd8e70.json`](prerequisite-report-15c3a629e5d670012642a137524d3659ccd42bf6b034b2ec6eabd05e3bbd8e70.json),
   exits `0`, has the matching SHA-256
@@ -151,10 +180,12 @@ GitHub finding was created or updated during reconciliation.
   and its claim is released.
 - Aidlc completion receipt: `telegram:23`; issue #3 is closed as completed and
   its claim is released.
+- Phase 5B admission receipt: `telegram:30`; issue #4 remains claimed by the
+  active probe cycle at the plan approval boundary.
 - Both workflow evidence sets remain mode-`0600` profile-local files. Private
   destination data is omitted from this record.
-- No retained increment, preferred-pack decision, reconciliation cron, new
-  cycle, or remote finding was created by Phase 5A.
+- No retained increment, preferred-pack decision, or remote finding was created.
+  Phase 5B added only the paused cron, issue #4, and its one active probe cycle.
 
 ## Redaction statement
 

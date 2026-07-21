@@ -17,9 +17,10 @@ shared dry-run-first CLI now exposes deterministic reconciliation with an exact
 preview-digest apply gate. Exact detached revision `80dd73e` is installed in the
 persistent controller profile and passes native and standalone live diagnosis;
 one matching no-agent reconciliation cron exists but remains paused with no run
-attempts. No controlled tick exists. Live
-duplicate-tick recovery, terminal retention, approved finding publication, and
-version-aware comparison remain unexercised or blocked by later approval gates.
+attempts. Two separately approved controlled runs now prove admission/replay
+convergence on one active cycle; the job is paused again at the plan approval
+boundary. Terminal retention, approved finding publication, and version-aware
+comparison remain unexercised or blocked by later approval gates.
 
 Authoritative implementation sources are `daidala/projects.py`,
 `daidala/registrations.py`, `daidala/cycles.py`, `daidala/increments.py`,
@@ -414,8 +415,8 @@ loop never marks its generated finding `daidala-si:ready`.
 
 Repository coverage uses temporary repositories and fake host boundaries. The
 two retained attended cycles separately supply live admission and completion
-evidence; neither repository tests nor those manual cycles supply controlled
-reconciliation-tick evidence.
+evidence. The controlled Phase 5B cron runs separately supply live admission and
+duplicate-tick replay evidence without authorizing implementation or retention.
 
 ## Recovery and reconciliation
 
