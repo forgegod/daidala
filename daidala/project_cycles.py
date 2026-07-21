@@ -40,6 +40,7 @@ from .credentials import (
     credential_bindings_path,
     parse_credential_bindings,
 )
+from .cycles import CycleMode
 from .errors import PolicyViolationError
 from .live_adapters import (
     GitHubIssueIntakeAdapter,
@@ -212,7 +213,9 @@ class ProjectCycleOperator:
         registration: Path,
         issue_id: str,
         stage_profiles: dict[str, str],
+        mode: CycleMode = CycleMode.IMPROVE,
         pack_name: str | None = None,
+        candidate_identity: str | None = None,
         claim_lease_seconds: int = 900,
     ) -> AdmissionPreview:
         return self._prepare(
@@ -220,7 +223,9 @@ class ProjectCycleOperator:
             registration_file=registration,
             issue_id=issue_id,
             stage_profiles=stage_profiles,
+            mode=mode,
             pack_name=pack_name,
+            candidate_identity=candidate_identity,
             claim_lease_seconds=claim_lease_seconds,
         ).preview
 
@@ -233,7 +238,9 @@ class ProjectCycleOperator:
         stage_profiles: dict[str, str],
         expected_cycle_id: str,
         expected_intake_digest: str,
+        mode: CycleMode = CycleMode.IMPROVE,
         pack_name: str | None = None,
+        candidate_identity: str | None = None,
         claim_lease_seconds: int = 900,
     ) -> ProjectCycleResult:
         prepared = self._prepare(
@@ -241,7 +248,9 @@ class ProjectCycleOperator:
             registration_file=registration,
             issue_id=issue_id,
             stage_profiles=stage_profiles,
+            mode=mode,
             pack_name=pack_name,
+            candidate_identity=candidate_identity,
             claim_lease_seconds=claim_lease_seconds,
         )
         if prepared.preview.cycle.cycle_id != expected_cycle_id:
@@ -266,7 +275,9 @@ class ProjectCycleOperator:
             baseline_revision=prepared.baseline_revision,
             stage_profiles=prepared.stage_profiles,
             constraints_content=prepared.constraints_content,
+            mode=mode,
             pack_name=prepared.pack_name,
+            candidate_identity=candidate_identity,
             claim_lease_seconds=prepared.claim_lease_seconds,
         )
         return ProjectCycleResult(prepared.preview, admission, ledger, receipt)
@@ -982,7 +993,9 @@ class ProjectCycleOperator:
         registration_file: Path,
         issue_id: str,
         stage_profiles: dict[str, str],
+        mode: CycleMode,
         pack_name: str | None,
+        candidate_identity: str | None,
         claim_lease_seconds: int,
     ) -> _PreparedProjectCycle:
         manifest_path = project_manifest.expanduser().resolve(strict=True)
@@ -1060,7 +1073,9 @@ class ProjectCycleOperator:
             baseline_revision=baseline_revision,
             stage_profiles=stage_profiles,
             constraints_content=constraints_content,
+            mode=mode,
             pack_name=pack_name,
+            candidate_identity=candidate_identity,
             claim_lease_seconds=claim_lease_seconds,
         )
         stored_admission = CycleArtifactStore(profile_root).load_admission(preview.cycle)

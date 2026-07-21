@@ -12,6 +12,7 @@ from importlib import resources
 from pathlib import Path
 from typing import NoReturn, cast
 
+from .cycles import CycleMode
 from .evaluation import EvaluatorIsolationEvidence
 from .kanban import KanbanGraphAdapter
 from .locations import resolve_data_root
@@ -115,6 +116,13 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
         metavar="STAGE=PROFILE",
     )
     project_cycle_admit.add_argument("--pack")
+    project_cycle_admit.add_argument(
+        "--mode",
+        type=CycleMode,
+        choices=tuple(CycleMode),
+        default=CycleMode.IMPROVE,
+    )
+    project_cycle_admit.add_argument("--candidate-identity")
     project_cycle_admit.add_argument(
         "--claim-lease-seconds", type=int, default=900
     )
@@ -562,13 +570,19 @@ def _run_project_cycle(
         return 0
     if args.project_cycle_command != "admit":
         raise ValueError(f"unsupported project-cycle command: {args.project_cycle_command}")
+    if args.mode is CycleMode.IMPROVE and args.candidate_identity is not None:
+        raise ValueError("--candidate-identity requires a comparison mode")
+    if args.mode is not CycleMode.IMPROVE and args.candidate_identity is None:
+        raise ValueError(f"--mode {args.mode.value} requires --candidate-identity")
     operator = project_cycle_factory()
     common = {
         "project_manifest": args.project_manifest,
         "registration": args.registration,
         "issue_id": args.issue_id,
         "stage_profiles": _parse_stage_profiles(args.profile, args.stage_profile),
+        "mode": args.mode,
         "pack_name": args.pack,
+        "candidate_identity": args.candidate_identity,
         "claim_lease_seconds": args.claim_lease_seconds,
     }
     if not args.apply:

@@ -2,17 +2,17 @@
 
 ## Record status
 
-Phases 1 through 4F, Phase 5A reconciliation, and the controlled Phase 5B
-reconciliation tick and closeout are complete. Phase 5C selected published
-finding [#5](https://github.com/forgegod/daidala/issues/5), completed one
-approval-gated candidate workflow, and applied the separately approved retained
-diff to the target checkout. Checkpoints `83780e2` and `9d9f4f6` retain the
-increment and its completion prerequisite. Detached controller revision
-`9d9f4f6a2801293e20622d98c97f50d017888872` is installed; exact completion digest
-`f9f5566ee15f7797d72c230e69e06c13930f4b6a5ca6b9e5214cdd624ab9fd65`
-closed issue #5 as completed and delivered attended receipt `telegram:44`.
-Native and standalone diagnosis pass 11/11, and the reconciliation cron remains
-paused. No push, release, or control-finding publication occurred.
+Phases 1 through 5C-R are complete. Phase 5C retained published finding
+[#5](https://github.com/forgegod/daidala/issues/5), and Phase 5C-R remediated and
+closed published control findings
+[#6](https://github.com/forgegod/daidala/issues/6) and
+[#7](https://github.com/forgegod/daidala/issues/7) as completed. Detached
+controller revision `2595bf5f8aacdd1411c101250acc2d0211eaf22a` is installed;
+native and standalone diagnosis pass 11/11, the reconciliation cron remains
+paused, and no active cycle or owned worktree exists. Phase 5D prerequisite
+source passes 416 tests and the complete repository/release gate; exact detached
+installation and live paired evaluation remain unapproved, as do push, release,
+and promotion.
 
 Each Phase 5A workflow independently changed only `calculator.py` and
 `test_calculator.py`, reproduced `AssertionError: 1 != 2` in the restricted
@@ -46,9 +46,9 @@ Repository tests cannot convert a blocked live probe into `pass`.
 | TC-F03-02 | Prerequisite CLI parity | Execute the shared handler through standalone and native parser surfaces; JSON and exit code match. | Adding a second checker executable. | pass |
 | TC-F04-01 | Setup preview | Preview registration and admission without mutation; require literal confirmation for setup. | Profile, board, GitHub, or repository mutation. | not-run |
 | TC-F04-02 | Prerequisite diagnosis | Run the complete stable checklist from a clean checkout; retain exact passes and blockers. | No setup mutation; fixing or creating prerequisite state. | pass |
-| TC-F05-01 | Define and plan | Persist activation, definition, plan, and handoff identities; create one blocked approval card. | Implementation-card creation. | pass |
-| TC-F06-01 | Exact approval | Reject wrong or stale tuple, preserve a human-blocked gate, and create one owned worktree only after exact attended approval. | Autonomous promotion or approval of the human gate. | fail |
-| TC-F07-01 | Constraints | Formatting-only replacement is identity-preserving; semantic replacement invalidates stale work while preserving historical artifacts. | Deleting or overwriting historical evidence. | fail |
+| TC-F05-01 | Define and plan | Persist activation, definition, plan, and handoff identities; expose the ledger-owned pending approval action without an executable approval task. | Implementation-card creation before exact approval. | pass |
+| TC-F06-01 | Exact approval | Reject wrong or stale tuples; keep the gate ledger-owned and non-executable; create one owned worktree only after exact attended approval. | Autonomous approval or an executable approval task. | pass |
+| TC-F07-01 | Constraints | Formatting-only replacement is identity-preserving; semantic replacement invalidates stale work while immutable revision paths preserve historical artifacts. | Deleting or overwriting historical evidence. | pass |
 | TC-F08-01 | Implementation | Capture immutable changed paths and evidence from only the owned worktree. | Mutation of the target checkout or protected paths. | pass |
 | TC-F08-02 | Verification recovery | Preserve a failed attempt and allow bounded same-card recovery. | Hiding the failed command or output digest. | pass |
 | TC-F09-01 | Review and delivery | Review frozen scope; delivery records commit and push as false. | Review mutation, commit, or push. | pass |
@@ -75,9 +75,10 @@ in `tests/test_projects.py`, `tests/test_registrations.py`,
 `tests/test_increments.py`. Live rows marked `pass` are additionally grounded by
 the content-addressed UC-01 artifacts below. TC-F16-01 also has the controlled
 live evidence below. Phase 5C supplies live same-card verification recovery for
-TC-F08-02. TC-F06-01 and TC-F07-01 are `fail`: the Phase 5C recovery observed an
-autonomously promoted approval gate and revision artifacts that reused historical
-paths. Both findings remain local and publication pending.
+TC-F08-02. Controlled Phase 5C-R evidence additionally grounds TC-F06-01 and
+TC-F07-01: the approval gate is ledger-owned and worker calls fail closed, while
+revision-addressed create-or-verify artifacts preserve historical bytes. Issues
+#6 and #7 are closed completed and `Done`.
 
 ## Use-case records
 
@@ -105,8 +106,13 @@ browser probe still require separate approvals and prerequisites.
 
 ### UC-03 — pack and skill compatibility
 
-Status: `not-run`. No candidate task or skill set has been selected. Selection
-and any later promotion remain human decisions.
+Status: `not-run`. The operator selected the pinned current/default
+`addyosmani` pack, pinned candidate `aidlc`, and one canonical Python
+`importlib.resources.contents()` migration fixture. The dry-run-first
+comparison-admission prerequisite passes the complete repository gate; live
+issues, installation, cycles, plans, cleanup, retention, publication, push,
+release, and promotion remain separately gated in the
+[Phase 5D child plan](../../plans/2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md).
 
 ## UC-01 reconciliation
 
@@ -238,15 +244,33 @@ still authorizes no pack preference.
   `f9f5566ee15f7797d72c230e69e06c13930f4b6a5ca6b9e5214cdd624ab9fd65`.
 - **Status:** `pass`.
 
+## Phase 5C-R control-plane remediation
+
+- **Approval boundary:** exact detached revision `9f380a6` removed the executable
+  approval card path and rejected worker-context approval before mutation.
+  Controlled workflow `tc-f06-direct-approval-probe-v2` retained fail-closed
+  envelope `1f4a99ec`, zero-mutation comparison `217d8b9d`, post-approval graph
+  evidence `5d9491c3`, and manifest `0db444d6`.
+- **Artifact boundary:** exact detached revision `2595bf5` made stage artifacts
+  immutable and revision-addressed. Controlled workflow
+  `tc-f07-revision-artifact-probe-v1` retained replay comparison `1032386d`,
+  conflict envelope `91a4efad`, five historical references, terminal evidence
+  `e9224f67`, and cleanup manifest `5a79e2fa`.
+- **Closeout:** issues #6 and #7 are closed completed and `Done`; both cases are
+  `pass`; the installed controller is clean at `2595bf5`; native and standalone
+  diagnosis pass 11/11; reconciliation is paused; no active cycle or owned
+  worktree exists; commit/push in probe delivery evidence remain false.
+
 ## Identities, receipts, findings, and blockers
 
 - Project: `forgegod-daidala`.
 - Committed manifest path: `.daidala/project.yaml`.
 - Phase 3 implementation checkpoint: `31e043be49f19a8f69cfb5eb630fb5b1257abc00`.
 - Phase 4 implementation checkpoint: `cba9c52`.
-- Installed detached controller: `9d9f4f6a2801293e20622d98c97f50d017888872`;
-  rollback controller `550671c19e5434fbe183140214ca12b4a047692d` and its
-  prior evidence remain outside plugin discovery.
+- Installed detached controller: `2595bf5f8aacdd1411c101250acc2d0211eaf22a`;
+  rollback controllers `9f380a6b04fdbb51817c7ac2279b217fda34f0c2` and
+  `550671c19e5434fbe183140214ca12b4a047692d` and their prior evidence remain
+  outside plugin discovery.
 - The approved-attempt prerequisite report is
   [`prerequisite-report-15c3a629e5d670012642a137524d3659ccd42bf6b034b2ec6eabd05e3bbd8e70.json`](prerequisite-report-15c3a629e5d670012642a137524d3659ccd42bf6b034b2ec6eabd05e3bbd8e70.json),
   exits `0`, has the matching SHA-256
@@ -269,9 +293,10 @@ still authorizes no pack preference.
   identities are recorded above.
 - Both workflow evidence sets remain mode-`0600` profile-local files. Private
   destination data is omitted from this record.
-- Phase 5C retains one controller-identity increment. No preferred-pack decision,
-  control-finding publication, push, or release occurred.
-  Phase 5B still leaves one paused cron and one terminal probe cycle.
+- Phase 5C retains one controller-identity increment. Phase 5C-R retains both
+  control remediations and their published, completed findings. No preferred-pack
+  decision, push, release, or promotion occurred. Phase 5B still leaves one
+  paused cron and one terminal probe cycle.
 
 ## Redaction statement
 

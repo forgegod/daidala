@@ -72,6 +72,10 @@ workflow-pack adapters, and bundled orchestration skills.
   digest returned by a fresh dry-run. The apply path reruns live prerequisites
   and rejects changed issue, manifest, pack, constraints, baseline, registration,
   or stage-profile identity before mutation.
+- `project-cycle admit` defaults to `improve`. `regress` and `evaluate-pack`
+  require one explicit bounded candidate identity; `improve` rejects one. Mode
+  and candidate are part of the dry-run cycle identity and are recomputed before
+  apply. Reconciliation remains `improve`-only.
 - `project-cycle complete` is read-only by default and opens the policy ledger
   without schema initialization. Apply requires the exact fresh preview digest,
   done current post-gate cards, accepted review and delivery artifacts, canonical

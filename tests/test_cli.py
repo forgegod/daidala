@@ -11,6 +11,7 @@ import pytest
 
 from daidala import cli
 from daidala.adapters import NotificationReceipt
+from daidala.cycles import CycleMode
 from daidala.evaluation import EvaluatorIsolationEvidence
 from daidala.reconciliation import (
     ReconciliationOutcome,
@@ -481,6 +482,10 @@ def test_project_cycle_admission_is_dry_run_by_default_on_both_surfaces(capsys) 
         "daidala-self-improvement",
         "--pack",
         "addyosmani",
+        "--mode",
+        "evaluate-pack",
+        "--candidate-identity",
+        "pack:aidlc:e49341dbeb8af82758dd85e96ed7fe9bcf38a447",
     ]
 
     standalone_code = cli.main(
@@ -496,6 +501,10 @@ def test_project_cycle_admission_is_dry_run_by_default_on_both_surfaces(capsys) 
     assert native.calls == standalone.calls
     assert native.calls[0][0] == "preview"
     assert native.calls[0][1]["issue_id"] == "42"
+    assert native.calls[0][1]["mode"] is CycleMode.EVALUATE_PACK
+    assert native.calls[0][1]["candidate_identity"] == (
+        "pack:aidlc:e49341dbeb8af82758dd85e96ed7fe9bcf38a447"
+    )
     assert native_payload == standalone_payload
     assert native_payload["dry_run"] is True
     assert native_payload["preview"]["intake_digest"] == "a" * 64
@@ -515,6 +524,10 @@ def test_project_cycle_apply_requires_and_forwards_exact_preview_identity(capsys
         "42",
         "--default-profile",
         "daidala-self-improvement",
+        "--mode",
+        "evaluate-pack",
+        "--candidate-identity",
+        "pack:aidlc:e49341dbeb8af82758dd85e96ed7fe9bcf38a447",
         "--apply",
         "--expected-cycle-id",
         cycle_id,
@@ -529,7 +542,65 @@ def test_project_cycle_apply_requires_and_forwards_exact_preview_identity(capsys
     assert service.calls[0][0] == "admit"
     assert service.calls[0][1]["expected_cycle_id"] == cycle_id
     assert service.calls[0][1]["expected_intake_digest"] == "a" * 64
+    assert service.calls[0][1]["mode"] is CycleMode.EVALUATE_PACK
+    assert service.calls[0][1]["candidate_identity"] == (
+        "pack:aidlc:e49341dbeb8af82758dd85e96ed7fe9bcf38a447"
+    )
     assert payload["dry_run"] is False
+
+
+@pytest.mark.parametrize(
+    ("extra", "message"),
+    [
+        (["--mode", "evaluate-pack"], "requires --candidate-identity"),
+        (["--candidate-identity", "pack:aidlc"], "requires a comparison mode"),
+    ],
+)
+def test_project_cycle_admission_rejects_incomplete_comparison_identity_before_service(
+    extra: list[str], message: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    service = FakeProjectCycles()
+    code = cli.main(
+        [
+            "project-cycle",
+            "admit",
+            "--project-manifest",
+            "/repo/.daidala/project.yaml",
+            "--registration",
+            "/profile/projects/forgegod-daidala/registration.yaml",
+            "--issue",
+            "42",
+            "--default-profile",
+            "daidala-self-improvement",
+            *extra,
+        ],
+        project_cycle_factory=_project_cycle_factory(service),
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert code == 1
+    assert service.calls == []
+    assert message in payload["message"]
+
+
+def test_project_cycle_admit_help_exposes_comparison_identity_on_both_surfaces(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(SystemExit) as standalone_exit:
+        cli.build_parser(prog="daidala").parse_args(["project-cycle", "admit", "--help"])
+    standalone = capsys.readouterr().out
+    native_parser = argparse.ArgumentParser(prog="hermes daidala")
+    cli.register_cli(native_parser)
+    with pytest.raises(SystemExit) as native_exit:
+        native_parser.parse_args(["project-cycle", "admit", "--help"])
+    native = capsys.readouterr().out
+
+    assert standalone_exit.value.code == native_exit.value.code == 0
+    for option in ("--mode", "--candidate-identity"):
+        assert option in standalone
+        assert option in native
+    assert "evaluate-pack" in standalone
+    assert "evaluate-pack" in native
 
 
 def test_project_cycle_apply_without_exact_preview_identity_fails_before_service(capsys) -> None:

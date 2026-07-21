@@ -607,7 +607,12 @@ Status: unexercised.
 ### UC-03 walkthrough
 
 1. Human selects one externally grounded task and at most one candidate skill set.
-2. Pin exact source revision and content digest.
+   The Daidala v1 run selects the Python `importlib.resources.contents()` to
+   traversable-API migration, current/default `addyosmani`, and candidate
+   `aidlc`; execution remains separately gated.
+2. Pin exact source revision and content digest. The candidate identity includes
+   the Aidlc pack name, source revision, and content digest already allowed by
+   `.daidala/project.yaml`.
 3. Run current and candidate packs against the same goal, fixture, model routing,
    and limits in fresh evaluators.
 4. Compare provenance, required metrics, observational evidence, and resource
@@ -651,6 +656,17 @@ hermes -p daidala-self-improvement daidala project-cycle admit \
   --default-profile daidala-self-improvement \
   --pack addyosmani
 
+# Comparison admissions additionally bind the mode and one exact candidate.
+# Replace CANDIDATE_IDENTITY only with the approved packet value.
+hermes -p daidala-self-improvement daidala project-cycle admit \
+  --project-manifest /home/raphael/src/rb/daidala/.daidala/project.yaml \
+  --registration /home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/registration.yaml \
+  --issue ISSUE_NUMBER \
+  --default-profile daidala-self-improvement \
+  --pack addyosmani \
+  --mode evaluate-pack \
+  --candidate-identity CANDIDATE_IDENTITY
+
 # Dry-run only: returns the exact cancellation preview digest
 hermes -p daidala-self-improvement daidala project-cycle cancel \
   --project-manifest /home/raphael/src/rb/daidala/.daidala/project.yaml \
@@ -662,8 +678,11 @@ hermes -p daidala-self-improvement daidala project-cycle cancel \
 `project-cycle admit` is dry-run by default. `--apply` additionally requires the
 exact `--expected-cycle-id` and `--expected-intake-digest` from a fresh dry run;
 the apply invocation reruns all live prerequisites before any claim or workflow
-mutation. Do not substitute generic workflow `start`, `status`, `approve`, or
-`cancel` for project admission.
+mutation. Admission defaults to `improve`; `regress` and `evaluate-pack` require
+`--candidate-identity`, while `improve` rejects it. Mode and candidate are part
+of the immutable cycle identity. Deterministic reconciliation admits only
+`improve` cycles. Do not substitute generic workflow `start`, `status`,
+`approve`, or `cancel` for project admission.
 
 `project-cycle cancel` is also dry-run by default. `--apply` additionally
 requires the exact `--expected-preview-digest` from a fresh dry run. The apply

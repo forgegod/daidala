@@ -19,6 +19,9 @@ completeness without touching a real Hermes profile.
 - Shared CLI tests prove standalone/native reconciliation argument parity,
   dry-run default behavior, exact preview-digest apply gates, bounded output,
   and nonzero stale or missing-identity exits without live profile mutation.
+- Project-cycle admission tests prove standalone/native mode and candidate
+  parity, comparison-mode candidate requirements, improve-mode rejection, and
+  exact dry-run/apply forwarding before adapter mutation.
 - Fresh-evaluator tests cover all three cycle modes, candidate/controller
   separation, isolation receipts, credential-free homes, durable baseline
   identity and ordering, immutable evidence, deterministic/repeated/

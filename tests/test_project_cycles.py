@@ -17,6 +17,7 @@ from daidala.adapters import (
     IntakeRecord,
     NotificationReceipt,
 )
+from daidala.cycles import CycleMode
 from daidala.errors import PolicyViolationError
 from daidala.packs import load_pack
 from daidala.prerequisites import CheckStatus, PrerequisiteReport, active_admission_paths
@@ -237,6 +238,51 @@ def test_project_cycle_preview_composes_live_inputs_without_runtime_mutation(
     assert not (profile_root / "daidala").exists()
     assert not (registration.parent / "cycles").exists()
     assert not any(call[0][:3] == ("gh", "issue", "comment") for call in runtime.calls)
+
+
+def test_project_cycle_preview_binds_exact_comparison_mode_and_candidate(
+    tmp_path: Path,
+) -> None:
+    operator, manifest, registration, runtime, workflow_roots = _operator(tmp_path)
+    candidate = "pack:aidlc:e49341dbeb8af82758dd85e96ed7fe9bcf38a447"
+
+    preview = operator.preview(
+        project_manifest=manifest,
+        registration=registration,
+        issue_id="42",
+        stage_profiles=_stage_profiles(),
+        mode=CycleMode.EVALUATE_PACK,
+        pack_name="addyosmani",
+        candidate_identity=candidate,
+    )
+
+    assert preview.cycle.mode is CycleMode.EVALUATE_PACK
+    assert preview.cycle.candidate_identity == candidate
+    assert workflow_roots == []
+    assert not any(
+        call[0][:3] in {("gh", "issue", "comment"), ("gh", "issue", "edit")}
+        for call in runtime.calls
+    )
+
+
+def test_project_cycle_comparison_requires_candidate_before_mutation(tmp_path: Path) -> None:
+    operator, manifest, registration, runtime, workflow_roots = _operator(tmp_path)
+
+    with pytest.raises(PolicyViolationError, match="require a candidate"):
+        operator.preview(
+            project_manifest=manifest,
+            registration=registration,
+            issue_id="42",
+            stage_profiles=_stage_profiles(),
+            mode=CycleMode.EVALUATE_PACK,
+            pack_name="addyosmani",
+        )
+
+    assert workflow_roots == []
+    assert not any(
+        call[0][:3] in {("gh", "issue", "comment"), ("gh", "issue", "edit")}
+        for call in runtime.calls
+    )
 
 
 def test_project_cycle_apply_rejects_stale_preview_before_workflow_or_claim(

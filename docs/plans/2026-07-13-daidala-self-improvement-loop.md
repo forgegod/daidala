@@ -50,11 +50,18 @@ retain `TC-F06-01` and `TC-F07-01` as `pass`. Issues
 [#7](https://github.com/forgegod/daidala/issues/7) are closed `completed` and
 `Done`; exact detached controller `2595bf5` and rollback `9f380a6` are clean,
 reconciliation remains paused, and native plus standalone diagnosis pass 11/11.
-Phase 5D is pending and unstarted.
+Phase 5D is in progress through its ranged paired-evaluation child plan. Phase 0
+is complete with 416 tests and the complete repository/release gate passing. The
+operator approved the pinned Addyosmani-versus-Aidlc comparison and canonical
+`importlib.resources` migration fixture, but experiment-packet, live issue,
+install, cycle, plan, cleanup, retention, publication, push, release, and
+promotion gates remain separate.
 The resumable execution record is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 The two failed Phase 5C control cases are explicit follow-up actions in
 [`2026-07-21-daidala-control-plane-findings-remediation.md`](2026-07-21-daidala-control-plane-findings-remediation.md).
+Phase 5D execution is ranged in
+[`2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md`](2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md).
 
 | Phase | Status | Evidence |
 |---|---|---|
@@ -76,8 +83,8 @@ The two failed Phase 5C control cases are explicit follow-up actions in
 | 5B-C — Deterministic probe cancellation | done | Exact detached revision `550671c`, approved preview `9deb8cef`, terminal digest `99fe86b3`, receipt `telegram:37`, identical replay, archived cards, and 11/11 diagnosis prove deterministic closeout. |
 | 5C — Approved improvement and findings synchronization | done | Issue #5 retained strict v2 controller-revision evidence; completion `f9f5566e` released the claim and delivered `telegram:44`. The two control findings were ranged into Phase 5C-R. |
 | 5C-R — Control-plane findings remediation | done | Exact controller `2595bf5`; `TC-F06-01`/`TC-F07-01` retained as `pass`; issues #6/#7 closed completed and `Done`; probe manifests `0db444d6`/`5a79e2fa`; cron paused; diagnosis 11/11. |
-| 5D — UC-03 pack evaluation | pending | Phase 5C-R is done; this phase remains unstarted and still requires one canonical paired fixture, one frozen baseline, one approved candidate skill set, and separate cycle approval. |
-| 6 — Version-aware re-evaluation | blocked | Requires the approved Phase 5 work; candidate Hermes identity is selected here, not invented earlier. |
+| 5D — UC-03 pack evaluation | in-progress ([child plan](2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md)) | Child Phase 0 passes 416 tests and the complete release gate; Phase 1 must freeze the exact packet and separately approve installation/issues before either live cycle. |
+| 6 — Version-aware re-evaluation | blocked | Requires the Phase 5D child closeout; candidate Hermes identity is selected here, not invented earlier. |
 | 7 — Repository gate and documentation | blocked | Requires the preceding live evaluation and comparison evidence. |
 
 Mark a phase `in-progress` while running it, `done` only after its gate passes
@@ -474,7 +481,7 @@ fail-closed outcomes are separate cases; pack-dependent results remain visible.
 | F02 packs and provenance | Both packs load; exact mappings and supported host boundaries validate; missing or drifted skills fail closed. |
 | F03 CLI and tools | Standalone and native surfaces agree; exactly declared JSON tools register; invalid arguments do not mutate state. |
 | F04 setup and admission | Preview is non-mutating; literal confirmation is required; start is idempotent; no implementation card exists before approval. |
-| F05 definition and planning | Workers record activation, artifacts, and handoffs; plan completion creates a blocked approval card. |
+| F05 definition and planning | Workers record activation, artifacts, and handoffs; plan completion exposes the ledger-owned pending approval action without creating an executable approval task. |
 | F06 approval | Wrong or stale digest fails; generic unblock is not approval; exact approval creates one owned worktree and post-gate graph. |
 | F07 constraints | Canonical parsing and compare-and-swap hold; formatting-only replacement is a no-op; semantic replacement invalidates stale identity and work. |
 | F08 implementation and verification | Work occurs only in the owned worktree; changed paths and evidence are immutable; same-card recovery remains possible. |
@@ -910,8 +917,9 @@ preview exposed duplicate successful-output digests; checkpoint `9d9f4f6`
 canonicalizes them and produced stable no-mutation preview digest
 `a09f3405f8dcd98360186b2373bb8845e7d3cc84ca5a47f214d8d19d80027c8b`.
 Separate install and apply approvals produced terminal completion `f9f5566e`,
-receipt `telegram:44`, issue #5 closed completed, and 11/11 diagnosis. Push,
-release, and control-finding publication remain separately gated.
+receipt `telegram:44`, issue #5 closed completed, and 11/11 diagnosis. Push and
+release remain separately gated. The control findings were subsequently
+published and closed through Phase 5C-R.
 The remediation plan completed separately approved source, installation,
 controlled evidence, cleanup, and finding closeout for both control cases.
 `TC-F06-01` and `TC-F07-01` are retained as `pass`.
@@ -934,15 +942,20 @@ controller are clean at `2595bf5`; and the row records probe manifests
 
 #### Phase 5D — UC-03 pack evaluation
 
-- Start only after Phase 5C-R reaches its gate and checkpoint.
-- Freeze one repository baseline and one canonical fixture for both compared
-  packs before either run.
-- Use at most one separately approved candidate skill set.
-- Require identical evaluator, verification, limits, and metric identities; any
-  drift produces `incomparable`.
+- Execute
+  [`2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md`](2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md)
+  from its first incomplete phase.
+- Keep this parent row `in-progress` while any child phase is incomplete.
+- Freeze one repository baseline and the approved canonical package-resource
+  fixture for both compared packs before either run.
+- Compare pinned current/default `addyosmani` only with the one approved pinned
+  `aidlc` candidate identity.
+- Require identical evaluator, routing, verification, limits, and metric
+  identities; any drift produces `incomparable`.
+- Do not start Phase 6 until every child phase and this row's gate pass.
 
-Gate: a pack conclusion is supported by a valid paired comparison; no project
-default changes automatically.
+Gate: the child plan is `done`, a pack conclusion is supported by a valid paired
+comparison, and no project default changes automatically.
 
 ### Phase 6 — Version-aware re-evaluation
 
