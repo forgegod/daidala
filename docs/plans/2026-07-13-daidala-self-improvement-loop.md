@@ -43,8 +43,15 @@ is complete.
 Phase 5C retained controller-revision evidence, installed exact detached
 controller `9d9f4f6`, closed issue #5 completed with receipt `telegram:44`, and
 returned both diagnosis routes to 11/11.
+Phase 5C-R is in progress. Its Phase 0 publication and scope gate produced
+findings [#6](https://github.com/forgegod/daidala/issues/6) and
+[#7](https://github.com/forgegod/daidala/issues/7) without readiness, and exact
+Increment A scope digest `8752c0647d1d82b35cd5995527c3726af778392375baac904525735ea659979a`
+received attended approval.
 The resumable execution record is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
+The two failed Phase 5C control cases are explicit follow-up actions in
+[`2026-07-21-daidala-control-plane-findings-remediation.md`](2026-07-21-daidala-control-plane-findings-remediation.md).
 
 | Phase | Status | Evidence |
 |---|---|---|
@@ -64,8 +71,9 @@ The resumable execution record is saved in
 | 5A — UC-01 evidence reconciliation | done | All retained plan, baseline, candidate, review, delivery, and completion hashes match; both workflows are terminal, but different repository baselines and candidate test fixtures make pack comparison `incomparable`. |
 | 5B — Paused reconciliation cron and controlled tick | done | Two approved executions produced `admitted` then `replayed` for one issue, claim, cycle, graph, and attended receipt. The no-agent job is paused on `every 15m`; no worktree, approval, commit, or push exists. |
 | 5B-C — Deterministic probe cancellation | done | Exact detached revision `550671c`, approved preview `9deb8cef`, terminal digest `99fe86b3`, receipt `telegram:37`, identical replay, archived cards, and 11/11 diagnosis prove deterministic closeout. |
-| 5C — Approved improvement and findings synchronization | done | Issue #5 retained strict v2 controller-revision evidence; completion `f9f5566e` released the claim and delivered `telegram:44`. Two control findings remain local and publication pending. |
-| 5D — UC-03 pack evaluation | blocked | Requires one canonical paired fixture, one frozen baseline, one approved candidate skill set, and separate cycle approval. |
+| 5C — Approved improvement and findings synchronization | done | Issue #5 retained strict v2 controller-revision evidence; completion `f9f5566e` released the claim and delivered `telegram:44`. The two control findings were ranged into Phase 5C-R. |
+| 5C-R — Control-plane findings remediation | in-progress | Child Phase 0 published unready issues #6 and #7 and received attended approval for exact Increment A scope digest `8752c064`; Phase 1 is pending. |
+| 5D — UC-03 pack evaluation | blocked | Requires Phase 5C-R done, one canonical paired fixture, one frozen baseline, one approved candidate skill set, and separate cycle approval. |
 | 6 — Version-aware re-evaluation | blocked | Requires the approved Phase 5 work; candidate Hermes identity is selected here, not invented earlier. |
 | 7 — Repository gate and documentation | blocked | Requires the preceding live evaluation and comparison evidence. |
 
@@ -891,9 +899,28 @@ canonicalizes them and produced stable no-mutation preview digest
 Separate install and apply approvals produced terminal completion `f9f5566e`,
 receipt `telegram:44`, issue #5 closed completed, and 11/11 diagnosis. Push,
 release, and control-finding publication remain separately gated.
+The remediation plan makes `TC-F06-01` and `TC-F07-01` concrete ordered action
+items; their status remains `fail` until separately approved source changes and
+controlled evidence pass.
+
+#### Phase 5C-R — Control-plane findings remediation
+
+- Execute
+  [`2026-07-21-daidala-control-plane-findings-remediation.md`](2026-07-21-daidala-control-plane-findings-remediation.md)
+  from its first incomplete phase.
+- Keep this parent row `in-progress` while any child phase is incomplete.
+- Apply the child plan's separate publication, implementation, retention,
+  installation, live-probe, and closeout gates in order.
+- Do not start Phase 5D from the parent plan until the child plan is done.
+
+Gate: the child plan is `done`; `TC-F06-01` and `TC-F07-01` are retained as
+`pass`; native and standalone diagnosis pass 11/11; the reconciliation cron is
+paused; the repository is clean; and the closeout checkpoint is recorded in this
+row.
 
 #### Phase 5D — UC-03 pack evaluation
 
+- Start only after Phase 5C-R reaches its gate and checkpoint.
 - Freeze one repository baseline and one canonical fixture for both compared
   packs before either run.
 - Use at most one separately approved candidate skill set.
