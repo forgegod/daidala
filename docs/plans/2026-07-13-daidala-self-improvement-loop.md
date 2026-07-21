@@ -36,9 +36,9 @@ loaded by the controller gateway.
 `incomparable` cross-pack outcome. Phase 5B is in progress: its controller-line
 integration, deterministic reconciliation, and shared dry-run-first CLI gates
 have passed; repository contract reconciliation and the complete release gate
-are also complete. The corrected exact-controller retry established
-native/standalone parity but rolled back cleanly when Docker became unavailable
-and blocked the live evaluator gate. The resumable execution design is saved in
+are also complete. Exact detached controller revision `80dd73e` is installed;
+native and standalone diagnosis both pass 11/11 after Docker integration was
+restored. The resumable execution design is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 
 | Phase | Status | Evidence |
@@ -46,10 +46,10 @@ and blocked the live evaluator gate. The resumable execution design is saved in
 | 1 — Daidala fixture and deterministic foundation | done | Manifest, constraints, issue form, strict identities, fake-adapter records, and F01-F18 cases are repository-tested. |
 | 2 — Controller coordination and adapters | done | Replay-safe coordination, normalized adapter contracts, and fake-boundary regressions are repository-tested. |
 | 3 — Prerequisite doctor and setup confirmation | done | The read-only prerequisite report, credential-binding contract, and setup confirmation rules are repository-tested. |
-| 4A — Controller and shared-board bootstrap | done | The controller profile and shared board remain valid; approved detached controller revision `31331e8352208321ae819ad2464396f03207602b` is clean and both packs validate. |
+| 4A — Controller and shared-board bootstrap | done | The controller profile and shared board remain valid; approved detached controller revision `80dd73efa9a4e462304b71ba157b5e5c0172b793` is clean and both packs validate. |
 | 4B — GitHub projection and static registration | done | Project 1 is repository-linked with all required fields, all exact labels exist, optional attended auto-add is enabled, and strict registration plus non-secret bindings parse. |
 | 4C — Capability and isolation receipts | done | Runtime read/write probes, attended Telegram delivery, controlled findings write, and restricted-container isolation receipts are retained as strict non-secret evidence. |
-| 4D — Live prerequisite gate | done | Post-completion `doctor --live` reports all eleven `SI-*` checks as `pass`, including `SI-ACTIVE-CYCLE`, with controller revision `31331e8352208321ae819ad2464396f03207602b`. |
+| 4D — Live prerequisite gate | done | Native and standalone `doctor --live` report all eleven `SI-*` checks as `pass`, including `SI-ACTIVE-CYCLE`, with controller revision `80dd73efa9a4e462304b71ba157b5e5c0172b793`. |
 | 4E prerequisite — Operational admission and completion paths | done | Dry-run-first admission and completion, exact digest gates, replay-safe issue closure, claim release, attended notification, immutable receipts, and completion-aware active ownership are installed and exercised. |
 | 4E — Addyosmani UC-01 live evaluation | done | Cycle `cycle-21158b4320bf09968915110abdfeb32ac2a0c833acfe90a99bf340936c148f55` reached accepted evidence-only delivery and completion; issue #2 is closed as completed and the claim is released. |
 | 4F-A — Aidlc intake rescope and fresh preview | done | Issue #3 authorized the full Aidlc lifecycle; final fresh preview identity `cycle-98afe833a63afdbfce7a16bcd9741d4475e46cfb47013c2982cbe3ad04653c26` and intake digest `377e2976bd1f5998a5bfc9b1c9df92aed53232099f4769330191a72fda8d4b1a` were retained without mutation and explicitly approved. |
@@ -57,7 +57,7 @@ and blocked the live evaluator gate. The resumable execution design is saved in
 | 4F-C — Aidlc execution and evidence-only delivery | done | Restricted baseline `80bb8cf7` failed with `1 != 2`; candidate `6f97e6d2` passed both approved tests; review returned `improved`; delivery recorded commit/push false and released worktree ownership. |
 | 4F-D — Aidlc terminal completion | done | Completion digest `250756b4021b92e7b9ef74214febfab1d5891baf908ca3650acb473505eb1101` closed issue #3, released its claim, delivered `telegram:23`, converged on replay, and returned doctor to 11/11. |
 | 5A — UC-01 evidence reconciliation | done | All retained plan, baseline, candidate, review, delivery, and completion hashes match; both workflows are terminal, but different repository baselines and candidate test fixtures make pack comparison `incomparable`. |
-| 5B — Paused reconciliation cron and controlled tick | in-progress | Implementation and the release gate are complete; corrected `80dd73e` installation restored clean `31331e8` after Docker unavailability blocked the evaluator and registration checks. No cron or controlled tick exists. |
+| 5B — Paused reconciliation cron and controlled tick | in-progress | Implementation, release gate, and exact `80dd73e` controller installation are complete with native and standalone 11/11 reports. No cron or controlled tick exists. |
 | 5C — Approved improvement and findings synchronization | blocked | Requires Phase 5B replay evidence plus separate cycle, retention, and publication approvals. |
 | 5D — UC-03 pack evaluation | blocked | Requires one canonical paired fixture, one frozen baseline, one approved candidate skill set, and separate cycle approval. |
 | 6 — Version-aware re-evaluation | blocked | Requires the approved Phase 5 work; candidate Hermes identity is selected here, not invented earlier. |

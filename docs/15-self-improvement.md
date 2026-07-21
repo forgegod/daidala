@@ -14,8 +14,9 @@ quarantine; and increment/DOX reconciliation.
 Two attended manual cycles exercised the detached controller's admission,
 approval, evaluation, delivery, replay, and terminal completion paths. The
 shared dry-run-first CLI now exposes deterministic reconciliation with an exact
-preview-digest apply gate, but that revision is not installed in the persistent
-controller profile and no reconciliation cron or controlled tick exists. Live
+preview-digest apply gate. Exact detached revision `80dd73e` is installed in the
+persistent controller profile and passes native and standalone live diagnosis;
+no reconciliation cron or controlled tick exists. Live
 duplicate-tick recovery, terminal retention, approved finding publication, and
 version-aware comparison remain unexercised or blocked by later approval gates.
 
