@@ -11,20 +11,19 @@ evaluator homes and owned worktrees; restricted-container execution; immutable
 evaluation evidence; comparison verdicts; lesson-reuse deltas; cleanup and
 quarantine; and increment/DOX reconciliation.
 
-Two attended manual cycles exercised the detached controller's admission,
+Three attended manual cycles exercised the detached controller's admission,
 approval, evaluation, delivery, replay, and terminal completion paths. The
 shared dry-run-first CLI exposes deterministic reconciliation with an exact
-preview-digest apply gate. Exact detached revision `550671c` is now installed in
-the persistent controller and exposes digest-bound cancellation through native
-and standalone command surfaces. One matching no-agent reconciliation cron is
-paused
-on its intended 15-minute schedule after two separately approved controlled runs
-proved admission/replay convergence on one cycle. Separately approved
-cancellation then closed issue #4 not planned, archived both cards, retained
-attended receipt `telegram:37`, and returned both diagnosis routes to 11/11.
-Terminal retention, approved finding publication,
-and version-aware comparison remain unexercised or blocked by later approval
-gates.
+preview-digest apply gate. Exact detached revision `9d9f4f6` is now installed in
+the persistent controller and exposes digest-bound cancellation and completion
+through native and standalone command surfaces. One matching no-agent
+reconciliation cron is paused on its intended 15-minute schedule after two
+separately approved controlled runs proved admission/replay convergence on one
+cycle. Separately approved cancellation closed issue #4 not planned. Phase 5C
+then retained the controller-revision evidence increment, completed published
+issue #5 with attended receipt `telegram:44`, and returned both diagnosis routes
+to 11/11. Version-aware comparison and publication of the two new control-plane
+findings remain blocked by later approval gates.
 
 Authoritative implementation sources are `daidala/projects.py`,
 `daidala/registrations.py`, `daidala/cycles.py`, `daidala/increments.py`,

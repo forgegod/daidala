@@ -6,10 +6,13 @@ Phases 1 through 4F, Phase 5A reconciliation, and the controlled Phase 5B
 reconciliation tick and closeout are complete. Phase 5C selected published
 finding [#5](https://github.com/forgegod/daidala/issues/5), completed one
 approval-gated candidate workflow, and applied the separately approved retained
-diff to the target checkout. The retained change is not yet committed, pushed,
-installed, or terminally completed; issue #5 remains open and claimed. Detached
-controller revision `550671c19e5434fbe183140214ca12b4a047692d` remains active,
-and the reconciliation cron remains paused.
+diff to the target checkout. Checkpoints `83780e2` and `9d9f4f6` retain the
+increment and its completion prerequisite. Detached controller revision
+`9d9f4f6a2801293e20622d98c97f50d017888872` is installed; exact completion digest
+`f9f5566ee15f7797d72c230e69e06c13930f4b6a5ca6b9e5214cdd624ab9fd65`
+closed issue #5 as completed and delivered attended receipt `telegram:44`.
+Native and standalone diagnosis pass 11/11, and the reconciliation cron remains
+paused. No push, release, or control-finding publication occurred.
 
 Each Phase 5A workflow independently changed only `calculator.py` and
 `test_calculator.py`, reproduced `AssertionError: 1 != 2` in the restricted
@@ -215,8 +218,8 @@ still authorizes no pack preference.
   repository interpreter and preserves all failed evidence.
 - **Retention:** separate approval applied the exact immutable diff to clean
   baseline `106b4f923823e016d33f95c66a826ec55a2bb1e1`. The target checkout passes the
-  complete repository gate. Commit, push, controller installation, issue
-  completion, and release remain separately gated.
+  complete repository gate and retains checkpoint `83780e2`. Push and release
+  remain separately gated.
 - **Control findings:** one blocked approval card was promoted and approved by an
   autonomous worker before attended approval; recovery stopped the worker before
   any diff, invalidated approval, and removed the clean worktree. Constraint and
@@ -226,9 +229,14 @@ still authorizes no pack preference.
   digest. The source completion preview now canonicalizes those passing identities
   as a unique sorted set. Two no-mutation standalone previews converge on digest
   `a09f3405f8dcd98360186b2373bb8845e7d3cc84ca5a47f214d8d19d80027c8b`;
-  native apply remains blocked until this exact source is separately installed.
-- **Status:** `pass` for candidate measurement and retention; terminal completion
-  is pending.
+  checkpoint `9d9f4f6` passes 407 tests and the complete release gate. Exact detached
+  installation plus native/standalone parity passed before apply.
+- **Completion:** separately approved application of that exact preview closed
+  issue #5 as completed, released its claim, retained remote, notification, and
+  terminal records at mode `0600`, and delivered receipt `telegram:44`.
+  Completion digest is
+  `f9f5566ee15f7797d72c230e69e06c13930f4b6a5ca6b9e5214cdd624ab9fd65`.
+- **Status:** `pass`.
 
 ## Identities, receipts, findings, and blockers
 
@@ -236,7 +244,9 @@ still authorizes no pack preference.
 - Committed manifest path: `.daidala/project.yaml`.
 - Phase 3 implementation checkpoint: `31e043be49f19a8f69cfb5eb630fb5b1257abc00`.
 - Phase 4 implementation checkpoint: `cba9c52`.
-- Installed detached controller: `550671c19e5434fbe183140214ca12b4a047692d`.
+- Installed detached controller: `9d9f4f6a2801293e20622d98c97f50d017888872`;
+  rollback controller `550671c19e5434fbe183140214ca12b4a047692d` and its
+  prior evidence remain outside plugin discovery.
 - The approved-attempt prerequisite report is
   [`prerequisite-report-15c3a629e5d670012642a137524d3659ccd42bf6b034b2ec6eabd05e3bbd8e70.json`](prerequisite-report-15c3a629e5d670012642a137524d3659ccd42bf6b034b2ec6eabd05e3bbd8e70.json),
   exits `0`, has the matching SHA-256
@@ -254,13 +264,13 @@ still authorizes no pack preference.
   its claim is released.
 - Phase 5B admission receipt: `telegram:30`; terminal cancellation receipt:
   `telegram:37`. Issue #4 is closed not planned and its active labels are removed.
-- Phase 5C issue #5 is open and claimed. Its retained cycle, plan,
-  implementation, review, and delivery identities are recorded above; completion
-  has not been previewed or applied.
+- Phase 5C issue #5 is closed completed and its claim is released. Its retained
+  cycle, plan, implementation, review, delivery, completion, and attended receipt
+  identities are recorded above.
 - Both workflow evidence sets remain mode-`0600` profile-local files. Private
   destination data is omitted from this record.
 - Phase 5C retains one controller-identity increment. No preferred-pack decision,
-  control-finding publication, push, controller promotion, or release occurred.
+  control-finding publication, push, or release occurred.
   Phase 5B still leaves one paused cron and one terminal probe cycle.
 
 ## Redaction statement

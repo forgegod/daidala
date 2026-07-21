@@ -32,8 +32,8 @@ again; later workflow stages remain separately approval-gated.
   terminal probe cycle; it created no retained change or remote finding.
 - Current source implements dry-run-first, digest-bound cancellation for that
   terminal probe closeout. It passes the complete repository and release gate
-  and is installed at detached controller revision `550671c`; approved preview
-  `9deb8cef` converged on terminal cancellation digest `99fe86b3`.
+  and remains exercised at detached controller revision `550671c`; approved
+  preview `9deb8cef` converged on terminal cancellation digest `99fe86b3`.
 - `daidala/reconciliation.py` now owns strict previews/results and immutable
   mode-`0600` tick evidence; `daidala/project_cycles.py` composes explicit
   prerequisite interpretation, terminal-record-aware active ownership, stable
@@ -42,12 +42,13 @@ again; later workflow stages remain separately approval-gated.
   audited, replay-safe claim release. The shared CLI exposes reconciliation as
   dry-run by default and requires an exact preview digest for apply.
 - Current source and the installed controller expose equivalent standalone and
-  native reconciliation and cancellation help. The controller profile runs
-  exact clean detached revision `550671c`.
+  native reconciliation, cancellation, and completion behavior. The controller
+  profile runs exact clean detached revision `9d9f4f6`; `550671c` is retained as
+  rollback outside plugin discovery.
 - The complete repository, packaging, release-content, pack, link, lint, and
-  test gate passes with 398 tests. Native and standalone installation diagnosis
-  and post-cancellation diagnosis pass all eleven checks. Issue #4 is closed not
-  planned, both workflow cards are archived, and no remote ref changed.
+  test gate passes with 407 tests. Native and standalone installation diagnosis
+  pass all eleven checks. Issue #4 is closed not planned, issue #5 is closed
+  completed, both terminal claims are released, and no remote ref changed.
 - `hermes -p daidala-self-improvement cron status` reports a running gateway and
   no active jobs. `cron list --all` reports exactly one paused no-agent job named
   `daidala-forgegod-daidala-reconciliation` on `every 15m`; its repeat is
@@ -64,10 +65,10 @@ again; later workflow stages remain separately approval-gated.
 
 ## Risk call-out
 
-The controller remains pinned to exact detached revision `550671c` even as
+The controller remains pinned to exact detached revision `9d9f4f6` even as
 documentation checkpoints advance the working branch. Staging, failed, and
-rollback checkouts stay outside the profile plugin scan root so no duplicate
-Daidala manifest can override the active controller.
+rollback checkouts, including `550671c`, stay outside the profile plugin scan root
+so no duplicate Daidala manifest can override the active controller.
 
 The second risk is a nominal "paused" job that can still run before verification.
 Later phases mutate profile-local controller state, Hermes cron state, GitHub

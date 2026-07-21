@@ -36,9 +36,13 @@ loaded by the controller gateway.
 `incomparable` cross-pack outcome. Phase 5B is complete: two separately approved
 cron executions converged on one claim, cycle, graph, and attended receipt, and
 the no-agent job is paused again. Exact detached controller revision `550671c`
-is installed. Separately approved cancellation closed issue #4 not planned,
-archived both cards, retained receipt `telegram:37`, converged on replay, and
-returned native and standalone live diagnosis to 11/11. Phase 5B-C is complete.
+was used for the Phase 5B closeout. Separately approved cancellation closed issue
+#4 not planned, archived both cards, retained receipt `telegram:37`, converged on
+replay, and returned native and standalone live diagnosis to 11/11. Phase 5B-C
+is complete.
+Phase 5C retained controller-revision evidence, installed exact detached
+controller `9d9f4f6`, closed issue #5 completed with receipt `telegram:44`, and
+returned both diagnosis routes to 11/11.
 The resumable execution record is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 
@@ -60,7 +64,7 @@ The resumable execution record is saved in
 | 5A — UC-01 evidence reconciliation | done | All retained plan, baseline, candidate, review, delivery, and completion hashes match; both workflows are terminal, but different repository baselines and candidate test fixtures make pack comparison `incomparable`. |
 | 5B — Paused reconciliation cron and controlled tick | done | Two approved executions produced `admitted` then `replayed` for one issue, claim, cycle, graph, and attended receipt. The no-agent job is paused on `every 15m`; no worktree, approval, commit, or push exists. |
 | 5B-C — Deterministic probe cancellation | done | Exact detached revision `550671c`, approved preview `9deb8cef`, terminal digest `99fe86b3`, receipt `telegram:37`, identical replay, archived cards, and 11/11 diagnosis prove deterministic closeout. |
-| 5C — Approved improvement and findings synchronization | pending | Select one exact improvement; separate cycle, retention, and publication approvals remain required. |
+| 5C — Approved improvement and findings synchronization | done | Issue #5 retained strict v2 controller-revision evidence; completion `f9f5566e` released the claim and delivered `telegram:44`. Two control findings remain local and publication pending. |
 | 5D — UC-03 pack evaluation | blocked | Requires one canonical paired fixture, one frozen baseline, one approved candidate skill set, and separate cycle approval. |
 | 6 — Version-aware re-evaluation | blocked | Requires the approved Phase 5 work; candidate Hermes identity is selected here, not invented earlier. |
 | 7 — Repository gate and documentation | blocked | Requires the preceding live evaluation and comparison evidence. |
@@ -72,9 +76,9 @@ a named prerequisite is incomplete.
 ## Current operational state
 
 - The persistent controller loads clean detached revision
-  `550671c19e5434fbe183140214ca12b4a047692d`; protected prerequisite evidence
-  records the same revision at mode `0600`. Clean recovery revision `31331e8`
-  remains retained outside the plugin scan root.
+  `9d9f4f6a2801293e20622d98c97f50d017888872`; protected prerequisite and paused
+  cron evidence record the same revision. Clean rollback revision `550671c` and
+  recovery revision `31331e8` remain outside the plugin scan root.
 - Addyosmani cycle
   `cycle-21158b4320bf09968915110abdfeb32ac2a0c833acfe90a99bf340936c148f55`
   retains accepted review and evidence-only delivery with commit and push false.
@@ -110,10 +114,15 @@ a named prerequisite is incomplete.
   outcomes were `admitted` then `replayed` with one claim, graph, and attended
   receipt. Before closeout, the plan card remained blocked without approval or a
   worktree; commit and push remain false.
-- Phase 5B-C cancellation passes the repository and release gate and is installed
+- Phase 5B-C cancellation passed the repository and release gate and was exercised
   at `550671c`. Issue #4 is closed not planned, its active labels are removed,
   both cards are archived, receipt `telegram:37` is retained, diagnosis is 11/11,
   and the cron remains paused.
+- Phase 5C cycle
+  `cycle-cbbbfd0273b7144cd2475369d14c9b55bd301ffd442728531bcb61db3c71ba18`
+  retains implementation `401f3dfe`, completion `f9f5566e`, and receipt
+  `telegram:44`. Issue #5 is closed completed, its claim is released, no worktree
+  remains, and commit/push in delivery evidence remain false.
 
 ## Registered project
 
@@ -873,15 +882,15 @@ used approved policy revision 2 and final plan revision 3. Immutable implementat
 `401f3dfec2604f5d64a7a605ede17f494644574dc567d755512f86b1c27a93f3`
 passed 50 focused and 406 full tests, accepted review, both pack validations, the
 complete release gate, and separate retention approval before application to
-baseline `106b4f923823e016d33f95c66a826ec55a2bb1e1`. Commit, completion, push,
-installation, and release remain pending. The run also exposed two local
+baseline `106b4f923823e016d33f95c66a826ec55a2bb1e1`. The run also exposed two local
 publication-pending control findings: autonomous promotion of a blocked approval
-gate and historical artifact-path reuse across revisions. Phase 5D does not start
-until the retained checkpoint and exact completion gate close issue #5. The first
-completion preview exposed duplicate successful-output digests; the bounded source
-fix canonicalizes them and produces stable no-mutation preview digest
+gate and historical artifact-path reuse across revisions. The first completion
+preview exposed duplicate successful-output digests; checkpoint `9d9f4f6`
+canonicalizes them and produced stable no-mutation preview digest
 `a09f3405f8dcd98360186b2373bb8845e7d3cc84ca5a47f214d8d19d80027c8b`.
-Installation and apply remain separately gated.
+Separate install and apply approvals produced terminal completion `f9f5566e`,
+receipt `telegram:44`, issue #5 closed completed, and 11/11 diagnosis. Push,
+release, and control-finding publication remain separately gated.
 
 #### Phase 5D — UC-03 pack evaluation
 
