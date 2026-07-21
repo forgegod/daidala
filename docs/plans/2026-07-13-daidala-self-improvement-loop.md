@@ -43,17 +43,14 @@ is complete.
 Phase 5C retained controller-revision evidence, installed exact detached
 controller `9d9f4f6`, closed issue #5 completed with receipt `telegram:44`, and
 returned both diagnosis routes to 11/11.
-Phase 5C-R is in progress. Its Phase 0 publication and scope gate produced
-findings [#6](https://github.com/forgegod/daidala/issues/6) and
-[#7](https://github.com/forgegod/daidala/issues/7) without readiness, and exact
-Increment A scope digest `8752c0647d1d82b35cd5995527c3726af778392375baac904525735ea659979a`
-received attended approval. Phase 1 then produced repository-verified candidate
-digest `ddef04b37f011c4d5b9062c2c7344152f1d44900a834f0e551a2c0e30d78b1ce`;
-retention and exact detached controller installation at `9f380a6` are complete,
-controlled evidence retains `TC-F06-01` as `pass`, issue #6 is closed completed,
-and native and standalone diagnosis pass 11/11. Increment B is repository-
-verified at candidate diff `3f10625b` under exact scope digest `d531546d`;
-retention and installation remain separately gated.
+Phase 5C-R is complete. Separately approved Increment A/B retention,
+installation, controlled probes, terminal cleanup, and finding reconciliation
+retain `TC-F06-01` and `TC-F07-01` as `pass`. Issues
+[#6](https://github.com/forgegod/daidala/issues/6) and
+[#7](https://github.com/forgegod/daidala/issues/7) are closed `completed` and
+`Done`; exact detached controller `2595bf5` and rollback `9f380a6` are clean,
+reconciliation remains paused, and native plus standalone diagnosis pass 11/11.
+Phase 5D is pending and unstarted.
 The resumable execution record is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 The two failed Phase 5C control cases are explicit follow-up actions in
@@ -78,8 +75,8 @@ The two failed Phase 5C control cases are explicit follow-up actions in
 | 5B — Paused reconciliation cron and controlled tick | done | Two approved executions produced `admitted` then `replayed` for one issue, claim, cycle, graph, and attended receipt. The no-agent job is paused on `every 15m`; no worktree, approval, commit, or push exists. |
 | 5B-C — Deterministic probe cancellation | done | Exact detached revision `550671c`, approved preview `9deb8cef`, terminal digest `99fe86b3`, receipt `telegram:37`, identical replay, archived cards, and 11/11 diagnosis prove deterministic closeout. |
 | 5C — Approved improvement and findings synchronization | done | Issue #5 retained strict v2 controller-revision evidence; completion `f9f5566e` released the claim and delivered `telegram:44`. The two control findings were ranged into Phase 5C-R. |
-| 5C-R — Control-plane findings remediation | in-progress | Child Phase 3 post-review candidate `3f10625b` passes 411 tests and the complete gate under scope `d531546d`; Increment B retention, installation, and controlled evidence remain separately gated. |
-| 5D — UC-03 pack evaluation | blocked | Requires Phase 5C-R done, one canonical paired fixture, one frozen baseline, one approved candidate skill set, and separate cycle approval. |
+| 5C-R — Control-plane findings remediation | done | Exact controller `2595bf5`; `TC-F06-01`/`TC-F07-01` retained as `pass`; issues #6/#7 closed completed and `Done`; probe manifests `0db444d6`/`5a79e2fa`; cron paused; diagnosis 11/11. |
+| 5D — UC-03 pack evaluation | pending | Phase 5C-R is done; this phase remains unstarted and still requires one canonical paired fixture, one frozen baseline, one approved candidate skill set, and separate cycle approval. |
 | 6 — Version-aware re-evaluation | blocked | Requires the approved Phase 5 work; candidate Hermes identity is selected here, not invented earlier. |
 | 7 — Repository gate and documentation | blocked | Requires the preceding live evaluation and comparison evidence. |
 
@@ -90,9 +87,10 @@ a named prerequisite is incomplete.
 ## Current operational state
 
 - The persistent controller loads clean detached revision
-  `9f380a6b04fdbb51817c7ac2279b217fda34f0c2`; protected prerequisite and paused
-  cron evidence record the same revision. Clean rollback revisions `9d9f4f6` and
-  `550671c`, plus recovery revision `31331e8`, remain outside the plugin scan root.
+  `2595bf5f8aacdd1411c101250acc2d0211eaf22a`; protected prerequisite and paused
+  cron evidence record the same revision. Clean rollback revisions `9f380a6`,
+  `9d9f4f6`, and `550671c`, plus recovery revision `31331e8`, remain outside the
+  plugin scan root.
 - Addyosmani cycle
   `cycle-21158b4320bf09968915110abdfeb32ac2a0c833acfe90a99bf340936c148f55`
   retains accepted review and evidence-only delivery with commit and push false.
@@ -137,14 +135,15 @@ a named prerequisite is incomplete.
   retains implementation `401f3dfe`, completion `f9f5566e`, and receipt
   `telegram:44`. Issue #5 is closed completed, its claim is released, no worktree
   remains, and commit/push in delivery evidence remain false.
-- Phase 5C-R controlled workflow `tc-f06-direct-approval-probe-v2` retains
+- Phase 5C-R approval workflow `tc-f06-direct-approval-probe-v2` retains
   fail-closed worker envelope `1f4a99ec`, zero-mutation comparison `217d8b9d`,
-  post-approval graph verification `5d9491c3`, cleanup `c0fb8d85`, and final
-  manifest `0db444d6`. One attended exact-digest approval created one worktree and
-  four post-gate cards without an approval card or worker run; cancellation
-  archived all six cards and removed the worktree before gateway restoration.
-  Issue #6 is closed completed and `Done`; issue #7 remains open, `Todo`, and
-  unready.
+  post-approval graph verification `5d9491c3`, and final manifest `0db444d6`.
+- Artifact workflow `tc-f07-revision-artifact-probe-v1` retains replay comparison
+  `1032386d`, conflict envelope `91a4efad`, five historical artifact references,
+  terminal system evidence `e9224f67`, and cleanup manifest `5a79e2fa`.
+- Both workflows were separately cancelled and cleaned up before gateway
+  restoration. Issues #6 and #7 are closed `completed` and `Done`; diagnosis is
+  11/11, no active cycle or owned worktree exists, and the cron remains paused.
 
 ## Registered project
 
@@ -913,10 +912,9 @@ canonicalizes them and produced stable no-mutation preview digest
 Separate install and apply approvals produced terminal completion `f9f5566e`,
 receipt `telegram:44`, issue #5 closed completed, and 11/11 diagnosis. Push,
 release, and control-finding publication remain separately gated.
-The remediation plan makes `TC-F06-01` and `TC-F07-01` concrete ordered action
-items. `TC-F06-01` is retained as `pass` after separately approved source,
-installation, controlled evidence, and finding closeout. `TC-F07-01` remains
-`fail` until Increment B source and controlled evidence pass.
+The remediation plan completed separately approved source, installation,
+controlled evidence, cleanup, and finding closeout for both control cases.
+`TC-F06-01` and `TC-F07-01` are retained as `pass`.
 
 #### Phase 5C-R — Control-plane findings remediation
 
@@ -928,10 +926,11 @@ installation, controlled evidence, and finding closeout. `TC-F07-01` remains
   installation, live-probe, and closeout gates in order.
 - Do not start Phase 5D from the parent plan until the child plan is done.
 
-Gate: the child plan is `done`; `TC-F06-01` and `TC-F07-01` are retained as
-`pass`; native and standalone diagnosis pass 11/11; the reconciliation cron is
-paused; the repository is clean; and the closeout checkpoint is recorded in this
-row.
+Gate passed: child plan is `done`; `TC-F06-01` and `TC-F07-01` are retained as
+`pass`; issues #6/#7 are closed completed and `Done`; native and standalone
+diagnosis pass 11/11; reconciliation remains paused; repository and installed
+controller are clean at `2595bf5`; and the row records probe manifests
+`0db444d6` and `5a79e2fa`. Phase 5D remains unstarted.
 
 #### Phase 5D — UC-03 pack evaluation
 

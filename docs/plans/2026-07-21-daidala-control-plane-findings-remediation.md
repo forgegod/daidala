@@ -1,9 +1,9 @@
 # Daidala Control-Plane Findings Remediation Plan
 
-**Status:** in progress — Increment A revision `9f380a6` is retained, installed,
-and controlled-evidence verified. Increment B is repository-verified at candidate
-diff `3f10625b` under exact scope `d531546d`; retention, installation, live
-probing, finding closure, push, release, and deployment remain unapproved.
+**Status:** done — Increments A and B are retained, installed, and
+controlled-evidence verified. Issues #6 and #7 are closed completed and `Done`;
+native and standalone diagnosis pass 11/11, reconciliation remains paused, and
+push, release, and deployment remain unapproved.
 
 **Parent plan:**
 [`2026-07-13-daidala-self-improvement-loop.md`](2026-07-13-daidala-self-improvement-loop.md)
@@ -38,8 +38,8 @@ Documentation in the Phase 5C evaluation and parent plan did not fix either beha
 | 1 | Increment A candidate — non-executable approval gate | done (candidate `ddef04b3`; 410 tests) | Focused tests and the complete repository gate pass against one immutable candidate diff; no live state changes. |
 | 2 | Increment A retention, installation, and controlled evidence | done (manifest `0db444d6`; issue #6 completed) | Separate retention/install/probe approvals hold; `TC-F06-01` passes, diagnosis is 11/11, cron is paused, and the finding is terminally reconciled. |
 | 3 | Increment B candidate — immutable revision artifacts | done (candidate `3f10625b`; 411 tests) | Focused tests and the complete repository gate pass against one immutable candidate diff; historical fixture bytes remain unchanged. |
-| 4 | Increment B retention, installation, and controlled evidence | pending | Separate retention/install/probe approvals hold; `TC-F07-01` passes, diagnosis is 11/11, cron is paused, and the finding is terminally reconciled. |
-| 5 | Closeout and parent-plan reconciliation | pending | Both cases are retained as `pass`, this plan is `done`, parent Phase 5C-R is done with closeout evidence, and Phase 5D remains unstarted. |
+| 4 | Increment B retention, installation, and controlled evidence | done (`2595bf5`; manifest `5a79e2fa`; issue #7 completed) | Separate retention/install/probe/cleanup approvals held; `TC-F07-01` passed, diagnosis returned to 11/11, cron stayed paused, and the finding was terminally reconciled. |
+| 5 | Closeout and parent-plan reconciliation | done | Both cases are retained as `pass`, this plan and parent Phase 5C-R are done, and Phase 5D remains unstarted. |
 
 Mark one row `in-progress` while executing it, `done (<evidence>)` only after its
 gate passes, and leave every later row `pending`.
@@ -332,14 +332,42 @@ python scripts/check_release_contents.py . --wheel dist/*.whl
   `d531546dde3ba60dde5537da3b5fa037c59824cc13f6557fcc9eb8987181fe94`
 - Implementation/test/contract diff digest:
   `3f10625b96f085d50e5d318fb3b8d317629bfa07d3c0f90ad4f7f320acc2d82f`
-- Initial retention checkpoint `4687e2d` was superseded before installation
-  after independent review tightened ledger-native sidecar reads and historical
-  hash evidence. The post-review candidate requires separate retention.
+- Independent review tightened ledger-native sidecar reads and historical hash
+  evidence before final retention at
+  `2595bf5f8aacdd1411c101250acc2d0211eaf22a`.
 - Focused gate: 92 tests, Ruff, markdown links, and `git diff --check` pass.
 - Complete gate: 411 tests, Ruff, both pack validators, build, Twine,
   release-content validation, and Lefthook pass.
-- No commit, controller installation, live workflow, cron resume, push, release,
-  or deployment occurred.
+
+## Phase 4 evidence
+
+- Separately approved installation activated clean detached controller
+  `2595bf5f8aacdd1411c101250acc2d0211eaf22a` and retained clean detached rollback
+  `9f380a6b04fdbb51817c7ac2279b217fda34f0c2` outside plugin discovery.
+- Mode-`0600` prerequisite and cron evidence bind the installed revision. Native
+  and standalone diagnosis pass 11/11, gateway service PID `4088074` is active,
+  and reconciliation job `1847b1b1e14b` remains paused.
+- Controlled workflow `tc-f07-revision-artifact-probe-v1` retained five distinct
+  stage artifacts across policy revisions 1/2 and plan revisions 0/1. Replay
+  comparison `1032386d`, conflict envelope `91a4efad`, final ledger `3d44a464`,
+  and artifact inventory `e203705d` prove convergence, fail-closed conflict, and
+  unchanged historical bytes.
+- Separately approved cleanup archived all four disposable cards, retained five
+  ledger artifact references with commit/push false, and produced terminal system
+  evidence `e9224f67` plus cleanup manifest `5a79e2fa` before 11/11 diagnosis.
+- Separately approved reconciliation comment
+  [#7](https://github.com/forgegod/daidala/issues/7#issuecomment-5038210238)
+  records the evidence; issue #7 is closed `completed` and Project status `Done`.
+
+## Phase 5 evidence
+
+- `TC-F06-01` and `TC-F07-01` are retained as `pass`; issues #6 and #7 are closed
+  `completed` and `Done`.
+- The registered checkout and installed controller are clean at `2595bf5`, the
+  cron remains paused, no active cycle or owned worktree exists, and both live
+  diagnosis routes pass all eleven checks.
+- Parent Phase 5C-R is reconciled as done. Phase 5D is pending and unstarted;
+  push, release, deployment, and cron resume remain unapproved.
 
 ## Controlled evidence
 
@@ -361,15 +389,22 @@ The retained direct-workflow probe established all required boundaries:
 6. native and standalone live diagnosis returned to 11/11 with the cron paused
    and repository clean.
 
-### Artifact probe
+### Artifact probe — completed
 
-1. Start one disposable controlled workflow with the cron paused.
-2. Capture hashes and modes for revision-1 define and plan artifacts.
-3. Replace constraints and plan through separately approved operations.
-4. Verify distinct revision paths and unchanged revision-1 bytes, hashes, and modes.
-5. Replay same-content writes and verify convergence without new objects.
-6. Attempt conflicting bytes at an existing path and verify fail-closed behavior.
-7. Cancel the disposable cycle through its separately approved terminal preview.
+The retained direct-workflow probe established all required boundaries:
+
+1. policy revisions 1/2 and plan revisions 0/1 produced five distinct mode-`0600`
+   stage paths whose bytes and SHA-256 digests match their original inputs;
+2. same-content replay converged on the existing `StoredArtifact` without a new
+   object or inventory change;
+3. one conflicting payload raised `ExecutionError` without changing retained
+   bytes or inventory;
+4. delivery, verification, cancellation, and restart checks resolved
+   ledger-authoritative historical references without rewriting paths;
+5. separately approved cancellation archived all four cards without creating an
+   approval, worktree, commit, or push; and
+6. gateway restoration returned native and standalone diagnosis to 11/11 with
+   the cron paused and repository clean.
 
 Private destinations and credentials remain excluded from retained evidence.
 
@@ -404,6 +439,6 @@ Stop before mutation when any of these is true:
 
 - `TC-F06-01` passes because no executable approval task exists and Kanban workers cannot invoke approval.
 - `TC-F07-01` passes because every revision has a distinct path and every stored object is immutable.
-- `TC-F06-01` is retained as `pass` and issue #6 is closed completed.
-- `TC-F07-01` remains `fail` and issue #7 remains open and unready until
-  Increment B controlled evidence is retained.
+- Both cases are retained as `pass`; issues #6 and #7 are closed `completed` and
+  Project status `Done`.
+- Phase 5C-R is complete. Phase 5D remains unstarted and separately gated.
