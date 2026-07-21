@@ -11,8 +11,9 @@ v1 and its immutable definition guessed a different command. Cancellation
 `e606f24c` released issue #9 and restored 11/11 diagnosis. Phase 2 remediation
 packet [`eb02da7c`](2026-07-21-daidala-phase-5d-uc03-experiment-v2.json)
 preserves the frozen contract/fixture and adds one mode-`0600` profile-local
-distribution path; exact GitHub mutation and replacement admission remain
-separately gated.
+distribution path. Its exact bytes are installed there; replacement control
+issue #11 and candidate issue #10 are byte-identical and unready. Readiness and
+replacement admission remain separately gated.
 
 **Parent plan:**
 [`2026-07-13-daidala-self-improvement-loop.md`](2026-07-13-daidala-self-improvement-loop.md)
@@ -62,7 +63,7 @@ worktree, or ledger state by inspection.
 |---|---|---|---|
 | 0 | Restore evidence authority and expose exact comparison admission | done (416 tests + complete release gate) | Focused project-cycle/CLI tests and the complete repository/release gate pass; current source exposes `--mode evaluate-pack --candidate-identity`; no live state changes. |
 | 1 | Freeze the paired experiment and install the exact controller | done (packet `c0cdfefb`; controller `3ce1bfc`; issues #9/#10) | Packet and nested digests verify; controller/help/packs agree; native/standalone diagnosis pass 11/11; cron is paused; issues are exact and unready; no cycle or owned worktree exists. |
-| 2 | Run the Addyosmani control workflow | in-progress (first attempt canceled `e606f24c`; remediation packet `eb02da7c` prepared) | One separately approved replacement `evaluate-pack` cycle using `addyosmani` reads the exact runtime packet before definition, reaches accepted evidence-only delivery, and cleans up with no retention, commit, or push. |
+| 2 | Run the Addyosmani control workflow | in-progress (first attempt canceled `e606f24c`; packet `eb02da7c` distributed; issues #11/#10 unready) | One separately approved replacement `evaluate-pack` cycle using `addyosmani` reads the exact runtime packet before definition, reaches accepted evidence-only delivery, and cleans up with no retention, commit, or push. |
 | 3 | Run the Aidlc candidate workflow | pending | One separately approved `evaluate-pack` cycle using `aidlc` reaches accepted evidence-only delivery and terminal cleanup with identities equal to Phase 2 except the selected pack. |
 | 4 | Compare, reconcile, and close Phase 5D | pending | Deterministic comparison eligibility passes or records `incomparable` for an exact missing identity; the result record and plans agree; no default, manifest, skill installation, controller, or remote ref changes automatically. |
 
@@ -286,6 +287,12 @@ Prepared remediation packet:
 - packet v2 changes only distribution and byte-identical intake guidance; baseline,
   controller, packs, candidate, source, fixture, evaluator, routing, limits,
   commands, metrics, and stop conditions remain unchanged
+
+The approved remediation apply copied those exact bytes to the runtime path with
+mode `0600`, updated candidate issue #10, and created replacement control issue
+#11. Both current payloads are byte-identical, open, unready, and unclaimed.
+Issue #9 and its canceled cycle remain terminal evidence. No readiness,
+admission, worktree, implementation, retention, or publication occurred.
 
 ## Phase 3 — Run the Aidlc candidate workflow
 

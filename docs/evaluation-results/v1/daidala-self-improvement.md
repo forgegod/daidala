@@ -114,9 +114,11 @@ The first control cycle was canceled at `e606f24c` before plan approval or
 worktree creation because definition `a580a0be` guessed a verification command
 that differed from the packet. Issue #9 is closed not planned, issue #10 remains
 unready, and diagnosis is 11/11. Packet v2 `eb02da7c` keeps the contract/fixture
-digests unchanged and adds the exact profile-local distribution required before
-definition. GitHub mutation, replacement cycles, plans, cleanup, retention,
-publication, push, release, and promotion remain separately gated in the
+digests unchanged and is installed at the exact profile-local distribution path
+required before definition. Replacement control issue #11 and candidate issue
+#10 are byte-identical, open, unready, and unclaimed. Replacement cycles, plans,
+cleanup, retention, publication, push, release, and promotion remain separately
+gated in the
 [Phase 5D child plan](../../plans/2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md).
 
 ## UC-01 reconciliation
