@@ -54,10 +54,12 @@ Phase 5D is in progress through its ranged paired-evaluation child plan. Phase 0
 is complete with 416 tests and the complete repository/release gate passing. The
 operator approved the pinned Addyosmani-versus-Aidlc comparison and canonical
 `importlib.resources` migration fixture. Child Phase 1 froze exact packet
-`c0cdfefb`, installed detached controller `3ce1bfc`, and created byte-identical
-unready issues #9/#10 with 11/11 diagnosis and paused reconciliation. Readiness,
-cycle, plan, cleanup, retention, publication, push, release, and promotion gates
-remain separate.
+`c0cdfefb` and installed detached controller `3ce1bfc`. The first control cycle
+was canceled at `e606f24c` before plan approval because its definition could not
+read the packet from detached baseline `3ce1bfc`; issue #9 is closed not planned,
+issue #10 remains unready, and diagnosis is 11/11. Remediation packet `eb02da7c`
+adds an exact profile-local distribution path; issue mutation, replacement cycle,
+plan, cleanup, retention, publication, push, release, and promotion remain gated.
 The resumable execution record is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 The two failed Phase 5C control cases are explicit follow-up actions in
@@ -85,7 +87,7 @@ Phase 5D execution is ranged in
 | 5B-C — Deterministic probe cancellation | done | Exact detached revision `550671c`, approved preview `9deb8cef`, terminal digest `99fe86b3`, receipt `telegram:37`, identical replay, archived cards, and 11/11 diagnosis prove deterministic closeout. |
 | 5C — Approved improvement and findings synchronization | done | Issue #5 retained strict v2 controller-revision evidence; completion `f9f5566e` released the claim and delivered `telegram:44`. The two control findings were ranged into Phase 5C-R. |
 | 5C-R — Control-plane findings remediation | done | Exact controller `2595bf5`; `TC-F06-01`/`TC-F07-01` retained as `pass`; issues #6/#7 closed completed and `Done`; probe manifests `0db444d6`/`5a79e2fa`; cron paused; diagnosis 11/11. |
-| 5D — UC-03 pack evaluation | in-progress ([child plan](2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md)) | Child Phase 1 is done at packet `c0cdfefb`, controller `3ce1bfc`, issues #9/#10 unready, 11/11 diagnosis, and paused cron; Phase 2 requires separate readiness/admission approval. |
+| 5D — UC-03 pack evaluation | in-progress ([child plan](2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md)) | First control cycle canceled at `e606f24c` without implementation after packet-visibility mismatch; remediation packet `eb02da7c` is prepared, issue #10 is unready, diagnosis is 11/11, and replacement live mutations remain gated. |
 | 6 — Version-aware re-evaluation | blocked | Requires the Phase 5D child closeout; candidate Hermes identity is selected here, not invented earlier. |
 | 7 — Repository gate and documentation | blocked | Requires the preceding live evaluation and comparison evidence. |
 

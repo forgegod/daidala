@@ -109,13 +109,14 @@ Status: `not-run`. The operator selected the pinned current/default
 `addyosmani` pack, pinned candidate `aidlc`, and one canonical Python
 `importlib.resources.contents()` migration fixture. The dry-run-first
 comparison-admission prerequisite passes the complete repository gate. Exact
-packet `c0cdfefb6740752d96dd2864f751c5fda25292bb26d889764e593fccf2c8645e`
-is locally preflighted; detached controller `3ce1bfc` is installed; exact open
-issue #9 is the `current-control`/`addyosmani` run and issue #10 is the
-`candidate`/`aidlc` run. They have byte-identical payloads and no ready/claimed
-labels or events; selected pack remains admission-bound rather than issue-bound.
-Cycles, plans, cleanup, retention, publication, push, release, and promotion
-remain separately gated in the
+packet v1 `c0cdfefb` remains retained; detached controller `3ce1bfc` is installed.
+The first control cycle was canceled at `e606f24c` before plan approval or
+worktree creation because definition `a580a0be` guessed a verification command
+that differed from the packet. Issue #9 is closed not planned, issue #10 remains
+unready, and diagnosis is 11/11. Packet v2 `eb02da7c` keeps the contract/fixture
+digests unchanged and adds the exact profile-local distribution required before
+definition. GitHub mutation, replacement cycles, plans, cleanup, retention,
+publication, push, release, and promotion remain separately gated in the
 [Phase 5D child plan](../../plans/2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md).
 
 ## UC-01 reconciliation

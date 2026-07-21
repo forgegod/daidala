@@ -5,13 +5,14 @@ Produce one valid, sequential `evaluate-pack` comparison of the pinned default
 baseline, one canonical package-resource migration fixture, identical evaluator
 and model-routing identities, and separately approved live cycles.
 
-**Status:** in-progress — Phases 0 and 1 are complete. Packet
-[`c0cdfefb`](2026-07-21-daidala-phase-5d-uc03-experiment.json) is frozen at
-checkpoint `fa626f6`; exact detached controller `3ce1bfc` is installed with
-rollback `2595bf5`; issues #9/#10 are byte-identical and unready; both diagnosis
-routes pass 11/11 with reconciliation paused and no active cycle. Phase 2
-readiness, admission, plan approval, cleanup, retention, push, release,
-publication, and promotion remain separate.
+**Status:** in-progress — Phases 0 and 1 are complete. The first control cycle
+was canceled before plan approval because detached baseline `3ce1bfc` hid packet
+v1 and its immutable definition guessed a different command. Cancellation
+`e606f24c` released issue #9 and restored 11/11 diagnosis. Phase 2 remediation
+packet [`eb02da7c`](2026-07-21-daidala-phase-5d-uc03-experiment-v2.json)
+preserves the frozen contract/fixture and adds one mode-`0600` profile-local
+distribution path; exact GitHub mutation and replacement admission remain
+separately gated.
 
 **Parent plan:**
 [`2026-07-13-daidala-self-improvement-loop.md`](2026-07-13-daidala-self-improvement-loop.md)
@@ -40,6 +41,10 @@ publication, and promotion remain separate.
   Python `importlib.resources` documentation. The deprecated
   `contents(anchor)` implementation must be replaced with
   `files(anchor).iterdir()` while preserving exact sorted resource names.
+- Invalid control cycle
+  `cycle-8cbe191f34e879a24fc9888e1d00d7d85624fdf2758cb90c2b66e05861ea3de2`
+  is terminally canceled at digest `e606f24c`; issue #9 is closed not planned,
+  issue #10 remains unready, no owned worktree exists, and diagnosis is 11/11.
 
 ## Risk call-out
 
@@ -57,7 +62,7 @@ worktree, or ledger state by inspection.
 |---|---|---|---|
 | 0 | Restore evidence authority and expose exact comparison admission | done (416 tests + complete release gate) | Focused project-cycle/CLI tests and the complete repository/release gate pass; current source exposes `--mode evaluate-pack --candidate-identity`; no live state changes. |
 | 1 | Freeze the paired experiment and install the exact controller | done (packet `c0cdfefb`; controller `3ce1bfc`; issues #9/#10) | Packet and nested digests verify; controller/help/packs agree; native/standalone diagnosis pass 11/11; cron is paused; issues are exact and unready; no cycle or owned worktree exists. |
-| 2 | Run the Addyosmani control workflow | pending | One separately approved `evaluate-pack` cycle using `addyosmani` reaches accepted evidence-only delivery and terminal cleanup with the frozen fixture and no retention, commit, or push. |
+| 2 | Run the Addyosmani control workflow | in-progress (first attempt canceled `e606f24c`; remediation packet `eb02da7c` prepared) | One separately approved replacement `evaluate-pack` cycle using `addyosmani` reads the exact runtime packet before definition, reaches accepted evidence-only delivery, and cleans up with no retention, commit, or push. |
 | 3 | Run the Aidlc candidate workflow | pending | One separately approved `evaluate-pack` cycle using `aidlc` reaches accepted evidence-only delivery and terminal cleanup with identities equal to Phase 2 except the selected pack. |
 | 4 | Compare, reconcile, and close Phase 5D | pending | Deterministic comparison eligibility passes or records `incomparable` for an exact missing identity; the result record and plans agree; no default, manifest, skill installation, controller, or remote ref changes automatically. |
 
@@ -225,15 +230,22 @@ pack without retaining repository changes.
 
 Steps:
 
-1. Apply readiness only to the approved Addyosmani issue; verify it is the only
-   eligible issue and the Aidlc issue remains unready. Before readiness, record
-   the active branch checkpoint, detach the same registered checkout at exact
-   baseline `3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8`, and rerun 11/11 diagnosis.
+0. Materialize packet v2 byte-for-byte at its mode-`0600` profile-local path,
+   verify embedded contract/fixture digests, update candidate issue #10 to the
+   byte-identical v2 payload, and create one replacement control issue only after
+   exact approval. The prior issue #9/cycle remain terminal evidence.
+1. Apply readiness only to the approved replacement Addyosmani issue; verify it
+   is the only eligible issue and the Aidlc issue remains unready. Before
+   readiness, record the active branch checkpoint, detach the same registered
+   checkout at exact baseline `3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8`,
+   and rerun 11/11 diagnosis.
 2. Run a dry-run admission with `--mode evaluate-pack`, selected pack
    `addyosmani`, and the exact candidate identity. Obtain separate approval for
    the fresh cycle ID and intake digest.
 3. Apply and replay admission; run definition and planning; stop for exact plan
-   digest approval.
+   digest approval. Both stage cards must read packet v2 from the approved
+   profile-local path before emitting an artifact; missing or mismatched bytes
+   block the card.
 4. After separate plan approval, create the canonical fixture only in the owned
    worktree/evaluator, retain baseline evidence before implementation, execute
    the pack, and collect deterministic, repeated, and observational evidence.
@@ -245,6 +257,35 @@ Verification gate: one terminal Addyosmani cycle binds the experiment packet,
 fixture, repository baseline, candidate identity, evaluator, routing, limits,
 commands, and metrics; immutable evidence is complete; no retention, commit,
 push, publication, default change, or second cycle occurred.
+
+Canceled first attempt:
+
+- cycle:
+  `cycle-8cbe191f34e879a24fc9888e1d00d7d85624fdf2758cb90c2b66e05861ea3de2`
+- immutable definition:
+  `a580a0be950ac0e6bdd81e4f58b9cc5d73cd8d59e46612d419c5470b766d6331`
+- mismatch: definition guessed `python -m unittest ... -v`; packet v1 binds
+  `python3 -m unittest ...` without `-v`
+- cancellation preview/digest:
+  `679cf1d9d0ba901f850e217e7211c44c07b83bfba4191a6b68b946420e50e7cb` /
+  `e606f24c787d1e9c024f13c39c8d953baffda0e6644c6072c26b07562b175c44`
+- receipt: `telegram:57`; issue #9 closed not planned; both cards archived;
+  claim released; no worktree or implementation; diagnosis 11/11; cron paused
+
+Prepared remediation packet:
+
+- path:
+  [`2026-07-21-daidala-phase-5d-uc03-experiment-v2.json`](2026-07-21-daidala-phase-5d-uc03-experiment-v2.json)
+- packet SHA-256:
+  `eb02da7c4f714eac03b2486d78c18922a77f5893aaad0548449c037af14c17aa`
+- unchanged contract/fixture SHA-256:
+  `357f6eff03c92b659a67e33a26ada687fa114a0ab57b886ce51917d3e4e0e09e` /
+  `4198f672861d7279aa9f5325a4e6fe1af54aa770f2c454fdd8c46d5d1478239d`
+- runtime path:
+  `/home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/uc03-experiment-packet-v2.json`
+- packet v2 changes only distribution and byte-identical intake guidance; baseline,
+  controller, packs, candidate, source, fixture, evaluator, routing, limits,
+  commands, metrics, and stop conditions remain unchanged
 
 ## Phase 3 — Run the Aidlc candidate workflow
 

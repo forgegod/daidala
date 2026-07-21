@@ -57,7 +57,7 @@ retained evidence.
 | Prerequisite | State | Evidence |
 |---|---|---|
 | Hermes baseline | Pass | `Hermes Agent v0.18.2 (2026.7.7.2)` |
-| Repository identity | Pass | The live report verifies canonical repository `forgegod/daidala`, clean packet checkpoint `fa626f6`, trusted remote identity, and frozen Phase 5D evaluation baseline `3ce1bfc`; no Phase 5D cycle is admitted. |
+| Repository identity | Pass | The live report verifies canonical repository `forgegod/daidala`, a clean branch checkout after cancellation, trusted remote identity, and frozen Phase 5D evaluation baseline `3ce1bfc`; no active cycle exists. |
 | Daidala command surfaces | Pass | Standalone and native controller-profile commands report Daidala `0.2.0`; native pack validation succeeds. |
 | Controller plugin revision | Pass | The controller profile loads clean detached revision `3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8`; native and standalone live diagnosis verify the same identity. Rollback `2595bf5` remains outside discovery. |
 | Controller profile | Pass | `/home/raphael/.hermes/profiles/daidala-self-improvement` exists and the sticky profile remains `hermes-vc`. |
@@ -72,8 +72,8 @@ retained evidence.
 | Trusted runtime state | Pass | Strict registration v2, `credential-bindings.yaml`, and non-secret `prerequisite-evidence.json` parse and both live reports pass all eleven checks. The private attended destination remains profile-local. |
 
 The current native and standalone reports pass all eleven checks with exact
-controller `3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8`, terminal issues #5/#6/#7,
-unready issues #9/#10, and a clean repository. Rollback controllers
+controller `3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8`, terminal issues #5/#6/#7/#9,
+unready issue #10, and a clean repository. Rollback controllers
 `2595bf5f8aacdd1411c101250acc2d0211eaf22a`,
 `9f380a6b04fdbb51817c7ac2279b217fda34f0c2`,
 `9d9f4f6a2801293e20622d98c97f50d017888872`, and
@@ -105,7 +105,8 @@ in this order; a later step must not be used to waive an earlier blocker.
 | 13 | Apply the separately approved terminal probe cancellation. | GitHub issue, workflow cards, attended notification, and mode-`0600` cancellation receipts. | Pass at preview `9deb8cef`; issue #4 is closed not planned, both cards are archived, replay converges, and native plus standalone diagnosis pass 11/11. |
 | 14 | Run one separately selected Phase 5C improvement through measurement and retention. | Published issue, workflow artifacts, owned worktrees, and one approved target diff. | Pass; implementation `401f3dfe` is retained, completion `f9f5566e` closed issue #5 completed, both diagnosis routes pass 11/11, and the cron remains paused. |
 | 15 | Verify and separately decide whether to retain both control-plane remediations. | Retained controller revision and rollback evidence; live workflow remains separately gated. | Pass for approval-boundary probe `tc-f06-direct-approval-probe-v2` at `9f380a6` and immutable-artifact probe `tc-f07-revision-artifact-probe-v1` at installed `2595bf5`; both reject the prohibited mutation, clean up exactly, and retain 11/11 diagnosis with paused cron. Issues #6/#7 are closed completed. |
-| 16 | Freeze the UC-03 packet and prepare paired intake. | Approved controller swap and two unready GitHub issues only. | Packet `c0cdfefb` is frozen at checkpoint `fa626f6`; detached controller `3ce1bfc` is installed with rollback `2595bf5`; exact issues #9/#10 are open and unready; both diagnosis routes pass 11/11 with paused cron and no active cycle or owned worktree. |
+| 16 | Freeze the UC-03 packet and prepare paired intake. | Approved controller swap and two unready GitHub issues only. | Packet v1 `c0cdfefb` is retained; detached controller `3ce1bfc` is installed with rollback `2595bf5`; first control issue #9 is canceled not planned, candidate issue #10 remains unready, and both diagnosis routes pass 11/11 with paused cron and no active cycle or owned worktree. |
+| 17 | Repair UC-03 packet visibility before replacement admission. | Repository packet v2 plus separately approved profile-local copy and intake mutation. | First cycle cancellation `e606f24c` retained exact command drift and `telegram:57`; packet v2 `eb02da7c` preserves contract/fixture identities and adds one mode-`0600` profile-local distribution path. Live replacement mutations remain unapproved. |
 
 The operator owns browser authorization, credential creation, attended-channel
 confirmation, setup approval, and later cycle approval. The agent may select a
