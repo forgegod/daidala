@@ -53,9 +53,9 @@ reconciliation remains paused, and native plus standalone diagnosis pass 11/11.
 Phase 5D is in progress through its ranged paired-evaluation child plan. Phase 0
 is complete with 416 tests and the complete repository/release gate passing. The
 operator approved the pinned Addyosmani-versus-Aidlc comparison and canonical
-`importlib.resources` migration fixture, but experiment-packet, live issue,
-install, cycle, plan, cleanup, retention, publication, push, release, and
-promotion gates remain separate.
+`importlib.resources` migration fixture. Child Phase 1 froze exact packet
+`c0cdfefb`; packet approval, live issue, install, cycle, plan, cleanup,
+retention, publication, push, release, and promotion gates remain separate.
 The resumable execution record is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 The two failed Phase 5C control cases are explicit follow-up actions in
@@ -83,7 +83,7 @@ Phase 5D execution is ranged in
 | 5B-C — Deterministic probe cancellation | done | Exact detached revision `550671c`, approved preview `9deb8cef`, terminal digest `99fe86b3`, receipt `telegram:37`, identical replay, archived cards, and 11/11 diagnosis prove deterministic closeout. |
 | 5C — Approved improvement and findings synchronization | done | Issue #5 retained strict v2 controller-revision evidence; completion `f9f5566e` released the claim and delivered `telegram:44`. The two control findings were ranged into Phase 5C-R. |
 | 5C-R — Control-plane findings remediation | done | Exact controller `2595bf5`; `TC-F06-01`/`TC-F07-01` retained as `pass`; issues #6/#7 closed completed and `Done`; probe manifests `0db444d6`/`5a79e2fa`; cron paused; diagnosis 11/11. |
-| 5D — UC-03 pack evaluation | in-progress ([child plan](2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md)) | Child Phase 0 passes 416 tests and the complete release gate; Phase 1 must freeze the exact packet and separately approve installation/issues before either live cycle. |
+| 5D — UC-03 pack evaluation | in-progress ([child plan](2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md)) | Child Phase 0 passes 416 tests and the complete release gate; Phase 1 packet `c0cdfefb` is frozen and awaits exact installation/two-unready-issue approval before either live cycle. |
 | 6 — Version-aware re-evaluation | blocked | Requires the Phase 5D child closeout; candidate Hermes identity is selected here, not invented earlier. |
 | 7 — Repository gate and documentation | blocked | Requires the preceding live evaluation and comparison evidence. |
 

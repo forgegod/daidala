@@ -6,10 +6,12 @@ baseline, one canonical package-resource migration fixture, identical evaluator
 and model-routing identities, and separately approved live cycles.
 
 **Status:** in-progress — Phase 0 is complete with 416 tests and the complete
-repository/release gate passing. Phase 1 is pending separate experiment-packet,
-issue-creation, and controller-installation approval. Live cycle admission, plan
+repository/release gate passing. Phase 1 froze packet
+[`c0cdfefb`](2026-07-21-daidala-phase-5d-uc03-experiment.json) after local
+contract, fixture, issue, command, image, and pack preflight. Exact packet
+approval, issue creation, controller installation, live cycle admission, plan
 approval, cleanup, finding publication, retention, push, release, and promotion
-remain unapproved.
+remain separate.
 
 **Parent plan:**
 [`2026-07-13-daidala-self-improvement-loop.md`](2026-07-13-daidala-self-improvement-loop.md)
@@ -54,7 +56,7 @@ worktree, or ledger state by inspection.
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
 | 0 | Restore evidence authority and expose exact comparison admission | done (416 tests + complete release gate) | Focused project-cycle/CLI tests and the complete repository/release gate pass; current source exposes `--mode evaluate-pack --candidate-identity`; no live state changes. |
-| 1 | Freeze the paired experiment and install the exact controller | pending | One canonical experiment packet binds fixture bytes, baseline, packs, candidate, routing, limits, evaluator image, commands, metrics, and two approved intake bodies; exact detached installation passes native/standalone help parity and 11/11 diagnosis. |
+| 1 | Freeze the paired experiment and install the exact controller | in-progress | One canonical experiment packet binds fixture bytes, baseline, packs, candidate, routing, limits, evaluator image, commands, metrics, and two approved intake bodies; exact detached installation passes native/standalone help parity and 11/11 diagnosis. |
 | 2 | Run the Addyosmani control workflow | pending | One separately approved `evaluate-pack` cycle using `addyosmani` reaches accepted evidence-only delivery and terminal cleanup with the frozen fixture and no retention, commit, or push. |
 | 3 | Run the Aidlc candidate workflow | pending | One separately approved `evaluate-pack` cycle using `aidlc` reaches accepted evidence-only delivery and terminal cleanup with identities equal to Phase 2 except the selected pack. |
 | 4 | Compare, reconcile, and close Phase 5D | pending | Deterministic comparison eligibility passes or records `incomparable` for an exact missing identity; the result record and plans agree; no default, manifest, skill installation, controller, or remote ref changes automatically. |
@@ -70,9 +72,16 @@ gate passes, and leave every later row `pending`.
   canonical candidate-identity string derived from its name, source revision,
   and content digest in both admissions.
 - **External source:**
-  `https://docs.python.org/3/library/importlib.resources.html`, specifically the
-  Python 3.11 deprecation of `contents(anchor)` in favor of traversable
-  `files(anchor).iterdir()`.
+  `https://docs.python.org/3.11/library/importlib.resources.html`, specifically
+  the Python 3.11 deprecation of `contents(package)` in favor of traversable
+  `files(package).iterdir()`. Do not bind the moving `/3/` URL, whose current
+  content no longer retains this deprecated API section.
+- **Repository baseline:** exact Phase 0 checkpoint
+  `3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8`. The packet is committed on the
+  active branch, then the same registered checkout path is detached at this
+  baseline before readiness or admission. The branch checkpoint is restored only
+  after both cycles release ownership. This avoids a self-referential packet
+  commit without changing registration or Kanban workdir identity.
 - **Fixture:** one bounded package under
   `tests/fixtures/uc03_pack_eval/` containing a resource package, two `.txt`
   resources, one non-matching resource, one nested directory, legacy catalog
@@ -158,20 +167,47 @@ Steps:
    both pack identities, candidate identity, stage/model routing identity,
    evaluator image, commands, expected exits, limits, metrics, allowed paths,
    issue titles/bodies/labels, and stop conditions.
-2. Verify the packet digest and dry-run both issue bodies locally. Obtain
-   separate approval for the exact packet, two issue creations, and controller
+2. Verify the packet digest and dry-run both issue bodies locally. Commit the
+   immutable packet as an intermediate approval checkpoint, then obtain separate
+   approval for that exact packet digest, two issue creations, and controller
    installation; do not combine that approval with admission.
 3. Install the clean detached Phase 0 checkpoint under rollback protection,
    restart the controller gateway, and verify standalone/native admit help,
    both packs, paused cron, no active cycle, and 11/11 diagnosis.
-4. Create exactly two structured, unready issues with identical experiment
-   contract and pack-specific run labels only after approval. Obtain separate
+4. Create exactly two structured, unready issues with byte-identical titles,
+   bodies, and protocol-valid compatibility/priority labels only after approval.
+   The packet run role and eventual issue ID distinguish control from candidate;
+   selected pack remains an admission argument so the normalized goals stay
+   equal. No unapproved pack-specific GitHub labels are created. Obtain separate
    approval before applying readiness to either issue.
 
 Verification gate: the canonical packet and its SHA-256 read back exactly; the
 installed controller equals the approved source checkpoint; both help routes and
 packs agree; diagnosis is 11/11; cron is paused; no cycle or owned worktree
 exists; and the two issue identities are retained without admission.
+
+Prepared approval packet:
+
+- path:
+  [`2026-07-21-daidala-phase-5d-uc03-experiment.json`](2026-07-21-daidala-phase-5d-uc03-experiment.json)
+- packet SHA-256:
+  `c0cdfefb6740752d96dd2864f751c5fda25292bb26d889764e593fccf2c8645e`
+- contract SHA-256:
+  `357f6eff03c92b659a67e33a26ada687fa114a0ab57b886ce51917d3e4e0e09e`
+- fixture SHA-256:
+  `4198f672861d7279aa9f5325a4e6fe1af54aa770f2c454fdd8c46d5d1478239d`
+- source capture: versioned Python 3.11 documentation, 39,388 bytes, raw
+  SHA-256 `2105a3a8fd602ffcadc87eabaa3fbfc1160a5d4f35c1084656cf0e9e4ac39b69`
+- local preflight: packet and nested digests recompute; issue payloads and
+  normalized goal inputs are equal and unready; baseline and representative
+  migrated behavior exit 0; migration policy exits 0; evaluator image is local;
+  both packs validate
+- live precondition: controller `2595bf5`, checkout `3ce1bfc`, paused cron, no
+  active cycle or owned worktree, and native 11/11 diagnosis
+
+The normative setup guide now agrees with that live precondition. No controller,
+gateway, profile evidence, GitHub issue, Kanban task, cron job, worktree,
+attended destination, or remote ref changed while preparing the packet.
 
 ## Phase 2 — Run the Addyosmani control workflow
 
@@ -181,7 +217,9 @@ pack without retaining repository changes.
 Steps:
 
 1. Apply readiness only to the approved Addyosmani issue; verify it is the only
-   eligible issue and the Aidlc issue remains unready.
+   eligible issue and the Aidlc issue remains unready. Before readiness, record
+   the active branch checkpoint, detach the same registered checkout at exact
+   baseline `3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8`, and rerun 11/11 diagnosis.
 2. Run a dry-run admission with `--mode evaluate-pack`, selected pack
    `addyosmani`, and the exact candidate identity. Obtain separate approval for
    the fresh cycle ID and intake digest.
@@ -238,7 +276,8 @@ Steps:
 3. Compare deterministic and repeated metrics first; observational/resource
    proxies may explain but never decide the result alone.
 4. Update the versioned result record, `docs/15-self-improvement.md`, this child
-   plan, and the parent plan. Keep any promotion or actionable finding in a
+   plan, and the parent plan after restoring the recorded branch checkpoint at
+   the same checkout path. Keep any promotion or actionable finding in a
    separately approval-gated later phase.
 5. Run the complete repository and release gate and create the closeout
    checkpoint. Do not push.
