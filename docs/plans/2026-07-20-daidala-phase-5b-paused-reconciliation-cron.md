@@ -9,8 +9,10 @@ admit at most one maintainer-ready issue and converge on one workflow.
 Phase 1 is complete at checkpoint `1d6a909`; Phase 2 is complete at the shared
 dry-run-first CLI checkpoint `5472cc1`. Phase 3 repository reconciliation and
 the complete release gate are complete at the repository checkpoint.
-Controller installation, cron creation, GitHub
-mutation, and controlled dispatch remain separately approval-gated.
+Phase 4 is blocked after its approved first install attempt failed the standalone
+live-parity gate and automatically restored revision `31331e8`. A corrected
+retry, cron creation, GitHub mutation, and controlled dispatch remain separately
+approval-gated.
 
 ## Current state
 
@@ -37,6 +39,13 @@ mutation, and controlled dispatch remain separately approval-gated.
   exact-revision installation.
 - The complete repository, packaging, release-content, pack, link, lint, and
   test gate passes with 388 tests. No controller profile or remote ref changed.
+- The first approved `80dd73e` replacement passed detached identity, pack,
+  native CLI, and native 11/11 live diagnosis checks. Standalone live diagnosis
+  was invoked without the controller profile environment and blocked four
+  profile-bound checks, so the automatic rollback restored clean revision
+  `31331e8`, its 11/11 native report, and an empty cron inventory. Importing the
+  profile environment without printing it makes the restored standalone report
+  pass 11/11; retrying the candidate requires renewed installation approval.
 - `hermes -p daidala-self-improvement cron status` reports a running gateway and
   no active jobs; `hermes -p daidala-self-improvement cron list` reports no
   scheduled jobs.
@@ -81,7 +90,7 @@ before any later phase. The immediate run uses Hermes' at-most-once claim; the
 | 1 | Implement deterministic reconciliation | done (24 focused + 384 full tests) | `pytest tests/test_reconciliation.py tests/test_live_adapters.py tests/test_project_cycles.py` exits 0 with selection, replay, recovery, outage, and notification cases. |
 | 2 | Expose the dry-run-first operator surface | done (39 focused + 388 full tests) | Current-source native and standalone `project-cycle reconcile --help` agree; CLI tests exit 0; dry-run fixtures produce no mutation. |
 | 3 | Reconcile contracts and checkpoint the implementation | done (388 tests + complete release gate) | The complete repository gate exits 0; one reviewed repository checkpoint exists; no push occurs. |
-| 4 | Install and verify the exact controller revision | pending | Native and standalone `doctor --live` report 11/11 pass for the separately approved checkpoint. |
+| 4 | Install and verify the exact controller revision | blocked (rolled back) | First attempt restored `31331e8` after standalone diagnosis omitted the profile environment; corrected retry requires renewed approval. |
 | 5 | Create the profile-local wrapper and paused cron | pending | `cron list --all` shows exactly one paused named job; `cron runs <job>` is empty; scheduling remains disabled. |
 | 6 | Run and replay one controlled tick | pending | Two completed cron attempts yield one cycle/workflow, no duplicate claim or graph, attended receipts, and a still-paused job. |
 
@@ -258,7 +267,8 @@ Steps:
    plugin source revision and both workflow packs in fresh processes.
 4. Update profile-local non-secret prerequisite evidence to the approved
    revision without exposing credentials or private destinations.
-5. Run native and standalone live diagnosis from the clean registered checkout.
+5. Run native live diagnosis and run standalone live diagnosis with the
+   controller profile environment imported without printing any value.
 6. If any check fails, restore detached revision `31331e8`, restart the gateway,
    and stop before creating a script or cron job.
 

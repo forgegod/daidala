@@ -603,6 +603,19 @@ If the target exists, stop and inspect it; never overwrite or update it
 implicitly. If Hermes asks whether Daidala may replace built-in tools, answer
 **No**. Daidala does not require `--allow-tool-override`.
 
+To replace an existing approved detached revision, clone and verify the new
+revision under `$profile_home/plugin-staging/`, and retain the previous checkout
+under `$profile_home/plugin-rollbacks/`. Stop the profile gateway, move only the
+verified checkout into `$profile_home/plugins/daidala`, then restart and run the
+complete gate. On any failure, stop the gateway, move the failed candidate back
+outside `plugins/`, restore the rollback checkout, restart, and verify the old
+revision again.
+
+Never place staging, backup, failed, or rollback checkouts anywhere below
+`$profile_home/plugins/`. Hermes discovers plugin manifests in sibling
+directories there; two Daidala manifests share one plugin key, and the later
+discovered checkout can silently override `$profile_home/plugins/daidala`.
+
 ### 5.3 Verify discovery and exact identity
 
 ```bash
@@ -940,6 +953,17 @@ hermes -p daidala-self-improvement daidala doctor \
   --project-manifest /home/raphael/src/rb/daidala/.daidala/project.yaml \
   --registration /home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/registration.yaml \
   --live
+
+# Standalone parity uses the same profile environment without printing values
+(
+set -a
+. /home/raphael/.hermes/profiles/daidala-self-improvement/.env
+set +a
+daidala doctor \
+  --project-manifest /home/raphael/src/rb/daidala/.daidala/project.yaml \
+  --registration /home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/registration.yaml \
+  --live
+)
 ```
 
 The checker will:

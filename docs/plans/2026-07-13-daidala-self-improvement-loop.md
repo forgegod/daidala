@@ -36,8 +36,10 @@ loaded by the controller gateway.
 `incomparable` cross-pack outcome. Phase 5B is in progress: its controller-line
 integration, deterministic reconciliation, and shared dry-run-first CLI gates
 have passed; repository contract reconciliation and the complete release gate
-are also complete. Exact controller installation remains separately
-approval-gated. The resumable execution design is saved in
+are also complete. The first exact-controller replacement attempt rolled back
+cleanly after a standalone live check omitted the controller profile
+environment; a corrected retry remains separately approval-gated. The resumable
+execution design is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 
 | Phase | Status | Evidence |
@@ -56,7 +58,7 @@ approval-gated. The resumable execution design is saved in
 | 4F-C — Aidlc execution and evidence-only delivery | done | Restricted baseline `80bb8cf7` failed with `1 != 2`; candidate `6f97e6d2` passed both approved tests; review returned `improved`; delivery recorded commit/push false and released worktree ownership. |
 | 4F-D — Aidlc terminal completion | done | Completion digest `250756b4021b92e7b9ef74214febfab1d5891baf908ca3650acb473505eb1101` closed issue #3, released its claim, delivered `telegram:23`, converged on replay, and returned doctor to 11/11. |
 | 5A — UC-01 evidence reconciliation | done | All retained plan, baseline, candidate, review, delivery, and completion hashes match; both workflows are terminal, but different repository baselines and candidate test fixtures make pack comparison `incomparable`. |
-| 5B — Paused reconciliation cron and controlled tick | in-progress | Controller-line integration, deterministic reconciliation, shared dry-run-first CLI, synchronized contracts, and the 388-test release gate are complete; no controller installation, cron, or controlled tick has been created, run, or enabled. |
+| 5B — Paused reconciliation cron and controlled tick | in-progress | Implementation and the release gate are complete; the first `80dd73e` install attempt automatically restored clean `31331e8` after standalone diagnosis omitted the profile environment. No cron or controlled tick exists. |
 | 5C — Approved improvement and findings synchronization | blocked | Requires Phase 5B replay evidence plus separate cycle, retention, and publication approvals. |
 | 5D — UC-03 pack evaluation | blocked | Requires one canonical paired fixture, one frozen baseline, one approved candidate skill set, and separate cycle approval. |
 | 6 — Version-aware re-evaluation | blocked | Requires the approved Phase 5 work; candidate Hermes identity is selected here, not invented earlier. |
