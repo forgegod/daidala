@@ -36,6 +36,7 @@ PINNED_EVALUATOR_IMAGE = (
     "catthehacker/ubuntu@sha256:"
     "3220992391c1182a0cfe4c64453511772c54f4c39e960d26a5e327960675982e"
 )
+CONTROLLER_REVISION = "0" * 40
 RECONCILIATION_CYCLE = "cycle-" + "e" * 64
 
 
@@ -407,6 +408,7 @@ def test_evaluator_run_apply_uses_profile_local_daidala_root(
         workflow_id=workflow_id,
         role="baseline",
         repository_revision="1" * 40,
+        controller_revision=CONTROLLER_REVISION,
         image_identity=PINNED_EVALUATOR_IMAGE,
         files=(("test.py", "raise SystemExit(1)\n"),),
         command=("python3", "test.py"),
@@ -427,6 +429,7 @@ def test_evaluator_run_apply_uses_profile_local_daidala_root(
             workflow_id=workflow_id,
             role="baseline",
             repository_revision="1" * 40,
+            controller_revision=CONTROLLER_REVISION,
             image_identity=PINNED_EVALUATOR_IMAGE,
             image_id="sha256:" + "2" * 64,
             fixture_digest="3" * 64,
@@ -437,6 +440,16 @@ def test_evaluator_run_apply_uses_profile_local_daidala_root(
             output_digest="4" * 64,
         )
         return evidence, data_root / "evidence.json"
+
+    dry_run_code = cli.main(
+        ["evaluator", "run", "--request", str(request_path)],
+        container_request_runner=run_request,
+    )
+    dry_run_payload = json.loads(capsys.readouterr().out)
+    assert dry_run_code == 0
+    assert calls == []
+    assert dry_run_payload["request"]["controller_revision"] == CONTROLLER_REVISION
+    assert dry_run_payload["request_digest"] == request.digest
 
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
     code = cli.main(
@@ -449,6 +462,7 @@ def test_evaluator_run_apply_uses_profile_local_daidala_root(
     assert calls == [(tmp_path / "daidala").resolve()]
     assert payload["success"] is True
     assert payload["evidence"]["exit_code"] == 1
+    assert payload["evidence"]["controller_revision"] == CONTROLLER_REVISION
 
 
 def test_project_cycle_admission_is_dry_run_by_default_on_both_surfaces(capsys) -> None:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 import pytest
@@ -16,6 +16,7 @@ from daidala.restricted_container import (
 
 DIGEST = "3220992391c1182a0cfe4c64453511772c54f4c39e960d26a5e327960675982e"
 IMAGE = f"catthehacker/ubuntu@sha256:{DIGEST}"
+CONTROLLER_REVISION = "8" * 40
 IMAGE_INSPECTION = json.dumps(
     {
         "Id": f"sha256:{DIGEST}",
@@ -205,6 +206,7 @@ def _build_request() -> RestrictedContainerRequest:
         workflow_id="cycle-" + "0" * 64,
         role="baseline",
         repository_revision="9" * 40,
+        controller_revision=CONTROLLER_REVISION,
         image_identity=IMAGE,
         files=tuple(_request_files()),
         command=("/bin/sh", "-c", "python3 -m unittest test_calculator.py"),
@@ -222,6 +224,8 @@ def test_request_loads_and_rejects_malformed_payload(tmp_path: Path) -> None:
     loaded = load_restricted_container_request(payload_path)
     assert loaded == request
     assert loaded.digest == request.digest
+    assert loaded.to_dict()["schema"] == "daidala.restricted-container-request/v2"
+    assert loaded.to_dict()["controller_revision"] == CONTROLLER_REVISION
 
     bad = tmp_path / "bad.json"
     bad.write_text(json.dumps({"schema": "wrong"}), encoding="utf-8")
@@ -231,6 +235,34 @@ def test_request_loads_and_rejects_malformed_payload(tmp_path: Path) -> None:
     overflow.write_text("x" * (1_048_577), encoding="utf-8")
     with pytest.raises(ContainerIsolationError, match="exceeds 1048576 bytes"):
         load_restricted_container_request(overflow)
+
+
+@pytest.mark.parametrize(
+    "controller_revision",
+    [None, "8" * 39, "8" * 41, "8" * 64, "A" * 40, "g" * 40, 8],
+)
+def test_request_rejects_invalid_controller_revision(
+    controller_revision: object,
+) -> None:
+    raw = _build_request().to_dict()
+    raw["controller_revision"] = controller_revision
+
+    with pytest.raises(ContainerIsolationError, match="controller revision"):
+        RestrictedContainerRequest.from_dict(raw)
+
+
+def test_request_rejects_v1_missing_and_unknown_fields() -> None:
+    raw = _build_request().to_dict()
+
+    for mutate in (
+        lambda value: value.update(schema="daidala.restricted-container-request/v1"),
+        lambda value: value.pop("controller_revision"),
+        lambda value: value.update(unknown=True),
+    ):
+        malformed = dict(raw)
+        mutate(malformed)
+        with pytest.raises(ContainerIsolationError):
+            RestrictedContainerRequest.from_dict(malformed)
 
 
 def test_request_run_retains_immutable_evidence_and_rejects_drift(tmp_path: Path) -> None:
@@ -273,21 +305,31 @@ def test_request_run_retains_immutable_evidence_and_rejects_drift(tmp_path: Path
     assert evidence.expected_exit_code == 1
     assert evidence.role == "baseline"
     assert evidence.repository_revision == "9" * 40
+    assert evidence.controller_revision == CONTROLLER_REVISION
+    assert evidence.request_digest == _build_request().digest
+    assert evidence.to_dict()["schema"] == "daidala.restricted-container-execution/v2"
     assert evidence.image_id == f"sha256:{DIGEST}"
     assert path.read_bytes() == json.dumps(
         evidence.to_dict(), sort_keys=True, separators=(",", ":")
     ).encode("utf-8")
-    mismatched = RestrictedContainerRequest(
-        workflow_id="cycle-" + "0" * 64,
-        role="candidate",
-        repository_revision="9" * 40,
-        image_identity=IMAGE,
-        files=tuple(_request_files()),
-        command=("/bin/sh", "-c", "python3 -m unittest test_calculator.py"),
-        expected_exit_code=0,
+    changed_raw = _build_request().to_dict()
+    changed_raw["controller_revision"] = "7" * 40
+    changed = RestrictedContainerRequest.from_dict(changed_raw)
+    assert changed.digest != _build_request().digest
+
+    changed_evidence, changed_path = run_restricted_container_request(
+        changed, tmp_path.resolve(), executor=executor
     )
-    evidence_candidate, _ = run_restricted_container_request(
-        mismatched, tmp_path.resolve(), executor=executor
-    )
-    assert evidence_candidate.exit_code == 0
-    assert evidence_candidate.expected_exit_code == 0
+    assert changed_evidence.controller_revision == "7" * 40
+    assert changed_evidence.request_digest == changed.digest
+    assert changed_evidence.digest != evidence.digest
+    assert changed_path != path
+
+    with pytest.raises(ContainerIsolationError, match="execution schema"):
+        replace(evidence, schema="daidala.restricted-container-execution/v1")
+    with pytest.raises(ContainerIsolationError, match="controller revision"):
+        replace(evidence, controller_revision="A" * 40)
+
+    docker_argv, child_environment = runner.calls[1]
+    assert CONTROLLER_REVISION not in "\n".join(docker_argv)
+    assert CONTROLLER_REVISION not in child_environment.values()

@@ -129,7 +129,10 @@ workflow-pack adapters, and bundled orchestration skills.
   fixture paths and content before mounting, remains dry-run by default, and on
   `--apply` retains the exact image, command, expected and observed exit, bounded
   output, and fixture identity as content-addressed mode-`0600` evidence under
-  the owning profile-local workflow artifact directory.
+  the owning profile-local workflow artifact directory. V2 requests and retained
+  v2 execution evidence bind the same exact 40-hex detached controller revision
+  into their canonical identities without exposing controller state through
+  evaluator files, mounts, commands, or environment.
   Candidate identity must differ from the
   loaded controller artifact, durable baseline evidence must match cycle, mode,
   repository revision, limits, controller, and boundary identity before any

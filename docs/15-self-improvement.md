@@ -289,6 +289,13 @@ worktree, command, exit-code, artifact, adapter, and metric identities. Raw logs
 are bounded and content-addressed. Credentials, connection strings, profile
 dumps, private board data, and unbounded logs are prohibited.
 
+Each v2 restricted-container request names the exact 40-hex detached controller
+revision that produced it, separately from the evaluated repository revision.
+The retained v2 execution artifact carries that same value unchanged, and both
+canonical digests bind it. The revision remains passive identity metadata: no
+controller files, Git state, profile data, command arguments, or environment
+values enter the evaluator through this binding.
+
 `daidala/evaluation.py` implements the repository-tested evaluator identity,
 fresh-home, immutable evidence, comparison, baseline-ordering, and quarantine
 contracts. A comparison verdict is only `improved`, `equivalent`, `regressed`,

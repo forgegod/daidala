@@ -18,8 +18,8 @@ from .evaluation import EvaluatorIsolationEvidence, validate_pinned_image_identi
 
 PROBE_SCHEMA = "daidala.restricted-container-probe/v1"
 POLICY_VERSION = "daidala.restricted-container-policy/v1"
-REQUEST_SCHEMA = "daidala.restricted-container-request/v1"
-EXECUTION_SCHEMA = "daidala.restricted-container-execution/v1"
+REQUEST_SCHEMA = "daidala.restricted-container-request/v2"
+EXECUTION_SCHEMA = "daidala.restricted-container-execution/v2"
 MAX_OUTPUT_BYTES = 65_536
 MAX_REQUEST_BYTES = 1_048_576
 MAX_FIXTURE_FILES = 64
@@ -83,6 +83,7 @@ class RestrictedContainerRequest:
     workflow_id: str
     role: str
     repository_revision: str
+    controller_revision: str
     image_identity: str
     files: tuple[tuple[str, str], ...]
     command: tuple[str, ...]
@@ -103,6 +104,12 @@ class RestrictedContainerRequest:
         if not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", self.repository_revision):
             raise ContainerIsolationError(
                 "restricted-container repository revision is invalid"
+            )
+        if not isinstance(self.controller_revision, str) or not re.fullmatch(
+            r"[0-9a-f]{40}", self.controller_revision
+        ):
+            raise ContainerIsolationError(
+                "restricted-container controller revision is invalid"
             )
         try:
             validate_pinned_image_identity(self.image_identity)
@@ -147,6 +154,7 @@ class RestrictedContainerRequest:
             "workflow_id": self.workflow_id,
             "role": self.role,
             "repository_revision": self.repository_revision,
+            "controller_revision": self.controller_revision,
             "image_identity": self.image_identity,
             "files": {name: content for name, content in self.files},
             "command": list(self.command),
@@ -164,6 +172,7 @@ class RestrictedContainerRequest:
             "workflow_id",
             "role",
             "repository_revision",
+            "controller_revision",
             "image_identity",
             "files",
             "command",
@@ -184,6 +193,7 @@ class RestrictedContainerRequest:
             workflow_id=raw["workflow_id"],
             role=raw["role"],
             repository_revision=raw["repository_revision"],
+            controller_revision=raw["controller_revision"],
             image_identity=raw["image_identity"],
             files=tuple(sorted(files.items())),
             command=tuple(command),
@@ -197,6 +207,7 @@ class RestrictedContainerEvidence:
     workflow_id: str
     role: str
     repository_revision: str
+    controller_revision: str
     image_identity: str
     image_id: str
     fixture_digest: str
@@ -207,6 +218,18 @@ class RestrictedContainerEvidence:
     output_digest: str
     schema: str = EXECUTION_SCHEMA
 
+    def __post_init__(self) -> None:
+        if self.schema != EXECUTION_SCHEMA:
+            raise ContainerIsolationError(
+                f"restricted-container execution schema must be {EXECUTION_SCHEMA!r}"
+            )
+        if not isinstance(self.controller_revision, str) or not re.fullmatch(
+            r"[0-9a-f]{40}", self.controller_revision
+        ):
+            raise ContainerIsolationError(
+                "restricted-container controller revision is invalid"
+            )
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "schema": self.schema,
@@ -214,6 +237,7 @@ class RestrictedContainerEvidence:
             "workflow_id": self.workflow_id,
             "role": self.role,
             "repository_revision": self.repository_revision,
+            "controller_revision": self.controller_revision,
             "image_identity": self.image_identity,
             "image_id": self.image_id,
             "fixture_digest": self.fixture_digest,
@@ -510,6 +534,7 @@ def run_restricted_container_request(
         workflow_id=request.workflow_id,
         role=request.role,
         repository_revision=request.repository_revision,
+        controller_revision=request.controller_revision,
         image_identity=execution.image_identity,
         image_id=execution.image_id,
         fixture_digest=fixture_digest,

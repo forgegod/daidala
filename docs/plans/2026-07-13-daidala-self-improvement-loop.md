@@ -867,6 +867,18 @@ channel, and scheduling remains disabled until separately approved.
 Gate: every retained change resolves its cited case without weakening another
 gate, and adapter replay creates no duplicate finding.
 
+Observed gate: published issue #5 selected one controller-identity improvement.
+Cycle `cycle-cbbbfd0273b7144cd2475369d14c9b55bd301ffd442728531bcb61db3c71ba18`
+used approved policy revision 2 and final plan revision 3. Immutable implementation
+`401f3dfec2604f5d64a7a605ede17f494644574dc567d755512f86b1c27a93f3`
+passed 50 focused and 406 full tests, accepted review, both pack validations, the
+complete release gate, and separate retention approval before application to
+baseline `106b4f923823e016d33f95c66a826ec55a2bb1e1`. Commit, completion, push,
+installation, and release remain pending. The run also exposed two local
+publication-pending control findings: autonomous promotion of a blocked approval
+gate and historical artifact-path reuse across revisions. Phase 5D does not start
+until the retained checkpoint and exact completion gate close issue #5.
+
 #### Phase 5D — UC-03 pack evaluation
 
 - Freeze one repository baseline and one canonical fixture for both compared

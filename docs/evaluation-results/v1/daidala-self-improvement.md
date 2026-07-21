@@ -3,21 +3,22 @@
 ## Record status
 
 Phases 1 through 4F, Phase 5A reconciliation, and the controlled Phase 5B
-reconciliation tick and closeout are complete. Detached controller revision
-`550671c19e5434fbe183140214ca12b4a047692d` exposes the exercised deterministic
-cancellation path. Probe issue #4 is closed not planned, both workflow cards are
-archived, active labels are removed, and native and standalone diagnosis pass
-all eleven checks. No worktree, approval, implementation, commit, or push was
-created for the probe.
+reconciliation tick and closeout are complete. Phase 5C selected published
+finding [#5](https://github.com/forgegod/daidala/issues/5), completed one
+approval-gated candidate workflow, and applied the separately approved retained
+diff to the target checkout. The retained change is not yet committed, pushed,
+installed, or terminally completed; issue #5 remains open and claimed. Detached
+controller revision `550671c19e5434fbe183140214ca12b4a047692d` remains active,
+and the reconciliation cron remains paused.
 
-Each workflow independently changed only `calculator.py` and
+Each Phase 5A workflow independently changed only `calculator.py` and
 `test_calculator.py`, reproduced `AssertionError: 1 != 2` in the restricted
 baseline, passed its approved restricted candidate, and received an accepted
-`improved` review. The cross-pack comparison is nevertheless `incomparable`:
+`improved` review. That cross-pack comparison remains `incomparable`:
 the workflows used different repository baselines and different candidate test
-fixtures. No preferred pack, retained change, or published finding is authorized
-by the Phase 5A comparison. Phase 5B authorizes only the retained paused cron and
-its one controlled terminal probe cycle.
+fixtures. No preferred pack or retained calculator change is authorized by the
+Phase 5A comparison. Phase 5B authorizes only the retained paused cron and its
+one controlled terminal probe cycle.
 
 Limits: [`experiment-limits.yaml`](experiment-limits.yaml).
 Protocol: [`../../15-self-improvement.md`](../../15-self-improvement.md).
@@ -43,10 +44,10 @@ Repository tests cannot convert a blocked live probe into `pass`.
 | TC-F04-01 | Setup preview | Preview registration and admission without mutation; require literal confirmation for setup. | Profile, board, GitHub, or repository mutation. | not-run |
 | TC-F04-02 | Prerequisite diagnosis | Run the complete stable checklist from a clean checkout; retain exact passes and blockers. | No setup mutation; fixing or creating prerequisite state. | pass |
 | TC-F05-01 | Define and plan | Persist activation, definition, plan, and handoff identities; create one blocked approval card. | Implementation-card creation. | pass |
-| TC-F06-01 | Exact approval | Reject wrong or stale tuple; exact approval creates one owned worktree and post-gate graph. | Treating generic Kanban unblock as approval. | pass |
-| TC-F07-01 | Constraints | Formatting-only replacement is identity-preserving; semantic replacement invalidates stale work. | Deleting historical evidence. | not-run |
+| TC-F06-01 | Exact approval | Reject wrong or stale tuple, preserve a human-blocked gate, and create one owned worktree only after exact attended approval. | Autonomous promotion or approval of the human gate. | fail |
+| TC-F07-01 | Constraints | Formatting-only replacement is identity-preserving; semantic replacement invalidates stale work while preserving historical artifacts. | Deleting or overwriting historical evidence. | fail |
 | TC-F08-01 | Implementation | Capture immutable changed paths and evidence from only the owned worktree. | Mutation of the target checkout or protected paths. | pass |
-| TC-F08-02 | Verification recovery | Preserve a failed attempt and allow bounded same-card recovery. | Hiding the failed command or output digest. | not-run |
+| TC-F08-02 | Verification recovery | Preserve a failed attempt and allow bounded same-card recovery. | Hiding the failed command or output digest. | pass |
 | TC-F09-01 | Review and delivery | Review frozen scope; delivery records commit and push as false. | Review mutation, commit, or push. | pass |
 | TC-F10-01 | Status and cancellation | Read live Kanban without mirrored status; remove only owned worktree state. | Writing Hermes Kanban storage directly. | pass |
 | TC-F11-01 | Packaging | Wheel and directory installs expose code, packs, skills, tools, and dashboard assets only. | Packaging runtime state, credentials, or evidence. | not-run |
@@ -70,8 +71,10 @@ in `tests/test_projects.py`, `tests/test_registrations.py`,
 `tests/test_cancellation.py`, and
 `tests/test_increments.py`. Live rows marked `pass` are additionally grounded by
 the content-addressed UC-01 artifacts below. TC-F16-01 also has the controlled
-live evidence below. TC-F08-02 remains `not-run`: the workflows did not exercise
-same-card verification recovery.
+live evidence below. Phase 5C supplies live same-card verification recovery for
+TC-F08-02. TC-F06-01 and TC-F07-01 are `fail`: the Phase 5C recovery observed an
+autonomously promoted approval gate and revision artifacts that reused historical
+paths. Both findings remain local and publication pending.
 
 ## Use-case records
 
@@ -127,11 +130,13 @@ baseline fixture digest, candidate fixture digest, and candidate test contract
 differ. The restricted execution records also do not carry a controller revision
 that could close the environment-identity gap.
 
-The required follow-up is a new separately approved paired evaluation from one
-frozen repository baseline and one canonical fixture containing the same focused
-and adjacent tests for both packs. Until then, pack selection and retention are
-blocked. A local actionable finding is recorded here as publication pending; no
-GitHub finding was created or updated during reconciliation.
+The remaining pack-evaluation follow-up is a new separately approved paired
+evaluation from one frozen repository baseline and one canonical fixture
+containing the same focused and adjacent tests for both packs. Until then, pack
+selection remains blocked.
+The independent controller-identity finding was published as issue
+[#5](https://github.com/forgegod/daidala/issues/5); the Phase 5A comparison itself
+still authorizes no pack preference.
 
 ## Phase 5B controlled reconciliation tick
 
@@ -185,6 +190,41 @@ GitHub finding was created or updated during reconciliation.
   11/11.
 - **Status:** `pass`.
 
+## Phase 5C controller-revision evidence improvement
+
+- **Goal and source:** resolve published issue
+  [#5](https://github.com/forgegod/daidala/issues/5) by replacing both
+  restricted-container request and execution schemas with v2 contracts that bind
+  one exact 40-lowercase-hex detached controller revision without exposing
+  controller state to the evaluator.
+- **Cycle and approval:** cycle
+  `cycle-cbbbfd0273b7144cd2475369d14c9b55bd301ffd442728531bcb61db3c71ba18`
+  retained policy revision 2 and separately approved plan revision 3, digest
+  `0460b92b674e9c1a8bbe0eeb6c6f5face0184248838ba62ad7ba09390af39628`.
+- **Candidate evidence:** immutable implementation
+  `401f3dfec2604f5d64a7a605ede17f494644574dc567d755512f86b1c27a93f3`
+  changes exactly five approved paths. Review
+  `02d1f01e92c52a25a0a2f8a5825f55d3cff9d478a0bd9dac5a2e4123a89e4cc0`
+  accepted the change without findings; evidence-only delivery
+  `3b5a7db684bcf15c1009304b030f62544c04575020409fc223b62d9e3ea8a46d`
+  records commit and push as false.
+- **Measurement:** 50 focused and 406 full tests pass. Focused and full Ruff,
+  both pack validations, 42-file Markdown links, package build, Twine,
+  release-content, Lefthook, and diff checks pass. Failed runner-environment
+  attempts remain in the verification record; the accepted recovery pins the
+  repository interpreter and preserves all failed evidence.
+- **Retention:** separate approval applied the exact immutable diff to clean
+  baseline `106b4f923823e016d33f95c66a826ec55a2bb1e1`. The target checkout passes the
+  complete repository gate. Commit, push, controller installation, issue
+  completion, and release remain separately gated.
+- **Control findings:** one blocked approval card was promoted and approved by an
+  autonomous worker before attended approval; recovery stopped the worker before
+  any diff, invalidated approval, and removed the clean worktree. Constraint and
+  plan replacement also reused artifact paths referenced by older revisions.
+  These are publication-pending control-plane findings, not accepted behavior.
+- **Status:** `pass` for candidate measurement and retention; terminal completion
+  is pending.
+
 ## Identities, receipts, findings, and blockers
 
 - Project: `forgegod-daidala`.
@@ -209,10 +249,14 @@ GitHub finding was created or updated during reconciliation.
   its claim is released.
 - Phase 5B admission receipt: `telegram:30`; terminal cancellation receipt:
   `telegram:37`. Issue #4 is closed not planned and its active labels are removed.
+- Phase 5C issue #5 is open and claimed. Its retained cycle, plan,
+  implementation, review, and delivery identities are recorded above; completion
+  has not been previewed or applied.
 - Both workflow evidence sets remain mode-`0600` profile-local files. Private
   destination data is omitted from this record.
-- No retained increment, preferred-pack decision, or remote finding was created.
-  Phase 5B leaves one paused cron and one terminal probe cycle.
+- Phase 5C retains one controller-identity increment. No preferred-pack decision,
+  control-finding publication, push, controller promotion, or release occurred.
+  Phase 5B still leaves one paused cron and one terminal probe cycle.
 
 ## Redaction statement
 

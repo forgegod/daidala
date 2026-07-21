@@ -71,6 +71,12 @@ retained evidence.
 | Self-improvement labels | Pass | All 17 exact `daidala-si` base, state, category, and priority labels exist in `forgegod/daidala`. |
 | Trusted runtime state | Pass | Strict registration v2, `credential-bindings.yaml`, and non-secret `prerequisite-evidence.json` parse and both live reports pass all eleven checks. The private attended destination remains profile-local. |
 
+The last clean live report remains the prerequisite baseline. The active Phase 5C
+cycle intentionally makes `SI-ACTIVE-CYCLE` non-pass, and its separately approved
+retained diff intentionally makes the target checkout non-clean until the local
+checkpoint is committed. Do not report a fresh 11/11 diagnosis until issue #5 is
+terminal and the repository is clean.
+
 Do not admit UC-01 unless every required row passes and the operator separately
 approves that exact cycle.
 
@@ -90,10 +96,11 @@ in this order; a later step must not be used to waive an earlier blocker.
 | 7 | Configure and verify the attended gateway target. | Profile gateway/home channel. | Pass; delivery receipt and operator confirmation are retained and live-validated. |
 | 8 | Create labels and the user-owned GitHub Project. | GitHub Issues and Projects. | Required projection and optional attended UI auto-add pass. |
 | 9 | Materialize trusted non-secret registration, bindings, and receipts. | Profile-local project files. | Pass; registration v2 binds the exact private attended destination, and bindings plus combined evidence validate strictly. |
-| 10 | Run the read-only live prerequisite checker from a clean checkout. | None. | Pass at revision `80dd73efa9a4e462304b71ba157b5e5c0172b793`; native and standalone reports return all eleven `SI-*` checks as `pass`. |
-| 11 | Admit UC-01 manually. | GitHub issue, board, evaluator, and cycle artifacts. | Pass; controlled Addyosmani issue #2 and Aidlc issue #3 are closed as completed, both claims are released, and no active admission remains. |
+| 10 | Run the read-only live prerequisite checker from a clean checkout. | None. | Last clean native and standalone reports pass all eleven `SI-*` checks with installed controller `550671c19e5434fbe183140214ca12b4a047692d`. |
+| 11 | Admit UC-01 manually. | GitHub issue, board, evaluator, and cycle artifacts. | Pass for controlled Addyosmani issue #2 and Aidlc issue #3; both are closed as completed and their claims are released. |
 | 12 | Create the approved script-only reconciliation job, then run the separately approved duplicate-tick probe. | Profile-local wrapper, non-secret digest evidence, immutable tick results, and Hermes cron metadata. | Pass; outcomes are `admitted` then `replayed` for one cycle and receipt; exactly one no-agent job is paused on `every 15m` with infinite repeat. |
 | 13 | Apply the separately approved terminal probe cancellation. | GitHub issue, workflow cards, attended notification, and mode-`0600` cancellation receipts. | Pass at preview `9deb8cef`; issue #4 is closed not planned, both cards are archived, replay converges, and native plus standalone diagnosis pass 11/11. |
+| 14 | Run one separately selected Phase 5C improvement through measurement and retention. | Published issue, workflow artifacts, owned worktrees, and one approved target diff. | Retention passes for issue #5 at implementation digest `401f3dfe`; local checkpoint and deterministic completion remain pending, with cron paused and installed controller unchanged. |
 
 The operator owns browser authorization, credential creation, attended-channel
 confirmation, setup approval, and later cycle approval. The agent may select a
