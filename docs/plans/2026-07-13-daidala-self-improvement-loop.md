@@ -877,7 +877,11 @@ baseline `106b4f923823e016d33f95c66a826ec55a2bb1e1`. Commit, completion, push,
 installation, and release remain pending. The run also exposed two local
 publication-pending control findings: autonomous promotion of a blocked approval
 gate and historical artifact-path reuse across revisions. Phase 5D does not start
-until the retained checkpoint and exact completion gate close issue #5.
+until the retained checkpoint and exact completion gate close issue #5. The first
+completion preview exposed duplicate successful-output digests; the bounded source
+fix canonicalizes them and produces stable no-mutation preview digest
+`a09f3405f8dcd98360186b2373bb8845e7d3cc84ca5a47f214d8d19d80027c8b`.
+Installation and apply remain separately gated.
 
 #### Phase 5D — UC-03 pack evaluation
 

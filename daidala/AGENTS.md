@@ -74,9 +74,10 @@ workflow-pack adapters, and bundled orchestration skills.
   or stage-profile identity before mutation.
 - `project-cycle complete` is read-only by default and opens the policy ledger
   without schema initialization. Apply requires the exact fresh preview digest,
-  done current post-gate cards, accepted review and delivery artifacts, passing
-  verification, released worktree ownership, `committed: false`, `pushed: false`,
-  and the exact stored claim owner. It closes the issue as completed, removes
+  done current post-gate cards, accepted review and delivery artifacts, canonical
+  unique sorted passing-verification output identities, released worktree
+  ownership, `committed: false`, `pushed: false`, and the exact stored claim
+  owner. It closes the issue as completed, removes
   only the claim label, retains remote and attended receipts plus the terminal
   completion at mode `0600`, and converges without duplicate comments or sends.
 - `project-cycle cancel` is read-only by default. Apply requires the exact fresh

@@ -222,6 +222,11 @@ still authorizes no pack preference.
   any diff, invalidated approval, and removed the clean worktree. Constraint and
   plan replacement also reused artifact paths referenced by older revisions.
   These are publication-pending control-plane findings, not accepted behavior.
+- **Completion prerequisite:** repeated successful commands can share one output
+  digest. The source completion preview now canonicalizes those passing identities
+  as a unique sorted set. Two no-mutation standalone previews converge on digest
+  `a09f3405f8dcd98360186b2373bb8845e7d3cc84ca5a47f214d8d19d80027c8b`;
+  native apply remains blocked until this exact source is separately installed.
 - **Status:** `pass` for candidate measurement and retention; terminal completion
   is pending.
 

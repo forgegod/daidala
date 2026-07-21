@@ -344,9 +344,11 @@ def build_completion_preview(
         raise PolicyViolationError("completion requires review and delivery artifacts")
     verification = tuple(
         sorted(
-            row.output_digest
-            for row in ledger.verification_evidence
-            if row.plan_revision == ledger.plan_revision and row.exit_code == 0
+            {
+                row.output_digest
+                for row in ledger.verification_evidence
+                if row.plan_revision == ledger.plan_revision and row.exit_code == 0
+            }
         )
     )
     if not verification:

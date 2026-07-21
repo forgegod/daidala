@@ -63,7 +63,8 @@ completeness without touching a real Hermes profile.
   event-bound receipts. Project-cycle composition tests prove admission and
   completion/cancellation dry-run non-mutation and exact preview-identity
   rejection before claim, workflow, issue, notification, or terminal-artifact
-  mutation.
+  mutation. Completion-preview tests also prove repeated successful command
+  outputs collapse to one canonical sorted digest identity.
 - Strict credential-binding and prerequisite-report tests cover guide/CLI ID
   parity, redaction, pass/blocked/not-run/error aggregation, bounded `GH_TOKEN`
   child environments, and complete, missing, malformed, denied, unavailable,

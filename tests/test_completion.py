@@ -14,6 +14,7 @@ from daidala.completion import (
     CompletionCoordinator,
     CycleCompletion,
     CycleCompletionPreview,
+    build_completion_preview,
 )
 from daidala.errors import PolicyViolationError
 from daidala.prerequisites import active_admission_paths
@@ -82,6 +83,39 @@ def test_completion_preview_accepts_initial_plan_revision() -> None:
     for invalid in (-1, True):
         with pytest.raises(PolicyViolationError, match="non-negative integer"):
             replace(preview(), plan_revision=invalid)
+
+
+def test_completion_preview_deduplicates_passing_output_digests() -> None:
+    admission = SimpleNamespace(
+        workflow_id=CYCLE,
+        cycle=SimpleNamespace(cycle_id=CYCLE),
+        intake=SimpleNamespace(item_id="42"),
+        canonical_bytes=lambda: b"admission",
+    )
+    review = SimpleNamespace(digest="3" * 64)
+    delivery = SimpleNamespace(digest="4" * 64)
+    ledger = SimpleNamespace(
+        workflow_id=CYCLE,
+        approval=object(),
+        current_plan_digest="2" * 64,
+        worktree_owned=False,
+        worktree_path=None,
+        committed=False,
+        pushed=False,
+        plan_revision=3,
+        artifact_for=lambda stage: {"review": review, "deliver": delivery}[stage.value],
+        verification_evidence=(
+            SimpleNamespace(output_digest="6" * 64, plan_revision=3, exit_code=0),
+            SimpleNamespace(output_digest="5" * 64, plan_revision=3, exit_code=0),
+            SimpleNamespace(output_digest="6" * 64, plan_revision=3, exit_code=0),
+            SimpleNamespace(output_digest="7" * 64, plan_revision=2, exit_code=0),
+            SimpleNamespace(output_digest="8" * 64, plan_revision=3, exit_code=1),
+        ),
+    )
+
+    result = build_completion_preview(admission, ledger)  # type: ignore[arg-type]
+
+    assert result.verification_digests == ("5" * 64, "6" * 64)
 
 
 def test_completion_store_is_immutable_and_preserves_admission(tmp_path: Path) -> None:
