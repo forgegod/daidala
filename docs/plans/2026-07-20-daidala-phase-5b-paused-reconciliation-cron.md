@@ -9,10 +9,10 @@ admit at most one maintainer-ready issue and converge on one workflow.
 Phase 1 is complete at checkpoint `1d6a909`; Phase 2 is complete at the shared
 dry-run-first CLI checkpoint `5472cc1`. Phase 3 repository reconciliation and
 the complete release gate are complete at the repository checkpoint.
-Phase 4 is blocked after its approved first install attempt failed the standalone
-live-parity gate and automatically restored revision `31331e8`. A corrected
-retry, cron creation, GitHub mutation, and controlled dispatch remain separately
-approval-gated.
+Phase 4 is blocked after the approved corrected retry reached native/standalone
+parity but the live evaluator boundary became unavailable. The retry
+automatically restored revision `31331e8`; cron creation, GitHub mutation, and
+controlled dispatch remain separately approval-gated.
 
 ## Current state
 
@@ -46,6 +46,11 @@ approval-gated.
   `31331e8`, its 11/11 native report, and an empty cron inventory. Importing the
   profile environment without printing it makes the restored standalone report
   pass 11/11; retrying the candidate requires renewed installation approval.
+- The approved corrected retry kept staging and rollback checkouts outside the
+  plugin scan root and established native/standalone parity. Both reports then
+  blocked only `SI-EVALUATOR` and dependent `SI-REGISTRATION` because Docker
+  became unavailable in WSL. The automatic rollback restored clean `31331e8`;
+  its reports remain 9/11 for the same external blocker, and cron remains empty.
 - `hermes -p daidala-self-improvement cron status` reports a running gateway and
   no active jobs; `hermes -p daidala-self-improvement cron list` reports no
   scheduled jobs.
@@ -90,7 +95,7 @@ before any later phase. The immediate run uses Hermes' at-most-once claim; the
 | 1 | Implement deterministic reconciliation | done (24 focused + 384 full tests) | `pytest tests/test_reconciliation.py tests/test_live_adapters.py tests/test_project_cycles.py` exits 0 with selection, replay, recovery, outage, and notification cases. |
 | 2 | Expose the dry-run-first operator surface | done (39 focused + 388 full tests) | Current-source native and standalone `project-cycle reconcile --help` agree; CLI tests exit 0; dry-run fixtures produce no mutation. |
 | 3 | Reconcile contracts and checkpoint the implementation | done (388 tests + complete release gate) | The complete repository gate exits 0; one reviewed repository checkpoint exists; no push occurs. |
-| 4 | Install and verify the exact controller revision | blocked (rolled back) | First attempt restored `31331e8` after standalone diagnosis omitted the profile environment; corrected retry requires renewed approval. |
+| 4 | Install and verify the exact controller revision | blocked (Docker unavailable; rolled back) | Corrected retry established native/standalone parity, then restored `31331e8` when both reports blocked on `SI-EVALUATOR`; cron remains empty. |
 | 5 | Create the profile-local wrapper and paused cron | pending | `cron list --all` shows exactly one paused named job; `cron runs <job>` is empty; scheduling remains disabled. |
 | 6 | Run and replay one controlled tick | pending | Two completed cron attempts yield one cycle/workflow, no duplicate claim or graph, attended receipts, and a still-paused job. |
 
