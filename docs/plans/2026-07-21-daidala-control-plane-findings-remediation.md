@@ -1,9 +1,9 @@
 # Daidala Control-Plane Findings Remediation Plan
 
-**Status:** in progress — retained Increment A revision `9f380a6` is installed
-and verified; Phase 2 awaits separate controlled-probe approval.
-No live probe, issue closure, push, release, or deployment is approved by this
-document.
+**Status:** in progress — Increment A revision `9f380a6` is retained, installed,
+and controlled-evidence verified; Phase 2 is complete and Increment B is next.
+No Increment B implementation, retention, live probe, push, release, or
+deployment is approved by this document.
 
 **Parent plan:**
 [`2026-07-13-daidala-self-improvement-loop.md`](2026-07-13-daidala-self-improvement-loop.md)
@@ -36,7 +36,7 @@ Documentation in the Phase 5C evaluation and parent plan did not fix either beha
 |---|---|---|---|
 | 0 | Finding publication and exact scope approval | done (issues #6/#7; scope `8752c064`) | Separately approved issue creation returns one identity per finding; the exact Increment A scope digest receives attended approval. |
 | 1 | Increment A candidate — non-executable approval gate | done (candidate `ddef04b3`; 410 tests) | Focused tests and the complete repository gate pass against one immutable candidate diff; no live state changes. |
-| 2 | Increment A retention, installation, and controlled evidence | in-progress (installed `9f380a6`; probe pending) | Separate retention/install/probe approvals hold; `TC-F06-01` passes, diagnosis is 11/11, cron is paused, and the finding is terminally reconciled. |
+| 2 | Increment A retention, installation, and controlled evidence | done (manifest `0db444d6`; issue #6 completed) | Separate retention/install/probe approvals hold; `TC-F06-01` passes, diagnosis is 11/11, cron is paused, and the finding is terminally reconciled. |
 | 3 | Increment B candidate — immutable revision artifacts | pending | Focused tests and the complete repository gate pass against one immutable candidate diff; historical fixture bytes remain unchanged. |
 | 4 | Increment B retention, installation, and controlled evidence | pending | Separate retention/install/probe approvals hold; `TC-F07-01` passes, diagnosis is 11/11, cron is paused, and the finding is terminally reconciled. |
 | 5 | Closeout and parent-plan reconciliation | pending | Both cases are retained as `pass`, this plan is `done`, parent Phase 5C-R is done with closeout evidence, and Phase 5D remains unstarted. |
@@ -80,7 +80,7 @@ gate passes, and leave every later row `pending`.
   worktree, or installed revision. The controller remains at `9d9f4f6` and Phase 2
   requires separate retention, installation, and controlled-probe approvals.
 
-## Phase 2 installation evidence
+## Phase 2 evidence
 
 - Retention and exact detached installation were approved for commit
   `9f380a6b04fdbb51817c7ac2279b217fda34f0c2` without authorizing a live probe.
@@ -93,8 +93,32 @@ gate passes, and leave every later row `pending`.
 - Native and standalone live diagnosis pass all eleven checks, the installed
   plugin is clean and detached, both packs validate, the gateway is running, and
   reconciliation job `1847b1b1e14b` remains paused.
-- Issues #6 and #7 remain open and unready. No workflow, approval probe,
-  terminal cleanup, issue closure, push, release, or cron resume occurred.
+- Controlled direct workflow `tc-f06-direct-approval-probe-v2` bound plan digest
+  `443b226397b6eeb80bf0ec367986630ec83289467665334bfb9351657fde9878`.
+  Worker-context approval returned the exact fail-closed envelope retained at
+  digest `1f4a99ecff3146f1a253d1111f0c850aa195cc1a5792827908bb75b246bb1719`;
+  mutation-sensitive pre/post evidence was identical at comparison digest
+  `217d8b9d7c479ccd3997e3aa395963b641bbab3875ebc3d15dd952dec4722151`.
+- One attended exact-digest approval created one owned worktree and exactly the
+  implementation, verification, review, and delivery cards in a linear graph
+  parented from the plan card, with no approval card and no post-gate worker run.
+  Post-approval verification digest
+  `5d9491c3d2f9fad9bed1321216a752fe33e678f7153384c4afc001a38a61a3e2`
+  records that boundary.
+- Separately approved cancellation archived all six cards, removed only the
+  owned worktree, and retained commit/push as false. Cleanup digest
+  `c0fb8d85ff6412c9d5e495b282dccd8e020f29f19efd5493e750e3af8bbb9518`
+  and final-state digest
+  `ec4807081364888000371035a77ca4d4d0e2dc92b2bd82251f4906cb2f41b695`
+  are indexed by evidence manifest
+  `0db444d65e36d8d55585391f06264611e2ed67fe943c66e57c9e92b82d0b0234`.
+- Native and standalone diagnosis returned to 11/11 after the same gateway was
+  restored. The repository remains clean, the reconciliation cron remains
+  paused, and no push, release, or deployment occurred.
+- [Issue #6](https://github.com/forgegod/daidala/issues/6) has the exact evidence
+  comment digest `96eb8e8ea582070e9d9e1f54148e688a5c75ca04cacb1eda29db03fef6df1d3f`,
+  is closed completed, and has Project status `Done`. Issue #7 remains open,
+  `Todo`, and unready for Increment B.
 
 ## Decisions
 
@@ -302,19 +326,23 @@ python scripts/check_release_contents.py . --wheel dist/*.whl
 
 ## Controlled evidence
 
-No live probe is authorized by this plan. After source verification, require separate approval for an exact detached candidate revision and each live mutation.
+Each live probe requires separate approval for the exact installed candidate,
+workflow identity, current tuple, mutating operation, and cleanup.
 
-### Approval probe
+### Approval probe — completed
 
-1. Start one disposable controlled workflow with the cron paused.
-2. Complete plan generation.
-3. Run at least two gateway dispatch intervals.
-4. Verify there is no approval card, worker run, worktree, or post-gate card.
-5. Attempt approval from a controlled Kanban worker and verify deterministic rejection with no mutation.
-6. Obtain human approval for the exact current tuple.
-7. Apply approval from the attended non-worker controller surface.
-8. Verify one worktree and one post-gate graph.
-9. Cancel the disposable cycle through its separately approved terminal preview.
+The retained direct-workflow probe established all required boundaries:
+
+1. pre-gate state contained only completed definition and plan cards;
+2. no approval card, worktree, or post-gate card existed;
+3. with the gateway stopped, one worker-marked approval call rejected before
+   mutation and its exact envelope was durably retained before parsing;
+4. one separately approved attended exact-digest call created one owned worktree
+   and the four expected post-gate cards, with no approval card or worker run;
+5. separately approved direct-workflow cancellation archived all six cards and
+   removed only the owned worktree before the same gateway was restored; and
+6. native and standalone live diagnosis returned to 11/11 with the cron paused
+   and repository clean.
 
 ### Artifact probe
 
@@ -359,4 +387,6 @@ Stop before mutation when any of these is true:
 
 - `TC-F06-01` passes because no executable approval task exists and Kanban workers cannot invoke approval.
 - `TC-F07-01` passes because every revision has a distinct path and every stored object is immutable.
-- The two findings remain `fail` and publication-pending until controlled evidence is retained; planning alone does not change their status.
+- `TC-F06-01` is retained as `pass` and issue #6 is closed completed.
+- `TC-F07-01` remains `fail` and issue #7 remains open and unready until
+  Increment B controlled evidence is retained.

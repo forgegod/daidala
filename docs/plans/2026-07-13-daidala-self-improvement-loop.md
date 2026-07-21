@@ -50,7 +50,8 @@ Increment A scope digest `8752c0647d1d82b35cd5995527c3726af778392375baac90452573
 received attended approval. Phase 1 then produced repository-verified candidate
 digest `ddef04b37f011c4d5b9062c2c7344152f1d44900a834f0e551a2c0e30d78b1ce`;
 retention and exact detached controller installation at `9f380a6` are complete,
-native and standalone diagnosis pass 11/11, and controlled evidence remains
+controlled evidence retains `TC-F06-01` as `pass`, issue #6 is closed completed,
+and native and standalone diagnosis pass 11/11. Increment B is next and remains
 separately gated.
 The resumable execution record is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
@@ -76,7 +77,7 @@ The two failed Phase 5C control cases are explicit follow-up actions in
 | 5B — Paused reconciliation cron and controlled tick | done | Two approved executions produced `admitted` then `replayed` for one issue, claim, cycle, graph, and attended receipt. The no-agent job is paused on `every 15m`; no worktree, approval, commit, or push exists. |
 | 5B-C — Deterministic probe cancellation | done | Exact detached revision `550671c`, approved preview `9deb8cef`, terminal digest `99fe86b3`, receipt `telegram:37`, identical replay, archived cards, and 11/11 diagnosis prove deterministic closeout. |
 | 5C — Approved improvement and findings synchronization | done | Issue #5 retained strict v2 controller-revision evidence; completion `f9f5566e` released the claim and delivered `telegram:44`. The two control findings were ranged into Phase 5C-R. |
-| 5C-R — Control-plane findings remediation | in-progress | Child Phase 1 candidate `ddef04b3` passed the complete gate; retained controller `9f380a6` is installed with 11/11 diagnosis and paused cron. Phase 2 controlled evidence is pending. |
+| 5C-R — Control-plane findings remediation | in-progress | Child Phase 2 is complete: controller `9f380a6`, controlled manifest `0db444d6`, closed issue #6, 11/11 diagnosis, clean repository, and paused cron retain `TC-F06-01` as `pass`. Increment B is next. |
 | 5D — UC-03 pack evaluation | blocked | Requires Phase 5C-R done, one canonical paired fixture, one frozen baseline, one approved candidate skill set, and separate cycle approval. |
 | 6 — Version-aware re-evaluation | blocked | Requires the approved Phase 5 work; candidate Hermes identity is selected here, not invented earlier. |
 | 7 — Repository gate and documentation | blocked | Requires the preceding live evaluation and comparison evidence. |
@@ -135,6 +136,14 @@ a named prerequisite is incomplete.
   retains implementation `401f3dfe`, completion `f9f5566e`, and receipt
   `telegram:44`. Issue #5 is closed completed, its claim is released, no worktree
   remains, and commit/push in delivery evidence remain false.
+- Phase 5C-R controlled workflow `tc-f06-direct-approval-probe-v2` retains
+  fail-closed worker envelope `1f4a99ec`, zero-mutation comparison `217d8b9d`,
+  post-approval graph verification `5d9491c3`, cleanup `c0fb8d85`, and final
+  manifest `0db444d6`. One attended exact-digest approval created one worktree and
+  four post-gate cards without an approval card or worker run; cancellation
+  archived all six cards and removed the worktree before gateway restoration.
+  Issue #6 is closed completed and `Done`; issue #7 remains open, `Todo`, and
+  unready.
 
 ## Registered project
 
@@ -904,8 +913,9 @@ Separate install and apply approvals produced terminal completion `f9f5566e`,
 receipt `telegram:44`, issue #5 closed completed, and 11/11 diagnosis. Push,
 release, and control-finding publication remain separately gated.
 The remediation plan makes `TC-F06-01` and `TC-F07-01` concrete ordered action
-items; their status remains `fail` until separately approved source changes and
-controlled evidence pass.
+items. `TC-F06-01` is retained as `pass` after separately approved source,
+installation, controlled evidence, and finding closeout. `TC-F07-01` remains
+`fail` until Increment B source and controlled evidence pass.
 
 #### Phase 5C-R — Control-plane findings remediation
 
