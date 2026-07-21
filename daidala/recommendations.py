@@ -166,8 +166,6 @@ def derive_recommendations(
     snapshots = {row.stage: row for row in kanban}
     recommendations: list[Recommendation] = []
 
-    approval_card = ledger.card_for(WorkflowStage.APPROVAL)
-
     plan_artifact = ledger.artifact_for(WorkflowStage.PLAN)
     plan_digest = plan_artifact.digest if plan_artifact else None
     plan_revision = ledger.plan_revision
@@ -175,24 +173,21 @@ def derive_recommendations(
     constraints_revision = ledger.current_constraints_revision
 
     if plan_artifact is not None:
-        if ledger.approval is None and approval_card is not None:
-            snapshot = snapshots.get(WorkflowStage.APPROVAL)
-            if snapshot is not None and snapshot.status == "blocked":
-                recommendations.append(
-                    Recommendation(
-                        action_kind="approve_current_tuple",
-                        workflow_id=ledger.workflow_id,
-                        rationale=(
-                            "Review the captured plan and approve its displayed "
-                            "plan and constraint digests to unblock implementation."
-                        ),
-                        plan_revision=plan_revision,
-                        plan_digest=plan_digest,
-                        constraints_revision=constraints_revision,
-                        constraints_digest=constraints_digest,
-                        card_id=approval_card.task_id,
-                    )
+        if ledger.approval is None:
+            recommendations.append(
+                Recommendation(
+                    action_kind="approve_current_tuple",
+                    workflow_id=ledger.workflow_id,
+                    rationale=(
+                        "Review the captured plan and approve its displayed "
+                        "plan and constraint digests to unblock implementation."
+                    ),
+                    plan_revision=plan_revision,
+                    plan_digest=plan_digest,
+                    constraints_revision=constraints_revision,
+                    constraints_digest=constraints_digest,
                 )
+            )
         elif ledger.approval is not None and not _approval_matches_ledger(
             ledger, ledger.approval, plan_artifact
         ):
@@ -327,6 +322,8 @@ def _blocked_cards(
 ) -> list[tuple[KanbanSnapshot, CardReference, str]]:
     blocked: list[tuple[KanbanSnapshot, CardReference, str]] = []
     for stage in WorkflowStage:
+        if stage is WorkflowStage.APPROVAL:
+            continue
         card = ledger.card_for(stage)
         snapshot = snapshots.get(stage)
         if card is None or snapshot is None:

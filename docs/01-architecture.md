@@ -119,14 +119,13 @@ same `WorkflowService`; Hermes Kanban CLI operations remain the host boundary.
 flowchart LR
     START["Daidala validates pack, profiles, and clean baseline"] --> DEFINE["define card"]
     DEFINE --> PLAN["plan card"]
-    PLAN --> APPROVAL["blocked approval card"]
-    APPROVAL -->|"exact digest approved"| IMPLEMENT["implement card"]
+    PLAN -->|"attended exact-digest ledger approval"| IMPLEMENT["implement card"]
     IMPLEMENT --> VERIFY["verify card"]
     VERIFY --> REVIEW["review card"]
     REVIEW --> DELIVER["deliver card"]
 
     KB["Hermes Kanban owns every card status and retry"] --> DEFINE
-    LEDGER["Daidala policy ledger"] -."digests + evidence refs".-> APPROVAL
+    LEDGER["Daidala policy ledger"] -."approval + digests + evidence refs".-> PLAN
     WORKTREE["One absolute Daidala-owned worktree"] --> IMPLEMENT
     WORKTREE --> VERIFY
     WORKTREE --> REVIEW

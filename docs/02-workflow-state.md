@@ -48,8 +48,7 @@ it never mirrors those statuses into its ledger.
 ```mermaid
 flowchart LR
     D["define"] --> P["plan"]
-    P --> A["approval — blocked"]
-    A -->|"matching digest"| I["implement"]
+    P -->|"matching digest approved in ledger"| I["implement"]
     I --> V["verify"]
     V --> R["review"]
     R --> DL["deliver"]
@@ -58,7 +57,9 @@ flowchart LR
 Cards use idempotency key `daidala:<workflow-id>:<plan-revision>:<stage>`.
 The initial `define` and `plan` cards use revision zero. Post-approval cards use
 the approved plan digest's ledger revision, so a changed plan cannot reuse an
-authorized graph. Hermes parent links own readiness promotion.
+authorized graph. The human gate is a Daidala ledger fact, not a Kanban card.
+`implement` is linked directly to `plan`; Hermes parent links own readiness
+promotion for executable cards.
 
 ## Transition ownership
 
@@ -67,8 +68,8 @@ authorized graph. Hermes parent links own readiness promotion.
 | Start accepted | `created` for `define` and dependent `plan` | Named board, clean baseline, exact skills, and all expanded profiles validate |
 | Definition begins or succeeds | `claimed`, then `completed` | `daidala.handoff/v1` definition artifact reference and digest validate |
 | Plan becomes runnable or succeeds | `promoted`, `claimed`, then `completed` | Definition digest matches; plan artifact reference and digest validate |
-| Human gate appears | `created` with blocked status and `plan` parent | Current plan digest is persisted before creation |
-| Approval succeeds | `completed` on the approval card | Supplied digest matches the current plan and approval binds the current nullable constraint identity before host mutation |
+| Human gate appears | None; no approval card exists | Current plan and nullable constraint tuple is persisted and exposed for attended approval |
+| Approval succeeds | `created` for the post-gate graph only after ledger mutation and worktree creation | Supplied digest matches the current plan and approval binds the current nullable constraint identity before host mutation |
 | Post-gate graph appears | `created` for `implement`, `verify`, `review`, and `deliver` | Approval, baseline, plan revision, profiles, exact skills, and worktree all validate |
 | Stage succeeds | `completed` | Handoff schema, plan revision, stage artifact, and evidence digest validate |
 | Stage needs intervention | `blocked` or `dependency_wait` | Structured comment names the current workflow, revision, evidence, and required decision |
@@ -84,9 +85,11 @@ invent parallel transition names.
 ## Approval integrity
 
 The plan artifact has a SHA-256 digest. `daidala_approve` accepts only that
-exact current digest. A generic Kanban unblock is interaction, not approval.
-Only after Daidala records the matching digest may it annotate and complete
-the approval card and create the post-gate graph.
+exact current digest. A generic Kanban unblock is interaction, not approval, and
+Kanban workers are rejected by the approval tool. Only after Daidala records the
+matching tuple may it create the worktree and post-gate graph. Historical
+approval-card references remain readable ledger evidence but are never completed,
+promoted, or recreated.
 
 Replacing a plan clears approval, increments the plan revision, and makes every
 older post-gate card ineligible for Daidala evidence submission. Worktree

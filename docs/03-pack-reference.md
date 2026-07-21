@@ -93,10 +93,10 @@ with `daidala:orchestrate` plus the exact skills declared for that stage. All
 declared skills are loaded as candidates. After `kanban_show`, the worker records
 a `daidala.skill-activation/v1` manifest before stage methodology or evidence:
 `required` skills must be applicable or blocked, while `conditional` skills may
-be applicable, deferred, not applicable, or blocked. The approval card is
-Daidala policy infrastructure and carries no worker skills. Profiles, card
-links, workspaces, activation decisions, and `daidala.handoff/v1` metadata use
-pack-neutral runtime contracts.
+be applicable, deferred, not applicable, or blocked. Approval is ledger-owned
+policy metadata between stages; it has no Kanban card or worker skills. Profiles,
+card links, workspaces, activation decisions, and `daidala.handoff/v1` metadata
+use pack-neutral runtime contracts.
 
 Each stage may declare at most 32 skills, matching the activation tool and
 artifact bounds. Missing or unknown `activation` values fail pack validation;

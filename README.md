@@ -60,8 +60,7 @@ operations remain available for progress and recovery.
 flowchart LR
     S["explicit Daidala start"] --> D["define"]
     D --> P["plan"]
-    P --> G["approval card<br>blocked"]
-    G -->|"human approves exact plan digest"| I["implement"]
+    P -->|"human approves exact plan digest<br>in Daidala ledger"| I["implement"]
     I --> V["verify"]
     V --> R["review"]
     R --> DL["deliver<br>no commit or push"]
@@ -72,7 +71,7 @@ flowchart LR
     H --> V
     H --> R
     H --> DL
-    W["Daidala policy ledger<br>digests and evidence"] -.-> G
+    W["Daidala policy ledger<br>approval, digests, evidence"] -.-> P
 ```
 
 ## Start a first workflow
@@ -113,8 +112,9 @@ plan artifact, approve that exact digest:
 hermes daidala approve first-workflow <64-character-plan-digest>
 ```
 
-A generic `hermes kanban unblock` is not approval. Successful Daidala approval
-completes the gate and creates `implement → verify → review → deliver` in one
+A generic `hermes kanban unblock` is not approval; there is no approval card to
+promote or dispatch. Successful Daidala approval records the ledger gate and
+creates `implement → verify → review → deliver`, parented from `plan`, in one
 persistent worktree. Use `hermes daidala status first-workflow` for combined
 policy facts and live card status; use normal Kanban comments, reassignment, and
 unblock for worker recovery.

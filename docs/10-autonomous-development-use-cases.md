@@ -92,7 +92,7 @@ Choose a pack when starting the workflow:
 Daidala also pins `daidala:orchestrate` to every executable card. That skill
 supplies the common worker protocol: inspect the card first, work in the assigned
 workspace, record evidence, and finish through Kanban completion or blocking.
-The approval card has no worker skills because it represents a human decision.
+Approval is a human ledger decision, not a card, and no worker may invoke it.
 
 Skills are contextual instructions, not functions called in sequence. Every
 mapped skill is loaded as a candidate. After `kanban_show`, the worker records
@@ -111,8 +111,8 @@ active skill names, and workflow identity.
 
 Completion makes the dependent planning card runnable. Its worker calls
 `kanban_show`, reads the parent handoff, uses its own phase skills, and records a
-content-addressed plan. The next card is a blocked approval gate, not an
-implementation worker.
+content-addressed plan. Execution then waits on the exact ledger-owned approval
+tuple; no approval or implementation card exists yet.
 
 ### 3. Review the plan, not just the prompt
 

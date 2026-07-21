@@ -292,22 +292,19 @@ def test_card_reference_persists_board_and_complete_constraint_identity() -> Non
     assert CardReference.from_dict(card.to_dict()) == card
 
 
-def test_approval_card_excludes_non_executable_constraint_projection() -> None:
+def test_adapter_rejects_new_approval_cards() -> None:
     host = FakeHost()
     ledger, constraints = with_constraints(make_approved_worktree())
 
-    card = KanbanGraphAdapter(host.dispatch).ensure_card(
-        ledger,
-        load_pack("addyosmani"),
-        stage=WorkflowStage.APPROVAL,
-        constraints=constraints,
-    )
+    with pytest.raises(KanbanError, match="ledger-owned"):
+        KanbanGraphAdapter(host.dispatch).ensure_card(
+            ledger,
+            load_pack("addyosmani"),
+            stage=WorkflowStage.APPROVAL,
+            constraints=constraints,
+        )
 
-    args = host.cards[card.task_id]["args"]
-    assert isinstance(args, dict)
-    body = str(args["body"])
-    assert "Workflow constraints" not in body
-    assert "Never commit or push" not in body
+    assert host.cards == {}
 
 
 def test_card_rejects_missing_current_constraint_content() -> None:
@@ -380,32 +377,22 @@ def test_show_accepts_native_unwrapped_kanban_payload() -> None:
     assert status.status == "ready"
 
 
-def test_approval_and_post_gate_graph_use_blocked_gate_and_shared_worktree() -> None:
+def test_post_gate_graph_uses_plan_parent_and_shared_worktree() -> None:
     host = FakeHost()
     adapter = KanbanGraphAdapter(host.dispatch)
     ledger = make_approved_worktree()
     plan = adapter.ensure_card(ledger, load_pack("addyosmani"), stage=WorkflowStage.PLAN)
     ledger = record_host_card(ledger, WorkflowStage.PLAN, plan.task_id, 5)
-    gate = adapter.ensure_card(
-        ledger,
-        load_pack("addyosmani"),
-        stage=WorkflowStage.APPROVAL,
-        parents=(plan.task_id,),
-    )
-    ledger = record_host_card(ledger, WorkflowStage.APPROVAL, gate.task_id, 6)
-
-    assert host.cards[gate.task_id]["status"] == "blocked"
-    adapter.complete_approval(ledger)
-    assert host.cards[gate.task_id]["status"] == "done"
 
     implement = adapter.ensure_card(
         ledger,
         load_pack("addyosmani"),
         stage=WorkflowStage.IMPLEMENT,
-        parents=(gate.task_id,),
+        parents=(plan.task_id,),
     )
     args = host.cards[implement.task_id]["args"]
-    assert args["parents"] == [gate.task_id]
+    assert isinstance(args, dict)
+    assert args["parents"] == [plan.task_id]
     assert args["workspace_kind"] == "dir"
     assert args["workspace_path"] == ledger.worktree_path
 

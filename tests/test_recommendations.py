@@ -69,17 +69,30 @@ def test_empty_host_snapshot_produces_no_fabricated_decision() -> None:
 def test_current_unapproved_plan_produces_exact_approval_action() -> None:
     state = ledger()
     plan = ArtifactReference(WorkflowStage.PLAN, 0, "/plan", "plan-digest", NOW)
+    state = replace(state, artifacts=(plan,))
+
+    result = derive_recommendations(state, ())
+
+    approval = next(row for row in result if row.action_kind == "approve_current_tuple")
+    assert approval.workflow_id == "wf-1"
+    assert approval.plan_digest == "plan-digest"
+    assert approval.card_id is None
+
+
+def test_historical_approval_card_is_inert_for_current_recommendations() -> None:
+    state = ledger()
+    plan = ArtifactReference(WorkflowStage.PLAN, 0, "/plan", "plan-digest", NOW)
     gate = CardReference(
         WorkflowStage.APPROVAL,
         0,
-        "gate-1",
+        "historical-gate",
         "daidala:wf-1:0:0:none:approval",
         board_slug="board",
     )
     state = replace(state, artifacts=(plan,), card_references=(gate,))
     snapshot = KanbanSnapshot(
         WorkflowStage.APPROVAL,
-        "gate-1",
+        "historical-gate",
         "blocked",
         "default",
         block_kind="needs_input",
@@ -87,10 +100,8 @@ def test_current_unapproved_plan_produces_exact_approval_action() -> None:
 
     result = derive_recommendations(state, (snapshot,))
 
-    approval = next(row for row in result if row.action_kind == "approve_current_tuple")
-    assert approval.workflow_id == "wf-1"
-    assert approval.plan_digest == "plan-digest"
-    assert approval.card_id == "gate-1"
+    assert [row.action_kind for row in result] == ["approve_current_tuple"]
+    assert result[0].card_id is None
 
 
 def test_blocked_snapshot_is_not_stored_in_ledger() -> None:

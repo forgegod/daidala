@@ -161,13 +161,20 @@ def _combined_status(service: WorkflowService, workflow_id: str) -> dict[str, An
 def approve(args: dict[str, Any], **kwargs: Any) -> str:
     """Approve the exact current plan digest."""
     del kwargs
-    return _service_handler(
+
+    def operation(values: dict[str, Any]) -> dict[str, Any]:
+        if "HERMES_KANBAN_TASK" in os.environ:
+            raise ValueError("approval is unavailable from Hermes Kanban worker context")
+        workflow = _service_factory().approve(
+            str(values["workflow_id"]), str(values["plan_digest"])
+        )
+        return {"workflow": workflow.to_dict()}
+
+    return _handle(
         args,
         allowed={"workflow_id", "plan_digest"},
         required={"workflow_id", "plan_digest"},
-        operation=lambda service, values: service.approve(
-            str(values["workflow_id"]), str(values["plan_digest"])
-        ),
+        operation=operation,
     )
 
 

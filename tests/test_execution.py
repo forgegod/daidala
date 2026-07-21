@@ -293,6 +293,8 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
     definition = planned.artifact_for(WorkflowStage.DEFINE)
     plan = planned.artifact_for(WorkflowStage.PLAN)
     assert definition is not None and plan is not None
+    assert planned.card_for(WorkflowStage.APPROVAL) is None
+    assert len(fake_kanban_host.cards) == 2
     complete_stage(WorkflowStage.DEFINE, definition.digest)
     complete_stage(WorkflowStage.PLAN, plan.digest)
 
@@ -371,7 +373,7 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
     ).stdout.strip()
     assert target_head == worktree_head == baseline
 
-    assert len(fake_kanban_host.cards) == 7
+    assert len(fake_kanban_host.cards) == 6
     assert all(card["status"] == "done" for card in fake_kanban_host.cards.values())
     for stage in (
         WorkflowStage.DEFINE,
@@ -701,7 +703,7 @@ def test_verification_worker_blocks_and_resumes_same_card_and_workspace(
     assert restarted_verify is not None
     assert restarted_verify.task_id == verify_card.task_id
     assert restarted.worktree_path == str(worktree)
-    assert len(fake_kanban_host.cards) == 7
+    assert len(fake_kanban_host.cards) == 6
 
     fake_kanban_host.dispatch("kanban_unblock", {"task_id": verify_card.task_id})
     retry_show = json.loads(

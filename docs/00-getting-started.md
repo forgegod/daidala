@@ -107,8 +107,9 @@ its artifact through a Daidala evidence tool, and completes with structured
 `daidala.handoff/v1` metadata. The `plan` card becomes runnable after `define`
 completes.
 
-After planning, Daidala creates an approval card in `blocked` state. No
-implementation-capable card exists yet.
+After planning, Daidala exposes the exact pending approval tuple from its ledger.
+It creates no approval card, implementation worktree, or implementation-capable
+card.
 
 ## 5. Approve the exact plan
 
@@ -119,10 +120,10 @@ the plan, risks, scope, and verification criteria are acceptable:
 hermes daidala approve first-workflow <64-character-plan-digest>
 ```
 
-A stale or changed digest fails closed. `hermes kanban unblock` only changes a
-card interaction state and never satisfies Daidala approval policy. Successful
-approval records the exact digest, creates one detached worktree, completes the
-gate, and creates:
+A stale or changed digest fails closed. `hermes kanban unblock` cannot satisfy
+Daidala approval policy, and a Kanban worker cannot call the approval tool.
+Successful attended approval records the exact tuple in the ledger, creates one
+detached worktree, and creates these cards with `plan` as their graph parent:
 
 ```text
 implement → verify → review → deliver

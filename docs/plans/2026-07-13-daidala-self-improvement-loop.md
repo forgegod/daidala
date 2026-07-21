@@ -47,7 +47,9 @@ Phase 5C-R is in progress. Its Phase 0 publication and scope gate produced
 findings [#6](https://github.com/forgegod/daidala/issues/6) and
 [#7](https://github.com/forgegod/daidala/issues/7) without readiness, and exact
 Increment A scope digest `8752c0647d1d82b35cd5995527c3726af778392375baac904525735ea659979a`
-received attended approval.
+received attended approval. Phase 1 then produced repository-verified candidate
+digest `ddef04b37f011c4d5b9062c2c7344152f1d44900a834f0e551a2c0e30d78b1ce`;
+retention and controller installation remain unapproved.
 The resumable execution record is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 The two failed Phase 5C control cases are explicit follow-up actions in
@@ -72,7 +74,7 @@ The two failed Phase 5C control cases are explicit follow-up actions in
 | 5B — Paused reconciliation cron and controlled tick | done | Two approved executions produced `admitted` then `replayed` for one issue, claim, cycle, graph, and attended receipt. The no-agent job is paused on `every 15m`; no worktree, approval, commit, or push exists. |
 | 5B-C — Deterministic probe cancellation | done | Exact detached revision `550671c`, approved preview `9deb8cef`, terminal digest `99fe86b3`, receipt `telegram:37`, identical replay, archived cards, and 11/11 diagnosis prove deterministic closeout. |
 | 5C — Approved improvement and findings synchronization | done | Issue #5 retained strict v2 controller-revision evidence; completion `f9f5566e` released the claim and delivered `telegram:44`. The two control findings were ranged into Phase 5C-R. |
-| 5C-R — Control-plane findings remediation | in-progress | Child Phase 0 published unready issues #6 and #7 and received attended approval for exact Increment A scope digest `8752c064`; Phase 1 is pending. |
+| 5C-R — Control-plane findings remediation | in-progress | Child Phase 0 published unready issues #6 and #7; Phase 1 candidate `ddef04b3` passed 410 tests and the complete repository gate. Phase 2 retention and installation are pending. |
 | 5D — UC-03 pack evaluation | blocked | Requires Phase 5C-R done, one canonical paired fixture, one frozen baseline, one approved candidate skill set, and separate cycle approval. |
 | 6 — Version-aware re-evaluation | blocked | Requires the approved Phase 5 work; candidate Hermes identity is selected here, not invented earlier. |
 | 7 — Repository gate and documentation | blocked | Requires the preceding live evaluation and comparison evidence. |

@@ -37,7 +37,7 @@ def test_every_executable_card_pins_worker_contract_and_exact_pack_skills(
     ]
 
 
-def test_approval_card_has_no_worker_skills() -> None:
+def test_historical_approval_stage_has_no_worker_skills() -> None:
     assert (
         KanbanGraphAdapter._stage_skills(load_pack("addyosmani"), WorkflowStage.APPROVAL)
         == []
@@ -87,6 +87,8 @@ def test_worker_contract_requires_kanban_handoff_and_recovery_protocol() -> None
         "never continue from a superseded card",
         "Apply every global constraint and only the current stage's phase constraints",
         "`constraints_revision`, `constraints_digest`",
+        "Daidala creates no approval Kanban card",
+        "Kanban workers must never call `daidala_approve`",
     )
     for statement in required:
         assert statement in instructions

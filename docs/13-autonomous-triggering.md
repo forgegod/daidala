@@ -321,15 +321,15 @@ the Daidala workflow ID in the provider comment or metadata and verify it with
 ## Approval and notification
 
 An accepted trigger creates only `define → plan`. After planning, the workflow
-creates a blocked approval card. No implementation worktree or
-implementation-capable card exists until a human runs:
+waits on its exact ledger-owned approval tuple. No approval card, implementation
+worktree, or implementation-capable card exists until a human runs:
 
 ```bash
 hermes daidala approve <workflow-id> <64-character-plan-digest>
 ```
 
-A cron job, webhook prompt, filter script, or source label must never call this
-command. Generic Kanban unblock is also not approval. This separation permits
+A cron job, webhook prompt, filter script, source label, or Kanban worker must
+never call this command. Generic Kanban unblock is also not approval. This separation permits
 unattended intake without turning untrusted ticket text into unattended code
 execution.
 
@@ -415,7 +415,8 @@ Then run one controlled end-to-end probe:
 3. Confirm an accepted payload creates one deterministic workflow.
 4. Replay the same payload and confirm no second graph is created.
 5. Inspect `hermes daidala status <workflow-id>` and the named board.
-6. Confirm the workflow stops at the blocked approval card.
+6. Confirm the workflow exposes an exact pending ledger approval but has no
+   approval card, worker run, worktree, or post-gate card.
 7. Confirm no target worktree, commit, push, or deployment occurred.
 8. Stop the gateway briefly and verify monitoring detects the unavailable
    scheduler/listener rather than claiming success.

@@ -223,8 +223,11 @@ fails locally rather than in production.
   and constraint digest. Card references also persist the named board and
   constraint revision. Executable card bodies include the immutable artifact identity,
   every global constraint, and only the current executable stage's constraints;
-  approval cards receive no constraint projection, and oversized bodies fail
-  instead of truncating policy.
+  oversized bodies fail instead of truncating policy.
+- Approval is an exact plan/constraint tuple in the policy ledger, never a Kanban
+  card. The plugin approval handler rejects `HERMES_KANBAN_TASK`; attended
+  approval creates one owned worktree and a post-gate graph parented from the
+  current plan card. Historical approval-card references remain readable and inert.
 - Worker activation validates the current board, current policy-bound card, and
   live assignee before methodology or evidence. Every worker evidence operation
   repeats that current-card check. A constraint revision makes prior cards and

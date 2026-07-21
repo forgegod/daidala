@@ -43,8 +43,10 @@ not depend on the launcher session retaining these instructions.
    criteria, and returned digest to the human. Do not approve until the human
    explicitly accepts that exact digest.
 5. Call `daidala_approve` with the accepted digest. This records approval,
-   creates the persistent worktree, completes the blocked gate, and creates the
-   linked post-gate cards. Do not call `daidala_prepare_implementation`
+   creates the persistent worktree, and creates the linked post-gate cards with
+   the plan card as their graph parent. Daidala creates no approval Kanban card.
+   Kanban workers must never call `daidala_approve`; approval belongs to the
+   attended non-worker launcher or explicit CLI. Do not call `daidala_prepare_implementation`
    separately unless recovery diagnostics show the approved worktree is absent.
 
 ## Stage Worker Contract

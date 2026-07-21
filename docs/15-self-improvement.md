@@ -270,7 +270,7 @@ store, or default pack. Promotion is a later `improve` cycle.
 | Admitted -> baseline | Evaluator | Fresh approved boundary | Commands, outputs, digests, identities | Atomic test-case ID | Failure/blocked receipt | `blocked` if incomplete. |
 | Baseline -> define | Daidala/Hermes | Durable baseline | Definition card and evidence | Workflow/stage identity | Status receipt | `blocked` on skill or handoff failure. |
 | Define -> plan | Hermes worker | Finalized activation and definition | Plan artifact and handoff | Plan revision | Approval-wait receipt | `blocked` on invalid plan. |
-| Plan -> approval wait | Daidala | Exact current identities | Blocked approval card | Approval tuple | Exact inspection identity | Wait without mutation. |
+| Plan -> approval wait | Daidala | Exact current identities | Pending ledger approval tuple; no Kanban card | Approval tuple | Exact inspection identity | Wait without mutation. |
 | Approval -> implement | Authorized human/Daidala | Exact matching approval | Approval record, owned worktree, post-gate cards | Approval tuple | Approval receipt | `blocked` on stale tuple. |
 | Implement -> verify | Hermes worker/Daidala | Owned worktree and finalized activation | Frozen changed paths, diff, increment entries | Stage/card identity | Failure receipt | `blocked` on scope drift. |
 | Verify -> review | Verifier | Declared suites complete | Immutable verification evidence | Test-case/run identity | Recovery receipt | `blocked` or `incomparable`. |
@@ -548,7 +548,8 @@ uses bundled `daidala:aidlc-adapter`. The engine contains no pack-name branch.
 1. Admit the temporary `answer() == 2` fixture as `improve`.
 2. Capture baseline failure before mutation.
 3. Run define and plan separately with Addyosmani and AI-DLC.
-4. Stop at the exact approval card; prove no implementation card exists.
+4. Stop at the exact ledger-owned approval tuple; prove no approval or
+   implementation card exists.
 5. After cycle-specific approval, create one owned worktree.
 6. Preserve the failing attempt, apply the bounded fix and one justified adjacent
    regression, verify, review, and compare in a fresh evaluator.

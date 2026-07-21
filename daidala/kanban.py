@@ -79,6 +79,8 @@ class KanbanGraphAdapter:
     ) -> KanbanTask:
         if (ledger.current_constraints is None) != (constraints is None):
             raise KanbanError("card constraints do not match the current workflow identity")
+        if stage is WorkflowStage.APPROVAL:
+            raise KanbanError("approval is a ledger-owned gate and has no Kanban card")
         if stage in {
             WorkflowStage.IMPLEMENT,
             WorkflowStage.VERIFY,
@@ -109,9 +111,7 @@ class KanbanGraphAdapter:
             "skills": self._stage_skills(pack, stage),
             "board": ledger.board_slug,
         }
-        if stage is WorkflowStage.APPROVAL:
-            args["initial_status"] = "blocked"
-        elif stage in {
+        if stage in {
             WorkflowStage.IMPLEMENT,
             WorkflowStage.VERIFY,
             WorkflowStage.REVIEW,
@@ -130,30 +130,6 @@ class KanbanGraphAdapter:
         if status is not None and not isinstance(status, str):
             raise KanbanError("kanban_create returned invalid status")
         return KanbanTask(task_id=task_id, status=status)
-
-    def complete_approval(self, ledger: WorkflowLedger) -> None:
-        card = ledger.card_for(WorkflowStage.APPROVAL)
-        if card is None or ledger.approval is None:
-            raise KanbanError("approval completion requires a recorded approval card")
-        current = self.show_card(ledger, WorkflowStage.APPROVAL)
-        if current.status == "done":
-            return
-        self._tool_json(
-            "kanban_complete",
-            {
-                "task_id": card.task_id,
-                "summary": "Daidala exact-digest approval recorded",
-                "metadata": {
-                    "workflow_id": ledger.workflow_id,
-                    "stage": WorkflowStage.APPROVAL.value,
-                    "plan_revision": ledger.plan_revision,
-                    "plan_digest": ledger.approval.plan_digest,
-                    "constraints_revision": ledger.approval.constraints_revision,
-                    "constraints_digest": ledger.approval.constraints_digest,
-                },
-                "board": ledger.board_slug,
-            },
-        )
 
     def show_card(
         self,

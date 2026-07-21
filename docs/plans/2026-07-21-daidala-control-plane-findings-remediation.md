@@ -1,6 +1,7 @@
 # Daidala Control-Plane Findings Remediation Plan
 
-**Status:** in progress — Phase 0 is done and Increment A candidate work is next.
+**Status:** in progress — Phase 1 produced a repository-verified Increment A
+candidate; separate retention approval is required before Phase 2.
 No retention, installation, live probe, issue closure, push, release, or
 deployment is approved by this document.
 
@@ -34,7 +35,7 @@ Documentation in the Phase 5C evaluation and parent plan did not fix either beha
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
 | 0 | Finding publication and exact scope approval | done (issues #6/#7; scope `8752c064`) | Separately approved issue creation returns one identity per finding; the exact Increment A scope digest receives attended approval. |
-| 1 | Increment A candidate — non-executable approval gate | pending | Focused tests and the complete repository gate pass against one immutable candidate diff; no live state changes. |
+| 1 | Increment A candidate — non-executable approval gate | done (candidate `ddef04b3`; 410 tests) | Focused tests and the complete repository gate pass against one immutable candidate diff; no live state changes. |
 | 2 | Increment A retention, installation, and controlled evidence | pending | Separate retention/install/probe approvals hold; `TC-F06-01` passes, diagnosis is 11/11, cron is paused, and the finding is terminally reconciled. |
 | 3 | Increment B candidate — immutable revision artifacts | pending | Focused tests and the complete repository gate pass against one immutable candidate diff; historical fixture bytes remain unchanged. |
 | 4 | Increment B retention, installation, and controlled evidence | pending | Separate retention/install/probe approvals hold; `TC-F07-01` passes, diagnosis is 11/11, cron is paused, and the finding is terminally reconciled. |
@@ -60,6 +61,24 @@ gate passes, and leave every later row `pending`.
 - Publication and scope approval authorize Phase 1 candidate work only. They do
   not authorize readiness, retention, installation, live probing, issue closure,
   push, release, or deployment.
+
+## Phase 1 evidence
+
+- The RED focused gate produced exactly seven expected failures covering approval
+  card creation, worker approval, ledger-only recommendations, worker guidance,
+  and both pack execution paths.
+- The immutable candidate patch excludes plan closeout metadata and has SHA-256
+  `ddef04b37f011c4d5b9062c2c7344152f1d44900a834f0e551a2c0e30d78b1ce`.
+- The focused approval suite, Ruff, and Markdown links pass. The complete gate
+  passes with 410 tests, both pack validations, sdist and wheel builds, Twine,
+  release-content verification, Lefthook validation, and staged diff checks.
+- The candidate creates no approval card, parents `implement` from `plan` only
+  after exact ledger approval, rejects `HERMES_KANBAN_TASK` before approval
+  mutation, derives the pending action without Kanban state, and leaves historical
+  approval references readable and inert.
+- Verification changed no live controller, profile, board, cron, issue state,
+  worktree, or installed revision. The controller remains at `9d9f4f6` and Phase 2
+  requires separate retention, installation, and controlled-probe approvals.
 
 ## Decisions
 

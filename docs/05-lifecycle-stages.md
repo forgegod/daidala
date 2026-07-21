@@ -23,7 +23,7 @@ historical artifacts, and restarts at `define` before renewed tuple approval.
 |---|---|---|---|
 | Define | Goal, pack, exact skills, clean baseline | `define.md` path and digest | Complete or block |
 | Plan | Definition handoff | `plan.md` path and digest | Complete or block |
-| Approval | Current plan and nullable constraint revision/digest tuple | Approval actor, time, and exact tuple | Remain blocked until Daidala approval; then complete |
+| Approval | Current plan and nullable constraint revision/digest tuple | Approval actor, time, and exact tuple | Ledger-only human gate; no Kanban card |
 | Implement | Approved revision and absolute owned worktree | Captured diff and changed-path manifest | Complete or block |
 | Verify | Immutable implementation scope and exact commands | Commands, exit codes, and output references | Complete or block |
 | Review | Captured diff and passing evidence | Review artifact and decision | Complete or block |
@@ -38,14 +38,15 @@ historical artifacts, and restarts at `define` before renewed tuple approval.
 3. `daidala_start` creates `define` and dependent `plan` with the bundled
    `daidala:orchestrate` worker contract, exact pack skills, and deterministic
    idempotency keys.
-4. After the plan handoff, Daidala records its digest and creates a blocked
-   approval card linked from `plan`.
-5. `hermes daidala approve <workflow-id> <digest>` records exact approval.
-   The command annotates and completes the gate through documented host
-   operations; generic `hermes kanban unblock` does not satisfy Daidala policy.
+4. After the plan handoff, Daidala records its digest and exposes the exact
+   pending approval tuple from the ledger without creating a Kanban card.
+5. `hermes daidala approve <workflow-id> <digest>` records exact attended
+   approval. Kanban workers are rejected, and generic `hermes kanban unblock`
+   does not satisfy Daidala policy.
 6. Daidala creates `implement → verify → review → deliver` only after approval.
-   Every card uses its resolved profile, the bundled worker contract, exact stage
-   skills, real parent links, and the same absolute Daidala-owned worktree.
+   `implement` is parented directly from `plan`; every post-gate card uses its
+   resolved profile, bundled worker contract, exact stage skills, real parent
+   links, and the same absolute Daidala-owned worktree.
 
 `daidala_status` is read-only and combines ledger facts with live Kanban card
 data. Cancellation cleans Daidala-owned resources and uses documented Kanban

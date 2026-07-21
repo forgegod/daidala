@@ -218,7 +218,6 @@ class WorkflowService:
         )
         if updated is not observed.ledger:
             updated = self.store.update(updated, expected_updated_at=observed.updated_at)
-        self._require_kanban().complete_approval(updated)
         updated = self.prepare_implementation(workflow_id)
         return self._ensure_post_gate_graph(updated, load_pack(updated.pack_name))
 
@@ -263,7 +262,7 @@ class WorkflowService:
             replaced_at=self._clock(),
         )
         updated = self.store.update(updated, expected_updated_at=observed.updated_at)
-        return self._ensure_approval_card(updated, load_pack(updated.pack_name))
+        return updated
 
     def replace_constraints(
         self,
@@ -415,8 +414,6 @@ class WorkflowService:
             recorded_at=self._clock(),
         )
         stored = self.store.update(updated, expected_updated_at=observed.updated_at)
-        if stage is WorkflowStage.PLAN:
-            return self._ensure_approval_card(stored, load_pack(stored.pack_name))
         return stored
 
     def prepare_implementation(self, workflow_id: str) -> WorkflowLedger:
@@ -691,21 +688,12 @@ class WorkflowService:
             parents=(define.task_id,),
         )
 
-    def _ensure_approval_card(self, ledger: WorkflowLedger, pack) -> WorkflowLedger:
-        plan = ledger.card_for(WorkflowStage.PLAN)
-        if plan is None or ledger.artifact_for(WorkflowStage.PLAN) is None:
-            raise ServiceError("approval card requires the plan card and artifact")
-        return self._ensure_card(
-            ledger,
-            pack,
-            WorkflowStage.APPROVAL,
-            parents=(plan.task_id,),
-        )
-
     def _ensure_post_gate_graph(self, ledger: WorkflowLedger, pack) -> WorkflowLedger:
-        parent = ledger.card_for(WorkflowStage.APPROVAL)
-        if parent is None:
-            raise ServiceError("post-gate graph requires the approval card")
+        parent = ledger.card_for(WorkflowStage.PLAN)
+        if parent is None or ledger.artifact_for(WorkflowStage.PLAN) is None:
+            raise ServiceError("post-gate graph requires the current plan card and artifact")
+        if ledger.approval is None:
+            raise ServiceError("post-gate graph requires exact ledger approval")
         for stage in (
             WorkflowStage.IMPLEMENT,
             WorkflowStage.VERIFY,

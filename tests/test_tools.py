@@ -252,13 +252,19 @@ def test_start_restart_and_approval_create_one_idempotent_graph(
     )
     plan = planned.artifact_for(WorkflowStage.PLAN)
     assert plan is not None
+    assert planned.card_for(WorkflowStage.APPROVAL) is None
+    assert planned.worktree_owned is False
+    assert len(fake_kanban_host.cards) == 2
+
     approved = service.approve(second.workflow_id, plan_digest=plan.digest)
 
-    assert len(fake_kanban_host.cards) == 7
-    assert [card.stage for card in approved.card_references] == list(WorkflowStage)
+    assert len(fake_kanban_host.cards) == 6
+    assert [card.stage for card in approved.card_references] == [
+        stage for stage in WorkflowStage if stage is not WorkflowStage.APPROVAL
+    ]
     for parent, child in zip(
         (
-            WorkflowStage.APPROVAL,
+            WorkflowStage.PLAN,
             WorkflowStage.IMPLEMENT,
             WorkflowStage.VERIFY,
             WorkflowStage.REVIEW,
@@ -276,6 +282,39 @@ def test_start_restart_and_approval_create_one_idempotent_graph(
         assert parent_card is not None and child_card is not None
         child_args = fake_kanban_host.cards[child_card.task_id]["args"]
         assert child_args["parents"] == [parent_card.task_id]
+
+    replayed = service.approve(second.workflow_id, plan_digest=plan.digest)
+    assert replayed.card_references == approved.card_references
+    assert len(fake_kanban_host.cards) == 6
+
+
+@pytest.mark.parametrize("worker_task", ("", "t_plan"))
+def test_approval_tool_rejects_kanban_worker_context_without_mutation(
+    service: WorkflowService,
+    target_repository: Path,
+    fake_kanban_host,
+    monkeypatch: pytest.MonkeyPatch,
+    worker_task: str,
+) -> None:
+    workflow_id = seed_planned(service, target_repository)
+    plan = service.status(workflow_id).artifact_for(WorkflowStage.PLAN)
+    assert plan is not None
+    before = service.status(workflow_id).to_dict()
+    cards_before = {task_id: dict(card) for task_id, card in fake_kanban_host.cards.items()}
+    monkeypatch.setenv("HERMES_KANBAN_TASK", worker_task)
+
+    result = call(
+        tools.approve,
+        {"workflow_id": workflow_id, "plan_digest": plan.digest},
+    )
+
+    assert result == {
+        "success": False,
+        "error": "ValueError",
+        "message": "approval is unavailable from Hermes Kanban worker context",
+    }
+    assert service.status(workflow_id).to_dict() == before
+    assert fake_kanban_host.cards == cards_before
 
 
 def test_start_rejects_dirty_target_without_persisting_status(

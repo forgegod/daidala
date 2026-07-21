@@ -313,10 +313,8 @@ rules:
 This prevents the workflow from depending on the launcher session retaining
 instructions. A planning worker and a later review worker may be different
 models in different Hermes profiles, but both receive the same worker contract.
-
-The approval card is intentionally different. It carries no worker skills
-because approval is Daidala policy infrastructure and a human decision, not a
-model-executed methodology stage.
+Approval has no card or worker skills: it is a ledger-owned human decision, and
+the plugin approval handler rejects Kanban worker context.
 
 ## How packs shape the phases
 
@@ -332,8 +330,8 @@ workflow mechanics around them.
 | Stage | Stable Daidala responsibility | Pack-controlled judgment |
 |---|---|---|
 | Define | Store `define.md` and its digest. | How to elicit intent, refine scope, identify ambiguity, and express acceptance criteria. |
-| Plan | Store `plan.md`, its digest, and create the blocked approval gate. | How to decompose work, make design decisions, and define verification. |
-| Approval | Bind a human decision to the exact current plan digest. | None; no worker skills are loaded. |
+| Plan | Store `plan.md`, its digest, and expose the exact pending approval tuple. | How to decompose work, make design decisions, and define verification. |
+| Approval | Bind an attended human decision to the exact current plan and constraint tuple without creating a card. | None; no worker exists. |
 | Implement | Provide the approved detached worktree and capture an immutable diff and path manifest. | How to apply changes, use tests during development, and resolve uncertainty. |
 | Verify | Record exact commands, exit codes, and output references. | Which approved checks to run and how to diagnose failures without inventing success. |
 | Review | Store the review artifact and decision against captured evidence. | Which quality, security, maintainability, and performance concerns to assess. |
