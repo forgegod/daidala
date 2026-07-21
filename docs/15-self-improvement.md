@@ -16,7 +16,8 @@ approval, evaluation, delivery, replay, and terminal completion paths. The
 shared dry-run-first CLI now exposes deterministic reconciliation with an exact
 preview-digest apply gate. Exact detached revision `80dd73e` is installed in the
 persistent controller profile and passes native and standalone live diagnosis;
-no reconciliation cron or controlled tick exists. Live
+one matching no-agent reconciliation cron exists but remains paused with no run
+attempts. No controlled tick exists. Live
 duplicate-tick recovery, terminal retention, approved finding publication, and
 version-aware comparison remain unexercised or blocked by later approval gates.
 

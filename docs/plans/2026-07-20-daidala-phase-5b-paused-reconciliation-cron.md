@@ -11,8 +11,9 @@ dry-run-first CLI checkpoint `5472cc1`. Phase 3 repository reconciliation and
 the complete release gate are complete at the repository checkpoint.
 Phase 4 is complete: the controller runs clean detached revision `80dd73e`,
 native and standalone live diagnosis pass 11/11, and rollback revision
-`31331e8` remains retained outside the plugin scan root. Cron creation, GitHub
-mutation, and controlled dispatch remain separately approval-gated.
+`31331e8` remains retained outside the plugin scan root. Phase 5 is complete
+with one verified paused no-agent job and no execution attempts. GitHub mutation
+and controlled dispatch remain separately approval-gated.
 
 ## Current state
 
@@ -41,8 +42,10 @@ mutation, and controlled dispatch remain separately approval-gated.
   pass all eleven checks after Docker integration was restored; no remote ref
   changed.
 - `hermes -p daidala-self-improvement cron status` reports a running gateway and
-  no active jobs; `hermes -p daidala-self-improvement cron list` reports no
-  scheduled jobs.
+  no active jobs. `cron list --all` reports exactly one paused no-agent job named
+  `daidala-forgegod-daidala-reconciliation` on `every 15m`; its repeat is
+  infinite, script digest matches profile-local evidence, and run history is
+  empty.
 - The read-only query `gh-vault run --name ghcli -- gh issue list --repo
   forgegod/daidala --state open --label daidala-si ...` currently returns an
   empty list, so a controlled live tick has no existing issue to admit.
@@ -62,7 +65,7 @@ The second risk is a nominal "paused" job that can still run before verification
 Later phases mutate profile-local controller state, Hermes cron state, GitHub
 issue state, Kanban state, and the attended channel. Their safety net is the
 clean Git tree, exact detached installation revision, content-addressed tick
-receipts, one approved issue, and a cron job that is created on a 24-hour
+receipts, one approved issue, and a cron job that is created on an `every 24h`
 placeholder schedule and paused before its schedule is edited. If cron setup
 fails, remove the new job and profile-local wrapper. If a controlled tick fails
 after claiming an issue, keep the job paused, preserve the run and claim
@@ -83,7 +86,7 @@ before any later phase. The immediate run uses Hermes' at-most-once claim; the
 | 2 | Expose the dry-run-first operator surface | done (39 focused + 388 full tests) | Current-source native and standalone `project-cycle reconcile --help` agree; CLI tests exit 0; dry-run fixtures produce no mutation. |
 | 3 | Reconcile contracts and checkpoint the implementation | done (388 tests + complete release gate) | The complete repository gate exits 0; one reviewed repository checkpoint exists; no push occurs. |
 | 4 | Install and verify the exact controller revision | done (`80dd73e`; native + standalone 11/11) | Clean detached identity, both packs, reconciliation CLI, gateway restart, and both live reports pass; `31331e8` rollback remains outside the scan root and cron remains empty. |
-| 5 | Create the profile-local wrapper and paused cron | pending | `cron list --all` shows exactly one paused named job; `cron runs <job>` is empty; scheduling remains disabled. |
+| 5 | Create the profile-local wrapper and paused cron | done (paused, no attempts) | `cron list --all` shows exactly one paused no-agent named job with infinite repeat; `cron runs <job>` is empty; the script digest matches profile-local evidence. |
 | 6 | Run and replay one controlled tick | pending | Two completed cron attempts yield one cycle/workflow, no duplicate claim or graph, attended receipts, and a still-paused job. |
 
 Mark a phase `in-progress` while running it, `done (<sha-or-evidence>)` once its
@@ -291,10 +294,13 @@ Steps:
 3. Record and verify the wrapper SHA-256 digest in profile-local non-secret
    evidence. Do not place credentials, private destinations, or mutable issue
    data in the script.
-4. Create `daidala-forgegod-daidala-reconciliation` as a `--no-agent` job on a
-   24-hour placeholder interval, with the registered checkout as `--workdir`
-   and attended failure delivery. Immediately pause it by exact name, then edit
-   the desired operational schedule to `every 15m` while it remains paused.
+4. Create `daidala-forgegod-daidala-reconciliation` as a `--no-agent` job on an
+   `every 24h` placeholder interval with infinite repeat, the registered checkout
+   as `--workdir`, and attended failure delivery. Immediately pause it by exact
+   name, then edit the desired operational schedule to `every 15m` while it
+   remains paused. Pass only the script filename to `cron create`; Hermes rejects
+   an absolute script path. Do not use bare `24h`, which is a one-shot schedule;
+   use `every 24h --repeat 0` so the edited job retains infinite repeat.
 5. Verify the job is unique, no run attempt exists, the gateway is healthy, and
    its persisted mode is no-agent. Do not resume or run it in this phase.
 

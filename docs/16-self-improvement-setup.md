@@ -61,6 +61,7 @@ retained evidence.
 | Daidala command surfaces | Pass | Standalone and native controller-profile commands report Daidala `0.2.0`; native pack validation succeeds. |
 | Controller plugin revision | Pass | The controller profile loads clean detached revision `80dd73efa9a4e462304b71ba157b5e5c0172b793`; native and standalone live diagnosis verify the same identity. |
 | Controller profile | Pass | `/home/raphael/.hermes/profiles/daidala-self-improvement` exists and the sticky profile remains `hermes-vc`. |
+| Reconciliation cron | Pass | Exactly one profile-local no-agent job uses the digest-matched wrapper, `every 15m` with infinite repeat, and the registered checkout; it remains paused with no execution attempts. |
 | Dedicated board | Pass | Installation-global board `daidala-forgegod-daidala` exists with the exact checkout as default workdir; both controlled UC-01 workflows are terminal and it did not replace the current `default` board. |
 | Restricted container | Pass | Docker integration is available again; native and standalone live diagnosis reproduce the retained restricted-container boundary with the digest-pinned image and denied network. |
 | GitHub runtime credentials | Pass | Non-secret alias bindings exist. Both bounded runtime read probes pass, and retained evidence includes their request identities, expirations, and the separately approved controlled findings-write receipt. |
@@ -91,6 +92,7 @@ in this order; a later step must not be used to waive an earlier blocker.
 | 9 | Materialize trusted non-secret registration, bindings, and receipts. | Profile-local project files. | Pass; registration v2 binds the exact private attended destination, and bindings plus combined evidence validate strictly. |
 | 10 | Run the read-only live prerequisite checker from a clean checkout. | None. | Pass at revision `80dd73efa9a4e462304b71ba157b5e5c0172b793`; native and standalone reports return all eleven `SI-*` checks as `pass`. |
 | 11 | Admit UC-01 manually. | GitHub issue, board, evaluator, and cycle artifacts. | Pass; controlled Addyosmani issue #2 and Aidlc issue #3 are closed as completed, both claims are released, and no active admission remains. |
+| 12 | Create the approved script-only reconciliation job and pause it before operational scheduling. | Profile-local wrapper, non-secret digest evidence, and Hermes cron metadata. | Pass; exactly one no-agent job is paused on `every 15m` with infinite repeat and no execution attempts. |
 
 The operator owns browser authorization, credential creation, attended-channel
 confirmation, setup approval, and later cycle approval. The agent may select a
