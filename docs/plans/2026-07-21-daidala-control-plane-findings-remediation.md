@@ -1,9 +1,9 @@
 # Daidala Control-Plane Findings Remediation Plan
 
-**Status:** in progress — Phase 1 produced a repository-verified Increment A
-candidate; separate retention approval is required before Phase 2.
-No retention, installation, live probe, issue closure, push, release, or
-deployment is approved by this document.
+**Status:** in progress — retained Increment A revision `9f380a6` is installed
+and verified; Phase 2 awaits separate controlled-probe approval.
+No live probe, issue closure, push, release, or deployment is approved by this
+document.
 
 **Parent plan:**
 [`2026-07-13-daidala-self-improvement-loop.md`](2026-07-13-daidala-self-improvement-loop.md)
@@ -36,7 +36,7 @@ Documentation in the Phase 5C evaluation and parent plan did not fix either beha
 |---|---|---|---|
 | 0 | Finding publication and exact scope approval | done (issues #6/#7; scope `8752c064`) | Separately approved issue creation returns one identity per finding; the exact Increment A scope digest receives attended approval. |
 | 1 | Increment A candidate — non-executable approval gate | done (candidate `ddef04b3`; 410 tests) | Focused tests and the complete repository gate pass against one immutable candidate diff; no live state changes. |
-| 2 | Increment A retention, installation, and controlled evidence | pending | Separate retention/install/probe approvals hold; `TC-F06-01` passes, diagnosis is 11/11, cron is paused, and the finding is terminally reconciled. |
+| 2 | Increment A retention, installation, and controlled evidence | in-progress (installed `9f380a6`; probe pending) | Separate retention/install/probe approvals hold; `TC-F06-01` passes, diagnosis is 11/11, cron is paused, and the finding is terminally reconciled. |
 | 3 | Increment B candidate — immutable revision artifacts | pending | Focused tests and the complete repository gate pass against one immutable candidate diff; historical fixture bytes remain unchanged. |
 | 4 | Increment B retention, installation, and controlled evidence | pending | Separate retention/install/probe approvals hold; `TC-F07-01` passes, diagnosis is 11/11, cron is paused, and the finding is terminally reconciled. |
 | 5 | Closeout and parent-plan reconciliation | pending | Both cases are retained as `pass`, this plan is `done`, parent Phase 5C-R is done with closeout evidence, and Phase 5D remains unstarted. |
@@ -79,6 +79,22 @@ gate passes, and leave every later row `pending`.
 - Verification changed no live controller, profile, board, cron, issue state,
   worktree, or installed revision. The controller remains at `9d9f4f6` and Phase 2
   requires separate retention, installation, and controlled-probe approvals.
+
+## Phase 2 installation evidence
+
+- Retention and exact detached installation were approved for commit
+  `9f380a6b04fdbb51817c7ac2279b217fda34f0c2` without authorizing a live probe.
+- A clean detached local clone passed isolated Hermes discovery and both pack
+  validations before the controller gateway was stopped.
+- The controller swap retained clean rollback revision
+  `9d9f4f6a2801293e20622d98c97f50d017888872` outside plugin discovery, preserved
+  mode-`0600` prerequisite and cron evidence beside it, and atomically updated
+  both live controller-revision fields to `9f380a6` before gateway restart.
+- Native and standalone live diagnosis pass all eleven checks, the installed
+  plugin is clean and detached, both packs validate, the gateway is running, and
+  reconciliation job `1847b1b1e14b` remains paused.
+- Issues #6 and #7 remain open and unready. No workflow, approval probe,
+  terminal cleanup, issue closure, push, release, or cron resume occurred.
 
 ## Decisions
 
