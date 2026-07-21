@@ -3,12 +3,12 @@
 ## Record status
 
 Phases 1 through 4F, Phase 5A reconciliation, and the controlled Phase 5B
-reconciliation tick are complete. Detached controller revision
-`80dd73efa9a4e462304b71ba157b5e5c0172b793` completed one Addyosmani and one
-Aidlc UC-01 workflow, then admitted and replayed one separately approved
-reconciliation probe. The earlier issues remain closed and released. Probe issue
-#4 remains claimed by one active workflow at its plan approval boundary, with no
-worktree, approval, commit, or push.
+reconciliation tick and closeout are complete. Detached controller revision
+`550671c19e5434fbe183140214ca12b4a047692d` exposes the exercised deterministic
+cancellation path. Probe issue #4 is closed not planned, both workflow cards are
+archived, active labels are removed, and native and standalone diagnosis pass
+all eleven checks. No worktree, approval, implementation, commit, or push was
+created for the probe.
 
 Each workflow independently changed only `calculator.py` and
 `test_calculator.py`, reproduced `AssertionError: 1 != 2` in the restricted
@@ -17,7 +17,7 @@ baseline, passed its approved restricted candidate, and received an accepted
 the workflows used different repository baselines and different candidate test
 fixtures. No preferred pack, retained change, or published finding is authorized
 by the Phase 5A comparison. Phase 5B authorizes only the retained paused cron and
-its one controlled active cycle.
+its one controlled terminal probe cycle.
 
 Limits: [`experiment-limits.yaml`](experiment-limits.yaml).
 Protocol: [`../../15-self-improvement.md`](../../15-self-improvement.md).
@@ -48,7 +48,7 @@ Repository tests cannot convert a blocked live probe into `pass`.
 | TC-F08-01 | Implementation | Capture immutable changed paths and evidence from only the owned worktree. | Mutation of the target checkout or protected paths. | pass |
 | TC-F08-02 | Verification recovery | Preserve a failed attempt and allow bounded same-card recovery. | Hiding the failed command or output digest. | not-run |
 | TC-F09-01 | Review and delivery | Review frozen scope; delivery records commit and push as false. | Review mutation, commit, or push. | pass |
-| TC-F10-01 | Status and cancellation | Read live Kanban without mirrored status; remove only owned worktree state. | Writing Hermes Kanban storage directly. | not-run |
+| TC-F10-01 | Status and cancellation | Read live Kanban without mirrored status; remove only owned worktree state. | Writing Hermes Kanban storage directly. | pass |
 | TC-F11-01 | Packaging | Wheel and directory installs expose code, packs, skills, tools, and dashboard assets only. | Packaging runtime state, credentials, or evidence. | not-run |
 | TC-F12-01 | Hermes routes | Exercise bounded default, fallback, MoA, goal, auxiliary, and delegation paths. | Replacing Hermes model/runtime authority. | not-run |
 | TC-F13-01 | Issue intake | Accept only structured maintainer-ready issues and create one recoverable claim. | Inferring readiness from prose or Project membership. | pass |
@@ -66,7 +66,8 @@ in `tests/test_projects.py`, `tests/test_registrations.py`,
 `tests/test_adapters.py`, `tests/test_controller.py`,
 `tests/test_reconciliation.py`, `tests/test_credentials.py`,
 `tests/test_prerequisites.py`, `tests/test_evaluation.py`,
-`tests/test_live_adapters.py`, `tests/test_project_cycles.py`, and
+`tests/test_live_adapters.py`, `tests/test_project_cycles.py`,
+`tests/test_cancellation.py`, and
 `tests/test_increments.py`. Live rows marked `pass` are additionally grounded by
 the content-addressed UC-01 artifacts below. TC-F16-01 also has the controlled
 live evidence below. TC-F08-02 remains `not-run`: the workflows did not exercise
@@ -158,13 +159,39 @@ GitHub finding was created or updated during reconciliation.
   `every 15m` with infinite repeat; the repository remains clean.
 - **Status:** `pass`.
 
+## Phase 5B deterministic probe closeout
+
+- **Goal:** terminate the admission/replay-only probe without authorizing its
+  blocked implementation path or editing live state by inspection.
+- **Installed controller:** clean detached revision
+  `550671c19e5434fbe183140214ca12b4a047692d`; native and standalone cancellation
+  help and active-cycle-only pre-apply diagnosis passed.
+- **Approved preview:**
+  `9deb8cefaa6be650eda41a076a58bb056782637d7d821103d51b553787f17810`,
+  binding admission `dcbd215d11ea3d564a66e7fd308d6640fddb447ef9c662db5adb06ea8785c509`,
+  workflow `911f904a6ea671992ef317bb4b707b4f01650c76434e0e429eaf9ea5ce8b0322`,
+  issue #4, and the bounded no-implementation reason.
+- **Observed:** cancellation digest
+  `99fe86b360266677a74be7f7ad5d2a2c9618e0acd787e0c4bc6b73e2384c8e33` closed
+  issue #4 as not planned, removed ready/claimed labels, archived cards
+  `t_aca696c4` and `t_4fe72ba8`, retained no worktree, and delivered attended
+  receipt `telegram:37`.
+- **Replay:** the same digest returned the identical terminal result. GitHub kept
+  one claim comment; each card kept one cancellation comment and one archive
+  event; no second notification or artifact was created.
+- **Evidence:** remote, workflow, notification, and terminal cancellation files
+  are strict profile-local mode-`0600` records. The cron remains paused on
+  `every 15m`, the repository is clean, and both live diagnosis routes pass
+  11/11.
+- **Status:** `pass`.
+
 ## Identities, receipts, findings, and blockers
 
 - Project: `forgegod-daidala`.
 - Committed manifest path: `.daidala/project.yaml`.
 - Phase 3 implementation checkpoint: `31e043be49f19a8f69cfb5eb630fb5b1257abc00`.
 - Phase 4 implementation checkpoint: `cba9c52`.
-- Installed detached controller: `80dd73efa9a4e462304b71ba157b5e5c0172b793`.
+- Installed detached controller: `550671c19e5434fbe183140214ca12b4a047692d`.
 - The approved-attempt prerequisite report is
   [`prerequisite-report-15c3a629e5d670012642a137524d3659ccd42bf6b034b2ec6eabd05e3bbd8e70.json`](prerequisite-report-15c3a629e5d670012642a137524d3659ccd42bf6b034b2ec6eabd05e3bbd8e70.json),
   exits `0`, has the matching SHA-256
@@ -180,12 +207,12 @@ GitHub finding was created or updated during reconciliation.
   and its claim is released.
 - Aidlc completion receipt: `telegram:23`; issue #3 is closed as completed and
   its claim is released.
-- Phase 5B admission receipt: `telegram:30`; issue #4 remains claimed by the
-  active probe cycle at the plan approval boundary.
+- Phase 5B admission receipt: `telegram:30`; terminal cancellation receipt:
+  `telegram:37`. Issue #4 is closed not planned and its active labels are removed.
 - Both workflow evidence sets remain mode-`0600` profile-local files. Private
   destination data is omitted from this record.
 - No retained increment, preferred-pack decision, or remote finding was created.
-  Phase 5B added only the paused cron, issue #4, and its one active probe cycle.
+  Phase 5B leaves one paused cron and one terminal probe cycle.
 
 ## Redaction statement
 

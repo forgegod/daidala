@@ -5,10 +5,9 @@ exact detached Daidala controller revision, create one profile-local Hermes cron
 job that remains paused, and retain evidence that two controlled invocations
 admit at most one maintainer-ready issue and converge on one workflow.
 
-**Status:** in-progress — the original reconciliation scope through Phase 6 and
-the Phase 7 deterministic closeout implementation are complete. Phase 8
-installed exact revision `550671c`; live cancellation remains separately
-exact-digest approval-gated. Phase 0 is complete at
+**Status:** complete — the original reconciliation scope through Phase 6, the
+Phase 7 deterministic closeout implementation, and Phase 8 installation and
+approved cancellation are complete. Phase 0 is complete at
 merge checkpoint `bdd2baf` and
 Phase 1 is complete at checkpoint `1d6a909`; Phase 2 is complete at the shared
 dry-run-first CLI checkpoint `5472cc1`. Phase 3 repository reconciliation and
@@ -30,11 +29,11 @@ again; later workflow stages remain separately approval-gated.
   evaluator request, and cycle-completion implementation and tests without
   replacing the later Phase 4F/5A evidence on `main`.
 - Phase 5A and Phase 5B are complete. Phase 5B created one paused cron and one
-  active probe cycle; it created no retained change or remote finding.
+  terminal probe cycle; it created no retained change or remote finding.
 - Current source implements dry-run-first, digest-bound cancellation for that
   terminal probe closeout. It passes the complete repository and release gate
-  and is installed at detached controller revision `550671c`; cancellation has
-  not been applied.
+  and is installed at detached controller revision `550671c`; approved preview
+  `9deb8cef` converged on terminal cancellation digest `99fe86b3`.
 - `daidala/reconciliation.py` now owns strict previews/results and immutable
   mode-`0600` tick evidence; `daidala/project_cycles.py` composes explicit
   prerequisite interpretation, terminal-record-aware active ownership, stable
@@ -47,18 +46,17 @@ again; later workflow stages remain separately approval-gated.
   exact clean detached revision `550671c`.
 - The complete repository, packaging, release-content, pack, link, lint, and
   test gate passes with 398 tests. Native and standalone installation diagnosis
-  passed all eleven checks after Docker integration was restored. Current live
-  diagnosis intentionally reports only `SI-ACTIVE-CYCLE` blocked while the probe
-  workflow waits at its plan approval boundary; no remote ref changed.
+  and post-cancellation diagnosis pass all eleven checks. Issue #4 is closed not
+  planned, both workflow cards are archived, and no remote ref changed.
 - `hermes -p daidala-self-improvement cron status` reports a running gateway and
   no active jobs. `cron list --all` reports exactly one paused no-agent job named
   `daidala-forgegod-daidala-reconciliation` on `every 15m`; its repeat is
   infinite, its script digest matches profile-local evidence, and exactly two
   successful direct executions are retained.
-- Issue #4 has one claim comment and one claimed label. Its two content-addressed
-  tick results are `admitted` then `replayed`; both bind the same cycle and
-  attended receipt. The workflow has one two-card graph, no approval or worktree,
-  and records commit and push as false.
+- Issue #4 retains one claim comment but no active intake label. Its two
+  content-addressed tick results are `admitted` then `replayed`; terminal
+  cancellation retains receipt `telegram:37`. The workflow has one archived
+  two-card graph, no approval or worktree, and records commit and push as false.
 - Hermes v0.18.2 supports create, pause, edit, run, and durable run history, but
   `hermes cron create --help` exposes no atomic create-paused option. A manual
   run also refuses a paused job (`tools/cronjob_tools.py:604-637` in the
@@ -99,7 +97,7 @@ before any later phase. The immediate run uses Hermes' at-most-once claim; the
 | 5 | Create the profile-local wrapper and paused cron | done | `cron list --all` shows exactly one paused no-agent named job with infinite repeat; its script digest matches profile-local evidence. |
 | 6 | Run and replay one controlled tick | done | Two completed executions yield one claim, cycle, workflow graph, and attended receipt; immutable outcomes are `admitted` then `replayed`, and the job is paused on `every 15m`. |
 | 7 | Implement deterministic terminal cancellation | done (58 focused + 398 full tests; complete release gate) | Focused cancellation, adapter, project-cycle, CLI, and active-ownership tests pass; the full repository and release gate pass. |
-| 8 | Install and apply the exact probe cancellation | in-progress (installation passed at `550671c`) | Native/standalone help and active-cycle-only diagnosis pass; a fresh cancellation digest still requires separate approval before issue, workflow, notification, or terminal mutation. |
+| 8 | Install and apply the exact probe cancellation | done (`550671c`; preview `9deb8cef`; cancellation `99fe86b3`) | Issue #4 is closed not planned, both cards are archived once, receipt `telegram:37` is retained, replay is identical, both diagnosis routes pass 11/11, and the cron remains paused. |
 
 Mark a phase `in-progress` while running it, `done (<sha-or-evidence>)` once its
 gate passes, and `pending` otherwise.

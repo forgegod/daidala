@@ -36,10 +36,9 @@ loaded by the controller gateway.
 `incomparable` cross-pack outcome. Phase 5B is complete: two separately approved
 cron executions converged on one claim, cycle, graph, and attended receipt, and
 the no-agent job is paused again. Exact detached controller revision `550671c`
-is installed. Native and standalone help and live diagnosis pass with only the
-current active probe intentionally blocking `SI-ACTIVE-CYCLE`. Phase 5B-C source
-implementation and installation are complete; live cancellation remains
-separately exact-digest approval-gated.
+is installed. Separately approved cancellation closed issue #4 not planned,
+archived both cards, retained receipt `telegram:37`, converged on replay, and
+returned native and standalone live diagnosis to 11/11. Phase 5B-C is complete.
 The resumable execution record is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 
@@ -60,8 +59,8 @@ The resumable execution record is saved in
 | 4F-D — Aidlc terminal completion | done | Completion digest `250756b4021b92e7b9ef74214febfab1d5891baf908ca3650acb473505eb1101` closed issue #3, released its claim, delivered `telegram:23`, converged on replay, and returned doctor to 11/11. |
 | 5A — UC-01 evidence reconciliation | done | All retained plan, baseline, candidate, review, delivery, and completion hashes match; both workflows are terminal, but different repository baselines and candidate test fixtures make pack comparison `incomparable`. |
 | 5B — Paused reconciliation cron and controlled tick | done | Two approved executions produced `admitted` then `replayed` for one issue, claim, cycle, graph, and attended receipt. The no-agent job is paused on `every 15m`; no worktree, approval, commit, or push exists. |
-| 5B-C — Deterministic probe cancellation | in-progress | Exact detached revision `550671c` exposes dry-run-first cancellation through native and standalone surfaces; live apply remains separately exact-digest gated. |
-| 5C — Approved improvement and findings synchronization | blocked | Phase 5B-C must close the non-implementation probe; separate cycle, retention, and publication approvals remain required. |
+| 5B-C — Deterministic probe cancellation | done | Exact detached revision `550671c`, approved preview `9deb8cef`, terminal digest `99fe86b3`, receipt `telegram:37`, identical replay, archived cards, and 11/11 diagnosis prove deterministic closeout. |
+| 5C — Approved improvement and findings synchronization | pending | Select one exact improvement; separate cycle, retention, and publication approvals remain required. |
 | 5D — UC-03 pack evaluation | blocked | Requires one canonical paired fixture, one frozen baseline, one approved candidate skill set, and separate cycle approval. |
 | 6 — Version-aware re-evaluation | blocked | Requires the approved Phase 5 work; candidate Hermes identity is selected here, not invented earlier. |
 | 7 — Repository gate and documentation | blocked | Requires the preceding live evaluation and comparison evidence. |
@@ -108,12 +107,13 @@ a named prerequisite is incomplete.
 - No preferred pack, retained change, cron job, new cycle, or remote finding was
   created during Phase 5A evidence reconciliation.
 - Phase 5B created one digest-matched no-agent cron and probe cycle. Controlled
-  outcomes are `admitted` then `replayed` with one claim, graph, and attended
-  receipt. The job is paused on `every 15m`; the plan card is blocked without an
-  approval or worktree, and commit and push remain false.
+  outcomes were `admitted` then `replayed` with one claim, graph, and attended
+  receipt. Before closeout, the plan card remained blocked without approval or a
+  worktree; commit and push remain false.
 - Phase 5B-C cancellation passes the repository and release gate and is installed
-  at `550671c`, but is not applied. Issue #4, its claim, the
-  blocked workflow, cron pause, and attended state remain unchanged.
+  at `550671c`. Issue #4 is closed not planned, its active labels are removed,
+  both cards are archived, receipt `telegram:37` is retained, diagnosis is 11/11,
+  and the cron remains paused.
 
 ## Registered project
 

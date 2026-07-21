@@ -93,6 +93,7 @@ in this order; a later step must not be used to waive an earlier blocker.
 | 10 | Run the read-only live prerequisite checker from a clean checkout. | None. | Pass at revision `80dd73efa9a4e462304b71ba157b5e5c0172b793`; native and standalone reports return all eleven `SI-*` checks as `pass`. |
 | 11 | Admit UC-01 manually. | GitHub issue, board, evaluator, and cycle artifacts. | Pass; controlled Addyosmani issue #2 and Aidlc issue #3 are closed as completed, both claims are released, and no active admission remains. |
 | 12 | Create the approved script-only reconciliation job, then run the separately approved duplicate-tick probe. | Profile-local wrapper, non-secret digest evidence, immutable tick results, and Hermes cron metadata. | Pass; outcomes are `admitted` then `replayed` for one cycle and receipt; exactly one no-agent job is paused on `every 15m` with infinite repeat. |
+| 13 | Apply the separately approved terminal probe cancellation. | GitHub issue, workflow cards, attended notification, and mode-`0600` cancellation receipts. | Pass at preview `9deb8cef`; issue #4 is closed not planned, both cards are archived, replay converges, and native plus standalone diagnosis pass 11/11. |
 
 The operator owns browser authorization, credential creation, attended-channel
 confirmation, setup approval, and later cycle approval. The agent may select a

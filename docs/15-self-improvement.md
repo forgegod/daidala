@@ -19,8 +19,10 @@ the persistent controller and exposes digest-bound cancellation through native
 and standalone command surfaces. One matching no-agent reconciliation cron is
 paused
 on its intended 15-minute schedule after two separately approved controlled runs
-proved admission/replay convergence on one active cycle. That cycle remains at
-the plan approval boundary. Terminal retention, approved finding publication,
+proved admission/replay convergence on one cycle. Separately approved
+cancellation then closed issue #4 not planned, archived both cards, retained
+attended receipt `telegram:37`, and returned both diagnosis routes to 11/11.
+Terminal retention, approved finding publication,
 and version-aware comparison remain unexercised or blocked by later approval
 gates.
 
