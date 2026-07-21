@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 from datetime import UTC, datetime, timedelta
@@ -438,6 +439,7 @@ def test_approve_binds_exact_digest_and_service_replacement_invalidates_it(
     assert replacement.plan_revision == 1
     assert replacement.approval is None
     assert Path(plan.path).read_text(encoding="utf-8") == "# Plan\n"
+    assert hashlib.sha256(Path(plan.path).read_bytes()).hexdigest() == plan.digest
     current_plan = replacement.artifact_for(WorkflowStage.PLAN)
     assert current_plan is not None
     assert current_plan.digest == replacement_artifact.digest

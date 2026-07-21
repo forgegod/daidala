@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import sys
@@ -332,6 +333,11 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
     )
     assert implementation.path.endswith("/implementation.diff")
     assert Path(implementation.path).with_name("implementation-paths.json").is_file()
+    artifact_root = service.store.data_root / "workflows" / workflow_id / "artifacts"
+    (artifact_root / "implementation-paths.json").write_text(
+        '{"changed_paths": ["stale-root.py"]}\n',
+        encoding="utf-8",
+    )
     complete_stage(WorkflowStage.IMPLEMENT, implementation.digest)
     diff = Path(implementation.path).read_text(encoding="utf-8")
     assert "return 2" in diff
@@ -516,6 +522,12 @@ def test_cancel_rolls_back_owned_implementation_worktree(
     assert implementing.worktree_path is not None
     worktree = Path(implementing.worktree_path)
     (worktree / "calculator.py").write_text("def answer():\n    return 9\n", encoding="utf-8")
+    record_stage_activation(service, workflow_id, WorkflowStage.IMPLEMENT)
+    captured = service.capture_implementation(workflow_id)
+    implementation = captured.artifact_for(WorkflowStage.IMPLEMENT)
+    assert implementation is not None
+    implementation_path = Path(implementation.path)
+    implementation_hash = hashlib.sha256(implementation_path.read_bytes()).hexdigest()
 
     cancelled = service.cancel(workflow_id, "Operator requested rollback")
 
@@ -523,6 +535,19 @@ def test_cancel_rolls_back_owned_implementation_worktree(
     assert cancelled.worktree_owned is False
     assert not worktree.exists()
     assert "return 1" in (target_repository / "calculator.py").read_text(encoding="utf-8")
+    assert cancelled.artifact_for(WorkflowStage.IMPLEMENT) == implementation
+    assert hashlib.sha256(implementation_path.read_bytes()).hexdigest() == implementation_hash
+
+    restarted = service.start(
+        board_slug="daidala-test",
+        target_repository=str(target_repository),
+        goal="Make the deliberately failing test pass",
+        stage_profiles=STAGE_PROFILES,
+        pack_name=service.fixture_pack_name,
+        workflow_id=workflow_id,
+    )
+    assert restarted.artifact_for(WorkflowStage.IMPLEMENT) == implementation
+    assert hashlib.sha256(implementation_path.read_bytes()).hexdigest() == implementation_hash
 
 
 def test_constraint_replacement_invalidates_and_recreates_graph_recoverably(
@@ -538,6 +563,10 @@ def test_constraint_replacement_invalidates_and_recreates_graph_recoverably(
     old_artifacts = approved.artifacts
     old_artifact_bytes = {
         artifact.path: Path(artifact.path).read_bytes() for artifact in old_artifacts
+    }
+    old_artifact_hashes = {
+        path: hashlib.sha256(content).hexdigest()
+        for path, content in old_artifact_bytes.items()
     }
     assert approved.worktree_path is not None
     old_worktree = Path(approved.worktree_path)
@@ -601,6 +630,10 @@ def test_constraint_replacement_invalidates_and_recreates_graph_recoverably(
         Path(path).read_bytes() == content
         for path, content in old_artifact_bytes.items()
     )
+    assert {
+        path: hashlib.sha256(Path(path).read_bytes()).hexdigest()
+        for path in old_artifact_hashes
+    } == old_artifact_hashes
     artifact_root = service.store.data_root / "workflows" / workflow_id / "artifacts"
     assert not (artifact_root / "define.md").exists()
     assert not (artifact_root / "plan.md").exists()
@@ -975,6 +1008,13 @@ def test_revision_artifact_paths_are_validated_immutable_and_replay_safe(
     json_first = workspace.write_json_artifact(
         "workflow-artifacts", json_relative, {"committed": False}
     )
+    assert workspace.read_json_artifact("workflow-artifacts", json_first.path) == {
+        "committed": False
+    }
+    with pytest.raises(ExecutionError, match="absolute path"):
+        workspace.read_json_artifact("workflow-artifacts", json_relative)
+    with pytest.raises(ExecutionError, match="outside"):
+        workspace.read_json_artifact("workflow-artifacts", str(tmp_path / "outside.json"))
     assert workspace.write_json_artifact(
         "workflow-artifacts", json_relative, {"committed": False}
     ) == json_first

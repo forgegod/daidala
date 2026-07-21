@@ -665,14 +665,12 @@ class WorkflowService:
         if delivery is None:
             if not ledger.worktree_path or not ledger.worktree_owned:
                 raise ExecutionError("workflow has no Daidala-owned implementation worktree")
+            implementation_reference = ledger.artifact_for(WorkflowStage.IMPLEMENT)
+            if implementation_reference is None:
+                raise ExecutionError("workflow has no current implementation artifact")
             implementation = self._workspace.read_json_artifact(
                 workflow_id,
-                self._workspace.stage_artifact_relative_path(
-                    stage=WorkflowStage.IMPLEMENT,
-                    policy_revision=ledger.policy_revision,
-                    plan_revision=ledger.plan_revision,
-                    filename="implementation-paths.json",
-                ),
+                str(Path(implementation_reference.path).with_name("implementation-paths.json")),
             )
             changed_paths = implementation.get("changed_paths")
             if not isinstance(changed_paths, list) or not all(

@@ -218,15 +218,15 @@ class ExecutionWorkspace:
             raise ExecutionError("cannot read activation manifest") from error
         return ActivationManifest.from_dict(payload)
 
-    def read_json_artifact(self, workflow_id: str, relative_path: str) -> dict[str, Any]:
-        """Read a Daidala-owned JSON sidecar from the workflow artifact root."""
-        path = self._artifact_path(workflow_id, relative_path)
+    def read_json_artifact(self, workflow_id: str, path: str) -> dict[str, Any]:
+        """Read a JSON sidecar through its authoritative absolute artifact path."""
+        artifact_path = self._referenced_artifact_path(workflow_id, path)
         try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
+            payload = json.loads(artifact_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as error:
-            raise ExecutionError(f"cannot read workflow artifact {relative_path!r}") from error
+            raise ExecutionError(f"cannot read workflow artifact {path!r}") from error
         if not isinstance(payload, dict):
-            raise ExecutionError(f"workflow artifact {relative_path!r} must be an object")
+            raise ExecutionError(f"workflow artifact {path!r} must be an object")
         return payload
 
     def create_worktree(
@@ -301,13 +301,7 @@ class ExecutionWorkspace:
 
     def _artifact_path(self, workflow_id: str, relative_path: str) -> Path:
         relative = self._safe_artifact_relative_path(relative_path)
-        unresolved_root = self._workflow_root(workflow_id) / "artifacts"
-        current = unresolved_root
-        while current != self.data_root:
-            if current.is_symlink():
-                raise ExecutionError("workflow artifact root contains a symlink")
-            current = current.parent
-        root = unresolved_root.resolve()
+        root = self._artifact_root(workflow_id)
         path = root.joinpath(*relative.parts)
         current = path
         while current != root:
@@ -318,6 +312,34 @@ class ExecutionWorkspace:
         if resolved != root and root not in resolved.parents:
             raise ExecutionError("workflow artifact relative path escapes its workflow root")
         return path
+
+    def _artifact_root(self, workflow_id: str) -> Path:
+        unresolved_root = self._workflow_root(workflow_id) / "artifacts"
+        current = unresolved_root
+        while current != self.data_root:
+            if current.is_symlink():
+                raise ExecutionError("workflow artifact root contains a symlink")
+            current = current.parent
+        return unresolved_root.resolve()
+
+    def _referenced_artifact_path(self, workflow_id: str, path: str) -> Path:
+        if not isinstance(path, str) or not path or not Path(path).is_absolute():
+            raise ExecutionError("workflow artifact reference must be an absolute path")
+        root = self._artifact_root(workflow_id)
+        artifact = Path(path)
+        resolved = artifact.resolve(strict=False)
+        if artifact != resolved:
+            raise ExecutionError("workflow artifact reference must be normalized")
+        if resolved != root and root not in resolved.parents:
+            raise ExecutionError("workflow artifact reference is outside its workflow root")
+        current = artifact
+        while current != root:
+            if current == current.parent:
+                raise ExecutionError("workflow artifact reference is outside its workflow root")
+            if current.is_symlink():
+                raise ExecutionError("workflow artifact reference contains a symlink")
+            current = current.parent
+        return artifact
 
     @staticmethod
     def _verify_existing_artifact(

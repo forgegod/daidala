@@ -2,7 +2,7 @@
 
 **Status:** in progress — Increment A revision `9f380a6` is retained, installed,
 and controlled-evidence verified. Increment B is repository-verified at candidate
-diff `4babce8a` under exact scope `d531546d`; retention, installation, live
+diff `3f10625b` under exact scope `d531546d`; retention, installation, live
 probing, finding closure, push, release, and deployment remain unapproved.
 
 **Parent plan:**
@@ -37,7 +37,7 @@ Documentation in the Phase 5C evaluation and parent plan did not fix either beha
 | 0 | Finding publication and exact scope approval | done (issues #6/#7; scope `8752c064`) | Separately approved issue creation returns one identity per finding; the exact Increment A scope digest receives attended approval. |
 | 1 | Increment A candidate — non-executable approval gate | done (candidate `ddef04b3`; 410 tests) | Focused tests and the complete repository gate pass against one immutable candidate diff; no live state changes. |
 | 2 | Increment A retention, installation, and controlled evidence | done (manifest `0db444d6`; issue #6 completed) | Separate retention/install/probe approvals hold; `TC-F06-01` passes, diagnosis is 11/11, cron is paused, and the finding is terminally reconciled. |
-| 3 | Increment B candidate — immutable revision artifacts | done (candidate `4babce8a`; 411 tests) | Focused tests and the complete repository gate pass against one immutable candidate diff; historical fixture bytes remain unchanged. |
+| 3 | Increment B candidate — immutable revision artifacts | done (candidate `3f10625b`; 411 tests) | Focused tests and the complete repository gate pass against one immutable candidate diff; historical fixture bytes remain unchanged. |
 | 4 | Increment B retention, installation, and controlled evidence | pending | Separate retention/install/probe approvals hold; `TC-F07-01` passes, diagnosis is 11/11, cron is paused, and the finding is terminally reconciled. |
 | 5 | Closeout and parent-plan reconciliation | pending | Both cases are retained as `pass`, this plan is `done`, parent Phase 5C-R is done with closeout evidence, and Phase 5D remains unstarted. |
 
@@ -331,7 +331,10 @@ python scripts/check_release_contents.py . --wheel dist/*.whl
 - Scope digest:
   `d531546dde3ba60dde5537da3b5fa037c59824cc13f6557fcc9eb8987181fe94`
 - Implementation/test/contract diff digest:
-  `4babce8aab0f6ba0e3d0acb175f1eed7f1ff400efb89f584ba30534e1a0389f2`
+  `3f10625b96f085d50e5d318fb3b8d317629bfa07d3c0f90ad4f7f320acc2d82f`
+- Initial retention checkpoint `4687e2d` was superseded before installation
+  after independent review tightened ledger-native sidecar reads and historical
+  hash evidence. The post-review candidate requires separate retention.
 - Focused gate: 92 tests, Ruff, markdown links, and `git diff --check` pass.
 - Complete gate: 411 tests, Ruff, both pack validators, build, Twine,
   release-content validation, and Lefthook pass.
