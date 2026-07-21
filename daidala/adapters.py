@@ -385,6 +385,93 @@ class IntakeCompletionReceipt:
         )
 
 
+@dataclass(frozen=True)
+class IntakeCancellationReceipt:
+    adapter: str
+    item_id: str
+    cycle_id: str
+    reason_digest: str
+    source_url: str
+    state: str
+    state_reason: str
+    claim_released: bool
+    canceled_at: datetime
+
+    def __post_init__(self) -> None:
+        _require_slug(self.adapter, "cancellation adapter")
+        _require_text(self.item_id, "cancellation item ID", 256)
+        _require_text(self.cycle_id, "cancellation cycle ID", 256)
+        _require_digest(self.reason_digest, "cancellation reason digest")
+        _require_text(self.source_url, "cancellation source URL", 1_024)
+        if not self.source_url.startswith("https://"):
+            raise PolicyViolationError("cancellation source URL must use HTTPS")
+        if self.state != "closed" or self.state_reason != "not_planned":
+            raise PolicyViolationError(
+                "cancellation receipt must close the item as not planned"
+            )
+        if self.claim_released is not True:
+            raise PolicyViolationError("cancellation receipt must release the claim")
+        if not isinstance(self.canceled_at, datetime) or self.canceled_at.tzinfo is None:
+            raise PolicyViolationError("cancellation timestamp must be timezone-aware")
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "adapter": self.adapter,
+            "item_id": self.item_id,
+            "cycle_id": self.cycle_id,
+            "reason_digest": self.reason_digest,
+            "source_url": self.source_url,
+            "state": self.state,
+            "state_reason": self.state_reason,
+            "claim_released": self.claim_released,
+            "canceled_at": self.canceled_at.isoformat(),
+        }
+
+    def canonical_bytes(self) -> bytes:
+        return json.dumps(
+            self.to_dict(), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+
+    @property
+    def digest(self) -> str:
+        return hashlib.sha256(self.canonical_bytes()).hexdigest()
+
+    @classmethod
+    def from_dict(cls, raw: Any) -> IntakeCancellationReceipt:
+        _require_fields(
+            raw,
+            {
+                "adapter",
+                "item_id",
+                "cycle_id",
+                "reason_digest",
+                "source_url",
+                "state",
+                "state_reason",
+                "claim_released",
+                "canceled_at",
+            },
+            "intake cancellation receipt",
+        )
+        try:
+            canceled_at = datetime.fromisoformat(raw["canceled_at"])
+        except (TypeError, ValueError) as error:
+            raise PolicyViolationError(
+                "cancellation timestamp must be an ISO-8601 string"
+            ) from error
+        return cls(
+            adapter=raw["adapter"],
+            item_id=raw["item_id"],
+            cycle_id=raw["cycle_id"],
+            reason_digest=raw["reason_digest"],
+            source_url=raw["source_url"],
+            state=raw["state"],
+            state_reason=raw["state_reason"],
+            claim_released=raw["claim_released"],
+            canceled_at=canceled_at,
+        )
+
+
 class IntakeAdapter(Protocol):
     def fetch_ready(self, *, limit: int) -> tuple[IntakeRecord, ...]: ...
 
@@ -397,6 +484,10 @@ class IntakeAdapter(Protocol):
     def validate_completion(self, item_id: str, cycle_id: str) -> None: ...
 
     def complete(self, item_id: str, cycle_id: str) -> IntakeCompletionReceipt: ...
+
+    def cancel(
+        self, item_id: str, cycle_id: str, reason_digest: str
+    ) -> IntakeCancellationReceipt: ...
 
 
 class FindingsAdapter(Protocol):

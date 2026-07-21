@@ -9,8 +9,17 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import cast
 
 from .adapters import IntakeRecord, NotificationReceipt
+from .cancellation import (
+    CancellationArtifactStore,
+    CancellationCoordinator,
+    CycleCancellation,
+    CycleCancellationPreview,
+    WorkflowCanceller,
+    build_cancellation_preview,
+)
 from .completion import (
     CompletionArtifactStore,
     CompletionCoordinator,
@@ -114,6 +123,21 @@ class ProjectCycleCompletionResult:
 
 
 @dataclass(frozen=True)
+class ProjectCycleCancellationResult:
+    preview: CycleCancellationPreview
+    cancellation: CycleCancellation
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "dry_run": False,
+            "preview": self.preview.to_dict(),
+            "preview_digest": self.preview.digest,
+            "cancellation": self.cancellation.to_dict(),
+            "cancellation_digest": self.cancellation.digest,
+        }
+
+
+@dataclass(frozen=True)
 class _PreparedProjectCycle:
     profile_root: Path
     manifest: ProjectManifest
@@ -137,6 +161,16 @@ class _PreparedCompletion:
     intake_adapter: GitHubIssueIntakeAdapter
     notification_adapter: HermesGatewayNotificationAdapter
     preview: CycleCompletionPreview
+
+
+@dataclass(frozen=True)
+class _PreparedCancellation:
+    profile_root: Path
+    registration: ControllerRegistration
+    admission: CycleAdmission
+    intake_adapter: GitHubIssueIntakeAdapter
+    notification_adapter: HermesGatewayNotificationAdapter
+    preview: CycleCancellationPreview
 
 
 @dataclass(frozen=True)
@@ -367,6 +401,56 @@ class ProjectCycleOperator:
         )
         store.save(result)
         return result
+
+    def preview_cancellation(
+        self,
+        *,
+        project_manifest: Path,
+        registration: Path,
+        cycle_id: str,
+        reason: str,
+    ) -> CycleCancellationPreview:
+        return self._prepare_cancellation(
+            project_manifest=project_manifest,
+            registration_file=registration,
+            cycle_id=cycle_id,
+            reason=reason,
+        ).preview
+
+    def cancel_cycle(
+        self,
+        *,
+        project_manifest: Path,
+        registration: Path,
+        cycle_id: str,
+        reason: str,
+        expected_preview_digest: str,
+    ) -> ProjectCycleCancellationResult:
+        prepared = self._prepare_cancellation(
+            project_manifest=project_manifest,
+            registration_file=registration,
+            cycle_id=cycle_id,
+            reason=reason,
+        )
+        if prepared.preview.digest != expected_preview_digest:
+            raise PolicyViolationError(
+                "expected cancellation preview digest does not match current state"
+            )
+        workflow = cast(
+            WorkflowCanceller,
+            self.workflow_factory(prepared.profile_root, self.runner, self.environ),
+        )
+        cancellation = CancellationCoordinator(
+            store=CancellationArtifactStore(
+                prepared.profile_root,
+                prepared.preview.project_id,
+                prepared.preview.cycle_id,
+            ),
+            intake_adapter=prepared.intake_adapter,
+            notification_adapter=prepared.notification_adapter,
+            workflow=workflow,
+        ).cancel(prepared.preview, prepared.registration)
+        return ProjectCycleCancellationResult(prepared.preview, cancellation)
 
     def preview_completion(
         self,
@@ -755,6 +839,94 @@ class ProjectCycleOperator:
             intake_adapter=intake_adapter,
             notification_adapter=notification_adapter,
             preview=build_completion_preview(admission, ledger),
+        )
+
+    def _prepare_cancellation(
+        self,
+        *,
+        project_manifest: Path,
+        registration_file: Path,
+        cycle_id: str,
+        reason: str,
+    ) -> _PreparedCancellation:
+        manifest_path = project_manifest.expanduser().resolve(strict=True)
+        registration_file = registration_file.expanduser().resolve(strict=True)
+        manifest = parse_project_manifest(
+            _read_bounded(manifest_path, "project manifest", MAX_MANIFEST_BYTES)
+        )
+        registration = parse_controller_registration(
+            _read_bounded(
+                registration_file, "controller registration", MAX_REGISTRATION_BYTES
+            )
+        )
+        registration.validate_manifest(manifest)
+        profile_root = registration_file.parents[2]
+        if registration_path(profile_root, registration.project_id) != registration_file:
+            raise PolicyViolationError(
+                "controller registration is outside its profile-local project path"
+            )
+        cycle_root = (
+            profile_root
+            / "projects"
+            / registration.project_id
+            / "cycles"
+            / cycle_id
+        )
+        admission = CycleAdmission.from_dict(
+            json.loads(
+                _read_bounded(
+                    cycle_root / "admission.json",
+                    "cycle admission",
+                    MAX_CONSTRAINTS_BYTES,
+                )
+            )
+        )
+        if (
+            admission.cycle.cycle_id != cycle_id
+            or admission.workflow_id != cycle_id
+            or admission.cycle.project_id != manifest.project_id
+        ):
+            raise PolicyViolationError("stored admission does not match cancellation cycle")
+        ledger = WorkflowStore(profile_root / "daidala", initialize=False).get(cycle_id)
+        bindings = parse_credential_bindings(
+            _read_bounded(
+                credential_bindings_path(registration_file),
+                "credential bindings",
+                MAX_CREDENTIAL_BINDINGS_BYTES,
+            )
+        )
+        intake_adapter = GitHubIssueIntakeAdapter(
+            repository=registration.repository_canonical,
+            read_credential_alias=registration.intake_credential,
+            write_credential_alias=registration.findings_credential,
+            credential_bindings=bindings,
+            authorized_actors=registration.maintainers,
+            runner=self.runner,
+            environ=self.environ,
+        )
+        intake_adapter.validate_cancellation(admission.intake.item_id, cycle_id)
+        notification_adapter = HermesGatewayNotificationAdapter(
+            profile=registration.controller_profile,
+            target_alias=registration.notification_target,
+            destination=registration.notification_destination,
+            runner=self.runner,
+            environ=self.environ,
+        )
+        preview = build_cancellation_preview(
+            project_id=manifest.project_id,
+            manifest_digest=manifest.digest,
+            registration=registration,
+            admission=admission,
+            ledger=ledger,
+            reason=reason,
+        )
+        return _PreparedCancellation(
+            profile_root=profile_root,
+            registration=registration,
+            admission=admission,
+            intake_adapter=intake_adapter,
+            notification_adapter=notification_adapter,
+            preview=preview,
         )
 
     def _require_completed_cards(

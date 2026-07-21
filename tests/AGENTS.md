@@ -57,11 +57,13 @@ completeness without touching a real Hermes profile.
   equivalent.
 - Production-adapter tests use fake `gh` and `hermes send` boundaries to prove
   strict issue normalization, ready-actor authority, replay-safe claims and
-  completed closure, exact claim-label release, immutable completion records,
+  completed or not-planned closure, exact claim-label release, immutable
+  completion and cancellation records,
   credential-minimal child environments, private-destination exclusion, and
   event-bound receipts. Project-cycle composition tests prove admission and
-  completion dry-run non-mutation and exact preview-identity rejection before
-  claim, workflow, issue, notification, or completion-artifact mutation.
+  completion/cancellation dry-run non-mutation and exact preview-identity
+  rejection before claim, workflow, issue, notification, or terminal-artifact
+  mutation.
 - Strict credential-binding and prerequisite-report tests cover guide/CLI ID
   parity, redaction, pass/blocked/not-run/error aggregation, bounded `GH_TOKEN`
   child environments, and complete, missing, malformed, denied, unavailable,

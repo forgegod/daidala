@@ -541,6 +541,8 @@ The controller currently loads this exact detached revision, exposes
 `project-cycle admit`, `project-cycle reconcile`, and `project-cycle complete`,
 and passes native and standalone live diagnosis with registration v2.
 Installation never authorizes a cycle.
+The repository source adds `project-cycle cancel`; do not use it operationally
+until that exact source revision passes the same detached-installation gate.
 For a fresh reproduction, choose exactly one installation path below. The local
 detached-clone path is required until publication of the selected revision is
 separately approved. Both paths must pass isolated Hermes v0.18.2 discovery and
@@ -1091,7 +1093,41 @@ Completion closes the exact issue with reason `completed`, removes only
 `daidala-si:claimed`, sends the event-bound attended notification, and retains
 remote, notification, and final completion records at mode `0600`. Replay
 converges without duplicate comments or notifications. Admission, workflow,
-Kanban, evaluator, review, and delivery history remain immutable. Only a valid
-completion whose cycle, workflow, and admission digest match releases
-`SI-ACTIVE-CYCLE`; missing, malformed, or cross-cycle records fail closed. Run
-`doctor --live` again before previewing a separately approved next intake.
+Kanban, evaluator, review, and delivery history remain immutable.
+
+When an admitted cycle must terminate without implementation, preview
+cancellation with a bounded operator-approved reason:
+
+```bash
+hermes -p daidala-self-improvement daidala project-cycle cancel \
+  --project-manifest /home/raphael/src/rb/daidala/.daidala/project.yaml \
+  --registration /home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/registration.yaml \
+  --cycle-id CYCLE_ID \
+  --reason 'OPERATOR_APPROVED_REASON'
+```
+
+Review the immutable admission, registration, board, workflow, claim, reason,
+and preview digests. Cancellation is a separate mutation gate; apply only the
+exact approved fresh digest:
+
+```bash
+hermes -p daidala-self-improvement daidala project-cycle cancel \
+  --project-manifest /home/raphael/src/rb/daidala/.daidala/project.yaml \
+  --registration /home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/registration.yaml \
+  --cycle-id CYCLE_ID \
+  --reason 'OPERATOR_APPROVED_REASON' \
+  --apply \
+  --expected-preview-digest PREVIEW_DIGEST
+```
+
+Cancellation validates the exact retained claim, closes the issue as not
+planned, removes both active intake labels, archives the workflow graph, removes
+only a Daidala-owned worktree, sends one event-bound attended notification, and
+retains remote, notification, and terminal cancellation records at mode `0600`.
+The workflow archival receipt is retained at the same mode so a notification
+retry does not repeat card comments or archival.
+It is convergent after a partial failure and preserves admission and workflow
+history. Exactly one valid completion or cancellation whose cycle, workflow,
+and admission digest match releases `SI-ACTIVE-CYCLE`; missing, malformed,
+conflicting, or cross-cycle terminal records fail closed. Run `doctor --live`
+again before previewing a separately approved next intake.

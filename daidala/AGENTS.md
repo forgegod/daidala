@@ -21,23 +21,24 @@ workflow-pack adapters, and bundled orchestration skills.
 | `projects.py` | Strict committed project-manifest parsing, canonical identity, verification declarations, and mutation policy. |
 | `registrations.py` | Trusted profile-local project registration v2, exact attended-delivery destination, limits, manifest binding, and storage path. |
 | `credentials.py` | Strict alias-to-environment credential bindings with no secret values or resolver inference. |
-| `prerequisites.py` | Stable self-improvement checklist registry, retained capability evidence, bounded probes, completion-aware active ownership, and strict prerequisite reports. |
+| `prerequisites.py` | Stable self-improvement checklist registry, retained capability evidence, bounded probes, terminal-record-aware active ownership, and strict prerequisite reports. |
 | `cycles.py` | Pure self-improvement cycle identity, metric kinds, outcomes, delegation evidence, and lesson-reuse evidence. |
 | `evaluation.py` | Isolation receipts, fresh evaluator homes, isolated candidate environments, immutable metric and lesson-reuse evidence, comparison verdicts, baseline-before-mutation worktrees, cleanup, and quarantine records. |
 | `restricted_container.py` | Digest-pinned Docker execution, credential-free child environments, bounded request fixtures, command evidence, denied-network setup probes, and isolation receipts. |
 | `increments.py` | Strict increment-document classification, producer provenance, canonical manifest, bounds, and digest. |
-| `adapters.py` | Strict normalized intake, finding, notification, claim, claim-release, completion, and receipt records plus injectable protocols. |
-| `live_adapters.py` | Bounded production GitHub ready/claimed inventory, replay-safe claim/release/completion, and Hermes attended-delivery adapters with credential-minimal child environments. |
+| `adapters.py` | Strict normalized intake, finding, notification, claim, claim-release, completion, cancellation, and receipt records plus injectable protocols. |
+| `live_adapters.py` | Bounded production GitHub ready/claimed inventory, replay-safe claim/release/completion/cancellation, and Hermes attended-delivery adapters with credential-minimal child environments. |
+| `cancellation.py` | Digest-bound cycle-cancellation previews, convergent remote/workflow/notification coordination, immutable mode-`0600` receipts, and terminal cancellation records. |
 | `completion.py` | Digest-bound delivered-cycle previews, replay-safe remote and attended receipts, immutable mode-`0600` completion records, and completion coordination. |
 | `controller.py` | Mutation-free admission preview, replay-safe cycle admission, manifest snapshots, deterministic workflow binding, immutable cycle storage, and receipt validation. |
-| `project_cycles.py` | Dry-run-first production project-cycle admission/completion/reconciliation, prerequisite enforcement, stable one-item selection, exact identity confirmation, and profile-local runtime wiring. |
+| `project_cycles.py` | Dry-run-first production project-cycle admission/completion/cancellation/reconciliation, prerequisite enforcement, stable one-item selection, exact identity confirmation, and profile-local runtime wiring. |
 | `reconciliation.py` | Two-authority claim recovery evidence, strict reconciliation previews/results, mode-`0600` content-addressed tick records, and local pending-to-published finding synchronization. |
 | `execution.py` | Profile-local artifacts, detached worktrees, and diff capture. |
 | `kanban.py` | Public host-boundary adapter for the idempotent, approval-gated Hermes card graph. |
 | `schemas.py` | Tool schemas exposed to the model. |
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
 | `packs.py` | Pack loading and deterministic validation. |
-| `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle dispatch, pack operations, dry-run-first project-cycle admission/completion/reconciliation and evaluator operations, exact preview-digest apply gates, bounded inspection output, and subprocess mutation boundary. |
+| `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle dispatch, pack operations, dry-run-first project-cycle admission/completion/cancellation/reconciliation and evaluator operations, exact preview-digest apply gates, bounded inspection output, and subprocess mutation boundary. |
 | `dashboard_backend.py` | Profile-safe dashboard read model, live Kanban snapshots, constraint previews, and typed compare-and-swap replacement adapter. |
 | `recommendations.py` | Pure finite pending-decision and next-action derivation from ledger facts and live Kanban snapshots. |
 | `setup_wizard.py` | Typed setup preview, confirmation gate, and documented Hermes board/profile inventory commands. |
@@ -78,10 +79,17 @@ workflow-pack adapters, and bundled orchestration skills.
   and the exact stored claim owner. It closes the issue as completed, removes
   only the claim label, retains remote and attended receipts plus the terminal
   completion at mode `0600`, and converges without duplicate comments or sends.
-- `SI-ACTIVE-CYCLE` releases admission ownership only for a strict completion
-  record whose cycle, workflow, and admission digest match the immutable
-  admission. Missing, malformed, or cross-cycle completion remains blocking or
-  errors closed; historical admission and workflow evidence is never deleted.
+- `project-cycle cancel` is read-only by default. Apply requires the exact fresh
+  preview digest, immutable admission identity, matching workflow and board,
+  exact current GitHub claim owner, and a bounded stripped reason. It closes the
+  issue as not planned, removes ready and claimed labels, archives the workflow,
+  removes only a Daidala-owned worktree, emits one attended event, and retains
+  convergent remote, notification, and terminal records at mode `0600`.
+- `SI-ACTIVE-CYCLE` releases admission ownership only for exactly one strict
+  completion or cancellation record whose cycle, workflow, and admission digest
+  match the immutable admission. Missing, malformed, conflicting, or cross-cycle
+  terminal records remain blocking or error closed; historical admission and
+  workflow evidence is never deleted.
 - Self-improvement prerequisite diagnosis extends the shared `doctor` command,
   mirrors the stable check IDs owned by `docs/16-self-improvement-setup.md`,
   emits bounded redacted evidence, and has no fix/apply or setup-mutation mode.
@@ -134,7 +142,7 @@ workflow-pack adapters, and bundled orchestration skills.
   activation/producer identity, and the nearest owning DOX scope.
 - `adapters.py` defines strict normalized records and protocols;
   `live_adapters.py` owns the separately gated concrete GitHub and Hermes
-  transports. GitHub reads use the intake alias, claim and completion mutations
+  transports. GitHub reads use the intake alias; claim, completion, and cancellation mutations
   use the findings alias, and attended delivery uses the exact profile-local registration
   non-home destination while retaining only a non-private receipt. Bare
   platform home aliases are rejected because they do not bind the attended

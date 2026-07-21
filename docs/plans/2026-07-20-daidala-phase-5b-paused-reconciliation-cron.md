@@ -5,7 +5,10 @@ exact detached Daidala controller revision, create one profile-local Hermes cron
 job that remains paused, and retain evidence that two controlled invocations
 admit at most one maintainer-ready issue and converge on one workflow.
 
-**Status:** complete — Phase 0 is complete at merge checkpoint `bdd2baf` and
+**Status:** blocked — the original reconciliation scope through Phase 6 and the
+Phase 7 deterministic closeout implementation are complete. Phase 8 remains
+separately installation- and cancellation-approval-gated. Phase 0 is complete at
+merge checkpoint `bdd2baf` and
 Phase 1 is complete at checkpoint `1d6a909`; Phase 2 is complete at the shared
 dry-run-first CLI checkpoint `5472cc1`. Phase 3 repository reconciliation and
 the complete release gate are complete at the repository checkpoint.
@@ -27,9 +30,13 @@ again; later workflow stages remain separately approval-gated.
   replacing the later Phase 4F/5A evidence on `main`.
 - Phase 5A and Phase 5B are complete. Phase 5B created one paused cron and one
   active probe cycle; it created no retained change or remote finding.
+- Current source implements dry-run-first, digest-bound cancellation for that
+  terminal probe closeout. It passes the complete repository and release gate
+  but is not installed or applied; detached controller revision `80dd73e`
+  remains unchanged.
 - `daidala/reconciliation.py` now owns strict previews/results and immutable
   mode-`0600` tick evidence; `daidala/project_cycles.py` composes explicit
-  prerequisite interpretation, completion-aware active ownership, stable
+  prerequisite interpretation, terminal-record-aware active ownership, stable
   one-item selection, admission replay, and two-authority claim recovery.
 - `daidala/live_adapters.py` now inventories ready and claimed issues and uses
   audited, replay-safe claim release. The shared CLI exposes reconciliation as
@@ -90,6 +97,8 @@ before any later phase. The immediate run uses Hermes' at-most-once claim; the
 | 4 | Install and verify the exact controller revision | done (`80dd73e`; native + standalone 11/11) | Clean detached identity, both packs, reconciliation CLI, gateway restart, and both live reports pass; `31331e8` rollback remains outside the scan root and cron remains empty. |
 | 5 | Create the profile-local wrapper and paused cron | done | `cron list --all` shows exactly one paused no-agent named job with infinite repeat; its script digest matches profile-local evidence. |
 | 6 | Run and replay one controlled tick | done | Two completed executions yield one claim, cycle, workflow graph, and attended receipt; immutable outcomes are `admitted` then `replayed`, and the job is paused on `every 15m`. |
+| 7 | Implement deterministic terminal cancellation | done (58 focused + 398 full tests; complete release gate) | Focused cancellation, adapter, project-cycle, CLI, and active-ownership tests pass; the full repository and release gate pass. |
+| 8 | Install and apply the exact probe cancellation | pending | The separately approved detached revision passes rollback-protected installation; a fresh cancellation digest is separately approved and converges issue, workflow, notification, and terminal evidence. |
 
 Mark a phase `in-progress` while running it, `done (<sha-or-evidence>)` once its
 gate passes, and `pending` otherwise.
@@ -363,10 +372,70 @@ Hermes Kanban name one cycle/workflow; the second attempt created no duplicate;
 the approval card remains blocked; attended receipts validate; `cron list --all`
 still reports the job paused; and the complete repository gate exits 0.
 
+## Phase 7 — Implement deterministic terminal cancellation
+
+**Goal:** Add the missing pack-neutral closeout path for an admitted cycle that
+must terminate without implementation, without mutating the live probe.
+
+Steps:
+
+1. Add strict cancellation preview, remote, workflow, attended, and final
+   terminal receipt schemas. Persist each immutable artifact at mode `0600`.
+2. Extend the GitHub intake adapter with replay-safe not-planned closure that
+   requires the exact claim owner and removes both ready and claimed labels.
+3. Coordinate remote closure, generic workflow archival, owned-worktree cleanup,
+   attended notification, and final terminal evidence as a convergent operation.
+4. Add shared native/standalone `project-cycle cancel`; keep it dry-run by
+   default and require `--apply --expected-preview-digest` for mutation.
+5. Release active admission ownership only for exactly one strict completion or
+   cancellation record whose cycle, workflow, and admission digest match.
+6. Add adapter, schema, coordinator, project-cycle, CLI parity, replay, identity
+   drift, and active-ownership tests. Update runtime, test, operator, and plan
+   contracts.
+7. Run the complete repository and release gate, then create one source
+   checkpoint. Do not install or apply cancellation in this phase.
+
+Verification gate: focused cancellation coverage and full `pytest` pass;
+`ruff check .`, package validation, pack validation, link checking, release
+contents, and `git diff --check` pass; the live controller, issue, claim, board,
+cron, and attended channel are unchanged.
+
+## Phase 8 — Install and apply the exact probe cancellation
+
+**Goal:** Promote the reviewed cancellation source under rollback protection,
+then close only the controlled probe after a separate exact-digest approval.
+
+Steps:
+
+1. Obtain approval for the exact detached controller revision and automatic
+   rollback on any installation gate failure.
+2. Install outside the plugin scan root, verify clean detached identity, restart
+   the gateway, validate both packs, and prove native/standalone cancellation
+   help parity plus live diagnosis.
+3. Generate a cancellation preview for issue #4 and its deterministic cycle with
+   the bounded reason that the controlled reconciliation replay completed and no
+   implementation was authorized.
+4. Present the exact preview digest and identities for separate apply approval.
+5. Apply once. Verify issue #4 is closed not planned without active intake
+   labels, all workflow cards are archived, no worktree exists, one attended
+   cancellation receipt exists, one terminal record releases active ownership,
+   doctor passes, and replay returns the same evidence without another send.
+6. Retain redacted evidence, synchronize current docs and plans, run the complete
+   gate, and create one checkpoint. Do not admit Phase 5C work in this phase.
+
+Recovery: any installation failure restores the exact prior controller revision.
+Any partial cancellation preserves receipts and retries the same approved digest;
+never delete admission, workflow, claim, or terminal evidence manually.
+
+Verification gate: exact installed revision and help parity pass; cancellation
+replay converges; issue, workflow, artifact modes, notification receipt, doctor,
+cron pause, repository gate, and clean Git status all pass.
+
 ## Out of scope
 
 - Do not enable recurring scheduling in Phase 5B.
 - Do not approve or run implementation for the controlled cycle.
+- Do not apply cancellation before Phase 8 installation and exact-digest approval.
 - Do not retain, reject, revert, commit, push, or publish a candidate change.
 - Do not synchronize findings; that remains Phase 5C and separately publication-gated.
 - Do not run the paired UC-03 pack evaluation; that remains Phase 5D.

@@ -12,16 +12,18 @@ import pytest
 
 from daidala.adapters import (
     ClaimIdentity,
+    IntakeCancellationReceipt,
     IntakeCategory,
     IntakeRecord,
     NotificationReceipt,
 )
 from daidala.errors import PolicyViolationError
 from daidala.packs import load_pack
-from daidala.prerequisites import CheckStatus, PrerequisiteReport
+from daidala.prerequisites import CheckStatus, PrerequisiteReport, active_admission_paths
 from daidala.project_cycles import ProjectCycleOperator, _diagnosis_allows_replay
 from daidala.reconciliation import ReconciliationOutcome
-from daidala.state import SkillDigest, StageProfile, WorkflowStage
+from daidala.state import SkillDigest, StageProfile, WorkflowLedger, WorkflowStage
+from daidala.store import WorkflowStore
 from daidala.workflow import new_workflow
 
 ROOT = Path(__file__).parents[1]
@@ -311,8 +313,10 @@ def _inventory_item(item_id: str) -> IntakeRecord:
 class InventoryAdapter:
     ready: tuple[IntakeRecord, ...] = ()
     claimed: tuple[IntakeRecord, ...] = ()
+    canceled: tuple[IntakeRecord, ...] = ()
     fail = False
     release_calls = 0
+    cancel_calls = 0
 
     def __init__(self, **kwargs: object) -> None:
         pass
@@ -328,7 +332,11 @@ class InventoryAdapter:
         return self.claimed[:limit]
 
     def fetch(self, item_id: str) -> IntakeRecord:
-        return next(row for row in self.ready + self.claimed if row.item_id == item_id)
+        return next(
+            row
+            for row in self.ready + self.claimed + self.canceled
+            if row.item_id == item_id
+        )
 
     def claim(self, item_id: str, claim: ClaimIdentity) -> IntakeRecord:
         current = self.fetch(item_id)
@@ -350,6 +358,31 @@ class InventoryAdapter:
         type(self).claimed = tuple(row for row in self.claimed if row.item_id != item_id)
         type(self).ready = (released,)
         return released
+
+    def validate_cancellation(self, item_id: str, cycle_id: str) -> None:
+        current = self.fetch(item_id)
+        if current.claim is None or current.claim.claimant != cycle_id:
+            raise PolicyViolationError("cancellation claim owner does not match")
+
+    def cancel(
+        self, item_id: str, cycle_id: str, reason_digest: str
+    ) -> IntakeCancellationReceipt:
+        self.validate_cancellation(item_id, cycle_id)
+        type(self).cancel_calls += 1
+        current = self.fetch(item_id)
+        type(self).claimed = tuple(row for row in self.claimed if row.item_id != item_id)
+        type(self).canceled = (current,)
+        return IntakeCancellationReceipt(
+            adapter="github-issues",
+            item_id=item_id,
+            cycle_id=cycle_id,
+            reason_digest=reason_digest,
+            source_url=f"https://github.com/forgegod/daidala/issues/{item_id}",
+            state="closed",
+            state_reason="not_planned",
+            claim_released=True,
+            canceled_at=datetime.now(UTC),
+        )
 
 
 class ReconciliationNotifications:
@@ -375,6 +408,7 @@ class ReconciliationNotifications:
 class ReconciliationWorkflow:
     def __init__(self) -> None:
         self.ledgers: dict[str, object] = {}
+        self.cancel_calls = 0
 
     def start(self, **kwargs: object) -> object:
         workflow_id = str(kwargs["workflow_id"])
@@ -397,6 +431,11 @@ class ReconciliationWorkflow:
                 ),
                 created_at=datetime.now(UTC),
             )
+        return self.ledgers[workflow_id]
+
+    def cancel(self, workflow_id: str, reason: str) -> object:
+        assert reason
+        self.cancel_calls += 1
         return self.ledgers[workflow_id]
 
 
@@ -541,6 +580,115 @@ def test_reconciliation_admission_and_duplicate_tick_converge_on_one_workflow(
     assert admitted.preview.cycle_id == active.cycle_id == replayed.preview.cycle_id
     assert list(workflow.ledgers) == [active.cycle_id]
     assert len(ReconciliationNotifications.calls) == 1
+
+
+def test_project_cycle_cancellation_is_digest_bound_and_releases_ownership(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    operator, manifest, registration, _runtime, _roots = _operator(tmp_path)
+    workflow = ReconciliationWorkflow()
+    operator.workflow_factory = lambda *_args: workflow  # type: ignore[assignment]
+    InventoryAdapter.ready = (_inventory_item("42"),)
+    InventoryAdapter.claimed = ()
+    InventoryAdapter.canceled = ()
+    InventoryAdapter.cancel_calls = 0
+    InventoryAdapter.fail = False
+    ReconciliationNotifications.calls = []
+    ReconciliationNotifications.fail = False
+    monkeypatch.setattr(
+        "daidala.project_cycles.GitHubIssueIntakeAdapter", InventoryAdapter
+    )
+    monkeypatch.setattr(
+        "daidala.project_cycles.HermesGatewayNotificationAdapter",
+        ReconciliationNotifications,
+    )
+    admission_preview = operator.preview_reconciliation(
+        project_manifest=manifest,
+        registration=registration,
+        stage_profiles=_stage_profiles(),
+    )
+    admitted = operator.reconcile(
+        project_manifest=manifest,
+        registration=registration,
+        stage_profiles=_stage_profiles(),
+        expected_preview_digest=admission_preview.digest,
+    )
+    cycle_id = str(admitted.preview.cycle_id)
+    profile_root = registration.parents[2]
+    store = WorkflowStore(profile_root / "daidala")
+    store.create(
+        cast(WorkflowLedger, workflow.ledgers[cycle_id])
+    )
+    reason = "Controlled reconciliation replay completed without implementation."
+
+    observed = store.get_with_token(cycle_id)
+    store.update(
+        replace(
+            observed.ledger,
+            requested_goal="Drifted goal.",
+            updated_at=datetime.now(UTC),
+        ),
+        expected_updated_at=observed.updated_at,
+    )
+    with pytest.raises(PolicyViolationError, match="goal does not match"):
+        operator.preview_cancellation(
+            project_manifest=manifest,
+            registration=registration,
+            cycle_id=cycle_id,
+            reason=reason,
+        )
+    drifted = store.get_with_token(cycle_id)
+    store.update(
+        replace(observed.ledger, updated_at=datetime.now(UTC)),
+        expected_updated_at=drifted.updated_at,
+    )
+
+    preview = operator.preview_cancellation(
+        project_manifest=manifest,
+        registration=registration,
+        cycle_id=cycle_id,
+        reason=reason,
+    )
+
+    assert preview.cycle_id == cycle_id
+    assert preview.reason == reason
+    assert InventoryAdapter.cancel_calls == workflow.cancel_calls == 0
+    with pytest.raises(PolicyViolationError, match="preview digest"):
+        operator.cancel_cycle(
+            project_manifest=manifest,
+            registration=registration,
+            cycle_id=cycle_id,
+            reason=reason,
+            expected_preview_digest="f" * 64,
+        )
+    first = operator.cancel_cycle(
+        project_manifest=manifest,
+        registration=registration,
+        cycle_id=cycle_id,
+        reason=reason,
+        expected_preview_digest=preview.digest,
+    )
+    second = operator.cancel_cycle(
+        project_manifest=manifest,
+        registration=registration,
+        cycle_id=cycle_id,
+        reason=reason,
+        expected_preview_digest=preview.digest,
+    )
+
+    assert first == second
+    assert first.cancellation.remote_receipt.state_reason == "not_planned"
+    assert InventoryAdapter.cancel_calls == workflow.cancel_calls == 1
+    assert [row["event"] for row in ReconciliationNotifications.calls] == [
+        "cycle-admitted",
+        "cycle-cancelled",
+    ]
+    assert active_admission_paths(registration.parent / "cycles") == ()
+    cycle_root = registration.parent / "cycles" / cycle_id
+    assert (cycle_root / "cancellation-remote.json").is_file()
+    assert (cycle_root / "cancellation-workflow.json").is_file()
+    assert (cycle_root / "cancellation-notification.json").is_file()
+    assert (cycle_root / "cancellation.json").is_file()
 
 
 def test_reconciliation_notification_failure_is_not_recorded_as_success(

@@ -38,6 +38,9 @@ cron executions converged on one claim, cycle, graph, and attended receipt, and
 the no-agent job is paused again. Exact detached controller revision `80dd73e`
 remains installed. Its installation gate passed native and standalone diagnosis
 11/11; the current active probe intentionally blocks only `SI-ACTIVE-CYCLE`.
+Phase 5B-C source implementation is complete. The missing deterministic terminal
+cancellation path passes the repository gate; controller installation and live
+apply remain separately approval-gated.
 The resumable execution record is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 
@@ -58,7 +61,8 @@ The resumable execution record is saved in
 | 4F-D — Aidlc terminal completion | done | Completion digest `250756b4021b92e7b9ef74214febfab1d5891baf908ca3650acb473505eb1101` closed issue #3, released its claim, delivered `telegram:23`, converged on replay, and returned doctor to 11/11. |
 | 5A — UC-01 evidence reconciliation | done | All retained plan, baseline, candidate, review, delivery, and completion hashes match; both workflows are terminal, but different repository baselines and candidate test fixtures make pack comparison `incomparable`. |
 | 5B — Paused reconciliation cron and controlled tick | done | Two approved executions produced `admitted` then `replayed` for one issue, claim, cycle, graph, and attended receipt. The no-agent job is paused on `every 15m`; no worktree, approval, commit, or push exists. |
-| 5C — Approved improvement and findings synchronization | blocked | Phase 5B replay evidence exists; separate cycle, retention, and publication approvals remain required. |
+| 5B-C — Deterministic probe cancellation | blocked | Source implements dry-run-first exact-digest cancellation with strict not-planned issue closure, workflow archival, attended notification, immutable receipts, and terminal active-ownership release; installation and live apply remain separately gated. |
+| 5C — Approved improvement and findings synchronization | blocked | Phase 5B-C must close the non-implementation probe; separate cycle, retention, and publication approvals remain required. |
 | 5D — UC-03 pack evaluation | blocked | Requires one canonical paired fixture, one frozen baseline, one approved candidate skill set, and separate cycle approval. |
 | 6 — Version-aware re-evaluation | blocked | Requires the approved Phase 5 work; candidate Hermes identity is selected here, not invented earlier. |
 | 7 — Repository gate and documentation | blocked | Requires the preceding live evaluation and comparison evidence. |
@@ -108,6 +112,9 @@ a named prerequisite is incomplete.
   outcomes are `admitted` then `replayed` with one claim, graph, and attended
   receipt. The job is paused on `every 15m`; the plan card is blocked without an
   approval or worktree, and commit and push remain false.
+- Phase 5B-C cancellation passes the repository and release gate but is not
+  installed or applied. Controller revision `80dd73e`, issue #4, its claim, the
+  blocked workflow, cron pause, and attended state remain unchanged.
 
 ## Registered project
 

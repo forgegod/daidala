@@ -14,6 +14,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any, cast
 
+from .cancellation import CycleCancellation
 from .completion import CycleCompletion
 from .credentials import (
     MAX_CREDENTIAL_BINDINGS_BYTES,
@@ -1019,26 +1020,41 @@ def active_admission_paths(cycles_root: Path) -> tuple[Path, ...]:
     active: list[Path] = []
     for admission_path in sorted(cycles_root.glob("cycle-*/admission.json")):
         completion_path = admission_path.with_name("completion.json")
-        if not completion_path.is_file():
+        cancellation_path = admission_path.with_name("cancellation.json")
+        terminal_paths = tuple(
+            path for path in (completion_path, cancellation_path) if path.is_file()
+        )
+        if not terminal_paths:
             active.append(admission_path)
             continue
+        if len(terminal_paths) != 1:
+            raise PolicyViolationError(
+                "cycle admission has multiple terminal ownership records"
+            )
+        terminal_path = terminal_paths[0]
         try:
-            completion = CycleCompletion.from_dict(
-                json.loads(completion_path.read_text(encoding="utf-8"))
+            terminal = (
+                CycleCompletion.from_dict(
+                    json.loads(terminal_path.read_text(encoding="utf-8"))
+                )
+                if terminal_path == completion_path
+                else CycleCancellation.from_dict(
+                    json.loads(terminal_path.read_text(encoding="utf-8"))
+                )
             )
         except (OSError, json.JSONDecodeError, PolicyViolationError) as error:
             raise PolicyViolationError(
-                "stored cycle completion cannot release admission ownership"
+                "stored cycle terminal record cannot release admission ownership"
             ) from error
         cycle_id = admission_path.parent.name
         admission_digest = hashlib.sha256(admission_path.read_bytes()).hexdigest()
         if (
-            completion.preview.cycle_id != cycle_id
-            or completion.preview.workflow_id != cycle_id
-            or completion.preview.admission_digest != admission_digest
+            terminal.preview.cycle_id != cycle_id
+            or terminal.preview.workflow_id != cycle_id
+            or terminal.preview.admission_digest != admission_digest
         ):
             raise PolicyViolationError(
-                "stored cycle completion does not match admission ownership"
+                "stored cycle terminal record does not match admission ownership"
             )
     return tuple(active)
 

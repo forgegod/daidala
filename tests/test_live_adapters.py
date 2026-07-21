@@ -168,17 +168,16 @@ class GitHubRunner:
             self.comments.append({"body": body, "user": {"login": "forgegod"}})
             return 0, "https://github.com/forgegod/daidala/issues/42#issuecomment-1"
         if command[:3] == ("gh", "issue", "edit"):
-            if "--remove-label" in command and command[-1] == CLAIMED:
-                self.labels.discard(CLAIMED)
-                if "--add-label" in command:
-                    self.labels.add(READY)
-            else:
-                self.labels.discard(READY)
-                self.labels.add(CLAIMED)
+            for index, value in enumerate(command):
+                if value == "--remove-label":
+                    self.labels.discard(command[index + 1])
+                elif value == "--add-label":
+                    self.labels.add(command[index + 1])
             return 0, "https://github.com/forgegod/daidala/issues/42"
         if command[:3] == ("gh", "issue", "close"):
             self.state = "CLOSED"
-            self.state_reason = "COMPLETED"
+            reason = command[command.index("--reason") + 1]
+            self.state_reason = "NOT_PLANNED" if reason == "not planned" else reason.upper()
             return 0, "Closed issue forgegod/daidala#42"
         raise AssertionError(f"unexpected command: {command}")
 
@@ -309,6 +308,60 @@ def test_github_completion_closes_releases_and_converges_without_comment() -> No
         ("gh", "issue", "close"),
         ("gh", "issue", "edit"),
     ]
+
+
+def test_github_cancellation_closes_not_planned_and_is_replay_safe() -> None:
+    runner = GitHubRunner()
+    adapter = github_adapter(runner)
+    cycle_id = "cycle-" + "b" * 64
+    claim = ClaimIdentity(cycle_id, NOW, NOW + timedelta(minutes=15))
+    adapter.claim("42", claim)
+    reason_digest = "c" * 64
+
+    first = adapter.cancel("42", cycle_id, reason_digest)
+    mutation_count = len(
+        [
+            command
+            for command, _ in runner.commands
+            if command[:3] in {("gh", "issue", "close"), ("gh", "issue", "edit")}
+        ]
+    )
+    second = adapter.cancel("42", cycle_id, reason_digest)
+
+    assert first == second
+    assert first.reason_digest == reason_digest
+    assert first.state_reason == "not_planned"
+    assert runner.state == "CLOSED"
+    assert runner.state_reason == "NOT_PLANNED"
+    assert CLAIMED not in runner.labels
+    assert READY not in runner.labels
+    assert len(runner.comments) == 1
+    assert mutation_count == 3
+    assert len(
+        [
+            command
+            for command, _ in runner.commands
+            if command[:3] in {("gh", "issue", "close"), ("gh", "issue", "edit")}
+        ]
+    ) == mutation_count
+
+
+def test_github_cancellation_rejects_another_claim_owner_before_mutation() -> None:
+    runner = GitHubRunner()
+    adapter = github_adapter(runner)
+    adapter.claim(
+        "42",
+        ClaimIdentity("cycle-" + "b" * 64, NOW, NOW + timedelta(minutes=15)),
+    )
+    before = len(runner.commands)
+
+    with pytest.raises(PolicyViolationError, match="claim owner"):
+        adapter.cancel("42", "cycle-" + "c" * 64, "d" * 64)
+
+    assert all(
+        command[:3] not in {("gh", "issue", "close"), ("gh", "issue", "edit")}
+        for command, _ in runner.commands[before:]
+    )
 
 
 def test_github_completion_rejects_another_claim_owner_before_mutation() -> None:

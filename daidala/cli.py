@@ -150,6 +150,15 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     project_cycle_complete.add_argument("--cycle-id", required=True)
     project_cycle_complete.add_argument("--apply", action="store_true")
     project_cycle_complete.add_argument("--expected-preview-digest")
+    project_cycle_cancel = project_cycle_sub.add_parser(
+        "cancel", help="Preview or cancel one claimed cycle without implementation"
+    )
+    project_cycle_cancel.add_argument("--project-manifest", required=True, type=Path)
+    project_cycle_cancel.add_argument("--registration", required=True, type=Path)
+    project_cycle_cancel.add_argument("--cycle-id", required=True)
+    project_cycle_cancel.add_argument("--reason", required=True)
+    project_cycle_cancel.add_argument("--apply", action="store_true")
+    project_cycle_cancel.add_argument("--expected-preview-digest")
 
     start = sub.add_parser("start", help="Validate inputs and create the initial Kanban graph")
     start.add_argument("target_repository")
@@ -478,6 +487,42 @@ def _run_project_cycle(
                 project_manifest=args.project_manifest,
                 registration=args.registration,
             )
+        )
+        return 0
+    if args.project_cycle_command == "cancel":
+        operator = project_cycle_factory()
+        common = {
+            "project_manifest": args.project_manifest,
+            "registration": args.registration,
+            "cycle_id": args.cycle_id,
+            "reason": args.reason,
+        }
+        if not args.apply:
+            if args.expected_preview_digest is not None:
+                raise ValueError("expected cancellation preview digest requires --apply")
+            preview = operator.preview_cancellation(**common)
+            _print(
+                {
+                    "success": True,
+                    "operation": "project-cycle-cancel",
+                    "dry_run": True,
+                    "preview_digest": preview.digest,
+                    "preview": preview.to_dict(),
+                }
+            )
+            return 0
+        if args.expected_preview_digest is None:
+            raise ValueError("--apply requires --expected-preview-digest")
+        result = operator.cancel_cycle(
+            **common,
+            expected_preview_digest=args.expected_preview_digest,
+        )
+        _print(
+            {
+                "success": True,
+                "operation": "project-cycle-cancel",
+                **result.to_dict(),
+            }
         )
         return 0
     if args.project_cycle_command == "complete":

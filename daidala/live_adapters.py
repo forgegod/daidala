@@ -13,6 +13,7 @@ from typing import Any, cast
 
 from .adapters import (
     ClaimIdentity,
+    IntakeCancellationReceipt,
     IntakeCategory,
     IntakeCompletionReceipt,
     IntakeRecord,
@@ -20,7 +21,7 @@ from .adapters import (
 )
 from .credentials import CredentialBindings
 from .errors import PolicyViolationError
-from .projects import _require_slug, _require_text
+from .projects import _require_digest, _require_slug, _require_text
 
 RuntimeRunner = Callable[[tuple[str, ...], Mapping[str, str]], tuple[int, str]]
 
@@ -323,6 +324,74 @@ class GitHubIssueIntakeAdapter:
         issue, labels, claim = self._completion_issue(item_id)
         self._validate_completion_state(issue, labels, claim, cycle_id)
 
+    def cancel(
+        self, item_id: str, cycle_id: str, reason_digest: str
+    ) -> IntakeCancellationReceipt:
+        _require_issue_id(item_id)
+        _require_text(cycle_id, "cancellation cycle ID", 256)
+        _require_digest(reason_digest, "cancellation reason digest")
+        issue, labels, claim = self._completion_issue(item_id)
+        self._validate_cancellation_state(issue, labels, claim, cycle_id)
+        if issue["state"] == "OPEN":
+            self._run_text(
+                (
+                    "gh",
+                    "issue",
+                    "close",
+                    item_id,
+                    "--repo",
+                    self.repository,
+                    "--reason",
+                    "not planned",
+                ),
+                alias=self.write_credential_alias,
+                label="GitHub issue cancellation",
+            )
+        removable = tuple(
+            label for label in (_CLAIMED_LABEL, _READY_LABEL) if label in labels
+        )
+        if removable:
+            command = (
+                "gh",
+                "issue",
+                "edit",
+                item_id,
+                "--repo",
+                self.repository,
+            ) + tuple(part for label in removable for part in ("--remove-label", label))
+            self._run_text(
+                command,
+                alias=self.write_credential_alias,
+                label="GitHub cancellation claim release",
+            )
+        canceled, final_labels, final_claim = self._completion_issue(item_id)
+        if (
+            canceled["state"] != "CLOSED"
+            or canceled["stateReason"] != "NOT_PLANNED"
+            or _CLAIMED_LABEL in final_labels
+            or _READY_LABEL in final_labels
+            or final_claim is None
+            or final_claim.claimant != cycle_id
+        ):
+            raise PolicyViolationError("GitHub issue cancellation did not converge")
+        return IntakeCancellationReceipt(
+            adapter="github-issues",
+            item_id=item_id,
+            cycle_id=cycle_id,
+            reason_digest=reason_digest,
+            source_url=f"https://github.com/{self.repository}/issues/{item_id}",
+            state="closed",
+            state_reason="not_planned",
+            claim_released=True,
+            canceled_at=self.clock(),
+        )
+
+    def validate_cancellation(self, item_id: str, cycle_id: str) -> None:
+        _require_issue_id(item_id)
+        _require_text(cycle_id, "cancellation cycle ID", 256)
+        issue, labels, claim = self._completion_issue(item_id)
+        self._validate_cancellation_state(issue, labels, claim, cycle_id)
+
     @staticmethod
     def _validate_completion_state(
         issue: dict[str, Any],
@@ -338,6 +407,24 @@ class GitHubIssueIntakeAdapter:
             return
         if issue["state"] != "CLOSED" or issue["stateReason"] != "COMPLETED":
             raise PolicyViolationError("GitHub issue is not eligible for completed closure")
+
+    @staticmethod
+    def _validate_cancellation_state(
+        issue: dict[str, Any],
+        labels: set[str],
+        claim: ClaimIdentity | None,
+        cycle_id: str,
+    ) -> None:
+        if claim is None or claim.claimant != cycle_id:
+            raise PolicyViolationError("GitHub cancellation claim owner does not match cycle")
+        if issue["state"] == "OPEN":
+            if _CLAIMED_LABEL not in labels:
+                raise PolicyViolationError("open GitHub cancellation issue must retain its claim")
+            return
+        if issue["state"] != "CLOSED" or issue["stateReason"] != "NOT_PLANNED":
+            raise PolicyViolationError("GitHub issue is not eligible for cancellation")
+        if _CLAIMED_LABEL in labels or _READY_LABEL in labels:
+            raise PolicyViolationError("closed GitHub cancellation issue retains active labels")
 
     def _completion_issue(
         self, item_id: str

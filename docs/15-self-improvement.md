@@ -6,27 +6,28 @@ The reusable deterministic foundation through reconciliation is implemented and
 repository-tested. It includes strict project, registration, cycle, metric,
 increment, credential-binding, prerequisite-report, reconciliation-preview, and
 tick-result schemas; normalized production and fake adapter contracts;
-replay-safe admission and completion; local finding synchronization; fresh
+replay-safe admission, completion, and cancellation; local finding synchronization; fresh
 evaluator homes and owned worktrees; restricted-container execution; immutable
 evaluation evidence; comparison verdicts; lesson-reuse deltas; cleanup and
 quarantine; and increment/DOX reconciliation.
 
 Two attended manual cycles exercised the detached controller's admission,
 approval, evaluation, delivery, replay, and terminal completion paths. The
-shared dry-run-first CLI now exposes deterministic reconciliation with an exact
-preview-digest apply gate. Exact detached revision `80dd73e` is installed in the
-persistent controller profile and passes native and standalone live diagnosis;
-one matching no-agent reconciliation cron exists but remains paused with no run
-attempts. Two separately approved controlled runs now prove admission/replay
-convergence on one active cycle; the job is paused again at the plan approval
-boundary. Terminal retention, approved finding publication, and version-aware
-comparison remain unexercised or blocked by later approval gates.
+shared dry-run-first CLI exposes deterministic reconciliation with an exact
+preview-digest apply gate. Source now also implements digest-bound cancellation;
+it is not yet installed in the persistent controller. Exact detached revision
+`80dd73e` remains installed. One matching no-agent reconciliation cron is paused
+on its intended 15-minute schedule after two separately approved controlled runs
+proved admission/replay convergence on one active cycle. That cycle remains at
+the plan approval boundary. Terminal retention, approved finding publication,
+and version-aware comparison remain unexercised or blocked by later approval
+gates.
 
 Authoritative implementation sources are `daidala/projects.py`,
 `daidala/registrations.py`, `daidala/cycles.py`, `daidala/increments.py`,
 `daidala/credentials.py`, `daidala/prerequisites.py`, `daidala/adapters.py`,
 `daidala/live_adapters.py`, `daidala/controller.py`,
-`daidala/project_cycles.py`, `daidala/completion.py`,
+`daidala/project_cycles.py`, `daidala/completion.py`, `daidala/cancellation.py`,
 `daidala/evaluation.py`, and `daidala/reconciliation.py`. The reusable and
 Daidala-instance plans remain the implementation authority for unfinished
 phases:
@@ -592,7 +593,7 @@ owned worktree; candidate code never replaces the currently loaded plugin.
 
 ## Operator procedures
 
-The source tree provides two self-improvement-specific operator commands:
+The source tree provides dry-run-first self-improvement operator commands:
 
 ```bash
 # Implemented: local checks; network, gateway, and container checks remain not-run
@@ -611,6 +612,13 @@ hermes -p daidala-self-improvement daidala project-cycle admit \
   --issue ISSUE_NUMBER \
   --default-profile daidala-self-improvement \
   --pack addyosmani
+
+# Dry-run only: returns the exact cancellation preview digest
+hermes -p daidala-self-improvement daidala project-cycle cancel \
+  --project-manifest /home/raphael/src/rb/daidala/.daidala/project.yaml \
+  --registration /home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/registration.yaml \
+  --cycle-id CYCLE_ID \
+  --reason 'Bounded operator-approved reason'
 ```
 
 `project-cycle admit` is dry-run by default. `--apply` additionally requires the
@@ -619,12 +627,18 @@ the apply invocation reruns all live prerequisites before any claim or workflow
 mutation. Do not substitute generic workflow `start`, `status`, `approve`, or
 `cancel` for project admission.
 
-Project registration mutation, project-cycle status, exact cycle approval,
-archive, pause/resume, recovery, and reconciliation remain unsupported. The
-installed command and passing prerequisite report are readiness evidence, not
-admission evidence: approved dry-run and apply invocations must still exercise
-the production boundary. Phase 6 must exercise candidate upgrades. Teardown
-remains destructive and separately approved.
+`project-cycle cancel` is also dry-run by default. `--apply` additionally
+requires the exact `--expected-preview-digest` from a fresh dry run. The apply
+path validates the immutable admission, registered board, current workflow,
+exact GitHub claim owner, and bounded reason before it can close the issue as
+not planned, remove active intake labels, archive the workflow, release only an
+owned worktree, notify the attended destination, and retain immutable receipts.
+
+Project registration mutation, project-cycle status, exact cycle approval, and
+pause/resume remain unsupported. Installed commands and passing prerequisite
+reports are readiness evidence, not mutation approval: approved dry-run and
+apply invocations must still exercise each production boundary. Teardown remains
+destructive and separately approved.
 
 ## Verification and source audit
 
