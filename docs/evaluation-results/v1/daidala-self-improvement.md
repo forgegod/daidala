@@ -114,11 +114,14 @@ The first control cycle was canceled at `e606f24c` before plan approval or
 worktree creation because definition `a580a0be` guessed a verification command
 that differed from the packet. Issue #9 is closed not planned, issue #10 remains
 unready, and diagnosis is 11/11. Packet v2 `eb02da7c` keeps the contract/fixture
-digests unchanged and is installed at the exact profile-local distribution path
-required before definition. Replacement control issue #11 and candidate issue
-#10 are byte-identical, open, unready, and unclaimed. Replacement cycles, plans,
-cleanup, retention, publication, push, release, and promotion remain separately
-gated in the
+digests unchanged and was installed at the exact profile-local distribution path.
+Replacement issue #11 read it correctly but was canceled at `fc865175` before
+plan approval because baseline `3ce1bfc` lacked the frozen fixture. Issue #11 is
+closed not planned; candidate issue #10 remains unready. Dedicated clean fixture
+baseline `c53ba52` passes the frozen behavior and repository gates. Packet v3
+`7139cf3e` binds that baseline while preserving fixture identity. Distribution,
+intake mutation, replacement cycles, plans, cleanup, retention, publication,
+push, release, and promotion remain separately gated in the
 [Phase 5D child plan](../../plans/2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md).
 
 ## UC-01 reconciliation

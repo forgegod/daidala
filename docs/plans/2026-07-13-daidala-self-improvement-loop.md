@@ -58,8 +58,10 @@ operator approved the pinned Addyosmani-versus-Aidlc comparison and canonical
 was canceled at `e606f24c` before plan approval because its definition could not
 read the packet from detached baseline `3ce1bfc`; issue #9 is closed not planned,
 issue #10 remains unready, and diagnosis is 11/11. Remediation packet `eb02da7c`
-is installed at its exact profile-local distribution path; replacement control
-issue #11 and candidate issue #10 are byte-identical and unready. Readiness,
+was installed at its exact profile-local path, but replacement issue #11 was
+canceled at `fc865175` when planning proved baseline `3ce1bfc` lacked the fixture.
+Dedicated fixture baseline `c53ba52` now passes the frozen behavior and repository
+gates; packet v3 `7139cf3e` binds it. Distribution, intake mutation, readiness,
 replacement cycle, plan, cleanup, retention, publication, push, release, and
 promotion remain gated.
 The resumable execution record is saved in
@@ -89,7 +91,7 @@ Phase 5D execution is ranged in
 | 5B-C — Deterministic probe cancellation | done | Exact detached revision `550671c`, approved preview `9deb8cef`, terminal digest `99fe86b3`, receipt `telegram:37`, identical replay, archived cards, and 11/11 diagnosis prove deterministic closeout. |
 | 5C — Approved improvement and findings synchronization | done | Issue #5 retained strict v2 controller-revision evidence; completion `f9f5566e` released the claim and delivered `telegram:44`. The two control findings were ranged into Phase 5C-R. |
 | 5C-R — Control-plane findings remediation | done | Exact controller `2595bf5`; `TC-F06-01`/`TC-F07-01` retained as `pass`; issues #6/#7 closed completed and `Done`; probe manifests `0db444d6`/`5a79e2fa`; cron paused; diagnosis 11/11. |
-| 5D — UC-03 pack evaluation | in-progress ([child plan](2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md)) | First control cycle canceled at `e606f24c` without implementation after packet-visibility mismatch; packet `eb02da7c` is distributed, issues #11/#10 are byte-identical and unready, diagnosis is 11/11, and replacement readiness/admission remain gated. |
+| 5D — UC-03 pack evaluation | in-progress ([child plan](2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md)) | Control attempts canceled at `e606f24c`/`fc865175` without implementation; clean fixture baseline `c53ba52` and packet v3 `7139cf3e` are prepared; issue #10 is unready, diagnosis is 11/11, and replacement live mutations remain gated. |
 | 6 — Version-aware re-evaluation | blocked | Requires the Phase 5D child closeout; candidate Hermes identity is selected here, not invented earlier. |
 | 7 — Repository gate and documentation | blocked | Requires the preceding live evaluation and comparison evidence. |
 

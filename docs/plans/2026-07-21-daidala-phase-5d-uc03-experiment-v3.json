@@ -1,0 +1,282 @@
+{
+  "contract": {
+    "approval_boundaries": [
+      "packet_controller_install_and_two_unready_issue_creations",
+      "control_issue_readiness",
+      "control_cycle_admission",
+      "control_plan_digest",
+      "control_terminal_completion_or_cancellation",
+      "candidate_issue_readiness",
+      "candidate_cycle_admission",
+      "candidate_plan_digest",
+      "candidate_terminal_completion_or_cancellation",
+      "any_retention_publication_push_release_or_promotion"
+    ],
+    "candidate_identity": "pack:aidlc@e49341dbeb8af82758dd85e96ed7fe9bcf38a447#sha256:e4e921b9e719eb54a7d5ec753418e2e451369a3ef50ffd7f52cf74a85d6a6b6a",
+    "commands": {
+      "baseline_behavior": {
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests/fixtures/uc03_pack_eval",
+          "-p",
+          "test_*.py"
+        ],
+        "expected_exit": 0
+      },
+      "candidate_behavior": {
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests/fixtures/uc03_pack_eval",
+          "-p",
+          "test_*.py"
+        ],
+        "expected_exit": 0,
+        "repeat": 3
+      },
+      "candidate_migration_policy": {
+        "argv": [
+          "python3",
+          "-c",
+          "from pathlib import Path; p=Path('tests/fixtures/uc03_pack_eval/resource_fixture/catalog.py'); s=p.read_text(encoding='utf-8'); assert 'contents' not in s; assert 'files' in s and '.iterdir()' in s"
+        ],
+        "expected_exit": 0
+      }
+    },
+    "controller": {
+      "approved_revision": "3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8",
+      "hermes_build": "2026.7.7.2",
+      "hermes_upstream_revision": "36f2a966",
+      "hermes_version": "0.18.2",
+      "install_transport": "verified-local-detached-clone",
+      "rollback_revision": "2595bf5f8aacdd1411c101250acc2d0211eaf22a"
+    },
+    "evaluator": {
+      "backend": "restricted-container",
+      "image_identity": "catthehacker/ubuntu@sha256:3220992391c1182a0cfe4c64453511772c54f4c39e960d26a5e327960675982e",
+      "network": "denied-by-default"
+    },
+    "fixture": {
+      "canonical_file_map_sha256": "4198f672861d7279aa9f5325a4e6fe1af54aa770f2c454fdd8c46d5d1478239d",
+      "encoding": "utf-8",
+      "files": [
+        {
+          "content_utf8": "\"\"\"Canonical UC-03 package-resource fixture.\"\"\"\n",
+          "path": "tests/fixtures/uc03_pack_eval/resource_fixture/__init__.py"
+        },
+        {
+          "content_utf8": "\"\"\"List packaged text resources using the legacy functional API.\"\"\"\n\nfrom importlib.resources import contents\n\n\ndef resource_names() -> tuple[str, ...]:\n    return tuple(\n        sorted(\n            name\n            for name in contents(\"resource_fixture.data\")\n            if name.endswith(\".txt\")\n        )\n    )\n",
+          "path": "tests/fixtures/uc03_pack_eval/resource_fixture/catalog.py"
+        },
+        {
+          "content_utf8": "\"\"\"Packaged resources for the canonical UC-03 fixture.\"\"\"\n",
+          "path": "tests/fixtures/uc03_pack_eval/resource_fixture/data/__init__.py"
+        },
+        {
+          "content_utf8": "alpha\n",
+          "path": "tests/fixtures/uc03_pack_eval/resource_fixture/data/alpha.txt"
+        },
+        {
+          "content_utf8": "beta\n",
+          "path": "tests/fixtures/uc03_pack_eval/resource_fixture/data/beta.txt"
+        },
+        {
+          "content_utf8": "{\"ignored\":true}\n",
+          "path": "tests/fixtures/uc03_pack_eval/resource_fixture/data/ignored.json"
+        },
+        {
+          "content_utf8": "nested\n",
+          "path": "tests/fixtures/uc03_pack_eval/resource_fixture/data/nested/ignored.txt"
+        },
+        {
+          "content_utf8": "\"\"\"Frozen behavior checks for the canonical UC-03 fixture.\"\"\"\n\nimport unittest\n\nfrom resource_fixture.catalog import resource_names\n\n\nclass ResourceNamesTests(unittest.TestCase):\n    def test_returns_only_sorted_top_level_text_resources(self) -> None:\n        self.assertEqual(resource_names(), (\"alpha.txt\", \"beta.txt\"))\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          "path": "tests/fixtures/uc03_pack_eval/test_catalog.py"
+        }
+      ],
+      "materialization_paths": [
+        "tests/fixtures/uc03_pack_eval/resource_fixture/__init__.py",
+        "tests/fixtures/uc03_pack_eval/resource_fixture/catalog.py",
+        "tests/fixtures/uc03_pack_eval/resource_fixture/data/__init__.py",
+        "tests/fixtures/uc03_pack_eval/resource_fixture/data/alpha.txt",
+        "tests/fixtures/uc03_pack_eval/resource_fixture/data/beta.txt",
+        "tests/fixtures/uc03_pack_eval/resource_fixture/data/ignored.json",
+        "tests/fixtures/uc03_pack_eval/resource_fixture/data/nested/ignored.txt",
+        "tests/fixtures/uc03_pack_eval/test_catalog.py"
+      ],
+      "protected_fixture_paths": [
+        "tests/fixtures/uc03_pack_eval/resource_fixture/__init__.py",
+        "tests/fixtures/uc03_pack_eval/resource_fixture/data/__init__.py",
+        "tests/fixtures/uc03_pack_eval/resource_fixture/data/alpha.txt",
+        "tests/fixtures/uc03_pack_eval/resource_fixture/data/beta.txt",
+        "tests/fixtures/uc03_pack_eval/resource_fixture/data/ignored.json",
+        "tests/fixtures/uc03_pack_eval/resource_fixture/data/nested/ignored.txt",
+        "tests/fixtures/uc03_pack_eval/test_catalog.py"
+      ],
+      "root": "tests/fixtures/uc03_pack_eval",
+      "worker_allowed_paths": [
+        "tests/fixtures/uc03_pack_eval/resource_fixture/catalog.py"
+      ]
+    },
+    "goal": "Replace only the legacy resource catalog implementation with importlib.resources.files(package).iterdir(), preserve exact sorted top-level .txt resource names, and do not modify frozen tests, resources, project defaults, packs, or runtime policy.",
+    "issue_contract": {
+      "category": "compatibility",
+      "labels": [
+        "daidala-si",
+        "daidala-si:compatibility",
+        "daidala-si:priority-3"
+      ],
+      "priority": 3,
+      "publication_state": "published",
+      "ready_label_absent": "daidala-si:ready",
+      "title": "[Daidala SI] UC-03 package-resource migration evaluation"
+    },
+    "limits": {
+      "active_cycles": 1,
+      "delegated_workers": 3,
+      "extracted_primary_sources": 3,
+      "goal_turns": 12,
+      "mutable_repositories": 1,
+      "research_query_batches": 3,
+      "retained_results_per_research_batch": 5,
+      "wall_clock_seconds": 3600
+    },
+    "metrics": {
+      "allowed_verdicts": [
+        "improved",
+        "equivalent",
+        "regressed",
+        "incomparable"
+      ],
+      "deterministic": [
+        "fixture_digest_equal",
+        "repository_baseline_equal",
+        "candidate_identity_equal",
+        "routing_identity_equal",
+        "evaluator_identity_equal",
+        "limits_equal",
+        "commands_equal",
+        "worker_changed_paths_exact",
+        "behavior_exit_zero",
+        "migration_policy_exit_zero"
+      ],
+      "observational": [
+        "ambiguity",
+        "recovery_quality",
+        "handoff_quality",
+        "goal_turns",
+        "model_calls_when_available",
+        "delegated_workers",
+        "research_calls",
+        "wall_time_seconds"
+      ],
+      "observational_metrics_decide_verdict": false,
+      "repeated": {
+        "behavior_runs": 3,
+        "required_failures": 0
+      }
+    },
+    "mode": "evaluate-pack",
+    "packs": {
+      "candidate": {
+        "content_sha256": "e4e921b9e719eb54a7d5ec753418e2e451369a3ef50ffd7f52cf74a85d6a6b6a",
+        "name": "aidlc",
+        "source": "https://github.com/awslabs/aidlc-workflows",
+        "source_revision": "e49341dbeb8af82758dd85e96ed7fe9bcf38a447"
+      },
+      "current": {
+        "content_sha256": "991faf8e26d1c472230dcbf2c29baae9925ad9b9e0cd954f1d90b374302b7832",
+        "name": "addyosmani",
+        "source": "https://github.com/addyosmani/agent-skills",
+        "source_revision": "7ce442de03ddc1b72480c3b48d55c62880ea2a90"
+      }
+    },
+    "project_id": "forgegod-daidala",
+    "repository": {
+      "baseline_checkout_mode": "same-path-detached-before-readiness",
+      "baseline_revision": "c53ba5285a34e8af7ac0c4eccf7466ee6e9589c4",
+      "branch_restore_required_after_both_terminal_cycles": true,
+      "canonical": "forgegod/daidala",
+      "registered_checkout": "/home/raphael/src/rb/daidala",
+      "verified_remote": "git@github.com:forgegod/daidala.git"
+    },
+    "routing": {
+      "default_profile": "daidala-self-improvement",
+      "model": "gpt-5.6-sol",
+      "provider": "openai-codex",
+      "stage_profiles": {
+        "define": "daidala-self-improvement",
+        "deliver": "daidala-self-improvement",
+        "implement": "daidala-self-improvement",
+        "plan": "daidala-self-improvement",
+        "review": "daidala-self-improvement",
+        "verify": "daidala-self-improvement"
+      }
+    },
+    "schema": "daidala.uc03-experiment-contract/v1",
+    "source_capture": {
+      "captured_at_utc": "2026-07-21T20:22:29Z",
+      "excerpt_sha256": "435c41488e3e94436d4dc65aaa3bfdf904a9270c72033d49e3eb2f94f9f288b4",
+      "excerpt_utf8": "importlib.resources. contents ( package ) ¶ Return an iterable over the named items within the package. The iterable returns str resources (e.g. files) and non-resources (e.g. directories). The iterable does not recurse into subdirectories. package is either a name or a module object which conforms to the Package requirements. Deprecated since version 3.11: Calls to this function can be replaced by: ( resource . name for resource in files ( package ) . iterdir () if resource . is_file ())",
+      "raw_bytes": 39388,
+      "raw_sha256": "2105a3a8fd602ffcadc87eabaa3fbfc1160a5d4f35c1084656cf0e9e4ac39b69",
+      "url": "https://docs.python.org/3.11/library/importlib.resources.html"
+    },
+    "stop_conditions": [
+      "packet_digest_or_contract_digest_changes",
+      "registered_checkout_not_clean_or_not_at_expected_revision",
+      "controller_revision_or_help_surface_mismatch",
+      "native_or_standalone_diagnosis_not_11_of_11",
+      "reconciliation_cron_not_paused",
+      "active_cycle_or_owned_worktree_exists_before_readiness",
+      "issue_payloads_not_byte_identical_or_not_unready",
+      "routing_evaluator_limits_commands_or_fixture_identity_drift",
+      "prohibited_path_change_or credential_exposure",
+      "unapproved_readiness_admission_plan_approval_retention_commit_push_publication_release_or_promotion"
+    ]
+  },
+  "contract_sha256": "a92ddca55d44203a9d275aa3d846bbef2d03cb9eb4a1209157b67bfd1ab0afff",
+  "github_issues": [
+    {
+      "payload": {
+        "body_utf8": "### Category\n\ncompatibility\n\n### Originating experiment, test case, or source identity\n\nUC-03 / Phase 5D paired pack evaluation contract sha256:a92ddca55d44203a9d275aa3d846bbef2d03cb9eb4a1209157b67bfd1ab0afff\n\n### Expected behavior\n\nThe pinned Addyosmani control and Aidlc candidate independently migrate the same canonical package-resource fixture from importlib.resources.contents(package) to files(package).iterdir() while preserving exact sorted top-level .txt resource names under identical baseline, routing, evaluator, commands, and limits.\n\nBefore definition or planning, read the approved canonical packet copy at `/home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/uc03-experiment-packet-v3.json`. Require schema `daidala.uc03-experiment-packet/v3`, embedded contract SHA-256 `a92ddca55d44203a9d275aa3d846bbef2d03cb9eb4a1209157b67bfd1ab0afff`, and fixture SHA-256 `4198f672861d7279aa9f5325a4e6fe1af54aa770f2c454fdd8c46d5d1478239d`; stop if the file, mode, schema, or either digest differs. Baseline `c53ba5285a34e8af7ac0c4eccf7466ee6e9589c4` already contains the byte-identical canonical fixture and its repository-level pytest collection exclusion.\n\n### Observed behavior\n\nNo valid UC-03 paired evaluation has run. Control issue #9 was canceled before plan approval because its definition could not see packet v1. Replacement issue #11 was canceled before plan approval because baseline 3ce1bfc lacked the frozen fixture. This unready issue reserves one byte-identical intake payload against the dedicated fixture baseline; selected pack is bound only by the later separately approved evaluate-pack admission.\n\n### Redacted evidence reference and SHA-256 digest\n\n`/home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/uc03-experiment-packet-v3.json` embedded contract sha256:a92ddca55d44203a9d275aa3d846bbef2d03cb9eb4a1209157b67bfd1ab0afff\n\n### Acceptance criteria\n\n- Before definition, the stage reads the mode-0600 runtime packet copy and verifies its schema, embedded contract digest, and fixture digest exactly.\n- The cycle identity binds mode evaluate-pack, baseline c53ba5285a34e8af7ac0c4eccf7466ee6e9589c4, the exact candidate identity, and the selected pack.\n- The clean baseline already contains the canonical fixture byte-for-byte; baseline behavior exits 0 before implementation.\n- Only resource_fixture/catalog.py changes during worker execution.\n- Frozen behavior verification exits 0 three times and the migration-policy command exits 0.\n- Routing, evaluator, limits, commands, metric definitions, and protected fixture bytes match the paired run.\n- Delivery is evidence-only with retention, commit, push, publication, release, default change, and promotion false.\n\n### Dependencies and risk\n\nOne active cycle globally; reconciliation stays paused. Readiness, admission, plan approval, terminal cleanup, and any later retention require separate exact approval. Any packet, source, baseline, controller, pack, candidate, fixture, routing, evaluator, command, limit, or issue drift stops the run.\n\n### Priority\n\n3\n\n### Publication state\n\npublished\n",
+        "labels": [
+          "daidala-si",
+          "daidala-si:compatibility",
+          "daidala-si:priority-3"
+        ],
+        "title": "[Daidala SI] UC-03 package-resource migration evaluation"
+      },
+      "run_role": "current-control",
+      "selected_pack": "addyosmani"
+    },
+    {
+      "payload": {
+        "body_utf8": "### Category\n\ncompatibility\n\n### Originating experiment, test case, or source identity\n\nUC-03 / Phase 5D paired pack evaluation contract sha256:a92ddca55d44203a9d275aa3d846bbef2d03cb9eb4a1209157b67bfd1ab0afff\n\n### Expected behavior\n\nThe pinned Addyosmani control and Aidlc candidate independently migrate the same canonical package-resource fixture from importlib.resources.contents(package) to files(package).iterdir() while preserving exact sorted top-level .txt resource names under identical baseline, routing, evaluator, commands, and limits.\n\nBefore definition or planning, read the approved canonical packet copy at `/home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/uc03-experiment-packet-v3.json`. Require schema `daidala.uc03-experiment-packet/v3`, embedded contract SHA-256 `a92ddca55d44203a9d275aa3d846bbef2d03cb9eb4a1209157b67bfd1ab0afff`, and fixture SHA-256 `4198f672861d7279aa9f5325a4e6fe1af54aa770f2c454fdd8c46d5d1478239d`; stop if the file, mode, schema, or either digest differs. Baseline `c53ba5285a34e8af7ac0c4eccf7466ee6e9589c4` already contains the byte-identical canonical fixture and its repository-level pytest collection exclusion.\n\n### Observed behavior\n\nNo valid UC-03 paired evaluation has run. Control issue #9 was canceled before plan approval because its definition could not see packet v1. Replacement issue #11 was canceled before plan approval because baseline 3ce1bfc lacked the frozen fixture. This unready issue reserves one byte-identical intake payload against the dedicated fixture baseline; selected pack is bound only by the later separately approved evaluate-pack admission.\n\n### Redacted evidence reference and SHA-256 digest\n\n`/home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/uc03-experiment-packet-v3.json` embedded contract sha256:a92ddca55d44203a9d275aa3d846bbef2d03cb9eb4a1209157b67bfd1ab0afff\n\n### Acceptance criteria\n\n- Before definition, the stage reads the mode-0600 runtime packet copy and verifies its schema, embedded contract digest, and fixture digest exactly.\n- The cycle identity binds mode evaluate-pack, baseline c53ba5285a34e8af7ac0c4eccf7466ee6e9589c4, the exact candidate identity, and the selected pack.\n- The clean baseline already contains the canonical fixture byte-for-byte; baseline behavior exits 0 before implementation.\n- Only resource_fixture/catalog.py changes during worker execution.\n- Frozen behavior verification exits 0 three times and the migration-policy command exits 0.\n- Routing, evaluator, limits, commands, metric definitions, and protected fixture bytes match the paired run.\n- Delivery is evidence-only with retention, commit, push, publication, release, default change, and promotion false.\n\n### Dependencies and risk\n\nOne active cycle globally; reconciliation stays paused. Readiness, admission, plan approval, terminal cleanup, and any later retention require separate exact approval. Any packet, source, baseline, controller, pack, candidate, fixture, routing, evaluator, command, limit, or issue drift stops the run.\n\n### Priority\n\n3\n\n### Publication state\n\npublished\n",
+        "labels": [
+          "daidala-si",
+          "daidala-si:compatibility",
+          "daidala-si:priority-3"
+        ],
+        "title": "[Daidala SI] UC-03 package-resource migration evaluation"
+      },
+      "run_role": "candidate",
+      "selected_pack": "aidlc"
+    }
+  ],
+  "runtime_distribution": {
+    "contract_sha256": "a92ddca55d44203a9d275aa3d846bbef2d03cb9eb4a1209157b67bfd1ab0afff",
+    "fixture_sha256": "4198f672861d7279aa9f5325a4e6fe1af54aa770f2c454fdd8c46d5d1478239d",
+    "materialize_before_issue_mutation": true,
+    "path": "/home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/uc03-experiment-packet-v3.json",
+    "required_mode": "0600"
+  },
+  "schema": "daidala.uc03-experiment-packet/v3",
+  "supersedes_packet_sha256": "eb02da7c4f714eac03b2486d78c18922a77f5893aaad0548449c037af14c17aa"
+}
