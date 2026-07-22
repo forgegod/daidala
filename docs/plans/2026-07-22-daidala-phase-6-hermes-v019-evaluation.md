@@ -5,9 +5,9 @@ exact Hermes v0.19.0 candidate in isolated environments, retain reproducible
 host-boundary evidence, and produce a supported-range proposal without changing
 the active Hermes runtime or persistent Daidala controller.
 
-**Status:** in-progress — Phases 0 and 1 are complete. Candidate-aware probes
-retain the supported defaults, the packaged plugin boundary passes on exact
-baseline `4281151a`, and Phase 2 is next. Candidate code has not run.
+**Status:** in-progress — Phases 0 through 2 are complete. Exact baseline and
+candidate hosts passed the repeated isolated matrix with the same Daidala wheel,
+and Phase 3 comparison is next. Candidate code ran only in temporary evaluators.
 
 **Parent plan:**
 [`2026-07-13-daidala-self-improvement-loop.md`](2026-07-13-daidala-self-improvement-loop.md)
@@ -33,12 +33,10 @@ baseline `4281151a`, and Phase 2 is next. Candidate code has not run.
   tag object `c7d08de287556b3d339df336b180a39d4980ebd7`, peeled source commit
   `3ef6bbd201263d354fd83ec55b3c306ded2eb72a`, published at
   <https://github.com/NousResearch/hermes-agent/releases/tag/v2026.7.20>.
-- `scripts/probe_hermes_compatibility.py` currently hard-codes only the supported
-  baseline identity and exercises a policy-skill digest, public Kanban lifecycle,
-  and worker-body limits. It does not load Daidala through Hermes.
-- `scripts/probe_hermes_dashboard_compatibility.py` shares that hard-coded
-  identity check and exercises an isolated minimal dashboard fixture rather than
-  the packaged Daidala plugin.
+- Core, plugin, and dashboard probes retain the supported baseline defaults and
+  accept only a complete explicit candidate identity. The packaged-plugin probe
+  covers entry-point and directory discovery plus native/standalone pack parity;
+  the dashboard probe retains its isolated minimal fixture boundary.
 - The stable matrix still records `TC-F11-01` packaging, `TC-F12-01` Hermes
   routes, and `TC-F14-01` version comparison as `not-run`. Candidate evaluation
   must not promote a row that its retained evidence does not exercise.
@@ -62,7 +60,7 @@ phase and produces no compatibility verdict.
 |---|---|---|---|
 | 0 | Approve the candidate and experiment contract | done (plan `826b07a`; candidate `3ef6bbd2…`; exact operator approval) | Remote tag resolution, baseline/candidate/active identities, active-state snapshots, selected matrix rows, and this committed plan are exact; the operator approves candidate commit `3ef6bbd2…` and the plan checkpoint. |
 | 1 | Repair the candidate-aware host probe boundary | done (428 tests; exact baseline wheel probe passed) | Focused probe tests pass; default invocations still require baseline `0.18.2`/`2026.7.7.2`/`4281151a`; explicit candidate arguments require all three v0.19.0 identity fields; a fresh-process probe loads the packaged Daidala plugin and native CLI without active-profile access. |
-| 2 | Execute the isolated baseline and candidate matrix | pending | Both detached host clones and Daidala artifact identities verify; every approved probe emits bounded JSON; temporary homes are removed; active Hermes/controller/cron/repository snapshots are byte-identical before and after. |
+| 2 | Execute the isolated baseline and candidate matrix | done (input `b92098b3`; file `dd587216`; active snapshot `b3ca20b4`) | Both detached host clones and Daidala artifact identities verify; every approved probe emits bounded JSON; temporary homes are removed; active Hermes/controller/cron/repository snapshots are byte-identical before and after. |
 | 3 | Compare results and range compatibility findings | pending | One content-addressed comparison classifies every selected matrix row as `pass`, `fail`, `blocked`, or `incomparable`; any actionable failure is added to the parent phase sequence before remote mutation. |
 | 4 | Propose the supported range and close Phase 6 | pending | Parent/child plans and the versioned result record agree; any range change is proposal-only; the complete repository/release gate passes; Phase 7 remains unstarted. |
 
@@ -236,6 +234,16 @@ Steps:
 Verification gate: baseline and candidate evidence use the same Daidala wheel and
 comparison contract; exact host identities differ only as declared; all temporary
 state is gone; repeated results agree; active-state snapshots are identical.
+
+Observed gate: exact hosts `4281151a` and `3ef6bbd2` used Daidala checkpoint
+`a62f029` wheel `6f43947f…` under Python 3.11.15 and Node 22.22.1. Both repeated
+legs produced identical zero-exit version, core policy/Kanban/body-limit,
+entry-point plugin, directory plugin, dashboard, and native/standalone `init`
+results; neither dry run created SQLite state. Evaluator cleanup completed and
+before/after active snapshots are byte-identical at `b3ca20b4…`. Canonical input
+`b92098b3…` is retained as mode-`0600` file SHA-256 `dd587216…` beside the exact
+evaluator and snapshot helpers. Phase 3 owns classification; matrix statuses and
+support policy remain unchanged here.
 
 ## Phase 3 — Compare results and range compatibility findings
 

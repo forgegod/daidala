@@ -76,10 +76,10 @@ routes pass 11/11, and reconciliation remains paused. Retained comparison
 `99c45ed` records `incomparable`: nine deterministic metrics pass, but the two
 admissions serialize the Aidlc candidate identity differently. No pack preference,
 implementation retention, publication, push, release, or promotion is authorized.
-Phase 6 is in progress. The operator approved child planning checkpoint `826b07a`
-and Hermes v0.19.0 candidate `3ef6bbd2` exactly. Child Phase 1 completed the
-candidate-aware probes and exact baseline wheel boundary; child Phase 2 is next.
-No candidate code has run.
+Phase 6 is in progress. The operator approved Hermes v0.19.0 candidate
+`3ef6bbd2` exactly. Child Phases 0-2 completed the candidate-aware probes and
+isolated repeated matrix at input digest `b92098b3`; child Phase 3 is next.
+Candidate code ran only in temporary evaluators.
 The resumable execution record is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 The two failed Phase 5C control cases are explicit follow-up actions in
@@ -110,7 +110,7 @@ Phase 6 execution is ranged in
 | 5C — Approved improvement and findings synchronization | done | Issue #5 retained strict v2 controller-revision evidence; completion `f9f5566e` released the claim and delivered `telegram:44`. The two control findings were ranged into Phase 5C-R. |
 | 5C-R — Control-plane findings remediation | done | Exact controller `2595bf5`; `TC-F06-01`/`TC-F07-01` retained as `pass`; issues #6/#7 closed completed and `Done`; probe manifests `0db444d6`/`5a79e2fa`; cron paused; diagnosis 11/11. |
 | 5D — UC-03 pack evaluation | done ([child plan](2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md)) | Both cycles are terminal with completions `a7a668ca`/`a3722356`; comparison `99c45ed` is `incomparable` because exact candidate identities differ despite nine passing deterministic metrics. No implementation was retained, and controller `3ce1bfc`, defaults, manifest, skills, paused cron, and remote refs are unchanged. |
-| 6 — Version-aware re-evaluation | in-progress ([child plan](2026-07-22-daidala-phase-6-hermes-v019-evaluation.md)) | Child Phases 0-1 are done: exact candidate approval is retained, candidate-aware probes preserve baseline defaults, and the packaged plugin passes on baseline `4281151a`. Phase 2 is next; no candidate code has run. |
+| 6 — Version-aware re-evaluation | in-progress ([child plan](2026-07-22-daidala-phase-6-hermes-v019-evaluation.md)) | Child Phases 0-2 are done: exact candidate approval is retained and both isolated repeated host legs pass with wheel `6f43947f…`; canonical input `b92098b3…` and unchanged active snapshot `b3ca20b4…` are retained. Phase 3 is next. |
 | 7 — Repository gate and documentation | blocked | Requires the preceding live evaluation and comparison evidence. |
 
 Mark a phase `in-progress` while running it, `done` only after its gate passes

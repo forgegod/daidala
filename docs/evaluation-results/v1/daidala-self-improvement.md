@@ -12,7 +12,8 @@ native and standalone diagnosis pass 11/11, the reconciliation cron remains
 paused, and no active cycle or owned worktree exists. Phase 5D packet v3
 `7139cf3e` is frozen. Addyosmani control issue #12 is completed with terminal
 digest `a7a668ca`; Aidlc candidate issue #10 is completed with terminal digest
-`a3722356`. Paired comparison, push, release, and promotion remain unapproved.
+`a3722356`. Phase 6 exact-host execution input `b92098b3` is retained for
+comparison. Paired comparison, push, release, and promotion remain unapproved.
 
 Each Phase 5A workflow independently changed only `calculator.py` and
 `test_calculator.py`, reproduced `AssertionError: 1 != 2` in the restricted
@@ -165,6 +166,36 @@ The identity strings encode the same source revision and content digest but are
 not byte-equal. Exact equality is a deterministic eligibility requirement, and
 observational metrics cannot decide the verdict. UC-03 is therefore
 `incomparable`; neither pack is preferred and no implementation is retained.
+
+### Phase 6 — Hermes v0.19 host comparison input
+
+Execution is complete; Phase 3 classification is pending. Daidala checkpoint
+`a62f029ae216f146161ec044681251cb62afb59a` produced wheel SHA-256
+`6f43947f49761b475df33b3724eb885d1d9af54c857a8166807acd6ce77be8dd`.
+The same wheel ran on exact baseline Hermes
+`4281151ae859241351ba14d8c7682dc67ff4c126` and candidate Hermes
+`3ef6bbd201263d354fd83ec55b3c306ded2eb72a` under Python 3.11.15 and
+Node 22.22.1.
+
+Both fresh-home repetitions per host are byte-identical and every approved
+command exits zero: exact version, policy skill digest, public Kanban lifecycle,
+worker-body limits, packaged entry-point plugin, directory plugin,
+native/standalone pack JSON, dashboard SDK/API/assets/tab/slot behavior, and
+native/standalone `init` dry run. Neither `init` run creates SQLite state. The
+temporary evaluator root was removed. Protected repository, active Hermes,
+controller, cron, active-cycle, and gateway identities are byte-identical before
+and after at canonical snapshot digest
+`b3ca20b47aecc7ec80e391a556cd47c348a1ee4f5454662dd4116b6bb624aa6b`.
+
+Canonical input `b92098b39d0d870dcf2a1baea7a24fc85f8755bbee78651392aff7257c5f057b`
+is retained mode `0600` at
+`/home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/hermes-v019-evaluation-input.json`;
+its file SHA-256 is
+`dd58721655155a0f1ed9c5740c508b8b43aad33741ca385d3a6348c19ce6f920`.
+The exact evaluator (`0e5e3349…`), validator (`b7d6b42f…`), snapshot helper
+(`92692cbe…`), and identical before/after snapshot files (`16a05173…`) are retained
+beside it mode `0600`. This input does not promote `TC-F04-01`, `TC-F11-01`, or
+`TC-F14-01`; Phase 3 owns those case statuses and the compatibility verdict.
 
 ## UC-01 reconciliation
 
