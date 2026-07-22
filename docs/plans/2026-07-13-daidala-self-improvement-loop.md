@@ -76,9 +76,10 @@ routes pass 11/11, and reconciliation remains paused. Retained comparison
 `99c45ed` records `incomparable`: nine deterministic metrics pass, but the two
 admissions serialize the Aidlc candidate identity differently. No pack preference,
 implementation retention, publication, push, release, or promotion is authorized.
-Phase 6 is prepared but unstarted. Its child plan binds proposed Hermes v0.19.0
-candidate commit `3ef6bbd2` against last-known-good probe baseline `4281151a` and
-requires separate exact approval before candidate code is installed or run.
+Phase 6 is in progress. The operator approved child planning checkpoint `826b07a`
+and proposed Hermes v0.19.0 candidate commit `3ef6bbd2` exactly against
+last-known-good probe baseline `4281151a`; child Phase 1 is next. No candidate
+code has been installed or run.
 The resumable execution record is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 The two failed Phase 5C control cases are explicit follow-up actions in
@@ -109,7 +110,7 @@ Phase 6 execution is ranged in
 | 5C — Approved improvement and findings synchronization | done | Issue #5 retained strict v2 controller-revision evidence; completion `f9f5566e` released the claim and delivered `telegram:44`. The two control findings were ranged into Phase 5C-R. |
 | 5C-R — Control-plane findings remediation | done | Exact controller `2595bf5`; `TC-F06-01`/`TC-F07-01` retained as `pass`; issues #6/#7 closed completed and `Done`; probe manifests `0db444d6`/`5a79e2fa`; cron paused; diagnosis 11/11. |
 | 5D — UC-03 pack evaluation | done ([child plan](2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md)) | Both cycles are terminal with completions `a7a668ca`/`a3722356`; comparison `99c45ed` is `incomparable` because exact candidate identities differ despite nine passing deterministic metrics. No implementation was retained, and controller `3ce1bfc`, defaults, manifest, skills, paused cron, and remote refs are unchanged. |
-| 6 — Version-aware re-evaluation | pending ([child plan](2026-07-22-daidala-phase-6-hermes-v019-evaluation.md)) | Proposed candidate v0.19.0 commit `3ef6bbd2` and the isolated comparison contract await exact approval; no candidate code has run. |
+| 6 — Version-aware re-evaluation | in-progress ([child plan](2026-07-22-daidala-phase-6-hermes-v019-evaluation.md)) | Child Phase 0 is done: planning checkpoint `826b07a` and candidate v0.19.0 commit `3ef6bbd2` were approved exactly. Phase 1 is next; no candidate code has run. |
 | 7 — Repository gate and documentation | blocked | Requires the preceding live evaluation and comparison evidence. |
 
 Mark a phase `in-progress` while running it, `done` only after its gate passes

@@ -5,8 +5,9 @@ exact Hermes v0.19.0 candidate in isolated environments, retain reproducible
 host-boundary evidence, and produce a supported-range proposal without changing
 the active Hermes runtime or persistent Daidala controller.
 
-**Status:** pending — the candidate identity and experiment contract are
-prepared but not approved. No candidate code has been installed or executed.
+**Status:** in-progress — Phase 0 is complete. The operator approved planning
+checkpoint `826b07a` and candidate commit `3ef6bbd2…` exactly. Phase 1 is next;
+no candidate code has been installed or executed.
 
 **Parent plan:**
 [`2026-07-13-daidala-self-improvement-loop.md`](2026-07-13-daidala-self-improvement-loop.md)
@@ -59,7 +60,7 @@ phase and produces no compatibility verdict.
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Approve the candidate and experiment contract | pending | Remote tag resolution, baseline/candidate/active identities, active-state snapshots, selected matrix rows, and this committed plan are exact; the operator approves candidate commit `3ef6bbd2…` and the plan checkpoint. |
+| 0 | Approve the candidate and experiment contract | done (plan `826b07a`; candidate `3ef6bbd2…`; exact operator approval) | Remote tag resolution, baseline/candidate/active identities, active-state snapshots, selected matrix rows, and this committed plan are exact; the operator approves candidate commit `3ef6bbd2…` and the plan checkpoint. |
 | 1 | Repair the candidate-aware host probe boundary | pending | Focused probe tests pass; default invocations still require baseline `0.18.2`/`2026.7.7.2`/`4281151a`; explicit candidate arguments require all three v0.19.0 identity fields; a fresh-process probe loads the packaged Daidala plugin and native CLI without active-profile access. |
 | 2 | Execute the isolated baseline and candidate matrix | pending | Both detached host clones and Daidala artifact identities verify; every approved probe emits bounded JSON; temporary homes are removed; active Hermes/controller/cron/repository snapshots are byte-identical before and after. |
 | 3 | Compare results and range compatibility findings | pending | One content-addressed comparison classifies every selected matrix row as `pass`, `fail`, `blocked`, or `incomparable`; any actionable failure is added to the parent phase sequence before remote mutation. |
@@ -125,6 +126,15 @@ Verification gate: all identities resolve exactly, the active runtime snapshot i
 retained without content from its untracked path, the repository is clean at the
 planning checkpoint, and no candidate clone, environment, process, profile,
 plugin, or evidence exists before approval.
+
+Observed gate: official tag `v2026.7.20` resolved again to annotated object
+`c7d08de2…` and peeled commit `3ef6bbd2…`; planning checkpoint `826b07a` was
+clean with plan SHA-256 `6cfc7f06…`; active Hermes remained v0.18.2 at
+`36f2a966…`; controller `3ce1bfc…`, both 11/11 diagnosis routes, paused cron
+`1847b1b1e14b`, and no active cycle/worktree were verified. The operator then
+approved checkpoint `826b07a` and full candidate commit `3ef6bbd201263d354fd83ec55b3c306ded2eb72a`
+verbatim. No candidate clone, environment, process, profile, plugin, or evidence
+was created.
 
 ## Phase 1 — Repair the candidate-aware host probe boundary
 
