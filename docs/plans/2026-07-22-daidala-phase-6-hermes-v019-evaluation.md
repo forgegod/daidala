@@ -219,10 +219,12 @@ Steps:
    dashboard web distribution with Node 22, and install Hermes plus the same
    Daidala wheel into a root-local Python 3.11 virtual environment. Do not use the
    repository's ambient Python 3.14; baseline Hermes requires Python `<3.14`.
-4. Run the version, packaged-plugin, policy/Kanban/body-limit, dashboard, setup
+4. Run the version, packaged-plugin, policy/Kanban/body-limit, dashboard, `init`
    dry-run, and standalone/native CLI probes with exact expected-host arguments.
    Capture bounded stdout, stderr digest, exit code, command identity, host commit,
    Python/Node identity, Daidala wheel digest, and cleanup result.
+   `setup` is not a CLI command; `init` is the documented mutation-free default
+   and is the `TC-F04-01` boundary used here.
 5. Repeat deterministic probes once per leg from a second fresh home. Any
    within-leg mismatch is `incomparable`, not a retry-adjusted pass.
 6. Remove both temporary roots and rerun the active-state snapshot. Stop if any
