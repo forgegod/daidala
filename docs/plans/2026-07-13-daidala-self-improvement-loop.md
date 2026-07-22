@@ -32,7 +32,7 @@ loaded by the controller gateway.
 
 ## Execution status
 
-**Status:** Phase 5A evidence reconciliation is complete with an
+**Status:** complete. Phase 5A evidence reconciliation produced an
 `incomparable` cross-pack outcome. Phase 5B is complete: two separately approved
 cron executions converged on one claim, cycle, graph, and attended receipt, and
 the no-agent job is paused again. Exact detached controller revision `550671c`
@@ -76,8 +76,9 @@ routes pass 11/11, and reconciliation remains paused. Retained comparison
 `99c45ed` records `incomparable`: nine deterministic metrics pass, but the two
 admissions serialize the Aidlc candidate identity differently. No pack preference,
 implementation retention, publication, push, release, or promotion is authorized.
-Phase 6 is complete. Comparison `5482aeb4` is `incomparable` with no candidate
-failure. Hermes support remains `>=0.18.2,<0.19.0`; Phase 7 is pending.
+Phase 6 comparison `5482aeb4` is `incomparable` with no candidate failure, so
+Hermes support remains `>=0.18.2,<0.19.0`. Phase 7 reconciled the durable flow,
+case, authority, and support documentation and passed the final gate.
 The resumable execution record is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 The two failed Phase 5C control cases are explicit follow-up actions in
@@ -109,7 +110,7 @@ Phase 6 execution is ranged in
 | 5C-R — Control-plane findings remediation | done | Exact controller `2595bf5`; `TC-F06-01`/`TC-F07-01` retained as `pass`; issues #6/#7 closed completed and `Done`; probe manifests `0db444d6`/`5a79e2fa`; cron paused; diagnosis 11/11. |
 | 5D — UC-03 pack evaluation | done ([child plan](2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md)) | Both cycles are terminal with completions `a7a668ca`/`a3722356`; comparison `99c45ed` is `incomparable` because exact candidate identities differ despite nine passing deterministic metrics. No implementation was retained, and controller `3ce1bfc`, defaults, manifest, skills, paused cron, and remote refs are unchanged. |
 | 6 — Version-aware re-evaluation | done ([child plan](2026-07-22-daidala-phase-6-hermes-v019-evaluation.md)) | Comparison `5482aeb4…` is `incomparable`: no candidate boundary failed, but actual setup preview and exact evaluated-wheel content verification are blocked. Support remains `>=0.18.2,<0.19.0`; the full gate passes. |
-| 7 — Repository gate and documentation | pending | Phase 6 is complete; execute the final repository/documentation gate without widening support or mutating the active runtime. |
+| 7 — Repository gate and documentation | done | Durable flow branches map to stable cases or explicit blockers, the authority split matches the parent protocol, support remains `>=0.18.2,<0.19.0`, and the complete repository/release gate passes without active-runtime mutation. |
 
 Mark a phase `in-progress` while running it, `done` only after its gate passes
 with exact evidence, `pending` when it is next but unstarted, and `blocked` when
@@ -1022,6 +1023,18 @@ The documentation gate also verifies that every Daidala-specific flow branch in
 `docs/15-self-improvement.md` maps to the case matrix or an explicit blocked live
 probe, that its GitHub/Kanban/ledger authority table matches the parent protocol,
 and that no diagram depicts Daidala as a separate service.
+
+Gate: the complete command suite passes; the final documentation audit has no
+stale flow, authority, support, or live-evidence claim; candidate probes without
+their exact approved prerequisites remain `blocked` or `not-run`; and active
+Hermes, controller Daidala, gateway, cron, board, profile, and remote refs remain
+unchanged.
+
+Observed gate: the complete suite passes with 428 tests, Lefthook, Ruff, both pack
+validators, Markdown links, build, Twine, and the 51-member release-content check.
+The exact Phase 6 wheel is unavailable, so v0.19.0 probes were not rerun against a
+different artifact; `TC-F11-01` and `TC-F14-01` remain `blocked`, and
+`TC-F12-01` remains `not-run`. The support range and release pin are unchanged.
 
 ## Daidala-specific stop conditions
 

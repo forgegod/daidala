@@ -11,31 +11,25 @@ evaluator homes and owned worktrees; restricted-container execution; immutable
 evaluation evidence; comparison verdicts; lesson-reuse deltas; cleanup and
 quarantine; and increment/DOX reconciliation.
 
-Three attended manual cycles exercised the detached controller's admission,
-approval, evaluation, delivery, replay, and terminal completion paths. The
-shared dry-run-first CLI exposes deterministic reconciliation with an exact
-preview-digest apply gate. Exact detached revision `9f380a6` is installed in
-the persistent controller and exposes ledger-native attended approval plus
-digest-bound cancellation and completion
-through native and standalone command surfaces. One matching no-agent
-reconciliation cron is paused on its intended 15-minute schedule after two
-separately approved controlled runs proved admission/replay convergence on one
-cycle. Separately approved cancellation closed issue #4 not planned. Phase 5C
-then retained the controller-revision evidence increment, completed published
-issue #5 with attended receipt `telegram:44`, and returned both diagnosis routes
-to 11/11. The controlled approval probe then closed issue #6 completed without
-running an implementation worker. Immutable workflow-artifact remediation for
-issue #7 is repository-verified; retention and installation remain separately
-gated.
+Attended manual cycles and controlled reconciliation, cancellation, approval,
+and artifact probes exercised admission, approval, evaluation, delivery, replay,
+recovery, and terminal completion. The shared dry-run-first CLI exposes
+deterministic reconciliation with exact preview-digest apply gates. Exact
+detached revision `3ce1bfc` is installed in the persistent controller; native
+and standalone live diagnosis pass 11/11, and the matching no-agent
+reconciliation cron is paused. Issues #4 through #7 are terminal, no cycle or
+owned worktree is active, and retained delivery evidence records commit and push
+as false. The Hermes v0.19.0 comparison is `incomparable` without a candidate
+failure, so host support remains `>=0.18.2,<0.19.0`.
 
 Authoritative implementation sources are `daidala/projects.py`,
 `daidala/registrations.py`, `daidala/cycles.py`, `daidala/increments.py`,
 `daidala/credentials.py`, `daidala/prerequisites.py`, `daidala/adapters.py`,
 `daidala/live_adapters.py`, `daidala/controller.py`,
 `daidala/project_cycles.py`, `daidala/completion.py`, `daidala/cancellation.py`,
-`daidala/evaluation.py`, and `daidala/reconciliation.py`. The reusable and
-Daidala-instance plans remain the implementation authority for unfinished
-phases:
+`daidala/evaluation.py`, and `daidala/reconciliation.py`. Current contracts live
+in this documentation spine; dated plans and the versioned result retain exact
+execution evidence:
 
 - [Reusable protocol plan](plans/2026-07-13-self-improvement-loop.md)
 - [Daidala dogfood plan](plans/2026-07-13-daidala-self-improvement-loop.md)
@@ -85,6 +79,21 @@ flowchart LR
 | Evidence | Reproducibility data and content-addressed outputs. | Daidala artifact ledger. |
 | Finding | Actionable result synchronized by stable identity. | Local evidence first; external system only after a returned receipt. |
 | Approval | Authorization of one exact current tuple. | Authorized maintainer from trusted registration. |
+
+Operational authority remains split exactly as follows:
+
+| Concern | Authority |
+|---|---|
+| Workflow identity, manifest snapshot, pack identity, constraints, approval, artifacts, evidence eligibility, and worktree ownership | Daidala policy ledger |
+| Card status, dependencies, claims, retries, comments, and worker runs | Hermes Kanban on the project's board |
+| Models, fallbacks, MoA, goal loop, delegation, tools, cron, and gateway delivery | Hermes configuration and runtime |
+| Stage methodology and skill activation | Selected Daidala workflow pack |
+| Project policy invariants | Materialized workflow constraints |
+| Repository metadata and default verification declaration | Committed project manifest |
+| Current architectural contracts and approved rationale | Version-controlled DOX and architecture/decision documents |
+| Local paths, identities, credentials, notification target, and evaluator backend | Trusted local controller registration |
+| Admission, plan approval, retention, publication, and release | Authorized human operator |
+| GitHub intake, claims, and findings | External projection through narrow adapters; returned remote receipts prove mutation but grant no execution authority |
 
 Related current contracts are [architecture](01-architecture.md),
 [policy ledger](02-workflow-state.md), [pack reference](03-pack-reference.md),
@@ -138,8 +147,10 @@ Repository data cannot grant local authority. The trusted registration stores:
 The registration path is derived from the Hermes-resolved profile data root as
 `projects/<project_id>/registration.yaml`. It is never committed. Structure,
 manifest binding, admission snapshots, and replay coordination are implemented;
-filesystem, board, credential, gateway, and backend capability probes remain
-live blockers listed in the [environment prerequisites](16-self-improvement-setup.md).
+filesystem, board, credential, gateway, and backend capabilities remain live
+requirements checked by `doctor --live`. The
+[versioned result](evaluation-results/v1/daidala-self-improvement.md) owns their
+observed status; repository tests never substitute for those probes.
 
 The Daidala instance reserves attended notification alias `attended-daidala`;
 its gateway destination and authorized local identities remain profile-local.
@@ -152,6 +163,9 @@ flowchart TD
     Admit -->|"identities and limits agree"| Cycle["Immutable cycle"]
     Admit -->|"mismatch or unavailable capability"| Blocked["blocked"]
 ```
+
+Cases: `TC-F01-01`, `TC-F01-02`, and `TC-F04-02`; all pass. Registration and
+live prerequisite evidence remain separate from the untrusted manifest snapshot.
 
 ## Cycle identity and exact approval
 
@@ -451,10 +465,10 @@ admission remain distinct approvals. A valid completion releases active-cycle
 ownership without deleting the immutable admission or workflow evidence. The
 loop never marks its generated finding `daidala-si:ready`.
 
-Repository coverage uses temporary repositories and fake host boundaries. The
-two retained attended cycles separately supply live admission and completion
-evidence. The controlled Phase 5B cron runs separately supply live admission and
-duplicate-tick replay evidence without authorizing implementation or retention.
+Repository coverage uses temporary repositories and fake host boundaries.
+Retained attended cycles separately supply live admission and completion
+evidence. Controlled reconciliation runs supply live admission and duplicate-tick
+replay evidence without authorizing implementation or retention.
 
 ## Recovery and reconciliation
 
@@ -489,6 +503,10 @@ flowchart TD
     Notify -->|"no"| Pause["Pause reconciliation"]
     Notify -->|"yes"| Done["Persist receipt"]
 ```
+
+Cases: `TC-F08-02`, `TC-F10-01`, `TC-F13-02`, and `TC-F16-01`; all pass. The
+notification-failure branch stops reconciliation, while successful attended
+receipts are live evidence rather than repository-test inference.
 
 ## Security boundaries
 
@@ -554,13 +572,17 @@ sequenceDiagram
     D->>G: Release claim
 ```
 
+Cases: `TC-F13-01`, `TC-F13-02`, and `TC-F16-01`; all pass. The issue adapter,
+finding publication boundary, claim replay, and attended receipt evidence are
+retained in the versioned result.
+
 GitHub Project membership is presentation only. Eligibility requires base label
 `daidala-si`, exactly one namespaced category, repository priority, structured
 body, and separate maintainer-applied `daidala-si:ready`. The issue template,
 labels, Project, credentials, and prerequisite evidence are configured and
 verified. The supported production adapter and project-cycle path is committed,
 installed as an exact detached controller revision, migrated to registration v2,
-and live-diagnosed. Admission now waits for a separately approved controlled
+and live-diagnosed. Every admission requires a separately approved controlled
 issue, successful preview inspection, and exact apply approval.
 
 ### Pack-neutral activation
@@ -584,9 +606,9 @@ uses bundled `daidala:aidlc-adapter`. The engine contains no pack-name branch.
 7. Confirm the source checkout is unchanged and decide retain/reject from evidence.
 
 Cases: `TC-F04-01`, `TC-F05-01`, `TC-F06-01`, `TC-F08-01`, `TC-F08-02`, and
-`TC-F09-01`. Status: blocked before mutation after approval; the production
-admission path is installed and live-diagnosed, but no controlled issue, preview,
-claim, or workflow exists.
+`TC-F09-01`. Status: exercised. All listed rows pass except `TC-F04-01`, which
+remains `blocked` because ledger initialization did not exercise registration and
+admission setup preview with literal confirmation.
 
 ### UC-02 walkthrough
 
@@ -602,7 +624,10 @@ claim, or workflow exists.
    changing the active controller.
 
 Cases: `TC-F07-01`, `TC-F10-01`, `TC-F11-01`, `TC-F14-01`, and `TC-F15-01`.
-Status: unexercised.
+Status: the walkthrough was not run end-to-end. `TC-F07-01`, `TC-F10-01`, and
+`TC-F15-01` pass. `TC-F11-01` and `TC-F14-01` are `blocked` because the exact
+evaluated wheel was removed before release-content verification; repository
+tests and a non-identical rebuild do not convert that missing evidence to pass.
 
 ### UC-03 walkthrough
 
@@ -639,6 +664,11 @@ support-range change and controller promotion require separate approved work.
 Failure preserves the baseline and creates at most one deduplicated finding.
 Rollback means discarding the candidate evaluator or reverting an unretained
 owned worktree; candidate code never replaces the currently loaded plugin.
+
+Cases: `TC-F03-01`, `TC-F03-02`, `TC-F04-01`, `TC-F11-01`, `TC-F12-01`,
+`TC-F14-01`, and `TC-F15-01`. The Hermes v0.19.0 comparison passes CLI parity
+and controller isolation, blocks setup preview, packaging, and final version
+comparison on missing evidence, and leaves model-route coverage `not-run`.
 
 ## Operator procedures
 
@@ -697,21 +727,25 @@ exact GitHub claim owner, and bounded reason before it can close the issue as
 not planned, remove active intake labels, archive the workflow, release only an
 owned worktree, notify the attended destination, and retain immutable receipts.
 
-Project registration mutation, project-cycle status, exact cycle approval, and
-pause/resume remain unsupported. Installed commands and passing prerequisite
-reports are readiness evidence, not mutation approval: approved dry-run and
-apply invocations must still exercise each production boundary. Teardown remains
-destructive and separately approved.
+Project registration mutation and project-cycle status or pause/resume remain
+unsupported. Exact workflow approval is ledger-owned and exposed through the
+shared `approve` command; there is no separate `project-cycle approve` facade.
+Installed commands and passing prerequisite reports are readiness evidence, not
+mutation approval: approved dry-run and apply invocations must still exercise
+each production boundary. Teardown remains destructive and separately approved.
 
 ## Verification and source audit
 
 Repository verification covers the deterministic schemas, admission,
 evaluation, comparison, reconciliation, packs, package contents, and
-documentation contracts. Evaluator coverage uses bounded local fixtures and
-fake boundaries; it proves no live profile, board, GitHub adapter, model call,
-restricted container, cron job, gateway delivery, or finding.
+documentation contracts. Evaluator tests use bounded local fixtures and fake
+boundaries; by themselves they prove no live profile, board, GitHub adapter,
+model call, restricted container, cron job, gateway delivery, or finding. Live
+receipts and blockers belong only to the versioned result.
 
-The current live prerequisite state is owned by
-[the setup guide](16-self-improvement-setup.md). Integration cases must replace
-`not-run` with exact evidence or `blocked`; repository tests and documentation
-never imply live success.
+The normative live prerequisite contract is owned by
+[the setup guide](16-self-improvement-setup.md); the
+[versioned result](evaluation-results/v1/daidala-self-improvement.md) owns
+observed live status. Integration cases must replace `not-run` with exact
+evidence or `blocked`; repository tests and documentation never imply live
+success.

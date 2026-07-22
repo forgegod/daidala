@@ -7,7 +7,7 @@ the active Hermes runtime or persistent Daidala controller.
 
 **Status:** complete — comparison `5482aeb4…` is `incomparable`. No candidate
 boundary failed, but setup preview and exact-wheel content evidence are blocked.
-The supported range remains `>=0.18.2,<0.19.0`; Phase 7 is pending.
+The supported range remains `>=0.18.2,<0.19.0`; parent Phase 7 is complete.
 
 **Parent plan:**
 [`2026-07-13-daidala-self-improvement-loop.md`](2026-07-13-daidala-self-improvement-loop.md)
@@ -313,8 +313,7 @@ host failure. Comparison `5482aeb4…` reproduces from input `b92098b3…`. The
 complete gate passes with 428 tests, Lefthook, Ruff, both pack validators,
 Markdown links, build, Twine, and the 51-member release-content check. No active
 runtime, controller, gateway, cron, board, profile, support constraint, workflow
-pin, GitHub, or remote-ref mutation was authorized or performed. Phase 7 is next
-and remains unstarted.
+pin, GitHub, or remote-ref mutation was authorized or performed.
 
 ## Out of scope
 

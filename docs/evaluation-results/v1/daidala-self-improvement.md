@@ -2,7 +2,7 @@
 
 ## Record status
 
-Phases 1 through 6 are complete. Phase 5C retained published finding
+Phases 1 through 7 are complete. Phase 5C retained published finding
 [#5](https://github.com/forgegod/daidala/issues/5), and Phase 5C-R remediated and
 closed published control findings
 [#6](https://github.com/forgegod/daidala/issues/6) and
