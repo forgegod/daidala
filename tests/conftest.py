@@ -6,6 +6,8 @@ import pytest
 
 from daidala.kanban import KanbanGraphAdapter
 
+collect_ignore_glob = ["fixtures/uc03_pack_eval/test_*.py"]
+
 STAGE_PROFILES = {
     "define": "architect",
     "plan": "architect",

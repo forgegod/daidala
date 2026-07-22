@@ -91,6 +91,10 @@ completeness without touching a real Hermes profile.
 - Release-content regressions for forbidden runtime paths, secret signatures,
   and superseded project identity in source and wheel paths or content.
 - Build/install smoke tests for directory entry points, wheel resources, and Hermes entry-point metadata.
+- `fixtures/uc03_pack_eval/` is the frozen Phase 5D package-resource baseline.
+  Its eight packet-addressed files are experiment inputs; only
+  `resource_fixture/catalog.py` may change inside an approval-owned evaluation
+  worktree. Tests and resource bytes remain immutable across both pack legs.
 
 ## Local Contracts
 
@@ -126,6 +130,7 @@ completeness without touching a real Hermes profile.
 
 ```bash
 pytest
+python3 -m unittest discover -s tests/fixtures/uc03_pack_eval -p 'test_*.py'
 ```
 
 ## Child DOX Index
