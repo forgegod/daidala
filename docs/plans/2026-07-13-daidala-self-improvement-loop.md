@@ -76,12 +76,17 @@ routes pass 11/11, and reconciliation remains paused. Retained comparison
 `99c45ed` records `incomparable`: nine deterministic metrics pass, but the two
 admissions serialize the Aidlc candidate identity differently. No pack preference,
 implementation retention, publication, push, release, or promotion is authorized.
+Phase 6 is prepared but unstarted. Its child plan binds proposed Hermes v0.19.0
+candidate commit `3ef6bbd2` against last-known-good probe baseline `4281151a` and
+requires separate exact approval before candidate code is installed or run.
 The resumable execution record is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 The two failed Phase 5C control cases are explicit follow-up actions in
 [`2026-07-21-daidala-control-plane-findings-remediation.md`](2026-07-21-daidala-control-plane-findings-remediation.md).
 Phase 5D execution is ranged in
 [`2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md`](2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md).
+Phase 6 execution is ranged in
+[`2026-07-22-daidala-phase-6-hermes-v019-evaluation.md`](2026-07-22-daidala-phase-6-hermes-v019-evaluation.md).
 
 | Phase | Status | Evidence |
 |---|---|---|
@@ -104,7 +109,7 @@ Phase 5D execution is ranged in
 | 5C — Approved improvement and findings synchronization | done | Issue #5 retained strict v2 controller-revision evidence; completion `f9f5566e` released the claim and delivered `telegram:44`. The two control findings were ranged into Phase 5C-R. |
 | 5C-R — Control-plane findings remediation | done | Exact controller `2595bf5`; `TC-F06-01`/`TC-F07-01` retained as `pass`; issues #6/#7 closed completed and `Done`; probe manifests `0db444d6`/`5a79e2fa`; cron paused; diagnosis 11/11. |
 | 5D — UC-03 pack evaluation | done ([child plan](2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md)) | Both cycles are terminal with completions `a7a668ca`/`a3722356`; comparison `99c45ed` is `incomparable` because exact candidate identities differ despite nine passing deterministic metrics. No implementation was retained, and controller `3ce1bfc`, defaults, manifest, skills, paused cron, and remote refs are unchanged. |
-| 6 — Version-aware re-evaluation | pending | Phase 5D is closed; candidate Hermes identity must be selected through its own approval gate before this phase starts. |
+| 6 — Version-aware re-evaluation | pending ([child plan](2026-07-22-daidala-phase-6-hermes-v019-evaluation.md)) | Proposed candidate v0.19.0 commit `3ef6bbd2` and the isolated comparison contract await exact approval; no candidate code has run. |
 | 7 — Repository gate and documentation | blocked | Requires the preceding live evaluation and comparison evidence. |
 
 Mark a phase `in-progress` while running it, `done` only after its gate passes
@@ -114,10 +119,10 @@ a named prerequisite is incomplete.
 ## Current operational state
 
 - The persistent controller loads clean detached revision
-  `2595bf5f8aacdd1411c101250acc2d0211eaf22a`; protected prerequisite and paused
-  cron evidence record the same revision. Clean rollback revisions `9f380a6`,
-  `9d9f4f6`, and `550671c`, plus recovery revision `31331e8`, remain outside the
-  plugin scan root.
+  `3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8`; protected prerequisite evidence
+  records the same revision and reconciliation cron `1847b1b1e14b` is paused.
+  Clean rollback revisions `2595bf5`, `9f380a6`, `9d9f4f6`, and `550671c`, plus
+  recovery revision `31331e8`, remain outside the plugin scan root.
 - Addyosmani cycle
   `cycle-21158b4320bf09968915110abdfeb32ac2a0c833acfe90a99bf340936c148f55`
   retains accepted review and evidence-only delivery with commit and push false.
@@ -979,11 +984,15 @@ comparison, and no project default changes automatically.
 
 ### Phase 6 — Version-aware re-evaluation
 
-- Identify one candidate Hermes version without changing the active runtime.
-- Run the stable matrix and selected use cases in an isolated evaluator.
-- Compare with the last-known-good baseline.
-- Resolve, reopen, or create compatibility findings.
-- Propose a supported-range change only after the complete comparison.
+- Execute
+  [`2026-07-22-daidala-phase-6-hermes-v019-evaluation.md`](2026-07-22-daidala-phase-6-hermes-v019-evaluation.md)
+  from its first incomplete phase only after exact candidate/plan approval.
+- Compare proposed Hermes v0.19.0 commit `3ef6bbd2` with last-known-good probe
+  baseline `4281151a` in isolated evaluators; never load the candidate into the
+  active runtime or persistent controller.
+- Run only the child plan's selected stable rows and use cases, range every
+  compatibility finding, and propose a supported-range change only after the
+  complete deterministic comparison.
 
 Gate: comparison is reproducible, candidate identities are exact, and the active
 Hermes and controller Daidala installations remain unchanged.
