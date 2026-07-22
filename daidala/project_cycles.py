@@ -948,7 +948,6 @@ class ProjectCycleOperator:
     ) -> None:
         environment = safe_runtime_environment(self.environ)
         for stage in (
-            WorkflowStage.APPROVAL,
             WorkflowStage.IMPLEMENT,
             WorkflowStage.VERIFY,
             WorkflowStage.REVIEW,

@@ -217,6 +217,53 @@ bindings:
     return operator, policy / "project.yaml", registration, runtime, workflow_roots
 
 
+def test_completion_requires_only_done_executable_post_gate_cards() -> None:
+    commands: list[tuple[str, ...]] = []
+
+    def runner(
+        command: tuple[str, ...], environment: Mapping[str, str]
+    ) -> tuple[int, str]:
+        del environment
+        commands.append(command)
+        return 0, json.dumps({"task": {"status": "done"}})
+
+    stages = (
+        WorkflowStage.IMPLEMENT,
+        WorkflowStage.VERIFY,
+        WorkflowStage.REVIEW,
+        WorkflowStage.DELIVER,
+    )
+    cards = {stage: SimpleNamespace(task_id=f"task-{stage.value}") for stage in stages}
+    ledger = cast(
+        WorkflowLedger,
+        SimpleNamespace(card_for=lambda stage: cards.get(stage)),
+    )
+    operator = ProjectCycleOperator(runner=runner, environ={"PATH": "/usr/bin"})
+
+    operator._require_completed_cards(  # noqa: SLF001 - regression for completion gate
+        SimpleNamespace(controller_profile="daidala-self-improvement"),  # type: ignore[arg-type]
+        SimpleNamespace(board="daidala-forgegod-daidala"),  # type: ignore[arg-type]
+        ledger,
+    )
+
+    assert [command[-2] for command in commands] == [
+        "task-implement",
+        "task-verify",
+        "task-review",
+        "task-deliver",
+    ]
+
+    cards.pop(WorkflowStage.DELIVER)
+    with pytest.raises(
+        PolicyViolationError, match="completion requires the current deliver card"
+    ):
+        operator._require_completed_cards(  # noqa: SLF001
+            SimpleNamespace(controller_profile="daidala-self-improvement"),  # type: ignore[arg-type]
+            SimpleNamespace(board="daidala-forgegod-daidala"),  # type: ignore[arg-type]
+            ledger,
+        )
+
+
 def test_project_cycle_preview_composes_live_inputs_without_runtime_mutation(
     tmp_path: Path,
 ) -> None:
