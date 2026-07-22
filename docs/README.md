@@ -20,7 +20,7 @@ architecture references.
 | [Lifecycle stages](05-lifecycle-stages.md) | Approval graph, host-bound activation authorization, pending/finalized recovery, fail-closed evidence gates, and handoffs implemented | Graph, activation, worker-contract, and recovery tests |
 | [Security](06-security.md) | Approval, activation, worktree, artifact, secrets, and supply-chain boundaries implemented | Runtime and release-content tests |
 | [Runbook](07-runbook.md) | Native lifecycle and normal Kanban recovery commands verified | Shared CLI tests and isolated Hermes lifecycle probe |
-| [Hermes integration](08-hermes-integration.md) | Hermes v0.18.2 plugin, CLI, Kanban, and gateway boundary verified | Isolated probes plus the release-only compatibility regression |
+| [Hermes integration](08-hermes-integration.md) | Hermes v0.18.2 supported; v0.19.0 comparison retained as incomparable without a candidate failure | Isolated repeated probes, content-addressed comparison, and release-only compatibility regression |
 | [Pack adapters](09-pack-adapters.md) | Addyosmani and AI-DLC mappings and activation modes implemented | Pack YAML, bundled adapter, and cross-pack execution tests |
 | [Autonomous development use cases](10-autonomous-development-use-cases.md) | Current use cases, activation handoffs, user controls, tutorial ideas, and unsupported opportunities documented | Runtime contracts plus external agent-development research |
 | [Skill usage and user control](11-skill-usage-and-user-control.md) | Candidate loading, persisted activation, structured handoff, and user-selection boundaries documented | Pack, policy ledger, worker contract, and cross-pack tests |

@@ -1,8 +1,10 @@
 # Hermes integration
 
-Daidala 0.2.0 has been exercised against Hermes Agent v0.18.2
-(`2026.7.7.2`, upstream `4281151a`) on Python 3.11.15. The proof used fresh
-`HERMES_HOME` directories and did not read or modify the active Hermes profile.
+Daidala 0.2.0 is supported on Hermes Agent v0.18.2 (`2026.7.7.2`, upstream
+`4281151a`) on Python 3.11.15. Hermes v0.19.0 was also exercised in isolation,
+but its comparison is incomplete and does not widen the supported range. The
+proofs used fresh `HERMES_HOME` directories and did not modify the active Hermes
+profile.
 
 This document records observed behavior. The current Hermes
 [plugin documentation](https://hermes-agent.nousresearch.com/docs/developer-guide/plugins)
@@ -193,9 +195,15 @@ clone on the pinned host.
 | Hermes host | Directory plugin | Python entry point | Public Git install | Native CLI | Kanban restart/idempotency | Status |
 |---|---|---|---|---|---|---|
 | v0.18.2 (`2026.7.7.2`, `4281151a`) | Passed | Passed | Passed | Passed | Passed | Supported through public Git installation |
+| v0.19.0 (`2026.7.20`, `3ef6bbd2`) | Passed | Passed | Not re-probed | Passed | Not re-probed | Unsupported: comparison `5482aeb4…` is incomparable |
 | Other versions | Not probed | Not probed | Not probed | Not probed | Not probed | Unsupported until the full matrix passes |
 
 - Hermes v0.18.2 is the only verified host version.
+- Hermes v0.19.0 passed the repeated version, plugin, CLI, policy/Kanban/context,
+  dashboard-fixture, `init`, cleanup, and controller-isolation probes. Actual
+  registration/admission setup preview was not exercised, and the exact evaluated
+  wheel bytes were not retained for release-content verification. The result is
+  `incomparable`, not a host failure.
 - Directory, entry-point, and public remote Git installation are verified.
 - Plugin registration, approval-gated Kanban graph mapping, policy-ledger persistence,
   exact-skill and pinned-content gates, fresh worktrees, artifact capture,
@@ -203,8 +211,8 @@ clone on the pinned host.
   operator commands, dry-run/apply/check/update planning, and approval-gated
   idempotent Kanban graph dispatch, operator CLI graph creation, and worker
   recovery are implemented. Target commit/push remains unavailable.
-- Compatibility with a newer Hermes release must be re-probed before widening
-  the supported range.
+- Both bundled packs therefore retain `>=0.18.2,<0.19.0`. Compatibility with a
+  newer Hermes release must pass the complete matrix before widening that range.
 
 Daidala does not declare Hermes as a Python package dependency. Hermes is the
 plugin host, and its Git installation uses a separate managed environment;

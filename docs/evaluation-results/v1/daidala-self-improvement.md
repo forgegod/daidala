@@ -2,7 +2,7 @@
 
 ## Record status
 
-Phases 1 through 5C-R are complete. Phase 5C retained published finding
+Phases 1 through 6 are complete. Phase 5C retained published finding
 [#5](https://github.com/forgegod/daidala/issues/5), and Phase 5C-R remediated and
 closed published control findings
 [#6](https://github.com/forgegod/daidala/issues/6) and
@@ -13,7 +13,8 @@ paused, and no active cycle or owned worktree exists. Phase 5D packet v3
 `7139cf3e` is frozen. Addyosmani control issue #12 is completed with terminal
 digest `a7a668ca`; Aidlc candidate issue #10 is completed with terminal digest
 `a3722356`. Phase 6 comparison `5482aeb4` is retained as `incomparable` with no
-candidate failure. Push, release, and promotion remain unapproved.
+candidate failure; Hermes support remains `>=0.18.2,<0.19.0`. Push, release, and
+promotion remain unapproved.
 
 Each Phase 5A workflow independently changed only `calculator.py` and
 `test_calculator.py`, reproduced `AssertionError: 1 != 2` in the restricted
