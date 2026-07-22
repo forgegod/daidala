@@ -11,8 +11,9 @@ issue #11 exposed packet v2 but proved baseline `3ce1bfc` lacked the fixture.
 Dedicated clean fixture baseline `c53ba52` now passes the frozen behavior and
 repository gates. Packet
 [`7139cf3e`](2026-07-21-daidala-phase-5d-uc03-experiment-v3.json) binds that
-baseline while preserving fixture identity; exact distribution and replacement
-intake mutations remain separately gated.
+baseline while preserving fixture identity. Its exact bytes are installed mode
+`0600`; replacement control issue #12 and candidate issue #10 are byte-identical,
+open, unready, and unclaimed. Readiness and admission remain separately gated.
 
 **Parent plan:**
 [`2026-07-13-daidala-self-improvement-loop.md`](2026-07-13-daidala-self-improvement-loop.md)
@@ -66,7 +67,7 @@ worktree, or ledger state by inspection.
 |---|---|---|---|
 | 0 | Restore evidence authority and expose exact comparison admission | done (416 tests + complete release gate) | Focused project-cycle/CLI tests and the complete repository/release gate pass; current source exposes `--mode evaluate-pack --candidate-identity`; no live state changes. |
 | 1 | Freeze the paired experiment and install the exact controller | done (packet `c0cdfefb`; controller `3ce1bfc`; issues #9/#10) | Packet and nested digests verify; controller/help/packs agree; native/standalone diagnosis pass 11/11; cron is paused; issues are exact and unready; no cycle or owned worktree exists. |
-| 2 | Run the Addyosmani control workflow | in-progress (attempts canceled `e606f24c`/`fc865175`; fixture baseline `c53ba52`; packet `7139cf3e` prepared) | One separately approved replacement `evaluate-pack` cycle using `addyosmani` starts from the fixture-bearing baseline, reads the exact runtime packet before definition, reaches accepted evidence-only delivery, and cleans up with no retention, commit, or push. |
+| 2 | Run the Addyosmani control workflow | in-progress (attempts canceled `e606f24c`/`fc865175`; fixture baseline `c53ba52`; packet `7139cf3e` distributed; issues #12/#10 unready) | One separately approved replacement `evaluate-pack` cycle using `addyosmani` starts from the fixture-bearing baseline, reads the exact runtime packet before definition, reaches accepted evidence-only delivery, and cleans up with no retention, commit, or push. |
 | 3 | Run the Aidlc candidate workflow | pending | One separately approved `evaluate-pack` cycle using `aidlc` reaches accepted evidence-only delivery and terminal cleanup with identities equal to Phase 2 except the selected pack. |
 | 4 | Compare, reconcile, and close Phase 5D | pending | Deterministic comparison eligibility passes or records `incomparable` for an exact missing identity; the result record and plans agree; no default, manifest, skill installation, controller, or remote ref changes automatically. |
 
@@ -325,6 +326,11 @@ Prepared final remediation packet:
 - v3 changes baseline/distribution/intake guidance only; controller, packs,
   candidate, source, fixture bytes, evaluator, routing, limits, commands,
   metrics, and stop conditions remain unchanged
+
+The approved v3 distribution installed those exact bytes mode `0600`, updated
+candidate issue #10, and created replacement control issue #12. Both payloads are
+byte-identical, open, unready, and unclaimed. No readiness, admission, worktree,
+implementation, retention, or publication occurred.
 
 ## Phase 3 — Run the Aidlc candidate workflow
 

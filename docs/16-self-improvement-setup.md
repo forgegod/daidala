@@ -73,7 +73,7 @@ retained evidence.
 
 The current native and standalone reports pass all eleven checks with exact
 controller `3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8`, terminal issues
-#5/#6/#7/#9/#11, unready issue #10, and a clean repository. Rollback controllers
+#5/#6/#7/#9/#11, unready issues #10/#12, and a clean repository. Rollback controllers
 `2595bf5f8aacdd1411c101250acc2d0211eaf22a`,
 `9f380a6b04fdbb51817c7ac2279b217fda34f0c2`,
 `9d9f4f6a2801293e20622d98c97f50d017888872`, and
@@ -107,7 +107,7 @@ in this order; a later step must not be used to waive an earlier blocker.
 | 15 | Verify and separately decide whether to retain both control-plane remediations. | Retained controller revision and rollback evidence; live workflow remains separately gated. | Pass for approval-boundary probe `tc-f06-direct-approval-probe-v2` at `9f380a6` and immutable-artifact probe `tc-f07-revision-artifact-probe-v1` at installed `2595bf5`; both reject the prohibited mutation, clean up exactly, and retain 11/11 diagnosis with paused cron. Issues #6/#7 are closed completed. |
 | 16 | Freeze the UC-03 packet and prepare paired intake. | Approved controller swap and two unready GitHub issues only. | Packet v1 `c0cdfefb` is retained; detached controller `3ce1bfc` is installed with rollback `2595bf5`; first control issue #9 is canceled not planned, candidate issue #10 remains unready, and both diagnosis routes pass 11/11 with paused cron and no active cycle or owned worktree. |
 | 17 | Repair UC-03 packet visibility before replacement admission. | Repository packet v2 plus separately approved profile-local copy and intake mutation. | First cancellation `e606f24c` retained exact command drift and `telegram:57`; packet v2 `eb02da7c` made exact bytes available, then replacement issue #11 canceled at `fc865175`/`telegram:59` when planning proved baseline `3ce1bfc` lacked the fixture. |
-| 18 | Establish the fixture-bearing UC-03 baseline. | Ten-file repository checkpoint: eight frozen fixture paths, pytest collection exclusion, and owning DOX update. | Clean baseline `c53ba52` passes the exact frozen behavior, full pytest, Ruff, and Markdown links; packet v3 `7139cf3e` binds it with unchanged fixture identity. Profile distribution and replacement intake mutation remain unapproved. |
+| 18 | Establish the fixture-bearing UC-03 baseline. | Ten-file repository checkpoint, packet-v3 distribution, and replacement intake. | Clean baseline `c53ba52` passes the exact frozen behavior, full pytest, Ruff, and Markdown links; packet v3 `7139cf3e` binds it with unchanged fixture identity and is installed mode `0600`; replacement issue #12 and candidate issue #10 are byte-identical, open, unready, and unclaimed. |
 
 The operator owns browser authorization, credential creation, attended-channel
 confirmation, setup approval, and later cycle approval. The agent may select a
