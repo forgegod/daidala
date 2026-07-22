@@ -12,8 +12,8 @@ native and standalone diagnosis pass 11/11, the reconciliation cron remains
 paused, and no active cycle or owned worktree exists. Phase 5D packet v3
 `7139cf3e` is frozen. Addyosmani control issue #12 is completed with terminal
 digest `a7a668ca`; Aidlc candidate issue #10 is completed with terminal digest
-`a3722356`. Phase 6 exact-host execution input `b92098b3` is retained for
-comparison. Paired comparison, push, release, and promotion remain unapproved.
+`a3722356`. Phase 6 comparison `5482aeb4` is retained as `incomparable` with no
+candidate failure. Push, release, and promotion remain unapproved.
 
 Each Phase 5A workflow independently changed only `calculator.py` and
 `test_calculator.py`, reproduced `AssertionError: 1 != 2` in the restricted
@@ -45,7 +45,7 @@ Repository tests cannot convert a blocked live probe into `pass`.
 | TC-F02-02 | Pack drift | Change one pinned digest; validation rejects the identity. | Repairing the digest from remote state. | pass |
 | TC-F03-01 | CLI and tools | Compare native and standalone project-cycle parser, dispatch, JSON, exit code, and exact apply identity. | Registering a second or untested handler. | pass |
 | TC-F03-02 | Prerequisite CLI parity | Execute the shared handler through standalone and native parser surfaces; JSON and exit code match. | Adding a second checker executable. | pass |
-| TC-F04-01 | Setup preview | Preview registration and admission without mutation; require literal confirmation for setup. | Profile, board, GitHub, or repository mutation. | not-run |
+| TC-F04-01 | Setup preview | Preview registration and admission without mutation; require literal confirmation for setup. | Profile, board, GitHub, or repository mutation. | blocked |
 | TC-F04-02 | Prerequisite diagnosis | Run the complete stable checklist from a clean checkout; retain exact passes and blockers. | No setup mutation; fixing or creating prerequisite state. | pass |
 | TC-F05-01 | Define and plan | Persist activation, definition, plan, and handoff identities; expose the ledger-owned pending approval action without an executable approval task. | Implementation-card creation before exact approval. | pass |
 | TC-F06-01 | Exact approval | Reject wrong or stale tuples; keep the gate ledger-owned and non-executable; create one owned worktree only after exact attended approval. | Autonomous approval or an executable approval task. | pass |
@@ -54,11 +54,11 @@ Repository tests cannot convert a blocked live probe into `pass`.
 | TC-F08-02 | Verification recovery | Preserve a failed attempt and allow bounded same-card recovery. | Hiding the failed command or output digest. | pass |
 | TC-F09-01 | Review and delivery | Review frozen scope; delivery records commit and push as false. | Review mutation, commit, or push. | pass |
 | TC-F10-01 | Status and cancellation | Read live Kanban without mirrored status; remove only owned worktree state. | Writing Hermes Kanban storage directly. | pass |
-| TC-F11-01 | Packaging | Wheel and directory installs expose code, packs, skills, tools, and dashboard assets only. | Packaging runtime state, credentials, or evidence. | not-run |
+| TC-F11-01 | Packaging | Wheel and directory installs expose code, packs, skills, tools, and dashboard assets only. | Packaging runtime state, credentials, or evidence. | blocked |
 | TC-F12-01 | Hermes routes | Exercise bounded default, fallback, MoA, goal, auxiliary, and delegation paths. | Replacing Hermes model/runtime authority. | not-run |
 | TC-F13-01 | Issue intake | Accept only structured maintainer-ready issues and create one recoverable claim. | Inferring readiness from prose or Project membership. | pass |
 | TC-F13-02 | Finding synchronization | Deduplicate stable finding identity and require a returned identity and URL before `published`. | Applying `daidala-si:ready` to generated findings. | pass |
-| TC-F14-01 | Version comparison | Compare exact supported and candidate Daidala/Hermes identities. | Updating the active runtime. | not-run |
+| TC-F14-01 | Version comparison | Compare exact supported and candidate Daidala/Hermes identities. | Updating the active runtime. | blocked |
 | TC-F15-01 | Controller isolation | Load candidate artifacts only in a fresh evaluator. | Candidate plugin loading in the persistent controller. | pass |
 | TC-F16-01 | Reconciliation | Duplicate ticks converge; missing board, dirty worktree, or uncertain claim blocks. | Recreating state from titles or prose. | pass |
 | TC-F17-01 | Metrics | Required deterministic and repeated thresholds govern retention eligibility; missing evidence is `incomparable`. | Retention from observational evidence alone. | pass |
@@ -169,7 +169,7 @@ observational metrics cannot decide the verdict. UC-03 is therefore
 
 ### Phase 6 — Hermes v0.19 host comparison input
 
-Execution is complete; Phase 3 classification is pending. Daidala checkpoint
+Execution and comparison are complete. Daidala checkpoint
 `a62f029ae216f146161ec044681251cb62afb59a` produced wheel SHA-256
 `6f43947f49761b475df33b3724eb885d1d9af54c857a8166807acd6ce77be8dd`.
 The same wheel ran on exact baseline Hermes
@@ -194,8 +194,25 @@ its file SHA-256 is
 `dd58721655155a0f1ed9c5740c508b8b43aad33741ca385d3a6348c19ce6f920`.
 The exact evaluator (`0e5e3349…`), validator (`b7d6b42f…`), snapshot helper
 (`92692cbe…`), and identical before/after snapshot files (`16a05173…`) are retained
-beside it mode `0600`. This input does not promote `TC-F04-01`, `TC-F11-01`, or
-`TC-F14-01`; Phase 3 owns those case statuses and the compatibility verdict.
+beside it mode `0600`.
+
+Comparison `5482aeb4bf9c5e42c078773cdbc1da81ac8bc0124ea70ce6e616c1abd9b7e96c`
+is `incomparable`. `TC-F03-01`, `TC-F03-02`, and `TC-F15-01` pass.
+`TC-F04-01` is blocked because the retained `init` probe covers ledger
+initialization, not registration/admission setup preview and literal confirmation.
+`TC-F11-01` is blocked because cleanup removed exact evaluated wheel
+`6f43947f…` before release-content verification. Rebuilding exact source
+`a62f029…` passes Twine and the 51-member release-content check but produces
+non-identical wheel `774f79ab…`, so it cannot replace the deleted bytes.
+`TC-F14-01` is blocked by those required evidence gaps; `TC-F12-01` remains
+`not-run`. No deterministic candidate failure or GitHub action exists.
+
+The comparison is retained mode `0600` at
+`/home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/hermes-v019-comparison.json`;
+its file SHA-256 is
+`df41417fdbbf866b54eb3fd632ebb27e6d01d4ade6e48f9d95edd95c6c43e53d`.
+Comparator SHA-256 `d5586761…` reproduces that file byte-for-byte from canonical
+input `b92098b3…`.
 
 ## UC-01 reconciliation
 
