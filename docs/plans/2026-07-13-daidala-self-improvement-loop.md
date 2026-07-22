@@ -61,10 +61,14 @@ issue #10 remains unready, and diagnosis is 11/11. Remediation packet `eb02da7c`
 was installed at its exact profile-local path, but replacement issue #11 was
 canceled at `fc865175` when planning proved baseline `3ce1bfc` lacked the fixture.
 Dedicated fixture baseline `c53ba52` now passes the frozen behavior and repository
-gates; packet v3 `7139cf3e` binds it and is installed mode `0600`. Replacement
-control issue #12 and candidate issue #10 are byte-identical and unready.
-Readiness, replacement cycle, plan, cleanup, retention, publication, push,
-release, and promotion remain gated.
+gates; packet v3 `7139cf3e` binds it and is installed mode `0600`. Addyosmani
+control cycle `cycle-c037e2b…` completed issue #12 with accepted review `4074ae25`,
+evidence-only delivery `422b88f9`, terminal digest `a7a668ca`, and receipt
+`telegram:64`; commit/push are false and the worktree/claim are released. Narrow
+controller fix `e20e3e8` resolved an impossible approval-card completion check,
+then exact controller `3ce1bfc` was restored and both diagnosis routes returned to
+11/11. Candidate issue #10 remains open and unready. Candidate readiness,
+admission, retention, publication, push, release, and promotion remain gated.
 The resumable execution record is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 The two failed Phase 5C control cases are explicit follow-up actions in

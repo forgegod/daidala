@@ -9,9 +9,10 @@ closed published control findings
 [#7](https://github.com/forgegod/daidala/issues/7) as completed. Detached
 controller revision `3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8` is installed;
 native and standalone diagnosis pass 11/11, the reconciliation cron remains
-paused, and no active cycle or owned worktree exists. Phase 5D packet `c0cdfefb`
-is frozen and exact issues #9/#10 remain unready. Live paired evaluation remains
-unapproved, as do push, release, and promotion.
+paused, and no active cycle or owned worktree exists. Phase 5D packet v3
+`7139cf3e` is frozen. Addyosmani control issue #12 is completed with terminal
+digest `a7a668ca`; Aidlc candidate issue #10 remains unready. Candidate execution,
+comparison, push, release, and promotion remain unapproved.
 
 Each Phase 5A workflow independently changed only `calculator.py` and
 `test_calculator.py`, reproduced `AssertionError: 1 != 2` in the restricted
@@ -105,7 +106,7 @@ browser probe still require separate approvals and prerequisites.
 
 ### UC-03 — pack and skill compatibility
 
-Status: `not-run`. The operator selected the pinned current/default
+Status: `control-complete`. The operator selected the pinned current/default
 `addyosmani` pack, pinned candidate `aidlc`, and one canonical Python
 `importlib.resources.contents()` migration fixture. The dry-run-first
 comparison-admission prerequisite passes the complete repository gate. Exact
@@ -120,10 +121,16 @@ plan approval because baseline `3ce1bfc` lacked the frozen fixture. Issue #11 is
 closed not planned; candidate issue #10 remains unready. Dedicated clean fixture
 baseline `c53ba52` passes the frozen behavior and repository gates. Packet v3
 `7139cf3e` binds that baseline while preserving fixture identity and is installed
-mode `0600`. Replacement control issue #12 and candidate issue #10 are
-byte-identical, open, unready, and unclaimed. Replacement cycles, plans, cleanup,
-retention, publication, push, release, and promotion remain separately gated in
-the
+mode `0600`. Replacement control cycle `cycle-c037e2b…` bound exact plan
+`15607a5f`, changed only the catalog implementation, passed three behavioral runs
+and the migration-policy command, and reached accepted review `4074ae25` plus
+evidence-only delivery `422b88f9`. Completion `a7a668ca` closed issue #12,
+released its claim/worktree, and retained receipt `telegram:64`; commit/push are
+false. Narrow regression fix `e20e3e8` corrected completion's stale approval-card
+assumption, after which controller `3ce1bfc` was restored and both diagnosis routes
+passed 11/11. Candidate issue #10 remains open, unready, and unclaimed. Candidate
+execution, comparison, retention, publication, push, release, and promotion remain
+separately gated in the
 [Phase 5D child plan](../../plans/2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md).
 
 ## UC-01 reconciliation

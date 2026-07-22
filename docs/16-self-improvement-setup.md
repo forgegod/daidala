@@ -57,12 +57,12 @@ retained evidence.
 | Prerequisite | State | Evidence |
 |---|---|---|
 | Hermes baseline | Pass | `Hermes Agent v0.18.2 (2026.7.7.2)` |
-| Repository identity | Pass | The live report verifies canonical repository `forgegod/daidala`, a clean branch checkout after cancellation, trusted remote identity, and frozen Phase 5D evaluation baseline `3ce1bfc`; no active cycle exists. |
+| Repository identity | Pass | The live report verifies canonical repository `forgegod/daidala`, trusted remote identity, frozen Phase 5D fixture baseline `c53ba52`, and no active cycle or owned worktree. The working branch includes controller-completion regression `e20e3e8`. |
 | Daidala command surfaces | Pass | Standalone and native controller-profile commands report Daidala `0.2.0`; native pack validation succeeds. |
-| Controller plugin revision | Pass | The controller profile loads clean detached revision `3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8`; native and standalone live diagnosis verify the same identity. Rollback `2595bf5` remains outside discovery. |
+| Controller plugin revision | Pass | The controller profile loads clean detached revision `3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8`; native and standalone live diagnosis verify the same identity. Exact fix `e20e3e8` was temporarily installed only to complete the terminal control after regression verification, then retained outside discovery. |
 | Controller profile | Pass | `/home/raphael/.hermes/profiles/daidala-self-improvement` exists and the sticky profile remains `hermes-vc`. |
 | Reconciliation cron | Pass | Exactly one profile-local no-agent job uses the digest-matched wrapper, `every 15m` with infinite repeat, and the registered checkout; it is paused after two successful controlled executions that converged on one cycle. |
-| Dedicated board | Pass | Installation-global board `daidala-forgegod-daidala` exists with the exact checkout as default workdir; both controlled UC-01 workflows are terminal and it did not replace the current `default` board. |
+| Dedicated board | Pass | Installation-global board `daidala-forgegod-daidala` exists with the exact checkout as default workdir; both UC-01 workflows and UC-03 control issue #12 are terminal, while candidate issue #10 remains unready. It did not replace the current `default` board. |
 | Restricted container | Pass | Docker integration is available again; native and standalone live diagnosis reproduce the retained restricted-container boundary with the digest-pinned image and denied network. |
 | GitHub runtime credentials | Pass | Non-secret alias bindings exist. Both bounded runtime read probes pass, and retained evidence includes their request identities, expirations, and the separately approved controlled findings-write receipt. |
 | GitHub operator credential | Pass | `gh-vault run --name ghcli -- gh project list` succeeds, and `GH_TOKEN_DAIDALA_PROJECT_MGMT` is absent from the controller profile. Attended Project authority remains isolated in `gh-vault`. |
@@ -73,7 +73,8 @@ retained evidence.
 
 The current native and standalone reports pass all eleven checks with exact
 controller `3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8`, terminal issues
-#5/#6/#7/#9/#11, unready issues #10/#12, and a clean repository. Rollback controllers
+#5/#6/#7/#9/#11/#12, unready issue #10, and no active cycle or owned worktree.
+Rollback controllers
 `2595bf5f8aacdd1411c101250acc2d0211eaf22a`,
 `9f380a6b04fdbb51817c7ac2279b217fda34f0c2`,
 `9d9f4f6a2801293e20622d98c97f50d017888872`, and
