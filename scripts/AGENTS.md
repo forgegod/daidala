@@ -10,8 +10,12 @@ Own dependency-free development and repository verification utilities.
 - `check_release_contents.py` rejects runtime state and high-confidence secret
   signatures from tracked source and wheel payloads.
 - `probe_hermes_compatibility.py` creates an isolated `HERMES_HOME` and verifies
-  the pinned release host's exact identity, policy-skill digest boundary, public
-  Kanban lifecycle, and worker-context body limits.
+  an exact expected host identity, policy-skill digest boundary, public Kanban
+  lifecycle, and worker-context body limits. The expected identity defaults to
+  the pinned release host and requires a complete three-field override.
+- `probe_hermes_plugin_compatibility.py` verifies public plugin inventory where
+  exposed, fresh-process native CLI loading, standalone/native pack parity, and
+  entry-point or isolated directory discovery without using an active profile.
 - `probe_hermes_dashboard_compatibility.py` proves the pinned release host's
   dashboard extension surface (manifest discovery, static asset serving, plugin
   API mount with auth gating) against an isolated profile.
@@ -24,9 +28,9 @@ Own dependency-free development and repository verification utilities.
 - Release-content verification rejects the superseded project identity in
   tracked paths, decodable tracked content, wheel paths, and decodable wheel
   content without retaining that identity in the checker source.
-- The live Hermes compatibility probe is release-only. It must clean its isolated
-  home on success and failure and must not create profiles, gateways, or files in
-  the operator's active Hermes configuration.
+- Hermes compatibility probes must clean their isolated homes on success and
+  failure, reject roots inside an inherited active `HERMES_HOME`, and must not
+  create profiles, gateways, or files in the operator's active configuration.
 - The dashboard compatibility probe requires the pinned Hermes checkout's web
   distribution to be built before invocation; the probe uses `--skip-build` and
   must not install or build host frontend dependencies itself.
@@ -41,6 +45,7 @@ Own dependency-free development and repository verification utilities.
 python scripts/check_md_links.py .
 python scripts/check_release_contents.py .
 python scripts/probe_hermes_compatibility.py
+python scripts/probe_hermes_plugin_compatibility.py
 pytest
 ruff check scripts
 ```

@@ -16,7 +16,16 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from probe_hermes_compatibility import ProbeError, require_version, run
+from probe_hermes_compatibility import (
+    SUPPORTED_HOST,
+    HostIdentity,
+    ProbeError,
+    add_expected_host_arguments,
+    expected_host_from_args,
+    require_isolated_root,
+    require_version,
+    run,
+)
 
 SDK_VERSION = "1.1.0"
 TAB_PATH = "/daidala"
@@ -73,13 +82,19 @@ def _write_probe_plugin(home: Path) -> None:
     )
 
 
-def exercise(root: Path, hermes: str, port: int) -> dict[str, Any]:
+def exercise(
+    root: Path,
+    hermes: str,
+    port: int,
+    expected_host: HostIdentity = SUPPORTED_HOST,
+) -> dict[str, Any]:
+    require_isolated_root(root)
     home = root / "home"
     _write_probe_plugin(home)
     env = os.environ.copy()
     env["HERMES_HOME"] = str(home)
     env.pop("HERMES_PROFILE", None)
-    version = require_version(run([hermes, "--version"], env=env))
+    version = require_version(run([hermes, "--version"], env=env), expected_host)
     process = subprocess.Popen(
         [
             hermes,
@@ -159,10 +174,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--hermes", default="hermes", help="Hermes executable to probe")
     parser.add_argument("--port", default=9120, type=int, help="Isolated dashboard port")
     parser.add_argument("--keep-temp", action="store_true", help="Keep the isolated probe root")
+    add_expected_host_arguments(parser)
     args = parser.parse_args(argv)
+    expected_host = expected_host_from_args(parser, args)
     root = Path(tempfile.mkdtemp(prefix="daidala-dashboard-compat-"))
     try:
-        result = exercise(root, args.hermes, args.port)
+        result = exercise(root, args.hermes, args.port, expected_host)
         if args.keep_temp:
             result["probe_root"] = str(root)
         print(json.dumps(result, sort_keys=True))

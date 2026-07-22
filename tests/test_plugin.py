@@ -76,6 +76,7 @@ def test_manifest_tool_inventory_matches_runtime_registration() -> None:
         "specialist agents and skills."
     )
     assert manifest["provides_tools"] == [tool["name"] for tool in ctx.tools]
+    assert manifest["provides_skills"] == [name for name, _ in ctx.skills]
 
 
 def test_pack_info_returns_json_string() -> None:

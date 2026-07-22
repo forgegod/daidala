@@ -23,6 +23,8 @@ if args == ["--version"]:
     mode = os.environ.get("FAKE_VERSION_MODE", "ok")
     if mode == "missing":
         print("Hermes Agent unknown")
+    elif mode == "candidate":
+        print("Hermes Agent v0.19.0 (2026.7.20) · upstream 3ef6bbd2")
     elif mode == "changed":
         print("Hermes Agent v0.19.0 (2026.8.1) · upstream deadbeef")
     else:
@@ -61,7 +63,11 @@ else:
 '''
 
 
-def run_probe(tmp_path: Path, **environment: str) -> subprocess.CompletedProcess[str]:
+def run_probe(
+    tmp_path: Path,
+    arguments: list[str] | None = None,
+    **environment: str,
+) -> subprocess.CompletedProcess[str]:
     hermes = tmp_path / "hermes"
     hermes.write_text(FAKE_HERMES, encoding="utf-8")
     hermes.chmod(0o755)
@@ -69,7 +75,7 @@ def run_probe(tmp_path: Path, **environment: str) -> subprocess.CompletedProcess
     env.update(environment)
     env["TMPDIR"] = str(tmp_path)
     return subprocess.run(
-        [sys.executable, str(PROBE), "--hermes", str(hermes)],
+        [sys.executable, str(PROBE), "--hermes", str(hermes), *(arguments or [])],
         cwd=PROBE.parents[1],
         capture_output=True,
         check=False,
@@ -101,6 +107,36 @@ def test_probe_rejects_changed_supported_host_identity(tmp_path: Path) -> None:
     assert result.returncode == 1
     assert "unsupported Hermes identity" in result.stderr
     assert "0.19.0" in result.stderr
+
+
+def test_probe_accepts_one_complete_explicit_candidate_identity(tmp_path: Path) -> None:
+    result = run_probe(
+        tmp_path,
+        [
+            "--expected-semver",
+            "0.19.0",
+            "--expected-build",
+            "2026.7.20",
+            "--expected-upstream",
+            "3ef6bbd2",
+        ],
+        FAKE_VERSION_MODE="candidate",
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout)["hermes"] == {
+        "semver": "0.19.0",
+        "build": "2026.7.20",
+        "upstream": "3ef6bbd2",
+    }
+
+
+def test_probe_rejects_partial_explicit_candidate_identity(tmp_path: Path) -> None:
+    result = run_probe(tmp_path, ["--expected-semver", "0.19.0"])
+
+    assert result.returncode == 2
+    assert "must be supplied together" in result.stderr
+    assert not list(tmp_path.glob("daidala-hermes-compat-*"))
 
 
 def test_probe_rejects_missing_host_identity_fields(tmp_path: Path) -> None:

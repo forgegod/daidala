@@ -5,9 +5,9 @@ exact Hermes v0.19.0 candidate in isolated environments, retain reproducible
 host-boundary evidence, and produce a supported-range proposal without changing
 the active Hermes runtime or persistent Daidala controller.
 
-**Status:** in-progress — Phase 0 is complete. The operator approved planning
-checkpoint `826b07a` and candidate commit `3ef6bbd2…` exactly. Phase 1 is next;
-no candidate code has been installed or executed.
+**Status:** in-progress — Phases 0 and 1 are complete. Candidate-aware probes
+retain the supported defaults, the packaged plugin boundary passes on exact
+baseline `4281151a`, and Phase 2 is next. Candidate code has not run.
 
 **Parent plan:**
 [`2026-07-13-daidala-self-improvement-loop.md`](2026-07-13-daidala-self-improvement-loop.md)
@@ -61,7 +61,7 @@ phase and produces no compatibility verdict.
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
 | 0 | Approve the candidate and experiment contract | done (plan `826b07a`; candidate `3ef6bbd2…`; exact operator approval) | Remote tag resolution, baseline/candidate/active identities, active-state snapshots, selected matrix rows, and this committed plan are exact; the operator approves candidate commit `3ef6bbd2…` and the plan checkpoint. |
-| 1 | Repair the candidate-aware host probe boundary | pending | Focused probe tests pass; default invocations still require baseline `0.18.2`/`2026.7.7.2`/`4281151a`; explicit candidate arguments require all three v0.19.0 identity fields; a fresh-process probe loads the packaged Daidala plugin and native CLI without active-profile access. |
+| 1 | Repair the candidate-aware host probe boundary | done (428 tests; exact baseline wheel probe passed) | Focused probe tests pass; default invocations still require baseline `0.18.2`/`2026.7.7.2`/`4281151a`; explicit candidate arguments require all three v0.19.0 identity fields; a fresh-process probe loads the packaged Daidala plugin and native CLI without active-profile access. |
 | 2 | Execute the isolated baseline and candidate matrix | pending | Both detached host clones and Daidala artifact identities verify; every approved probe emits bounded JSON; temporary homes are removed; active Hermes/controller/cron/repository snapshots are byte-identical before and after. |
 | 3 | Compare results and range compatibility findings | pending | One content-addressed comparison classifies every selected matrix row as `pass`, `fail`, `blocked`, or `incomparable`; any actionable failure is added to the parent phase sequence before remote mutation. |
 | 4 | Propose the supported range and close Phase 6 | pending | Parent/child plans and the versioned result record agree; any range change is proposal-only; the complete repository/release gate passes; Phase 7 remains unstarted. |
@@ -151,9 +151,11 @@ Steps:
    `scripts/probe_hermes_dashboard_compatibility.py`; keep its baseline defaults,
    isolated home, cleanup, and `--skip-build` behavior unchanged.
 3. Add a fresh-process packaged-plugin probe that enables the exact Daidala wheel
-   only inside a fresh `HERMES_HOME`, verifies no plugin error, exact tool/skill
-   registration, and native/standalone CLI parity, then removes the home. Use
-   public Hermes CLI/plugin surfaces; do not import Hermes internals.
+   only inside a fresh `HERMES_HOME`, verifies public inventory when exposed,
+   native command loading, and native/standalone CLI parity, then removes the
+   home. Pin exact tool/skill registration through the manifest and repository
+   registration test. Use public Hermes CLI/plugin surfaces; do not import Hermes
+   internals.
 4. Add positive baseline/candidate, incomplete-identity, wrong-identity,
    plugin-load failure, active-path exclusion, and cleanup regressions under
    `tests/test_hermes_compatibility_probe.py` and
@@ -188,6 +190,17 @@ git diff --check
 The default release path remains pinned to the last-known-good baseline; the
 candidate identity is accepted only when all three explicit fields match.
 
+Observed gate: `HostIdentity` is immutable; core, plugin, and dashboard probes
+require either all three expected-host arguments or none; defaults remain
+`0.18.2`/`2026.7.7.2`/`4281151a`. `plugin.yaml` now matches all 12 tools and all
+three runtime-registered skills. A fresh Python 3.11 venv installed the built
+Daidala wheel with exact baseline Hermes `4281151a`; public inventory reported
+the entry-point plugin enabled and native/standalone JSON matched for Addyosmani
+and Aidlc. The full gate passed with 428 tests, Lefthook, Ruff, both pack
+validators, Markdown links, build, Twine, release contents, and clean diffs. All
+temporary evaluator/probe roots were removed; no candidate code or active-state
+mutation occurred.
+
 ## Phase 2 — Execute the isolated baseline and candidate matrix
 
 **Goal:** Produce bounded, content-addressed evidence for the same Daidala wheel
@@ -204,7 +217,8 @@ Steps:
 3. Clone the official Hermes repository into each root, detach at the exact host
    commit, pin its local tracking ref, disable network updates, build the required
    dashboard web distribution with Node 22, and install Hermes plus the same
-   Daidala wheel into a root-local virtual environment.
+   Daidala wheel into a root-local Python 3.11 virtual environment. Do not use the
+   repository's ambient Python 3.14; baseline Hermes requires Python `<3.14`.
 4. Run the version, packaged-plugin, policy/Kanban/body-limit, dashboard, setup
    dry-run, and standalone/native CLI probes with exact expected-host arguments.
    Capture bounded stdout, stderr digest, exit code, command identity, host commit,

@@ -48,6 +48,7 @@ workflow-pack adapters, and bundled orchestration skills.
 ## Local Contracts
 
 - `register(ctx)` imports no Hermes internals; it uses only the documented plugin context API.
+- `plugin.yaml` tool and skill inventories match `register(ctx)` exactly.
 - Tool handlers never raise across the plugin boundary and always return JSON strings.
 - Pack skills declare exactly one provider: a fully qualified external install
   target or a plugin-bundled skill with the same exact name.

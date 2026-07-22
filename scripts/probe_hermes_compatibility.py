@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +25,23 @@ TRUNCATED_BODY_CHARS = 8300
 VERSION_RE = re.compile(
     r"Hermes Agent v(?P<semver>\S+) \((?P<build>[^)]+)\) · upstream (?P<upstream>[0-9a-f]+)"
 )
+
+
+@dataclass(frozen=True)
+class HostIdentity:
+    semver: str
+    build: str
+    upstream: str
+
+    def to_dict(self) -> dict[str, str]:
+        return {
+            "semver": self.semver,
+            "build": self.build,
+            "upstream": self.upstream,
+        }
+
+
+SUPPORTED_HOST = HostIdentity(SUPPORTED_SEMVER, SUPPORTED_BUILD, SUPPORTED_UPSTREAM)
 
 
 class ProbeError(RuntimeError):
@@ -45,18 +63,48 @@ def parse_json(output: str, label: str) -> Any:
         raise ProbeError(f"{label} did not return valid JSON: {error}") from error
 
 
-def require_version(output: str) -> dict[str, str]:
+def add_expected_host_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--expected-semver")
+    parser.add_argument("--expected-build")
+    parser.add_argument("--expected-upstream")
+
+
+def expected_host_from_args(
+    parser: argparse.ArgumentParser, args: argparse.Namespace
+) -> HostIdentity:
+    values = (args.expected_semver, args.expected_build, args.expected_upstream)
+    if any(value is None for value in values):
+        if any(value is not None for value in values):
+            parser.error(
+                "--expected-semver, --expected-build, and --expected-upstream "
+                "must be supplied together"
+            )
+        return SUPPORTED_HOST
+    return HostIdentity(*values)
+
+
+def require_isolated_root(root: Path) -> None:
+    active_home_value = os.environ.get("HERMES_HOME")
+    if not active_home_value:
+        return
+    active_home = Path(active_home_value).expanduser().resolve()
+    resolved_root = root.resolve()
+    if resolved_root == active_home or active_home in resolved_root.parents:
+        raise ProbeError("isolated probe root resolves inside the active HERMES_HOME")
+
+
+def require_version(
+    output: str, expected: HostIdentity = SUPPORTED_HOST
+) -> dict[str, str]:
     match = VERSION_RE.search(output)
     if match is None:
         raise ProbeError("Hermes version output is missing semantic, build, or upstream identity")
     observed = match.groupdict()
-    expected = {
-        "semver": SUPPORTED_SEMVER,
-        "build": SUPPORTED_BUILD,
-        "upstream": SUPPORTED_UPSTREAM,
-    }
-    if observed != expected:
-        raise ProbeError(f"unsupported Hermes identity: expected {expected}, observed {observed}")
+    expected_dict = expected.to_dict()
+    if observed != expected_dict:
+        raise ProbeError(
+            f"unsupported Hermes identity: expected {expected_dict}, observed {observed}"
+        )
     return observed
 
 
@@ -79,7 +127,10 @@ def create_task(
     return task_id
 
 
-def exercise(root: Path, hermes: str) -> dict[str, Any]:
+def exercise(
+    root: Path, hermes: str, expected_host: HostIdentity = SUPPORTED_HOST
+) -> dict[str, Any]:
+    require_isolated_root(root)
     home = root / "home"
     skill = home / "skills" / "policy-probe"
     skill.mkdir(parents=True)
@@ -93,7 +144,7 @@ def exercise(root: Path, hermes: str) -> dict[str, Any]:
     env["HERMES_HOME"] = str(home)
     env.pop("HERMES_PROFILE", None)
 
-    version = require_version(run([hermes, "--version"], env=env))
+    version = require_version(run([hermes, "--version"], env=env), expected_host)
     registry = ProfileSkillContentRegistry(home / "skills")
     installed = sorted(registry.installed_names())
     if installed != ["policy-probe"]:
@@ -156,10 +207,12 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--hermes", default="hermes", help="Hermes executable to probe")
     parser.add_argument("--keep-temp", action="store_true", help="Keep the isolated probe root")
+    add_expected_host_arguments(parser)
     args = parser.parse_args(argv)
+    expected_host = expected_host_from_args(parser, args)
     root = Path(tempfile.mkdtemp(prefix="daidala-hermes-compat-"))
     try:
-        result = exercise(root, args.hermes)
+        result = exercise(root, args.hermes, expected_host)
         if args.keep_temp:
             result["probe_root"] = str(root)
         print(json.dumps(result, sort_keys=True))

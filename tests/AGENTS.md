@@ -82,9 +82,14 @@ completeness without touching a real Hermes profile.
   cards.
 - Subprocess tests for dependency-free repository verification scripts.
 - `test_hermes_compatibility_probe.py` validates host-output parsing, boundary
-  drift failures, and isolated-home cleanup through subprocesses.
+  drift failures, complete explicit candidate identities, and isolated-home
+  cleanup through subprocesses.
+- `test_hermes_plugin_compatibility_probe.py` validates public plugin inventory,
+  fresh native/standalone pack parity, directory/entry-point evidence, active-home
+  exclusion, and cleanup through subprocesses.
 - `test_hermes_dashboard_compatibility_probe.py` validates dashboard discovery,
-  asset serving, API auth gating, and isolated cleanup through subprocesses.
+  asset serving, API auth gating, explicit candidate identity, and isolated
+  cleanup through subprocesses.
 - `test_release_workflow.py` keeps both live probes release-only, pins the
   documented Hermes checkout and tracking identity, prevents update-check drift,
   and requires the pinned host dashboard build.

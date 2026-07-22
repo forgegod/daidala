@@ -27,7 +27,7 @@ The verified directory and entry-point discovery paths register exactly:
 - tools `daidala_submit_artifact`, `daidala_prepare_implementation`,
   `daidala_capture_implementation`, `daidala_record_skill_activation`,
   `daidala_record_verification`, and `daidala_deliver`;
-- skills `daidala:orchestrate` and `daidala:aidlc-adapter`;
+- skills `daidala:aidlc-adapter`, `daidala:orchestrate`, and `daidala:setup`;
 - operator command family `hermes daidala`.
 
 The optional dashboard package registers `/daidala`, the `sessions:top` slot,
@@ -56,53 +56,49 @@ HERMES_HOME="$isolated_home" hermes plugins list --user --json
 ```
 
 The list output must report `daidala` as enabled with source `git`. A fresh
-Hermes process using the same `HERMES_HOME` must expose
-`daidala_pack_info`; loading `daidala:orchestrate` must return the bundled
-skill content.
+Hermes process using the same `HERMES_HOME` must expose `hermes daidala` and
+produce byte-equivalent native and standalone pack-validation JSON. The exact
+12-tool and three-skill inventories are pinned against `register(ctx)` by
+`tests/test_plugin.py`.
 
 Daidala does not override built-in tools.
 
-## Workflow-constraint host verification
+## Repeatable isolated verification
 
-Phase 7 repeated the constraint integration against a fresh isolated
-`HERMES_HOME` on the supported host. The probe:
+The host probes cover separate public boundaries:
 
-- loaded the directory plugin with exactly 12 registered tools and no plugin
-  error;
-- created an isolated named board and clean local Git target;
-- resolved one exact `policy-probe` skill, verified its complete-directory
-  digest, and materialized its sole fenced YAML document;
-- started an AI-DLC workflow through `hermes daidala`, producing two cards
-  whose bodies contained full constraint text but no policy-skill activation;
-- removed the installed source and successfully read the self-contained
-  materialized workflow;
-- replaced constraints from an explicit UTF-8 file, preserving the historical
-  sourced artifact while creating policy revision 2 and distinct define/plan
-  card IDs and idempotency keys;
-- rejected evidence submitted with the archived definition card identity.
+- `probe_hermes_compatibility.py` verifies exact host identity, one complete
+  policy-skill digest, public Kanban create/show/context/link/comment/complete/
+  archive operations, and the 8,192/8,300 worker-context boundary.
+- `probe_hermes_plugin_compatibility.py` verifies fresh-process Daidala loading,
+  public enabled-plugin inventory when the host reports entry points, and exact
+  native/standalone validation parity for both bundled packs. Passing
+  `--plugin-directory` exercises directory discovery instead of the installed
+  Python entry point.
+- `probe_hermes_dashboard_compatibility.py` verifies dashboard manifest
+  discovery, static assets, and authenticated API mounting against an isolated
+  fixture plugin.
 
-No gateway, model, active profile, private Hermes import, or direct Kanban
-database access was used. The probe root was temporary and isolated from the
-operator's configured Hermes home.
-
-Hermes v0.18.2 profile creation is not fully `HERMES_HOME`-isolated: it creates a
-launcher under `~/.local/bin`. The exploratory launcher was removed immediately,
-and the successful probe used the host-visible `default` assignee instead. The
-repeatable release probe therefore does not call `hermes profile create` and
-exercises Kanban without assignment.
-
-Run it from a Daidala checkout with the supported `hermes` executable on
-`PATH`:
+Run them from a Daidala checkout with the supported `hermes` and `daidala`
+executables on `PATH`:
 
 ```bash
 python scripts/probe_hermes_compatibility.py
+python scripts/probe_hermes_plugin_compatibility.py
 python scripts/probe_hermes_dashboard_compatibility.py
 ```
 
-Success returns one JSON object with exact host identity, policy-skill digest,
-public operations, and observed 8,192/8,300 worker-context boundaries. Failure is
-non-zero and names the missing or changed contract. Temporary homes are removed
-on both paths unless `--keep-temp` is explicitly selected for diagnosis.
+Each success returns one bounded JSON object. A failure is non-zero and names the
+missing or changed contract. Temporary homes are removed unless `--keep-temp` is
+explicitly selected for diagnosis. Every probe rejects a generated root inside
+an inherited active `HERMES_HOME`.
+
+All three probes accept `--expected-semver`, `--expected-build`, and
+`--expected-upstream` only as one complete identity override. Omitting all three
+retains the supported v0.18.2 defaults. An entry point omitted from v0.18.2's
+public plugin inventory is retained as `reported: false`; native command loading
+must still pass. A reported plugin error or any native/standalone mismatch fails.
+
 `.github/workflows/release.yml` installs Hermes at full revision
 `4281151ae859241351ba14d8c7682dc67ff4c126` and runs
 the probe only for `v*` tags or explicit `workflow_dispatch`, after normal test

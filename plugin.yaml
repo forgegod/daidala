@@ -15,5 +15,6 @@ provides_tools:
   - daidala_record_verification
   - daidala_deliver
 provides_skills:
+  - aidlc-adapter
   - orchestrate
   - setup
