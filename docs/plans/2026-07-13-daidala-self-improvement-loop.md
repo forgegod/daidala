@@ -50,8 +50,8 @@ retain `TC-F06-01` and `TC-F07-01` as `pass`. Issues
 [#7](https://github.com/forgegod/daidala/issues/7) are closed `completed` and
 `Done`; exact detached controller `2595bf5` and rollback `9f380a6` are clean,
 reconciliation remains paused, and native plus standalone diagnosis pass 11/11.
-Phase 5D is in progress through its ranged paired-evaluation child plan. Phase 0
-is complete with 416 tests and the complete repository/release gate passing. The
+Phase 5D is complete through its ranged paired-evaluation child plan. Phase 0
+completed with 416 tests and the complete repository/release gate passing. The
 operator approved the pinned Addyosmani-versus-Aidlc comparison and canonical
 `importlib.resources` migration fixture. Child Phase 1 froze exact packet
 `c0cdfefb` and installed detached controller `3ce1bfc`. The first control cycle
@@ -72,8 +72,10 @@ immutable rejected-review recovery through exact plan revision 1 `ebfadd7b`.
 Accepted review `5786d828`, evidence-only delivery `d7c7a63f`, terminal digest
 `a3722356`, and receipt `telegram:73` are retained; commit/push are false and the
 claim/worktree are released. Controller `3ce1bfc` is restored, both diagnosis
-routes pass 11/11, and reconciliation remains paused. Paired comparison,
-publication, push, release, and promotion remain gated.
+routes pass 11/11, and reconciliation remains paused. Retained comparison
+`99c45ed` records `incomparable`: nine deterministic metrics pass, but the two
+admissions serialize the Aidlc candidate identity differently. No pack preference,
+implementation retention, publication, push, release, or promotion is authorized.
 The resumable execution record is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 The two failed Phase 5C control cases are explicit follow-up actions in
@@ -101,8 +103,8 @@ Phase 5D execution is ranged in
 | 5B-C — Deterministic probe cancellation | done | Exact detached revision `550671c`, approved preview `9deb8cef`, terminal digest `99fe86b3`, receipt `telegram:37`, identical replay, archived cards, and 11/11 diagnosis prove deterministic closeout. |
 | 5C — Approved improvement and findings synchronization | done | Issue #5 retained strict v2 controller-revision evidence; completion `f9f5566e` released the claim and delivered `telegram:44`. The two control findings were ranged into Phase 5C-R. |
 | 5C-R — Control-plane findings remediation | done | Exact controller `2595bf5`; `TC-F06-01`/`TC-F07-01` retained as `pass`; issues #6/#7 closed completed and `Done`; probe manifests `0db444d6`/`5a79e2fa`; cron paused; diagnosis 11/11. |
-| 5D — UC-03 pack evaluation | in-progress ([child plan](2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md)) | Control/candidate cycles `cycle-c037e2b…`/`cycle-39a46010…` are terminal with completions `a7a668ca`/`a3722356`, accepted evidence-only deliveries, no commit/push/retention, released ownership, restored controller `3ce1bfc`, paused cron, and 11/11 diagnosis. Phase 4 comparison and reconciliation remain pending. |
-| 6 — Version-aware re-evaluation | blocked | Requires the Phase 5D child closeout; candidate Hermes identity is selected here, not invented earlier. |
+| 5D — UC-03 pack evaluation | done ([child plan](2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md)) | Both cycles are terminal with completions `a7a668ca`/`a3722356`; comparison `99c45ed` is `incomparable` because exact candidate identities differ despite nine passing deterministic metrics. No implementation was retained, and controller `3ce1bfc`, defaults, manifest, skills, paused cron, and remote refs are unchanged. |
+| 6 — Version-aware re-evaluation | pending | Phase 5D is closed; candidate Hermes identity must be selected through its own approval gate before this phase starts. |
 | 7 — Repository gate and documentation | blocked | Requires the preceding live evaluation and comparison evidence. |
 
 Mark a phase `in-progress` while running it, `done` only after its gate passes

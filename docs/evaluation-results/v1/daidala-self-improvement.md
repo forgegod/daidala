@@ -106,7 +106,7 @@ browser probe still require separate approvals and prerequisites.
 
 ### UC-03 — pack and skill compatibility
 
-Status: `paired-runs-complete`. The operator selected the pinned current/default
+Status: `complete-incomparable`. The operator selected the pinned current/default
 `addyosmani` pack, pinned candidate `aidlc`, and one canonical Python
 `importlib.resources.contents()` migration fixture. The dry-run-first
 comparison-admission prerequisite passes the complete repository gate. Exact
@@ -136,8 +136,9 @@ three behavior exits 0, migration-policy exit 0, accepted review `5786d828`, and
 evidence-only delivery `d7c7a63f`. Completion `a3722356` closed issue #10, released
 its claim/worktree, and retained receipt `telegram:73`; commit/push are false.
 Controller `3ce1bfc` is restored, both diagnosis routes pass 11/11, and the cron
-remains paused. Comparison, retention, publication, push, release, and promotion
-remain separately gated in the
+remains paused. Retained comparison `99c45ed` records `incomparable`; no
+implementation retention, publication, push, release, or promotion is authorized.
+The complete execution record remains in the
 [Phase 5D child plan](../../plans/2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md).
 
 | UC-03 terminal evidence | Addyosmani control | Aidlc candidate |
@@ -150,9 +151,20 @@ remain separately gated in the
 | Completion | `a7a668ca5dcd18f175fc727457ca683a15323b060b2b802a75aed33918ee7923` | `a3722356093638cf5ad0e2922b90ab19ce509be6c8d4d11541f0c2931f7b6a05` |
 | Receipt | `telegram:64` | `telegram:73` |
 
-This table records terminal evidence only. It does not assign the Phase 4 paired
-verdict; all deterministic identity and observational metric checks still require
-recomputation from the immutable artifacts.
+| Deterministic metric | Result | Basis |
+| --- | --- | --- |
+| Fixture, baseline, routing, evaluator binding, limits, commands | pass | Both admissions bind packet v3, baseline `c53ba52`, the same stage profiles, and the same fixed contract. |
+| Worker changed path | pass | Both changed only `tests/fixtures/uc03_pack_eval/resource_fixture/catalog.py`. |
+| Behavior and migration policy | pass | Both retained zero-exit behavior and policy evidence; accepted reviews confirm three behavior runs. |
+| Candidate identity | fail | Control uses `pack:aidlc@…#sha256:…`; candidate uses `pack:aidlc:revision:…:digest:…`. |
+
+Comparison artifact
+`/home/raphael/.hermes/profiles/daidala-self-improvement/projects/forgegod-daidala/uc03-paired-comparison.json`
+is mode `0600`, SHA-256 `99c45ed69d371343ea0e004e70dcd4e1b0b9ab5d0b12b06fa11840ed7fbf004e`.
+The identity strings encode the same source revision and content digest but are
+not byte-equal. Exact equality is a deterministic eligibility requirement, and
+observational metrics cannot decide the verdict. UC-03 is therefore
+`incomparable`; neither pack is preferred and no implementation is retained.
 
 ## UC-01 reconciliation
 

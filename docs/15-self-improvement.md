@@ -612,7 +612,9 @@ Status: unexercised.
    `aidlc`; execution remains separately gated.
 2. Pin exact source revision and content digest. The candidate identity includes
    the Aidlc pack name, source revision, and content digest already allowed by
-   `.daidala/project.yaml`.
+   `.daidala/project.yaml`. Pass the packet's one canonical candidate-identity
+   string byte-for-byte to both admissions; equivalent alternate serialization
+   is not comparison-safe.
 3. Run current and candidate packs against the same goal, fixture, model routing,
    and limits in fresh evaluators.
 4. Compare provenance, required metrics, observational evidence, and resource
@@ -621,7 +623,11 @@ Status: unexercised.
    update defaults automatically.
 
 Cases: `TC-F02-01`, `TC-F02-02`, `TC-F12-01`, `TC-F17-01`, and
-`TC-F18-01` through `TC-F18-03`. Status: unexercised.
+`TC-F18-01` through `TC-F18-03`. Status: exercised with verdict
+`incomparable`. Both terminal cycles passed the one-path behavior and migration
+policy, but the control and candidate admission records used byte-unequal
+candidate-identity serializations. No pack preference or retained implementation
+is authorized.
 
 ### Candidate promotion and rollback boundary
 

@@ -5,7 +5,7 @@ Produce one valid, sequential `evaluate-pack` comparison of the pinned default
 baseline, one canonical package-resource migration fixture, identical evaluator
 and model-routing identities, and separately approved live cycles.
 
-**Status:** in-progress — Phases 0 through 3 are complete. Two control attempts were
+**Status:** complete — Phases 0 through 4 are complete. Two control attempts were
 canceled before plan approval: issue #9 could not expose packet v1 to workers;
 issue #11 exposed packet v2 but proved baseline `3ce1bfc` lacked the fixture.
 Dedicated clean fixture baseline `c53ba52` now passes the frozen behavior and
@@ -15,8 +15,10 @@ baseline while preserving fixture identity. Control cycle `cycle-c037e2b…`
 completed issue #12 with accepted evidence-only delivery and no commit, push, or
 retention. Candidate cycle `cycle-39a46010…` completed issue #10 after immutable
 review recovery through plan revision 1, also with accepted evidence-only delivery
-and no commit, push, or retention. Phase 4 comparison and reconciliation remain
-pending; no verdict, publication, or promotion has occurred.
+and no commit, push, or retention. Retained comparison `99c45ed` records
+`incomparable` because the two admission candidate-identity strings are
+byte-unequal. No implementation retention, remote publication, or promotion
+occurred.
 
 **Parent plan:**
 [`2026-07-13-daidala-self-improvement-loop.md`](2026-07-13-daidala-self-improvement-loop.md)
@@ -86,7 +88,7 @@ worktree, or ledger state by inspection.
 | 1 | Freeze the paired experiment and install the exact controller | done (packet `c0cdfefb`; controller `3ce1bfc`; issues #9/#10) | Packet and nested digests verify; controller/help/packs agree; native/standalone diagnosis pass 11/11; cron is paused; issues are exact and unready; no cycle or owned worktree exists. |
 | 2 | Run the Addyosmani control workflow | done (cycle `cycle-c037e2b…`; completion `a7a668ca`; receipt `telegram:64`) | The separately approved `evaluate-pack` cycle using `addyosmani` started from fixture baseline `c53ba52`, read packet `7139cf3e`, passed all exact verification commands, reached accepted evidence-only delivery, completed issue #12, and cleaned up with no retention, commit, or push. |
 | 3 | Run the Aidlc candidate workflow | done (cycle `cycle-39a46010…`; completion `a3722356`; receipt `telegram:73`) | The separately approved `evaluate-pack` cycle using `aidlc` started from fixture baseline `c53ba52`, retained three behavior runs and the migration-policy result, recovered an immutable rejected review through plan revision 1, reached accepted evidence-only delivery, completed issue #10, and cleaned up with no retention, commit, or push. |
-| 4 | Compare, reconcile, and close Phase 5D | pending | Deterministic comparison eligibility passes or records `incomparable` for an exact missing identity; the result record and plans agree; no default, manifest, skill installation, controller, or remote ref changes automatically. |
+| 4 | Compare, reconcile, and close Phase 5D | done (comparison `99c45ed`; verdict `incomparable`) | Nine deterministic metrics pass; exact `candidate_identity_equal` fails because control and candidate admissions use byte-unequal serializations. The result record and plans agree; no default, manifest, skill installation, controller, cron, implementation retention, or remote ref changed. |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` only after its
 gate passes, and leave every later row `pending`.
@@ -431,6 +433,25 @@ Verification gate: both terminal workflows and all content addresses verify; the
 record names a valid verdict and its basis; parent Phase 5D and this child are
 done; Phase 6 remains unstarted; controller/default pack/manifest/skills/cron and
 remote refs are unchanged.
+
+Retained profile-local comparison
+`uc03-paired-comparison.json` is mode `0600` with SHA-256
+`99c45ed69d371343ea0e004e70dcd4e1b0b9ab5d0b12b06fa11840ed7fbf004e`.
+Nine deterministic metrics pass: fixture, repository baseline, routing,
+evaluator binding, limits, commands, exact changed path, behavioral exits, and
+migration-policy exits. Exact candidate identity does not:
+
+- control: `pack:aidlc@e49341dbeb8af82758dd85e96ed7fe9bcf38a447#sha256:e4e921b9e719eb54a7d5ec753418e2e451369a3ef50ffd7f52cf74a85d6a6b6a`
+- candidate: `pack:aidlc:revision:e49341dbeb8af82758dd85e96ed7fe9bcf38a447:digest:e4e921b9e719eb54a7d5ec753418e2e451369a3ef50ffd7f52cf74a85d6a6b6a`
+
+The strings encode the same pack inputs but are not byte-equal. The frozen
+contract requires exact equality and does not permit semantic normalization, so
+the only valid verdict is `incomparable`. Observational differences — including
+the candidate's immutable review recovery and longer wall time — cannot override
+that deterministic failure. No preferred pack, default change, retained
+implementation, finding publication, push, release, promotion, or cron resume is
+authorized. A later paired rerun must pass the packet's one canonical candidate
+identity byte-for-byte to both admissions.
 
 ## Out of scope
 
