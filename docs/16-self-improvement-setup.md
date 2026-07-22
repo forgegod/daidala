@@ -57,12 +57,12 @@ retained evidence.
 | Prerequisite | State | Evidence |
 |---|---|---|
 | Hermes baseline | Pass | `Hermes Agent v0.18.2 (2026.7.7.2)` |
-| Repository identity | Pass | The live report verifies canonical repository `forgegod/daidala`, trusted remote identity, frozen Phase 5D fixture baseline `c53ba52`, and no active cycle or owned worktree. The working branch includes controller-completion regression `e20e3e8`. |
+| Repository identity | Pass | The live report verifies canonical repository `forgegod/daidala`, trusted remote identity, frozen Phase 5D fixture baseline `c53ba52`, and no active cycle or owned worktree. The working branch includes controller-completion regression `e20e3e8` and terminal control/candidate checkpoints. |
 | Daidala command surfaces | Pass | Standalone and native controller-profile commands report Daidala `0.2.0`; native pack validation succeeds. |
-| Controller plugin revision | Pass | The controller profile loads clean detached revision `3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8`; native and standalone live diagnosis verify the same identity. Exact fix `e20e3e8` was temporarily installed only to complete the terminal control after regression verification, then retained outside discovery. |
+| Controller plugin revision | Pass | The controller profile loads clean detached revision `3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8`; native and standalone live diagnosis verify the same identity. Exact fix `e20e3e8` was installed temporarily only for the terminal control/candidate completions after regression verification, then retained outside discovery. |
 | Controller profile | Pass | `/home/raphael/.hermes/profiles/daidala-self-improvement` exists and the sticky profile remains `hermes-vc`. |
 | Reconciliation cron | Pass | Exactly one profile-local no-agent job uses the digest-matched wrapper, `every 15m` with infinite repeat, and the registered checkout; it is paused after two successful controlled executions that converged on one cycle. |
-| Dedicated board | Pass | Installation-global board `daidala-forgegod-daidala` exists with the exact checkout as default workdir; both UC-01 workflows and UC-03 control issue #12 are terminal, while candidate issue #10 remains unready. It did not replace the current `default` board. |
+| Dedicated board | Pass | Installation-global board `daidala-forgegod-daidala` exists with the exact checkout as default workdir; both UC-01 workflows and UC-03 issues #12/#10 are terminal with released ownership. It did not replace the current `default` board. |
 | Restricted container | Pass | Docker integration is available again; native and standalone live diagnosis reproduce the retained restricted-container boundary with the digest-pinned image and denied network. |
 | GitHub runtime credentials | Pass | Non-secret alias bindings exist. Both bounded runtime read probes pass, and retained evidence includes their request identities, expirations, and the separately approved controlled findings-write receipt. |
 | GitHub operator credential | Pass | `gh-vault run --name ghcli -- gh project list` succeeds, and `GH_TOKEN_DAIDALA_PROJECT_MGMT` is absent from the controller profile. Attended Project authority remains isolated in `gh-vault`. |
@@ -73,7 +73,7 @@ retained evidence.
 
 The current native and standalone reports pass all eleven checks with exact
 controller `3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8`, terminal issues
-#5/#6/#7/#9/#11/#12, unready issue #10, and no active cycle or owned worktree.
+#5/#6/#7/#9/#10/#11/#12, and no active cycle or owned worktree.
 Rollback controllers
 `2595bf5f8aacdd1411c101250acc2d0211eaf22a`,
 `9f380a6b04fdbb51817c7ac2279b217fda34f0c2`,
@@ -106,9 +106,9 @@ in this order; a later step must not be used to waive an earlier blocker.
 | 13 | Apply the separately approved terminal probe cancellation. | GitHub issue, workflow cards, attended notification, and mode-`0600` cancellation receipts. | Pass at preview `9deb8cef`; issue #4 is closed not planned, both cards are archived, replay converges, and native plus standalone diagnosis pass 11/11. |
 | 14 | Run one separately selected Phase 5C improvement through measurement and retention. | Published issue, workflow artifacts, owned worktrees, and one approved target diff. | Pass; implementation `401f3dfe` is retained, completion `f9f5566e` closed issue #5 completed, both diagnosis routes pass 11/11, and the cron remains paused. |
 | 15 | Verify and separately decide whether to retain both control-plane remediations. | Retained controller revision and rollback evidence; live workflow remains separately gated. | Pass for approval-boundary probe `tc-f06-direct-approval-probe-v2` at `9f380a6` and immutable-artifact probe `tc-f07-revision-artifact-probe-v1` at installed `2595bf5`; both reject the prohibited mutation, clean up exactly, and retain 11/11 diagnosis with paused cron. Issues #6/#7 are closed completed. |
-| 16 | Freeze the UC-03 packet and prepare paired intake. | Approved controller swap and two unready GitHub issues only. | Packet v1 `c0cdfefb` is retained; detached controller `3ce1bfc` is installed with rollback `2595bf5`; first control issue #9 is canceled not planned, candidate issue #10 remains unready, and both diagnosis routes pass 11/11 with paused cron and no active cycle or owned worktree. |
+| 16 | Freeze the UC-03 packet and prepare paired intake. | Approved controller swap and two unready GitHub issues only. | Packet v1 `c0cdfefb` is retained; detached controller `3ce1bfc` is installed with rollback `2595bf5`; first control issue #9 was canceled not planned, candidate issue #10 was kept unready at this gate, and both diagnosis routes passed 11/11 with paused cron and no active cycle or owned worktree. |
 | 17 | Repair UC-03 packet visibility before replacement admission. | Repository packet v2 plus separately approved profile-local copy and intake mutation. | First cancellation `e606f24c` retained exact command drift and `telegram:57`; packet v2 `eb02da7c` made exact bytes available, then replacement issue #11 canceled at `fc865175`/`telegram:59` when planning proved baseline `3ce1bfc` lacked the fixture. |
-| 18 | Establish the fixture-bearing UC-03 baseline. | Ten-file repository checkpoint, packet-v3 distribution, and replacement intake. | Clean baseline `c53ba52` passes the exact frozen behavior, full pytest, Ruff, and Markdown links; packet v3 `7139cf3e` binds it with unchanged fixture identity and is installed mode `0600`; replacement issue #12 and candidate issue #10 are byte-identical, open, unready, and unclaimed. |
+| 18 | Establish the fixture-bearing UC-03 baseline. | Ten-file repository checkpoint, packet-v3 distribution, and replacement intake. | Clean baseline `c53ba52` passed the exact frozen behavior, full pytest, Ruff, and Markdown links; packet v3 `7139cf3e` bound it with unchanged fixture identity and was installed mode `0600`; replacement issue #12 and candidate issue #10 were byte-identical, open, unready, and unclaimed at this gate. |
 
 The operator owns browser authorization, credential creation, attended-channel
 confirmation, setup approval, and later cycle approval. The agent may select a

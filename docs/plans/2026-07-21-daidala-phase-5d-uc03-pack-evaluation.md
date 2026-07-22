@@ -5,7 +5,7 @@ Produce one valid, sequential `evaluate-pack` comparison of the pinned default
 baseline, one canonical package-resource migration fixture, identical evaluator
 and model-routing identities, and separately approved live cycles.
 
-**Status:** in-progress — Phases 0 through 2 are complete. Two control attempts were
+**Status:** in-progress — Phases 0 through 3 are complete. Two control attempts were
 canceled before plan approval: issue #9 could not expose packet v1 to workers;
 issue #11 exposed packet v2 but proved baseline `3ce1bfc` lacked the fixture.
 Dedicated clean fixture baseline `c53ba52` now passes the frozen behavior and
@@ -13,8 +13,10 @@ repository gates. Packet
 [`7139cf3e`](2026-07-21-daidala-phase-5d-uc03-experiment-v3.json) binds that
 baseline while preserving fixture identity. Control cycle `cycle-c037e2b…`
 completed issue #12 with accepted evidence-only delivery and no commit, push, or
-retention. Candidate issue #10 remains open, unready, and unclaimed; its readiness
-and admission remain separately gated.
+retention. Candidate cycle `cycle-39a46010…` completed issue #10 after immutable
+review recovery through plan revision 1, also with accepted evidence-only delivery
+and no commit, push, or retention. Phase 4 comparison and reconciliation remain
+pending; no verdict, publication, or promotion has occurred.
 
 **Parent plan:**
 [`2026-07-13-daidala-self-improvement-loop.md`](2026-07-13-daidala-self-improvement-loop.md)
@@ -46,17 +48,25 @@ and admission remain separately gated.
 - Invalid control cycle
   `cycle-8cbe191f34e879a24fc9888e1d00d7d85624fdf2758cb90c2b66e05861ea3de2`
   is terminally canceled at digest `e606f24c`; issue #9 is closed not planned,
-  issue #10 remains unready, no owned worktree exists, and diagnosis is 11/11.
+  issue #10 was kept unready, no owned worktree existed, and diagnosis returned
+  to 11/11.
 - Invalid replacement cycle
   `cycle-54b9b3f253d7a3dee883f146b446bad239c31819e8bdbf48ce05e62f154ab738`
   is terminally canceled at digest `fc865175`; issue #11 is closed not planned,
-  issue #10 remains unready, and no worktree or implementation exists.
+  issue #10 was kept unready, and no worktree or implementation existed.
 - Valid control cycle
   `cycle-c037e2b69532105d79b7c1d0707e3e3663c1822a449ff538353ef5c8dedbc081`
   binds plan `15607a5f`, accepted review `4074ae25`, delivery `422b88f9`, and
   terminal completion `a7a668ca`; issue #12 is closed completed, receipt
   `telegram:64` is retained, its claim/worktree are released, and exact controller
   `3ce1bfc` is restored with native plus standalone diagnosis at 11/11.
+- Valid candidate cycle
+  `cycle-39a46010db3f45c4cc2e4bfc541f18481ff6b3c2c478eb1a9f8d892926267842`
+  binds terminal plan revision 1 digest `ebfadd7b`, accepted review `5786d828`,
+  delivery `d7c7a63f`, and terminal completion `a3722356`; issue #10 is closed
+  completed, receipt `telegram:73` is retained, its claim/worktree are released,
+  and exact controller `3ce1bfc` is restored with native plus standalone diagnosis
+  at 11/11.
 
 ## Risk call-out
 
@@ -75,7 +85,7 @@ worktree, or ledger state by inspection.
 | 0 | Restore evidence authority and expose exact comparison admission | done (416 tests + complete release gate) | Focused project-cycle/CLI tests and the complete repository/release gate pass; current source exposes `--mode evaluate-pack --candidate-identity`; no live state changes. |
 | 1 | Freeze the paired experiment and install the exact controller | done (packet `c0cdfefb`; controller `3ce1bfc`; issues #9/#10) | Packet and nested digests verify; controller/help/packs agree; native/standalone diagnosis pass 11/11; cron is paused; issues are exact and unready; no cycle or owned worktree exists. |
 | 2 | Run the Addyosmani control workflow | done (cycle `cycle-c037e2b…`; completion `a7a668ca`; receipt `telegram:64`) | The separately approved `evaluate-pack` cycle using `addyosmani` started from fixture baseline `c53ba52`, read packet `7139cf3e`, passed all exact verification commands, reached accepted evidence-only delivery, completed issue #12, and cleaned up with no retention, commit, or push. |
-| 3 | Run the Aidlc candidate workflow | pending | One separately approved `evaluate-pack` cycle using `aidlc` reaches accepted evidence-only delivery and terminal cleanup with identities equal to Phase 2 except the selected pack. |
+| 3 | Run the Aidlc candidate workflow | done (cycle `cycle-39a46010…`; completion `a3722356`; receipt `telegram:73`) | The separately approved `evaluate-pack` cycle using `aidlc` started from fixture baseline `c53ba52`, retained three behavior runs and the migration-policy result, recovered an immutable rejected review through plan revision 1, reached accepted evidence-only delivery, completed issue #10, and cleaned up with no retention, commit, or push. |
 | 4 | Compare, reconcile, and close Phase 5D | pending | Deterministic comparison eligibility passes or records `incomparable` for an exact missing identity; the result record and plans agree; no default, manifest, skill installation, controller, or remote ref changes automatically. |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` only after its
@@ -350,8 +360,8 @@ retains checks for done implement, verify, review, and deliver cards. The exact 
 was installed temporarily, completion preview `deb7d47b` applied and replayed to
 digest `a7a668ca`, and issue #12 closed completed with receipt `telegram:64`.
 Controller `3ce1bfc` and its evidence were then restored before candidate work;
-both diagnosis routes pass 11/11. Control evidence files are mode `0600`, evidence
-directories are mode `0700`, and candidate issue #10 remains open and unready.
+both diagnosis routes passed 11/11. Control evidence files are mode `0600` and
+evidence directories are mode `0700`.
 
 ## Phase 3 — Run the Aidlc candidate workflow
 
@@ -376,6 +386,25 @@ Steps:
 Verification gate: one terminal Aidlc cycle has every comparison identity equal
 to Phase 2 except selected pack identity; immutable evidence is complete; no
 retention, commit, push, publication, default change, or third cycle occurred.
+
+Candidate issue #10 admitted as workflow `cycle-39a46010…` with receipt
+`telegram:66`. Original plan `9095050a` produced the required one-path migration
+and three successful behavior executions, but the worker persisted rejection
+`3592ffd9` before the repeated evidence was fully represented in the ledger. The
+accepted retry could not overwrite immutable `review.md`. Supported plan
+replacement preserved all revision-0 evidence, archived its post-gate cards,
+removed its worktree, and invalidated approval. Separately approved revision 1
+`ebfadd7b` recreated the same one-path migration as diff `e68e33c1`, retained
+three distinct behavior rows plus migration-policy row `e3b0c442`, and reached
+accepted review `5786d828` and delivery `d7c7a63f` with commit/push false.
+
+Exact completion preview `2b206ef9` applied and replayed to terminal digest
+`a3722356`; issue #10 closed completed, its claim/worktree were released, and
+receipt `telegram:73` was retained. Completion used the already verified narrow
+controller fix `e20e3e8` temporarily. Controller `3ce1bfc` and both mode-`0600`
+evidence files were restored afterward; native and standalone diagnosis pass
+11/11, cron `1847b1b1e14b` remains disabled, and candidate evidence files and
+directories are restricted to `0600`/`0700` without content changes.
 
 ## Phase 4 — Compare, reconcile, and close Phase 5D
 

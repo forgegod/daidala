@@ -11,8 +11,8 @@ controller revision `3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8` is installed;
 native and standalone diagnosis pass 11/11, the reconciliation cron remains
 paused, and no active cycle or owned worktree exists. Phase 5D packet v3
 `7139cf3e` is frozen. Addyosmani control issue #12 is completed with terminal
-digest `a7a668ca`; Aidlc candidate issue #10 remains unready. Candidate execution,
-comparison, push, release, and promotion remain unapproved.
+digest `a7a668ca`; Aidlc candidate issue #10 is completed with terminal digest
+`a3722356`. Paired comparison, push, release, and promotion remain unapproved.
 
 Each Phase 5A workflow independently changed only `calculator.py` and
 `test_calculator.py`, reproduced `AssertionError: 1 != 2` in the restricted
@@ -106,7 +106,7 @@ browser probe still require separate approvals and prerequisites.
 
 ### UC-03 — pack and skill compatibility
 
-Status: `control-complete`. The operator selected the pinned current/default
+Status: `paired-runs-complete`. The operator selected the pinned current/default
 `addyosmani` pack, pinned candidate `aidlc`, and one canonical Python
 `importlib.resources.contents()` migration fixture. The dry-run-first
 comparison-admission prerequisite passes the complete repository gate. Exact
@@ -118,9 +118,9 @@ unready, and diagnosis is 11/11. Packet v2 `eb02da7c` keeps the contract/fixture
 digests unchanged and was installed at the exact profile-local distribution path.
 Replacement issue #11 read it correctly but was canceled at `fc865175` before
 plan approval because baseline `3ce1bfc` lacked the frozen fixture. Issue #11 is
-closed not planned; candidate issue #10 remains unready. Dedicated clean fixture
-baseline `c53ba52` passes the frozen behavior and repository gates. Packet v3
-`7139cf3e` binds that baseline while preserving fixture identity and is installed
+closed not planned; candidate issue #10 was kept unready at that gate. Dedicated
+clean fixture baseline `c53ba52` passes the frozen behavior and repository gates.
+Packet v3 `7139cf3e` binds that baseline while preserving fixture identity and is installed
 mode `0600`. Replacement control cycle `cycle-c037e2b…` bound exact plan
 `15607a5f`, changed only the catalog implementation, passed three behavioral runs
 and the migration-policy command, and reached accepted review `4074ae25` plus
@@ -128,10 +128,31 @@ evidence-only delivery `422b88f9`. Completion `a7a668ca` closed issue #12,
 released its claim/worktree, and retained receipt `telegram:64`; commit/push are
 false. Narrow regression fix `e20e3e8` corrected completion's stale approval-card
 assumption, after which controller `3ce1bfc` was restored and both diagnosis routes
-passed 11/11. Candidate issue #10 remains open, unready, and unclaimed. Candidate
-execution, comparison, retention, publication, push, release, and promotion remain
-separately gated in the
+passed 11/11. Aidlc cycle `cycle-39a46010…` admitted issue #10 with receipt
+`telegram:66`. Original plan `9095050a` reached correct implementation but persisted
+an immutable rejected review before all repeated evidence rows existed. Exact plan
+revision 1 `ebfadd7b` preserved that history and produced one-path diff `e68e33c1`,
+three behavior exits 0, migration-policy exit 0, accepted review `5786d828`, and
+evidence-only delivery `d7c7a63f`. Completion `a3722356` closed issue #10, released
+its claim/worktree, and retained receipt `telegram:73`; commit/push are false.
+Controller `3ce1bfc` is restored, both diagnosis routes pass 11/11, and the cron
+remains paused. Comparison, retention, publication, push, release, and promotion
+remain separately gated in the
 [Phase 5D child plan](../../plans/2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md).
+
+| UC-03 terminal evidence | Addyosmani control | Aidlc candidate |
+| --- | --- | --- |
+| Cycle | `cycle-c037e2b69532105d79b7c1d0707e3e3663c1822a449ff538353ef5c8dedbc081` | `cycle-39a46010db3f45c4cc2e4bfc541f18481ff6b3c2c478eb1a9f8d892926267842` |
+| Plan | `15607a5f915dda36e6e4ee8540b1c4968fe43634b22e3e0fbb6879a859f6482d` | terminal revision 1 `ebfadd7b7682b6c191d9376326a360eccc56f94d4765182778b0b508ba9096e4` |
+| Implementation | `56e2cb082f850b30c312a7ae719e85beba6f754fe2b008ec0c7cd999009d2e43` | `e68e33c164171d36ec3fecc465fd1f7c786c9495910b972da69e6b4e60ce0a01` |
+| Review | `4074ae250b72986e66a743f88822f6c543c417ca8cc0567b076a5052d7c41d49` | `5786d828d7ff740c50945350650662d10398f7378dc3639b8f2b769e805dd742` |
+| Delivery | `422b88f9df3b7b89bac3932ea076d93ad5a6effafbc4d898081da24d3a5eb0ee` | `d7c7a63f382e48fb3da3d33c83d599256f41c2c7377c0866ecbbb3c3acbde0c2` |
+| Completion | `a7a668ca5dcd18f175fc727457ca683a15323b060b2b802a75aed33918ee7923` | `a3722356093638cf5ad0e2922b90ab19ce509be6c8d4d11541f0c2931f7b6a05` |
+| Receipt | `telegram:64` | `telegram:73` |
+
+This table records terminal evidence only. It does not assign the Phase 4 paired
+verdict; all deterministic identity and observational metric checks still require
+recomputation from the immutable artifacts.
 
 ## UC-01 reconciliation
 

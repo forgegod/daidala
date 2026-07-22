@@ -57,9 +57,9 @@ operator approved the pinned Addyosmani-versus-Aidlc comparison and canonical
 `c0cdfefb` and installed detached controller `3ce1bfc`. The first control cycle
 was canceled at `e606f24c` before plan approval because its definition could not
 read the packet from detached baseline `3ce1bfc`; issue #9 is closed not planned,
-issue #10 remains unready, and diagnosis is 11/11. Remediation packet `eb02da7c`
-was installed at its exact profile-local path, but replacement issue #11 was
-canceled at `fc865175` when planning proved baseline `3ce1bfc` lacked the fixture.
+issue #10 was kept unready, and diagnosis returned to 11/11. Remediation packet
+`eb02da7c` was installed at its exact profile-local path, but replacement issue
+#11 was canceled at `fc865175` when planning proved baseline `3ce1bfc` lacked the fixture.
 Dedicated fixture baseline `c53ba52` now passes the frozen behavior and repository
 gates; packet v3 `7139cf3e` binds it and is installed mode `0600`. Addyosmani
 control cycle `cycle-c037e2b…` completed issue #12 with accepted review `4074ae25`,
@@ -67,8 +67,13 @@ evidence-only delivery `422b88f9`, terminal digest `a7a668ca`, and receipt
 `telegram:64`; commit/push are false and the worktree/claim are released. Narrow
 controller fix `e20e3e8` resolved an impossible approval-card completion check,
 then exact controller `3ce1bfc` was restored and both diagnosis routes returned to
-11/11. Candidate issue #10 remains open and unready. Candidate readiness,
-admission, retention, publication, push, release, and promotion remain gated.
+11/11. Aidlc candidate cycle `cycle-39a46010…` completed issue #10 after an
+immutable rejected-review recovery through exact plan revision 1 `ebfadd7b`.
+Accepted review `5786d828`, evidence-only delivery `d7c7a63f`, terminal digest
+`a3722356`, and receipt `telegram:73` are retained; commit/push are false and the
+claim/worktree are released. Controller `3ce1bfc` is restored, both diagnosis
+routes pass 11/11, and reconciliation remains paused. Paired comparison,
+publication, push, release, and promotion remain gated.
 The resumable execution record is saved in
 [`2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md`](2026-07-20-daidala-phase-5b-paused-reconciliation-cron.md).
 The two failed Phase 5C control cases are explicit follow-up actions in
@@ -96,7 +101,7 @@ Phase 5D execution is ranged in
 | 5B-C — Deterministic probe cancellation | done | Exact detached revision `550671c`, approved preview `9deb8cef`, terminal digest `99fe86b3`, receipt `telegram:37`, identical replay, archived cards, and 11/11 diagnosis prove deterministic closeout. |
 | 5C — Approved improvement and findings synchronization | done | Issue #5 retained strict v2 controller-revision evidence; completion `f9f5566e` released the claim and delivered `telegram:44`. The two control findings were ranged into Phase 5C-R. |
 | 5C-R — Control-plane findings remediation | done | Exact controller `2595bf5`; `TC-F06-01`/`TC-F07-01` retained as `pass`; issues #6/#7 closed completed and `Done`; probe manifests `0db444d6`/`5a79e2fa`; cron paused; diagnosis 11/11. |
-| 5D — UC-03 pack evaluation | in-progress ([child plan](2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md)) | Control attempts canceled at `e606f24c`/`fc865175` without implementation; clean fixture baseline `c53ba52` and packet v3 `7139cf3e` are active; issues #12/#10 are byte-identical and unready, diagnosis is 11/11, and readiness/admission remain gated. |
+| 5D — UC-03 pack evaluation | in-progress ([child plan](2026-07-21-daidala-phase-5d-uc03-pack-evaluation.md)) | Control/candidate cycles `cycle-c037e2b…`/`cycle-39a46010…` are terminal with completions `a7a668ca`/`a3722356`, accepted evidence-only deliveries, no commit/push/retention, released ownership, restored controller `3ce1bfc`, paused cron, and 11/11 diagnosis. Phase 4 comparison and reconciliation remain pending. |
 | 6 — Version-aware re-evaluation | blocked | Requires the Phase 5D child closeout; candidate Hermes identity is selected here, not invented earlier. |
 | 7 — Repository gate and documentation | blocked | Requires the preceding live evaluation and comparison evidence. |
 
