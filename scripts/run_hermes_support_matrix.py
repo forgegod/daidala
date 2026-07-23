@@ -198,6 +198,22 @@ def _record_probe(
     }
 
 
+def _validate_repetition_identity(host: Host, runs: list[dict[str, object]]) -> None:
+    signatures: list[list[tuple[object, object]]] = []
+    for run in runs:
+        probes = run.get("probes")
+        if not isinstance(probes, list):
+            raise MatrixError(f"{host.label} repetition omitted probe evidence")
+        signature: list[tuple[object, object]] = []
+        for probe in probes:
+            if not isinstance(probe, dict):
+                raise MatrixError(f"{host.label} repetition has invalid probe evidence")
+            signature.append((probe.get("probe"), probe.get("output_sha256")))
+        signatures.append(signature)
+    if len(signatures) != 2 or signatures[0] != signatures[1]:
+        raise MatrixError(f"{host.label} probe outputs differed across repetitions")
+
+
 def _entry_points_file(host: Host) -> Path:
     output = _run(
         [
@@ -283,6 +299,7 @@ def run_host(host: Host, wheel: Path, root: Path) -> dict[str, object]:
             run_probes.append(directory_result)
     finally:
         disabled_entry_points.rename(entry_points)
+    _validate_repetition_identity(host, repetitions)
     return {"host": host.to_dict(), "repetitions": repetitions}
 
 

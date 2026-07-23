@@ -202,6 +202,17 @@ def test_entrypoint_metadata_lookup_is_anchored_to_host_purelib(
     assert "importlib.metadata" not in commands[0][2]
 
 
+def test_matrix_rejects_probe_output_drift_between_repetitions() -> None:
+    module = load_matrix()
+    runs = [
+        {"probes": [{"probe": "probe.py", "output_sha256": "a" * 64}]},
+        {"probes": [{"probe": "probe.py", "output_sha256": "b" * 64}]},
+    ]
+
+    with pytest.raises(module.MatrixError, match="differed across repetitions"):
+        module._validate_repetition_identity(host(module), runs)
+
+
 def test_matrix_cleans_owned_root_on_host_failure(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

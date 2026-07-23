@@ -23,8 +23,8 @@ Own dependency-free development and repository verification utilities.
 - `run_hermes_support_matrix.py` preflights one exact wheel, installs it into
   complete explicit Hermes host tuples, and runs the core, entry-point plugin,
   directory plugin, and dashboard probes twice per host before bounded canonical
-  evidence and cleanup. The directory leg restores disabled entry-point metadata
-  in `finally`.
+  evidence and cleanup. It rejects output drift between repetitions. The
+  directory leg restores disabled entry-point metadata in `finally`.
 
 ## Local Contracts
 

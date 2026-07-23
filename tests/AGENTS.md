@@ -93,8 +93,9 @@ completeness without touching a real Hermes profile.
   explicit candidate identity, and isolated cleanup through subprocesses.
 - `test_hermes_support_matrix.py` validates exact-wheel preflight, complete host
   tuples, two runs of the core, entry-point, directory, and dashboard probes,
-  entry-point metadata restoration, fail-closed evidence checks, private
-  canonical output, active-home exclusion, and cleanup on failure.
+  byte-identical repetition output, entry-point metadata restoration, fail-closed
+  evidence checks, private canonical output, active-home exclusion, and cleanup
+  on failure.
 - `test_release_workflow.py` keeps the exact-wheel matrix release-only, pins the
   documented Hermes checkout and tracking identity, transfers one checked wheel,
   prevents editable-Daidala drift, and requires the pinned host dashboard build.

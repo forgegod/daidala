@@ -208,6 +208,19 @@ def test_probe_loads_plugin_and_compares_native_standalone_packs(tmp_path: Path)
     assert not list(tmp_path.glob("daidala-plugin-compat-*"))
 
 
+def test_probe_output_is_byte_identical_across_isolated_runs(tmp_path: Path) -> None:
+    first_root = tmp_path / "first"
+    second_root = tmp_path / "second"
+    first_root.mkdir()
+    second_root.mkdir()
+
+    first = run_probe(first_root)
+    second = run_probe(second_root)
+
+    assert first.returncode == second.returncode == 0
+    assert first.stdout == second.stdout
+
+
 def test_probe_accepts_explicit_candidate_identity(tmp_path: Path) -> None:
     result = run_probe(
         tmp_path,

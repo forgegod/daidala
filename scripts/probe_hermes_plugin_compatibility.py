@@ -36,6 +36,7 @@ from daidala.state import WorkflowStage
 PACKS = ("addyosmani", "aidlc")
 PLUGIN_NAME = "daidala"
 PLUGIN_VERSION = "0.2.0"
+FIXTURE_GIT_DATE = "2026-01-01T00:00:00+00:00"
 
 
 def _prepare_home(home: Path, plugin_directory: Path | None) -> None:
@@ -252,7 +253,14 @@ def _prepare_admission_fixture(root: Path, home: Path, env: dict[str, str]) -> d
         shutil.copy2(source_root / ".daidala" / name, policy / name)
     (checkout / "README.md").write_text("Daidala compatibility fixture.\n", encoding="utf-8")
     _git(["git", "-C", str(checkout), "add", "."], env)
-    _git(["git", "-C", str(checkout), "commit", "-q", "-m", "fixture"], env)
+    commit_env = env | {
+        "GIT_AUTHOR_DATE": FIXTURE_GIT_DATE,
+        "GIT_COMMITTER_DATE": FIXTURE_GIT_DATE,
+    }
+    _git(
+        ["git", "-C", str(checkout), "commit", "-q", "-m", "fixture"],
+        commit_env,
+    )
     baseline = _git(["git", "-C", str(checkout), "rev-parse", "HEAD"], env)
 
     plugin_checkout = home / "plugins" / PLUGIN_NAME
