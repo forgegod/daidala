@@ -103,9 +103,13 @@ jobs:
           python -m venv /tmp/hermes-v0182
           /tmp/hermes-v0182/bin/pip install --upgrade pip
           /tmp/hermes-v0182/bin/pip install /tmp/hermes-v0182-source
+          v0182_purelib="$(/tmp/hermes-v0182/bin/python -c 'import sysconfig; print(sysconfig.get_path("purelib"))')"
+          printf '%s\n' 4281151ae859241351ba14d8c7682dc67ff4c126 > "$v0182_purelib/.hermes_build_sha"
           python -m venv /tmp/hermes-v0190
           /tmp/hermes-v0190/bin/pip install --upgrade pip
           /tmp/hermes-v0190/bin/pip install /tmp/hermes-v0190-source
+          v0190_purelib="$(/tmp/hermes-v0190/bin/python -c 'import sysconfig; print(sysconfig.get_path("purelib"))')"
+          printf '%s\n' 3ef6bbd201263d354fd83ec55b3c306ded2eb72a > "$v0190_purelib/.hermes_build_sha"
       - name: Probe exact wheel on supported Hermes boundary
         run: |
           mapfile -t wheels < <(printf '%s\n' dist/*.whl)

@@ -41,6 +41,16 @@ def test_live_probe_runs_only_for_tags_and_manual_dispatch() -> None:
     assert "--host supported-v0190 0.19.0 2026.7.20 3ef6bbd2" in job
     assert "/tmp/hermes-v0182/bin/pip install /tmp/hermes-v0182-source" in job
     assert "/tmp/hermes-v0190/bin/pip install /tmp/hermes-v0190-source" in job
+    assert 'v0182_purelib="$(/tmp/hermes-v0182/bin/python -c' in job
+    assert (
+        "4281151ae859241351ba14d8c7682dc67ff4c126 > "
+        '"$v0182_purelib/.hermes_build_sha"'
+    ) in job
+    assert 'v0190_purelib="$(/tmp/hermes-v0190/bin/python -c' in job
+    assert (
+        "3ef6bbd201263d354fd83ec55b3c306ded2eb72a > "
+        '"$v0190_purelib/.hermes_build_sha"'
+    ) in job
     assert "pip install -e /tmp/hermes" not in job
     assert "python -m pip install -e ." not in job
     assert "github.event_name == 'push'" not in job
