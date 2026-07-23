@@ -147,6 +147,11 @@ def _validate_probe(probe: str, payload: Any) -> None:
         raise MatrixError(f"{probe} did not return successful JSON")
     if probe == "probe_hermes_plugin_compatibility.py":
         admission = payload.get("cli", {}).get("admission_preview")
+        discovery = payload.get("plugin", {}).get("discovery")
+        if discovery == "directory":
+            if admission is not None:
+                raise MatrixError("directory plugin probe returned unexpected admission evidence")
+            return
         if not isinstance(admission, dict):
             raise MatrixError("plugin probe omitted admission-preview evidence")
         if (

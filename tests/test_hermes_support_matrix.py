@@ -156,6 +156,17 @@ def test_matrix_rejects_native_standalone_mismatch() -> None:
         module._validate_probe("probe_hermes_plugin_compatibility.py", payload)
 
 
+def test_matrix_accepts_directory_discovery_without_duplicate_admission() -> None:
+    module = load_matrix()
+    payload = {
+        "success": True,
+        "plugin": {"discovery": "directory"},
+        "cli": {"admission_preview": None},
+    }
+
+    module._validate_probe("probe_hermes_plugin_compatibility.py", payload)
+
+
 def test_matrix_rejects_missing_literal_confirmation() -> None:
     module = load_matrix()
     payload = {
@@ -254,18 +265,17 @@ def test_matrix_runs_entrypoint_and_directory_probes_twice_per_host(
         probe = Path(command[1]).name if len(command) > 1 else ""
         if probe == "probe_hermes_plugin_compatibility.py":
             discovery = "directory" if "--plugin-directory" in command else "entrypoint"
+            admission = None if discovery == "directory" else {
+                "byte_identical": True,
+                "state_unchanged": True,
+                "native_exit": 0,
+                "standalone_exit": 0,
+            }
             return json.dumps(
                 {
                     "success": True,
                     "plugin": {"discovery": discovery},
-                    "cli": {
-                        "admission_preview": {
-                            "byte_identical": True,
-                            "state_unchanged": True,
-                            "native_exit": 0,
-                            "standalone_exit": 0,
-                        }
-                    },
+                    "cli": {"admission_preview": admission},
                 },
                 sort_keys=True,
             )
