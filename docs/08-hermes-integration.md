@@ -19,7 +19,7 @@ releases:
 |---|---|---|
 | Directory containing `plugin.yaml` and root `__init__.py` | `user` (`git` in `hermes plugins list`) | Explicit enablement, tool registration, and bundled skill loading passed |
 | Python distribution entry point in `hermes_agent.plugins` | `entrypoint` | Explicit enablement, tool registration, and bundled skill loading passed |
-| Public Git repository `forgegod/daidala` | `user` (`git` in `hermes plugins list`) | Pending the authorized Phase 6 destination push and fresh installation probe |
+| Public Git repository `forgegod/daidala` | `user` (`git` in `hermes plugins list`) | Fresh v0.19.0 installation from merged remote `main` passed |
 
 The verified directory and entry-point discovery paths register exactly:
 
@@ -64,6 +64,21 @@ produce byte-equivalent native and standalone pack-validation JSON. The exact
 `tests/test_plugin.py`.
 
 Daidala does not override built-in tools.
+
+## Public Git verification
+
+Phase 6 installed `forgegod/daidala` into a fresh mode-`0700` `HERMES_HOME`
+using exact Hermes v0.19.0 build `2026.7.20`, upstream `3ef6bbd2`. The host had
+no preinstalled Daidala distribution. Public remote `main` and the installed
+plugin both resolved to merge commit `dfce6ad3ad8285755ff773acd295b56b70939dff`.
+
+A fresh process reported the plugin enabled with source `user`, registered the
+12 tools and three qualified skills listed above, exposed `hermes daidala`, and
+validated both packs. The dashboard discovered the manifest, served exact asset
+bytes, mounted the authenticated router, returned an unconfirmed setup preview,
+and rejected start without literal confirmation. No Daidala policy ledger,
+Kanban state, or new profile-root path was created. This verification did not
+tag or publish a GitHub, TestPyPI, or PyPI release.
 
 ## Repeatable isolated verification
 

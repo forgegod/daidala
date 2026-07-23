@@ -425,8 +425,8 @@ commands, schemas, diagrams, and plan paths use Daidala. The two branded plan
 filenames were renamed, all Markdown links pass, and no tracked Markdown token
 or filename retains the superseded identity. Mermaid diagrams preserve the
 in-process Hermes boundary, live CLI help matches documented command forms, and
-public Git installation evidence is explicitly pending the authorized Phase 6
-destination push and fresh probe. The full gate passed with 231 tests, Ruff, and
+public Git installation evidence is recorded in the Hermes v0.19 support
+upgrade plan. The full gate passed with 231 tests, Ruff, and
 both bundled pack validations.
 
 ### Files
