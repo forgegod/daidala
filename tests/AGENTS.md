@@ -85,14 +85,18 @@ completeness without touching a real Hermes profile.
   drift failures, complete explicit candidate identities, and isolated-home
   cleanup through subprocesses.
 - `test_hermes_plugin_compatibility_probe.py` validates public plugin inventory,
-  fresh native/standalone pack parity, directory/entry-point evidence, active-home
-  exclusion, and cleanup through subprocesses.
+  fresh native/standalone pack and admission-preview parity, preview mutation
+  rejection, directory/entry-point evidence, active-home exclusion, and cleanup
+  through subprocesses.
 - `test_hermes_dashboard_compatibility_probe.py` validates dashboard discovery,
-  asset serving, API auth gating, explicit candidate identity, and isolated
-  cleanup through subprocesses.
-- `test_release_workflow.py` keeps both live probes release-only, pins the
-  documented Hermes checkout and tracking identity, prevents update-check drift,
-  and requires the pinned host dashboard build.
+  exact packaged asset serving, router auth gating, literal-confirmation behavior,
+  explicit candidate identity, and isolated cleanup through subprocesses.
+- `test_hermes_support_matrix.py` validates exact-wheel preflight, complete host
+  tuples, two runs of every probe, fail-closed evidence checks, private canonical
+  output, active-home exclusion, and cleanup on failure.
+- `test_release_workflow.py` keeps the exact-wheel matrix release-only, pins the
+  documented Hermes checkout and tracking identity, transfers one checked wheel,
+  prevents editable-Daidala drift, and requires the pinned host dashboard build.
 - Release-content regressions for forbidden runtime paths, secret signatures,
   and superseded project identity in source and wheel paths or content.
 - Build/install smoke tests for directory entry points, wheel resources, and Hermes entry-point metadata.

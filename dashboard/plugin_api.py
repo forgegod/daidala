@@ -240,8 +240,12 @@ def wizard_preview(payload: dict[str, Any]) -> dict[str, Any]:
 @router.post("/wizard/start")
 def wizard_start(payload: dict[str, Any]) -> dict[str, Any]:
     """Invoke the existing service path after explicit confirmation."""
+
+    def start(**kwargs: Any) -> Any:
+        return service_factory().start(**kwargs)
+
     try:
-        ledger = confirmed_start(payload, service_factory().start)
+        ledger = confirmed_start(payload, start)
     except SetupWizardError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
     return {"workflow": ledger.to_dict()}

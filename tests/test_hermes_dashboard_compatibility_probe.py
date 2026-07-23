@@ -47,18 +47,55 @@ if args[:1] == ["dashboard"]:
     }]).encode()
     while True:
         conn, _ = sock.accept()
-        data = conn.recv(4096)
+        data = conn.recv(65536)
         if not data:
             break
-        first = data.split(b" ", 2)[1].decode()
+        header, _, request_body = data.partition(b"\r\n\r\n")
+        first = header.split(b" ", 2)[1].decode()
+        content_length = 0
+        for line in header.split(b"\r\n"):
+            if line.lower().startswith(b"content-length:"):
+                content_length = int(line.split(b":", 1)[1].strip())
+        while len(request_body) < content_length:
+            request_body += conn.recv(65536)
         if first == "/api/dashboard/plugins":
             response = (b"HTTP/1.1 200 OK\r\n"
                         b"Content-Type: application/json\r\n"
                         b"Content-Length: " + str(len(body)).encode() + b"\r\n\r\n" + body)
         elif first.startswith("/dashboard-plugins/daidala/"):
-            response = b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok"
+            relative = first.removeprefix("/dashboard-plugins/daidala/")
+            asset = (home / "plugins" / "daidala" / "dashboard" / relative).read_bytes()
+            response = (b"HTTP/1.1 200 OK\r\nContent-Length: "
+                        + str(len(asset)).encode() + b"\r\n\r\n" + asset)
         elif first == "/api/plugins/daidala/health":
             response = b"HTTP/1.1 401 Unauthorized\r\nContent-Length: 0\r\n\r\n"
+        elif first == "/api/plugins/daidala/wizard/preview":
+            request = json.loads(request_body)
+            request.update({
+                "pack_name": request["pack"],
+                "constraints_content": request["constraints_content"].strip(),
+                "constraints_skill": None,
+                "constraints_skill_digest": None,
+            })
+            preview = json.dumps({
+                "confirmed": False,
+                "request": request,
+                "mutations": [],
+            }, sort_keys=True).encode()
+            response = (b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n"
+                        b"Content-Length: " + str(len(preview)).encode()
+                        + b"\r\n\r\n" + preview)
+        elif first == "/api/plugins/daidala/wizard/start":
+            if os.environ.get("FAKE_UNCONFIRMED_MUTATION") == "1":
+                ledger = home / "daidala" / "policy-ledger.sqlite3"
+                ledger.parent.mkdir(parents=True)
+                ledger.write_text("mutated", encoding="utf-8")
+            rejected = json.dumps({
+                "detail": "explicit confirmation is required before setup mutation"
+            }).encode()
+            response = (b"HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\n"
+                        b"Content-Length: " + str(len(rejected)).encode()
+                        + b"\r\n\r\n" + rejected)
         else:
             response = b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n"
         conn.sendall(response)
@@ -116,7 +153,26 @@ def test_probe_discovers_dashboard_plugin_and_serves_assets(tmp_path: Path) -> N
     assert payload["plugin"]["tab"] == "/daidala"
     assert payload["plugin"]["slot"] == "sessions:top"
     assert payload["plugin"]["assets_served"] is True
+    assert payload["plugin"]["packaged_router"] is True
     assert payload["plugin"]["api_mounted_and_auth_gated"] is True
+    assert set(payload["plugin"]["asset_digests"]) == {
+        "manifest.json",
+        "dist/index.js",
+        "dist/style.css",
+    }
+    assert payload["setup"] == {
+        "preview_confirmed": False,
+        "unconfirmed_start_status": 400,
+        "state_unchanged": True,
+    }
+    assert not list(tmp_path.glob("daidala-dashboard-compat-*"))
+
+
+def test_probe_rejects_unconfirmed_setup_mutation(tmp_path: Path) -> None:
+    result = run_probe(tmp_path, FAKE_UNCONFIRMED_MUTATION="1")
+
+    assert result.returncode == 1
+    assert "mutated workflow or Kanban state" in result.stderr
     assert not list(tmp_path.glob("daidala-dashboard-compat-*"))
 
 

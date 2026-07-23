@@ -9,6 +9,8 @@ import types
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).parents[1]
 MODULE = ROOT / "dashboard" / "plugin_api.py"
 
@@ -129,6 +131,25 @@ def test_router_source_has_only_read_routes_and_nonmutating_preview() -> None:
     assert "DashboardBackend" in source
     assert '@router.post("/constraints/replace")' in source
     assert 'payload.get("confirm") is not True' in source
+
+
+def test_unconfirmed_wizard_start_does_not_construct_service() -> None:
+    api = load_api()
+    calls = 0
+
+    def service_factory() -> object:
+        nonlocal calls
+        calls += 1
+        return object()
+
+    api.__dict__["service_factory"] = service_factory
+
+    with pytest.raises(FakeHTTPException) as raised:
+        api.wizard_start({})
+
+    assert raised.value.status_code == 400
+    assert "explicit confirmation is required" in raised.value.detail
+    assert calls == 0
 
 
 def test_default_service_is_process_cached_to_avoid_concurrent_store_initialization() -> None:

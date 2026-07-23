@@ -5,9 +5,9 @@ Hermes v0.18.2 and v0.19.0 hosts, widen both bundled pack constraints to
 `>=0.18.2,<0.20.0` only after the complete compatibility matrix passes, and
 retain reproducible evidence without changing the active Hermes runtime.
 
-**Status:** in progress — Phase 0 is approved and checkpointed locally; Phase 1
-is the next implementation boundary. Push, merge, active-runtime change, and
-publication remain separately gated.
+**Status:** in progress — Phases 0 and 1 are complete; the local Phase 1
+checkpoint is pending. Phase 2 remains unstarted. Push, merge, active-runtime
+change, and publication remain separately gated.
 
 ## Current state
 
@@ -34,20 +34,18 @@ publication remain separately gated.
   `scripts/probe_hermes_compatibility.py` defaults to v0.18.2 build
   `2026.7.7.2`, upstream `4281151a`; explicit three-field host overrides are
   already supported by all three compatibility probes.
-- `.github/workflows/release.yml` still pins exact Hermes revision
-  `4281151ae859241351ba14d8c7682dc67ff4c126`, installs Daidala editable, and
-  runs only the core and synthetic-dashboard probes. It does not install and
-  inspect one exact Daidala wheel, run the packaged-plugin probe, exercise the
-  actual Daidala setup/admission preview, or test both supported hosts.
-- `probe_hermes_dashboard_compatibility.py` currently creates a synthetic
-  dashboard plugin. It proves the Hermes SDK fixture boundary but cannot prove
-  that the packaged Daidala router exposes `/wizard/preview`, rejects an
-  unconfirmed start, or leaves the policy ledger untouched.
-- Current local `main`, `origin/main`, and `HEAD` are synchronized at
-  `c091ec4fd587424bb0bb83df943266fc2e3edb85`; both sides of
-  `origin/main...main` are zero and this untracked plan is the only working-tree
-  change. The earlier 55-commit publication risk was stale before execution
-  began. Any future push still requires its own exact outgoing-range approval.
+- `.github/workflows/release.yml` now transfers the package job's exact checked
+  distribution into the release-only compatibility job, rejects ambiguous wheel
+  selection, records its SHA-256, and runs the support matrix without an editable
+  Daidala install. The v0.18.2 host pin remains unchanged; the second supported
+  host is still reserved for Phase 4 after the Phase 2 verdict.
+- The plugin and dashboard probes now exercise packaged native/standalone
+  admission parity, the packaged manifest/assets/router, normalized setup
+  preview, literal confirmation rejection, and mutation-free state. The matrix
+  preflights one exact wheel and runs all three probes twice per explicit host.
+- Branch `feat/hermes-v019-support` contains the Phase 0 checkpoint and the
+  reviewed Phase 1 working batch. Any future push still requires its own exact
+  outgoing-range approval.
 - The active Hermes installation changed independently before this plan began.
   It now reports v0.19.0 build `2026.7.20` at
   `de5ece994415276d215976836161f871f1d6d8f5`, with local `main` equal to its
@@ -92,7 +90,7 @@ installation, tag, release, and publication each remain separately gated.
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
 | 0 | Freeze the release and execution contract | done (operator-approved plan `a03d4e7f…`; local plan-only checkpoint) | Exact v0.19 tag/build/source, baseline source, Daidala checkpoint, active-state snapshot, outgoing Git range, and plan digest are recorded; the operator explicitly approves the plan and branch creation. |
-| 1 | Close the probe and exact-wheel evidence gaps | pending | Focused probe/workflow tests pass; actual packaged setup and admission previews are mutation-free; unconfirmed setup is rejected; the exact wheel is inspected before cleanup. |
+| 1 | Close the probe and exact-wheel evidence gaps | done (`63dd099e…` wheel; `c4fc1792…` baseline matrix evidence) | Focused probe/workflow tests pass; actual packaged setup and admission previews are mutation-free; unconfirmed setup is rejected; the exact wheel is inspected before cleanup. |
 | 2 | Execute the two-host compatibility matrix | pending | Repeated v0.18.2 and v0.19.0 legs use one verified wheel, all required rows pass, retained evidence reproduces, temporary roots are gone, and active snapshots are identical. |
 | 3 | Remediate deterministic host incompatibilities | pending | Every candidate failure is fixed without weakening v0.18.2, approval, isolation, or evidence contracts; focused and complete gates pass, or the plan stops with support unchanged. |
 | 4 | Widen support policy and make CI enforce it | pending | Both packs accept 0.18.2 and 0.19.0 but reject 0.20.0; release CI pins and probes both exact hosts with one verified wheel; current docs agree. |
@@ -236,6 +234,20 @@ Verification gate: the focused commands exit 0; the actual packaged dashboard
 and native/standalone admission previews are mutation-free; missing confirmation
 fails; one exact wheel is hashed and content-checked before cleanup; support
 still remains `>=0.18.2,<0.19.0`.
+
+Observed gate on 2026-07-23: the focused probe, matrix, workflow, and dashboard
+tests, Ruff, Markdown-link check, and diff check exit 0. One source-built wheel
+passed Twine and release-content inspection at SHA-256
+`63dd099e67c5b0370c50af7d4cba5c3083001cb8c36035bb22d66f41e42cd639`.
+An isolated Python 3.11 host at exact Hermes v0.18.2 build `2026.7.7.2`, pinned
+tracking identity `4281151a`, ran all three probes twice successfully. Its
+7,583-byte mode-`0600` canonical evidence has SHA-256
+`c4fc179283ea1eea9056bd96272e9500deb92e94c7a866dee16adfe674a72d0c`.
+The matrix rejected an initial Python 3.14 host, exposed and fixed virtualenv
+symlink resolution, required an independent clone to bind Hermes' tracking-ref
+identity, and verified normalized setup-preview bytes. Temporary host, wheel,
+and matrix roots were removed after inspection. This baseline-only integration
+proves the Phase 1 boundary; it does not start the two-host Phase 2 evaluation.
 
 Suggested checkpoint: `test(compat): close Hermes support evidence gaps`.
 
