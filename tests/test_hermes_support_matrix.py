@@ -171,6 +171,26 @@ def test_matrix_rejects_missing_literal_confirmation() -> None:
         module._validate_probe("probe_hermes_dashboard_compatibility.py", payload)
 
 
+def test_entrypoint_metadata_lookup_is_anchored_to_host_purelib(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    module = load_matrix()
+    entry_points = tmp_path / "daidala-0.2.0.dist-info" / "entry_points.txt"
+    entry_points.parent.mkdir()
+    entry_points.write_text("[hermes_agent.plugins]\ndaidala = daidala\n")
+    commands: list[list[str]] = []
+
+    def run(command: list[str], **_kwargs: object) -> str:
+        commands.append(command)
+        return f"{entry_points}\n"
+
+    monkeypatch.setattr(module, "_run", run)
+
+    assert module._entry_points_file(host(module)) == entry_points
+    assert "get_path('purelib')" in commands[0][2]
+    assert "importlib.metadata" not in commands[0][2]
+
+
 def test_matrix_cleans_owned_root_on_host_failure(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -199,10 +199,10 @@ def _entry_points_file(host: Host) -> Path:
             str(host.python),
             "-c",
             (
-                "from importlib.metadata import distribution;"
-                "d=distribution('daidala');"
-                "print(next(p.locate() for p in d.files "
-                "if str(p).endswith('.dist-info/entry_points.txt')))"
+                "from pathlib import Path;"
+                "from sysconfig import get_path;"
+                "print(next(Path(get_path('purelib')).glob("
+                "'daidala-*.dist-info/entry_points.txt')))"
             ),
         ]
     )
