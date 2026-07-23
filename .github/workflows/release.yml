@@ -81,7 +81,6 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
-          cache: npm
       - uses: actions/download-artifact@v6
         with:
           name: daidala-dist

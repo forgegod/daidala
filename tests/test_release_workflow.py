@@ -67,6 +67,7 @@ def test_release_workflow_checks_and_hashes_one_exact_wheel_before_matrix() -> N
     assert "actions/upload-artifact@v6" in package
     assert "name: daidala-dist" in package
     assert "actions/download-artifact@v6" in compatibility
+    assert "cache: npm" not in compatibility
     assert 'test "${#wheels[@]}" -eq 1' in compatibility
     hash_index = compatibility.index('wheel_sha256="$(sha256sum')
     orchestrator_install_index = compatibility.index('python -m pip install "$wheel"')
