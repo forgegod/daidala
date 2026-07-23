@@ -120,6 +120,48 @@ def test_matrix_rejects_preflight_check_failure(
     assert calls == (1 if failed_check == "twine" else 2)
 
 
+def test_matrix_requires_canonical_core_evidence() -> None:
+    module = load_matrix()
+    payload = {
+        "success": True,
+        "skill": {
+            "name": "policy-probe",
+            "digest": "ca950f24a36359f9c71a5466723e7b8a2e37e3daabe3613006650e2b600620c5",
+        },
+        "kanban": {
+            "board": "daidala-compatibility",
+            "operations": ["create", "show", "comment", "link", "complete", "archive"],
+        },
+        "worker_context": {"intact": 8192, "truncated": 8300},
+    }
+
+    module._validate_probe("probe_hermes_compatibility.py", payload)
+    payload["worker_context"] = {"intact": 8192, "truncated": 8192}
+
+    with pytest.raises(module.MatrixError, match="core probe evidence"):
+        module._validate_probe("probe_hermes_compatibility.py", payload)
+
+
+def test_matrix_rejects_admission_mutation_commands() -> None:
+    module = load_matrix()
+    payload = {
+        "success": True,
+        "plugin": {"discovery": "entrypoint"},
+        "cli": {
+            "admission_preview": {
+                "byte_identical": True,
+                "state_unchanged": True,
+                "native_exit": 0,
+                "standalone_exit": 0,
+                "mutation_commands": 1,
+            }
+        },
+    }
+
+    with pytest.raises(module.MatrixError, match="admission preview evidence"):
+        module._validate_probe("probe_hermes_plugin_compatibility.py", payload)
+
+
 def test_matrix_rejects_preview_mutation() -> None:
     module = load_matrix()
     payload = {
@@ -281,6 +323,7 @@ def test_matrix_runs_entrypoint_and_directory_probes_twice_per_host(
                 "state_unchanged": True,
                 "native_exit": 0,
                 "standalone_exit": 0,
+                "mutation_commands": 0,
             }
             return json.dumps(
                 {
@@ -302,7 +345,31 @@ def test_matrix_runs_entrypoint_and_directory_probes_twice_per_host(
                 },
                 sort_keys=True,
             )
-        return json.dumps({"success": True}, sort_keys=True)
+        return json.dumps(
+            {
+                "success": True,
+                "skill": {
+                    "name": "policy-probe",
+                    "digest": (
+                        "ca950f24a36359f9c71a5466723e7b8a"
+                        "2e37e3daabe3613006650e2b600620c5"
+                    ),
+                },
+                "kanban": {
+                    "board": "daidala-compatibility",
+                    "operations": [
+                        "create",
+                        "show",
+                        "comment",
+                        "link",
+                        "complete",
+                        "archive",
+                    ],
+                },
+                "worker_context": {"intact": 8192, "truncated": 8300},
+            },
+            sort_keys=True,
+        )
 
     monkeypatch.setattr(module, "_run", run)
 

@@ -145,7 +145,22 @@ def _probe_command(host: Host, probe: str, repetition: int) -> list[str]:
 def _validate_probe(probe: str, payload: Any) -> None:
     if not isinstance(payload, dict) or payload.get("success") is not True:
         raise MatrixError(f"{probe} did not return successful JSON")
-    if probe == "probe_hermes_plugin_compatibility.py":
+    if probe == "probe_hermes_compatibility.py":
+        if (
+            payload.get("skill")
+            != {
+                "name": "policy-probe",
+                "digest": "ca950f24a36359f9c71a5466723e7b8a2e37e3daabe3613006650e2b600620c5",
+            }
+            or payload.get("kanban")
+            != {
+                "board": "daidala-compatibility",
+                "operations": ["create", "show", "comment", "link", "complete", "archive"],
+            }
+            or payload.get("worker_context") != {"intact": 8192, "truncated": 8300}
+        ):
+            raise MatrixError("core probe evidence is incompatible")
+    elif probe == "probe_hermes_plugin_compatibility.py":
         admission = payload.get("cli", {}).get("admission_preview")
         discovery = payload.get("plugin", {}).get("discovery")
         if discovery == "directory":
@@ -158,6 +173,7 @@ def _validate_probe(probe: str, payload: Any) -> None:
             admission.get("byte_identical") is not True
             or admission.get("state_unchanged") is not True
             or admission.get("native_exit") != admission.get("standalone_exit")
+            or admission.get("mutation_commands") != 0
         ):
             raise MatrixError("plugin admission preview evidence is incompatible")
     elif probe == "probe_hermes_dashboard_compatibility.py":

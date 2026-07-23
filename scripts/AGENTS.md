@@ -42,7 +42,8 @@ Own dependency-free development and repository verification utilities.
   must not install or build host frontend dependencies itself.
 - Exact-wheel matrix runs require a caller-supplied SHA-256 digest, successful
   Twine and release-content checks, complete host identity tuples, fresh probe
-  homes, and literal-confirmation plus preview-mutation evidence.
+  homes, exact core skill/Kanban/worker-context evidence, zero admission mutation
+  commands, and literal-confirmation plus preview-mutation evidence.
 - Ignore generated, virtual-environment, VCS, and cache directories.
 - Markdown checking supports fenced and indented code exclusion, UTF-8 BOMs,
   headings indented by up to three spaces, duplicate/custom anchors, reference
