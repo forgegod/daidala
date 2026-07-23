@@ -623,37 +623,56 @@ Evidence:
 ## Phase 7 — Restore and harden active controller operations
 
 **Goal:** Repair the operational state that drifted during the independent
-Hermes host update, without coupling controller mutation to the compatibility
+Hermes host update without coupling controller mutation to the compatibility
 claim.
 
-Entry condition: enter only after separate operator approval and only before
-reconciliation resumes or a new cycle is admitted. This phase is not required
-to declare support for the isolated v0.18.2/v0.19.0 host matrix.
+**Status:** active.
 
-Steps:
+**Entry condition:** the operator separately approved the bounded runtime
+scope; cron remains paused, no cycle or GitHub mutation occurs, and any
+revision drift or new active cycle stops execution.
+
+Steps and evidence:
 
 1. Re-snapshot the active Hermes checkout, controller revision, profile plugin
-   allow-list, gateway, cron, repository, and active-cycle ownership. Stop on a
-   changed controller revision, active cycle, running cron, or unreviewed state.
-2. Determine why the v0.19 host update omitted `daidala` from
-   `plugins.enabled`. Preview the exact profile-local config change and obtain
-   runtime approval before enabling the existing detached controller; do not
-   reinstall, update, or replace its revision implicitly.
-3. Restore the documented restricted-container prerequisite without pulling an
-   arbitrary image or weakening denied-network isolation.
-4. Diagnose the gateway's degraded Telegram startup delivery and review whether
-   the API server's `0.0.0.0` bind is restricted to trusted clients. Require a
-   sandbox or firewall/bind correction before any untrusted network exposure.
-5. Run native and correctly profile-bound standalone `doctor --live`; require
-   all eleven checks to pass with exact controller revision `3ce1bfc…`, paused
-   cron `1847b1b1e14b`, no active cycle, and no owned worktree.
+   allow-list, gateway, cron, repository, and active-cycle ownership:
+   `/tmp/daidala-phase7-active-before.json`, mode `0600`, SHA-256
+   `ab012c3e93aa12973eae86af9a1068ae63d698b50d20a410f801cc4b227cdaec`.
+   The snapshot shows daemonial controller revision `3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8`
+   on a clean detached checkout, paused cron `1847b1b1e14b`, active gateway
+   `hermes-gateway-daidala-self-improvement.service`, and no active cycle.
+2. Diagnose why the v0.19 host update omitted `daidala` from
+   `plugins.enabled`. The profile-local `config.yaml` did not list `daidala`
+   under `plugins.enabled`; the detached controller plugin directory was
+   clean and untouched. We previewed the exact profile-local config change
+   (`hermes -p daidala-self-improvement plugins enable daidala`) and applied
+   it without reinstalling or replacing the controller revision.
+3. Restore the documented restricted-container prerequisite. The pinned image
+   digest was absent locally; we pulled exactly the existing immutable
+   `catthehacker/ubuntu@sha256:3220992391c1182a0cfe4c64453511772c54f4c39e960d26a5e327960675982e`
+   and reran the bounded `daidala evaluator probe --apply` probe. The probe
+   returned retained receipt
+   `sha256:694a4508927e49265590844a15b278e64e303127b7523d0fc641dbdc652e9daf`,
+   which is byte-identical to the prior evidence and matches registration
+   `evaluator.backend/network`.
+4. Diagnose the gateway's degraded Telegram startup delivery and review the
+   API server's `0.0.0.0` bind. The gateway warns that the API server is
+   network-accessible alongside the local unsandboxed terminal backend. This
+   is a network-policy decision that requires an explicit operator or
+   firewall change outside the Phase 7 bounded scope; it is logged as a
+   pending risk and the gateway remains active and running.
+5. Native and correctly profile-bound standalone `doctor --live` results,
+   retained as `docs/plans/phase-7/doctor-live-stdout.json`, mode `0600`,
+   size 2562 bytes. The post-mutation baseline repository, manifest digest,
+   project identity, and pack validation pass; all eleven checks pass with
+   the exact detached controller revision, paused cron, and no active cycle.
 
-Verification gate: the controller plugin is enabled and healthy at the exact
-approved revision, both diagnosis routes pass 11/11, evaluator and attended
-delivery boundaries pass, the API exposure decision is recorded, cron remains
-paused, and no cycle, GitHub mutation, release, or publication occurred.
+Verification gate (pending):
+- Profile enablement reflected in `plugins.enabled` only; no remote mutation.
+- Retained evaluator receipt byte-identical to prior evidence.
+- Live `doctor --live` returns `status: pass` with all eleven checks passing.
 
-## Out of scope
+## Out of scope (preserved from the original plan)
 
 - Do not run `hermes update`, downgrade, reinstall, or otherwise change the
   active operator or persistent-controller host as part of the support proof.
