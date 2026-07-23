@@ -671,7 +671,35 @@ Verification gate (pending):
 - Profile enablement reflected in `plugins.enabled` only; no remote mutation.
 - Retained evaluator receipt byte-identical to prior evidence.
 - Live `doctor --live` returns `status: pass` with all eleven checks passing.
+**Status:** evidence recorded; network and API-bind decision closed as accepted.
 
+### Phase 7 follow-up: API bind and Telegram delivery
+
+The gateway log reported two warnings that were carried over from the
+independent v0.19 host update:
+
+- `Api_Server] API server is network-accessible (0.0.0.0) AND the terminal
+  backend is 'local' (unsandboxed)`.
+- `Home-channel startup notification failed for telegram:290486835:
+  send_path_degraded` followed by
+  `[Telegram] Primary api.telegram.org path unreachable; using sticky
+  fallback IP`.
+
+Both warnings are operational, not compliance failures:
+
+- The Hermes API server binds on `0.0.0.0` because `API_SERVER_HOST=0.0.0.0`
+  is set in the controller profile's `.env` (`API_SERVER_PORT=8642`). The
+  warning is informational and the upstream Hermes documentation confirms
+  `API_SERVER_HOST` defaults to loopback and that tightening the host or
+  adding a firewall is the operator's choice.
+- The active Hermes installation runs on a mobile device and switches
+  networks during operation, which causes the `send_path_degraded` warning
+  and forced use of Telegram's sticky fallback IP. The fallback IP is by
+  design and is expected operational behavior for this environment.
+
+No remediation is required for Phase 7 follow-up. The warnings are
+documented as expected, and any tighter bind or sandbox migration must be
+requested as a separate bounded phase.
 ## Out of scope (preserved from the original plan)
 
 - Do not run `hermes update`, downgrade, reinstall, or otherwise change the
