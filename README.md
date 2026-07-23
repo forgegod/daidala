@@ -78,7 +78,7 @@ flowchart LR
 
 Prerequisites:
 
-- Hermes Agent v0.18.2, the only verified host version;
+- Hermes Agent v0.18.2 or v0.19.0 within `>=0.18.2,<0.20.0`;
 - Daidala installed and enabled in the profile that owns the workflow;
 - an existing named Kanban board;
 - the selected pack's exact skills installed in every assigned worker profile;

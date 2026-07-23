@@ -18,7 +18,7 @@ schema_version: 1
 name: example
 source: https://github.com/publisher/repository
 source_revision: 0123456789abcdef0123456789abcdef01234567
-hermes_version_constraint: ">=0.18.2,<0.19.0"
+hermes_version_constraint: ">=0.18.2,<0.20.0"
 lifecycle:
   human_gate_after: plan
   stages:

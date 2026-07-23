@@ -5,8 +5,8 @@ Hermes v0.18.2 and v0.19.0 hosts, widen both bundled pack constraints to
 `>=0.18.2,<0.20.0` only after the complete compatibility matrix passes, and
 retain reproducible evidence without changing the active Hermes runtime.
 
-**Status:** in progress — Phases 0 through 3 are complete and checkpointed
-locally. Phase 4 is pending. Push, merge, active-runtime change, and publication
+**Status:** in progress — Phases 0 through 4 are complete locally. Phase 5 is
+pending. Push, merge, active-runtime change, and publication
 remain separately gated.
 
 ## Current state
@@ -29,16 +29,15 @@ remain separately gated.
   `TC-F11-01` lost the exact evaluated wheel before release-content inspection;
   `TC-F14-01` was blocked by those two gaps
   (`docs/evaluation-results/v1/daidala-self-improvement.md:200-209`).
-- Both packs still declare `>=0.18.2,<0.19.0` in
+- Both packs declare `>=0.18.2,<0.20.0` in
   `daidala/packs/addyosmani.yaml` and `daidala/packs/aidlc.yaml`.
-  `scripts/probe_hermes_compatibility.py` defaults to v0.18.2 build
-  `2026.7.7.2`, upstream `4281151a`; explicit three-field host overrides are
-  already supported by all three compatibility probes.
-- `.github/workflows/release.yml` now transfers the package job's exact checked
+  `scripts/probe_hermes_compatibility.py` defaults to v0.19.0 build
+  `2026.7.20`, upstream `3ef6bbd2`; explicit three-field overrides preserve
+  exact v0.18.2 baseline probing.
+- `.github/workflows/release.yml` transfers the package job's exact checked
   distribution into the release-only compatibility job, rejects ambiguous wheel
-  selection, records its SHA-256, and runs the support matrix without an editable
-  Daidala install. The v0.18.2 host pin remains unchanged; the second supported
-  host is still reserved for Phase 4 after the Phase 2 verdict.
+  selection, records its SHA-256, and runs one matrix across non-editable exact
+  Hermes v0.18.2 and v0.19.0 installations without an editable Daidala install.
 - Phase 2 produced a `compatible` verdict for exact Hermes v0.18.2 and v0.19.0
   using one Daidala wheel at source checkpoint `98254ea…`, SHA-256 `ea0ee80b…`.
   Both four-probe repetitions per host are byte-identical; both loaders report
@@ -98,7 +97,7 @@ installation, tag, release, and publication each remain separately gated.
 | 1 | Close the probe and exact-wheel evidence gaps | done (`63dd099e…` wheel; `c4fc1792…` baseline matrix evidence) | Focused probe/workflow tests pass; actual packaged setup and admission previews are mutation-free; unconfirmed setup is rejected; the exact wheel is inspected before cleanup. |
 | 2 | Execute the two-host compatibility matrix | done (`c202459b…` matrix; `f09febde…` isolation) | Repeated v0.18.2 and v0.19.0 legs use one verified wheel, all required rows pass, retained evidence reproduces, temporary roots are gone, and active runtime projections are identical. |
 | 3 | Remediate deterministic host incompatibilities | done (no remediation required; compatible matrix `c202459b…`) | Phase 2 reports no deterministic candidate failure; no source change or compatibility-contract weakening occurred. |
-| 4 | Widen support policy and make CI enforce it | pending | Both packs accept 0.18.2 and 0.19.0 but reject 0.20.0; release CI pins and probes both exact hosts with one verified wheel; current docs agree. |
+| 4 | Widen support policy and make CI enforce it | done (bounded range `>=0.18.2,<0.20.0`; exact two-host release matrix) | Both packs accept 0.18.2 and 0.19.0 but reject 0.20.0; release CI pins and probes both exact hosts with one verified wheel; current docs agree. |
 | 5 | Run the complete local release gate and checkpoint | pending | Repository, docs, test, lint, pack, build, Twine, wheel-content, and fresh-wheel smoke gates exit 0; reviewed commits are clean; no runtime or remote mutation occurred. |
 | 6 | Verify remote CI and public Git installation | pending | Separately approved push/merge scope, exact-SHA two-host CI, and a post-merge isolated v0.19 public-Git install all pass before any tag or release. |
 | 7 | Restore and harden active controller operations | pending — deferred; enter only before reconciliation resumes or a new cycle is admitted, with separate runtime approval | The exact detached controller is enabled and healthy on the then-current host; native and standalone diagnosis pass 11/11; restricted-container availability is restored; startup delivery and non-loopback API exposure are reviewed; cron remains paused and no cycle is admitted. |
@@ -432,6 +431,11 @@ Verification gate: both pack validators report the widened exact range; tests
 accept the two supported minor lines and reject 0.20.0; CI structurally pins and
 runs both host commits against one exact wheel; all normal docs agree with the
 new evidence and do not claim an active-runtime upgrade.
+
+Observed gate on 2026-07-23: 60 focused policy, pack, probe, matrix, and release
+workflow tests pass. Full Ruff, both real pack validators, the 46-file Markdown
+link check, and diff hygiene pass. No normal documentation surface retains the
+old bound; historical plans preserve their original verdicts.
 
 Suggested checkpoint: `feat(compat): support Hermes v0.19` followed by
 `docs(compat): document Hermes v0.19 support` if the reviewed diff separates

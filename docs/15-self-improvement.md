@@ -19,8 +19,8 @@ detached revision `3ce1bfc` is installed in the persistent controller; native
 and standalone live diagnosis pass 11/11, and the matching no-agent
 reconciliation cron is paused. Issues #4 through #7 are terminal, no cycle or
 owned worktree is active, and retained delivery evidence records commit and push
-as false. The Hermes v0.19.0 comparison is `incomparable` without a candidate
-failure, so host support remains `>=0.18.2,<0.19.0`.
+as false. The exact Hermes v0.18.2/v0.19.0 comparison is `compatible`, and the
+bounded host support policy is `>=0.18.2,<0.20.0`.
 
 Authoritative implementation sources are `daidala/projects.py`,
 `daidala/registrations.py`, `daidala/cycles.py`, `daidala/increments.py`,
@@ -666,9 +666,9 @@ Rollback means discarding the candidate evaluator or reverting an unretained
 owned worktree; candidate code never replaces the currently loaded plugin.
 
 Cases: `TC-F03-01`, `TC-F03-02`, `TC-F04-01`, `TC-F11-01`, `TC-F12-01`,
-`TC-F14-01`, and `TC-F15-01`. The Hermes v0.19.0 comparison passes CLI parity
-and controller isolation, blocks setup preview, packaging, and final version
-comparison on missing evidence, and leaves model-route coverage `not-run`.
+`TC-F14-01`, and `TC-F15-01`. The exact Hermes v0.18.2/v0.19.0 comparison passes
+CLI parity, setup preview, packaging, version comparison, and controller
+isolation. Model-route coverage remains separately unapproved and `not-run`.
 
 ## Operator procedures
 

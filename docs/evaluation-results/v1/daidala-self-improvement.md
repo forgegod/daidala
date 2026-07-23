@@ -14,9 +14,8 @@ paused, and no active cycle or owned worktree exists. Phase 5D packet v3
 digest `a7a668ca`; Aidlc candidate issue #10 is completed with terminal digest
 `a3722356`. The prior Phase 6 comparison `5482aeb4` remains retained as `incomparable`.
 Support-upgrade Phase 2 closes both missing boundaries and records exact Hermes
-v0.18.2/v0.19.0 compatibility. The declared pack range remains
-`>=0.18.2,<0.19.0` until the separately gated policy change. Push, release, and
-promotion remain unapproved.
+v0.18.2/v0.19.0 compatibility. Both packs now declare the bounded range
+`>=0.18.2,<0.20.0`. Push, release, and promotion remain unapproved.
 
 Each Phase 5A workflow independently changed only `calculator.py` and
 `test_calculator.py`, reproduced `AssertionError: 1 != 2` in the restricted
