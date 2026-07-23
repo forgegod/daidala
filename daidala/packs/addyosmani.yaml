@@ -2,7 +2,7 @@ schema_version: 1
 name: addyosmani
 source: https://github.com/addyosmani/agent-skills
 source_revision: 7ce442de03ddc1b72480c3b48d55c62880ea2a90
-hermes_version_constraint: ">=0.18.2,<0.19.0"
+hermes_version_constraint: ">=0.18.2,<0.20.0"
 lifecycle:
   human_gate_after: plan
   stages:

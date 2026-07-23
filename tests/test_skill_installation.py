@@ -53,7 +53,7 @@ def test_install_plan_blocks_source_content_host_and_recursive_drift() -> None:
         inventory_from_names(names),
         content_registry_from_digests(digests),
         resolved_revision="0" * 40,
-        hermes_version="0.19.0",
+        hermes_version="0.20.0",
         recursive=True,
     )
 
@@ -65,12 +65,14 @@ def test_install_plan_blocks_source_content_host_and_recursive_drift() -> None:
 
 
 def test_version_constraint_has_exact_bounded_semantics() -> None:
-    constraint = ">=0.18.2,<0.19.0"
+    constraint = ">=0.18.2,<0.20.0"
 
+    assert not version_satisfies("0.18.1", constraint)
     assert version_satisfies("0.18.2", constraint)
     assert version_satisfies("0.18.9", constraint)
-    assert not version_satisfies("0.18.1", constraint)
-    assert not version_satisfies("0.19.0", constraint)
+    assert version_satisfies("0.19.0", constraint)
+    assert version_satisfies("0.19.9", constraint)
+    assert not version_satisfies("0.20.0", constraint)
 
 
 def test_cli_install_defaults_to_complete_dry_run_without_mutation(

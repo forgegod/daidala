@@ -14,11 +14,17 @@ Own dependency-free development and repository verification utilities.
   lifecycle, and worker-context body limits. The expected identity defaults to
   the pinned release host and requires a complete three-field override.
 - `probe_hermes_plugin_compatibility.py` verifies public plugin inventory where
-  exposed, fresh-process native CLI loading, standalone/native pack parity, and
-  entry-point or isolated directory discovery without using an active profile.
+  exposed, fresh-process native CLI loading, standalone/native pack and
+  admission-preview parity, and entry-point or isolated directory discovery
+  without using an active profile.
 - `probe_hermes_dashboard_compatibility.py` proves the pinned release host's
-  dashboard extension surface (manifest discovery, static asset serving, plugin
-  API mount with auth gating) against an isolated profile.
+  dashboard extension surface using the packaged manifest, assets, and router;
+  it also proves preview and declined setup remain non-mutating.
+- `run_hermes_support_matrix.py` preflights one exact wheel, installs it into
+  complete explicit Hermes host tuples, and runs the core, entry-point plugin,
+  directory plugin, and dashboard probes twice per host before bounded canonical
+  evidence and cleanup. It rejects output drift between repetitions. The
+  directory leg restores disabled entry-point metadata in `finally`.
 
 ## Local Contracts
 
@@ -34,6 +40,10 @@ Own dependency-free development and repository verification utilities.
 - The dashboard compatibility probe requires the pinned Hermes checkout's web
   distribution to be built before invocation; the probe uses `--skip-build` and
   must not install or build host frontend dependencies itself.
+- Exact-wheel matrix runs require a caller-supplied SHA-256 digest, successful
+  Twine and release-content checks, complete host identity tuples, fresh probe
+  homes, exact core skill/Kanban/worker-context evidence, zero admission mutation
+  commands, and literal-confirmation plus preview-mutation evidence.
 - Ignore generated, virtual-environment, VCS, and cache directories.
 - Markdown checking supports fenced and indented code exclusion, UTF-8 BOMs,
   headings indented by up to three spaces, duplicate/custom anchors, reference
@@ -46,6 +56,7 @@ python scripts/check_md_links.py .
 python scripts/check_release_contents.py .
 python scripts/probe_hermes_compatibility.py
 python scripts/probe_hermes_plugin_compatibility.py
+python scripts/probe_hermes_dashboard_compatibility.py
 pytest
 ruff check scripts
 ```

@@ -17,9 +17,9 @@ from typing import Any
 
 from daidala.skills import ProfileSkillContentRegistry, hash_skill_directory
 
-SUPPORTED_SEMVER = "0.18.2"
-SUPPORTED_BUILD = "2026.7.7.2"
-SUPPORTED_UPSTREAM = "4281151a"
+SUPPORTED_SEMVER = "0.19.0"
+SUPPORTED_BUILD = "2026.7.20"
+SUPPORTED_UPSTREAM = "3ef6bbd2"
 INTACT_BODY_CHARS = 8192
 TRUNCATED_BODY_CHARS = 8300
 VERSION_RE = re.compile(

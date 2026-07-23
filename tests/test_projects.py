@@ -67,7 +67,7 @@ def test_mapping_order_and_yaml_style_do_not_change_manifest_identity() -> None:
         ),
         (
             manifest_content().replace(
-                "content_digest: 991faf8e26d1c472230dcbf2c29baae9925ad9b9e0cd954f1d90b374302b7832",
+                "content_digest: b9658b5e35ff295b45ab757505893c8244cf8606067d78148a85f41425727c95",
                 "content_digest: BAD",
             ),
             "SHA-256",

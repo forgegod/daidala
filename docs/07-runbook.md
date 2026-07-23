@@ -6,7 +6,8 @@ same parser and handlers; it does not run a second agent or service.
 
 ## Install and enable
 
-The supported host baseline is Hermes v0.18.2.
+Supported hosts are exact Hermes v0.18.2 and v0.19.0 releases within the bounded
+pack range `>=0.18.2,<0.20.0`.
 
 ```bash
 hermes plugins install forgegod/daidala --enable

@@ -11,6 +11,11 @@ This document does not authorize a cycle, implementation, retention, commit,
 push, publication, release, or runtime promotion. Those remain separate gates
 in the [self-improvement flow](15-self-improvement.md).
 
+Daidala supports exact Hermes v0.18.2 and v0.19.0 hosts within
+`>=0.18.2,<0.20.0`. Commands and identities later in this guide remain observed
+controller prerequisites; support policy does not imply that controller was
+upgraded or promoted.
+
 This guide is the normative source of truth for the Daidala dogfood
 prerequisites and their remediation. The implemented read-only CLI checker
 mirrors the stable check IDs in the ready-to-admit table and reports omissions;

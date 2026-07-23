@@ -12,7 +12,7 @@ architecture references.
 
 | Document or surface | Status | Grounded by |
 |---|---|---|
-| [Getting started](00-getting-started.md) | Native first-workflow path verified on Hermes v0.18.2 | Isolated native lifecycle probe and CLI tests |
+| [Getting started](00-getting-started.md) | Native first-workflow path verified on Hermes v0.18.2 and v0.19.0 | Isolated native lifecycle probe and CLI tests |
 | [Architecture](01-architecture.md) | In-process policy adapter and Kanban authority split implemented | Runtime modules, graph tests, and isolated Hermes probes |
 | [Policy ledger](02-workflow-state.md) | Status-free ledger and combined live Kanban diagnostics implemented | State, store, service, Kanban, and persistence tests |
 | [Pack reference](03-pack-reference.md) | Schema-v1 providers and required/conditional activation implemented | Pack loader, bundled YAML, and pack tests |
@@ -20,12 +20,12 @@ architecture references.
 | [Lifecycle stages](05-lifecycle-stages.md) | Approval graph, host-bound activation authorization, pending/finalized recovery, fail-closed evidence gates, and handoffs implemented | Graph, activation, worker-contract, and recovery tests |
 | [Security](06-security.md) | Approval, activation, worktree, artifact, secrets, and supply-chain boundaries implemented | Runtime and release-content tests |
 | [Runbook](07-runbook.md) | Native lifecycle and normal Kanban recovery commands verified | Shared CLI tests and isolated Hermes lifecycle probe |
-| [Hermes integration](08-hermes-integration.md) | Hermes v0.18.2 supported; v0.19.0 comparison retained as incomparable without a candidate failure | Isolated repeated probes, content-addressed comparison, and release-only compatibility regression |
+| [Hermes integration](08-hermes-integration.md) | Exact Hermes v0.18.2 and v0.19.0 hosts supported within `>=0.18.2,<0.20.0` | Isolated repeated exact-wheel probes, compatible comparison, and release-only compatibility regression |
 | [Pack adapters](09-pack-adapters.md) | Addyosmani and AI-DLC mappings and activation modes implemented | Pack YAML, bundled adapter, and cross-pack execution tests |
 | [Autonomous development use cases](10-autonomous-development-use-cases.md) | Current use cases, activation handoffs, user controls, tutorial ideas, and unsupported opportunities documented | Runtime contracts plus external agent-development research |
 | [Skill usage and user control](11-skill-usage-and-user-control.md) | Candidate loading, persisted activation, structured handoff, and user-selection boundaries documented | Pack, policy ledger, worker contract, and cross-pack tests |
 | [Workflow ecosystem market overview](12-market-overview.md) | Current projects evaluated as packs, interoperability layers, optional tools, or product references | Upstream documentation, local Matt Pocock Skills checkout, and Daidala pack contracts |
-| [Autonomous triggering](13-autonomous-triggering.md) | Hermes cron/webhook composition documented but not exercised end to end; implementation still requires exact-digest approval | Observed Hermes v0.18.2 CLI plus Daidala start CLI and tool schemas |
+| [Autonomous triggering](13-autonomous-triggering.md) | Hermes cron/webhook composition documented but not exercised end to end; implementation still requires exact-digest approval | Observed Hermes v0.18.2 and v0.19.0 CLIs plus Daidala start CLI and tool schemas |
 | [Workflow constraints](14-workflow-constraints.md) | Implemented; workflow-scoped policy invariants, approval binding, replacement, and exact skill-backed reusable sources | `daidala/constraints.py`, `daidala/service.py`, and constraint regressions |
 | [Autonomous self-improvement flow](15-self-improvement.md) | Phases 1-4 implemented and repository-tested, including prerequisite diagnosis, admission coordination, evaluator/comparison evidence, and increment reconciliation; project onboarding, live adapters, attended cycle, retention, and publication remain blocked | Pure and fake-boundary tests, local evaluator fixtures, versioned result, and both implementation plans |
 | [Self-improvement environment prerequisites](16-self-improvement-setup.md) | Complete reproducible setup/configuration and remediation guide with stable check IDs; revision, profile, Docker, credentials, gateway, and Project 1 exist, while plugin/board/bindings/Project fields/labels/receipts remain blocked | CLI parity and fail-closed tests, current non-secret host inventory, both implementation plans, and official Hermes, GitHub CLI, and Docker documentation |
