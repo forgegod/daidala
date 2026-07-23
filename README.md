@@ -42,6 +42,8 @@ that runtime:
   `pushed: false`.
 - **Pack neutrality** keeps pack-specific skill mappings in YAML rather than
   branching the Python engine.
+- **Native surfaces** expose 12 agent tools, three bundled skills, the shared
+  `hermes daidala`/`daidala` CLI, and an optional authenticated dashboard tab.
 
 ## How it integrates
 
@@ -138,9 +140,13 @@ instead of asking Hermes goal decomposition to choose an orchestrator profile.
 
 ## Support and limits
 
-- Supported host: Hermes Agent v0.18.2 on one local/single-host installation.
+- Supported hosts: exact Hermes Agent v0.18.2 and v0.19.0 on Python 3.11,
+  bounded by `>=0.18.2,<0.20.0` for local/single-host installations.
+- Public installation: `hermes plugins install forgegod/daidala --enable` is
+  verified from merged remote `main` on a fresh Hermes v0.19.0 profile.
 - Supported entry points: native `hermes daidala`, standalone diagnostics,
-  agent-facing plugin tools, and the optional Hermes dashboard extension.
+  12 agent-facing plugin tools, three qualified bundled skills, and the
+  optional authenticated Hermes dashboard extension.
 - Packs: Addyosmani `agent-skills` and the bundled AI-DLC v1.0.1 adapter.
 - Unattended runtime: the existing Hermes gateway Kanban dispatcher only.
 - Delivery never commits, pushes, deploys, or publishes without separate
@@ -154,8 +160,9 @@ Start with the [documentation index](docs/README.md). Runtime claims and
 compatibility evidence are recorded in the
 [Hermes integration guide](docs/08-hermes-integration.md); development commands
 and repository verification live in [AGENTS.md](AGENTS.md).
-Release maintainers run both compatibility probes in `scripts/`; the release
-workflow enforces them for version tags and explicit manual dispatches.
+Release maintainers run the compatibility matrix in `scripts/`; the release
+workflow verifies one exact wheel twice on both supported Hermes hosts for
+version tags and explicit manual dispatches.
 
 ```bash
 python -m venv .venv

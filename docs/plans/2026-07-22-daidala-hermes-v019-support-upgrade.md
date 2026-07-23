@@ -5,9 +5,8 @@ Hermes v0.18.2 and v0.19.0 hosts, widen both bundled pack constraints to
 `>=0.18.2,<0.20.0` only after the complete compatibility matrix passes, and
 retain reproducible evidence without changing the active Hermes runtime.
 
-**Status:** in progress — Phases 0 through 5 are complete locally. Phase 6
-requires separate approval for its exact push scope. Push, merge,
-active-runtime change, and publication remain separately gated.
+**Status:** Phases 0 through 6 complete. Phase 7 requires separate approval;
+active-runtime change and publication remain separately gated.
 
 ## Current state
 
@@ -49,8 +48,19 @@ active-runtime change, and publication remain separately gated.
   admission parity, the packaged manifest/assets/router, normalized setup
   preview, literal confirmation rejection, and mutation-free state. The matrix
   preflights one exact wheel and runs all three probes twice per explicit host.
-- Branch `feat/hermes-v019-support` contains completed local Phases 0 through 5.
-  Any future push still requires its own exact outgoing-range approval.
+- Pull request [#13](https://github.com/forgegod/daidala/pull/13) merged reviewed
+  head `ebac85ede7027617889f1e272a9198b124122488` through merge commit
+  `dfce6ad3ad8285755ff773acd295b56b70939dff`. Exact-SHA release run
+  [30020250327](https://github.com/forgegod/daidala/actions/runs/30020250327)
+  passed Python 3.11, Python 3.12, package/dependency audit, and both-host Hermes
+  compatibility jobs.
+- A fresh public Git installation on exact Hermes v0.19.0 installed remote
+  `main` at `dfce6ad3…`, loaded as source `user`, exposed 12 Daidala tools, all
+  three bundled skills, native CLI and both packs, served the dashboard assets
+  and authenticated router, and kept setup preview mutation-free. Private
+  evidence is mode `0600` at
+  `/tmp/daidala-phase6-public-install/public-smoke.json`, SHA-256
+  `de99931a90508b014f3faff61511d0e58616b6231bcb094e1e870fee26ab42c2`.
 - The active Hermes installation changed independently before this plan began.
   It now reports v0.19.0 build `2026.7.20` at
   `de5ece994415276d215976836161f871f1d6d8f5`, with local `main` equal to its
@@ -100,7 +110,7 @@ installation, tag, release, and publication each remain separately gated.
 | 3 | Remediate deterministic host incompatibilities | done (no remediation required; compatible matrix `c202459b…`) | Phase 2 reports no deterministic candidate failure; no source change or compatibility-contract weakening occurred. |
 | 4 | Widen support policy and make CI enforce it | done (bounded range `>=0.18.2,<0.20.0`; exact two-host release matrix) | Both packs accept 0.18.2 and 0.19.0 but reject 0.20.0; release CI pins and probes both exact hosts with one verified wheel; current docs agree. |
 | 5 | Run the complete local release gate and checkpoint | done (450 tests; wheel `5096da5b…`; matrix `64dfbc8d…`) | Repository, docs, test, lint, pack, build, Twine, wheel-content, and fresh-wheel smoke gates exit 0; reviewed commits are clean; no runtime or remote mutation occurred. |
-| 6 | Verify remote CI and public Git installation | pending | Separately approved push/merge scope, exact-SHA two-host CI, and a post-merge isolated v0.19 public-Git install all pass before any tag or release. |
+| 6 | Verify remote CI and public Git installation | done (PR #13; merge `dfce6ad3…`; CI run `30020250327`; public smoke `de99931a…`) | Separately approved push/merge scope, exact-SHA two-host CI, and a post-merge isolated v0.19 public-Git install all passed before any tag or release. |
 | 7 | Restore and harden active controller operations | pending — deferred; enter only before reconciliation resumes or a new cycle is admitted, with separate runtime approval | The exact detached controller is enabled and healthy on the then-current host; native and standalone diagnosis pass 11/11; restricted-container availability is restored; startup delivery and non-loopback API exposure are reviewed; cron remains paused and no cycle is admitted. |
 
 Mark a phase `in-progress` while running it, `done (<sha-or-evidence>)` only
@@ -538,6 +548,8 @@ Suggested checkpoint: `docs(plan): complete Hermes v0.19 support gate`.
 **Goal:** Prove the release transport on exact remote commits without tagging or
 publishing a release.
 
+**Status:** complete.
+
 Steps:
 
 1. Display the exact outgoing range and obtain separate operator approval to
@@ -574,6 +586,39 @@ Verification gate: exact-SHA CI passes both host rows; the separately approved
 merge is on remote `main`; a fresh v0.19 public-Git installation exposes the
 complete Daidala surface without errors; no tag, GitHub release, TestPyPI/PyPI
 publication, active-controller upgrade, or reconciliation resume occurred.
+
+Evidence:
+
+- The separately approved feature branch ended at reviewed head `ebac85e…`.
+  Independent runtime, CI/package, and policy/documentation reviews found two
+  fail-closed matrix-validation gaps and one stale support-status line. Commit
+  `ebac85e…` requires exact core skill/Kanban/worker-context evidence, zero
+  admission mutation commands, and current v0.18.2/v0.19.0 wording. The full
+  gate passed with 452 tests, and the repeated local two-host matrix retained
+  canonical evidence SHA-256 `64dfbc8d8d3dd5fc8a054d140aaa506f3685828e5bfee146c5376ea75a98fe32`.
+- Exact-SHA release run
+  [30020250327](https://github.com/forgegod/daidala/actions/runs/30020250327)
+  passed all four jobs at `ebac85e…`. Pull request
+  [#13](https://github.com/forgegod/daidala/pull/13) then merged through
+  `dfce6ad3…`; the reviewed head is reachable from remote `main`.
+- A new Python 3.11.15 environment installed exact Hermes v0.19.0 build
+  `2026.7.20`, upstream `3ef6bbd2`, without a Daidala distribution. In a new
+  mode-`0700` `HERMES_HOME`, `hermes plugins install forgegod/daidala --enable`
+  cloned public remote `main` at `dfce6ad3…`. Fresh-process checks passed for
+  enabled source `user`, the exact 12 tools, three qualified skills, native
+  command, both pack validations, dashboard manifest and exact asset bytes,
+  authenticated router mounting, mutation-free setup preview, and rejected
+  unconfirmed start. The profile gained no new top-level paths during the smoke
+  and no Daidala policy ledger or Kanban state.
+- Public-install evidence is private, mode `0600`, 1,163 bytes, and SHA-256
+  `de99931a90508b014f3faff61511d0e58616b6231bcb094e1e870fee26ab42c2`.
+  The post-install active-state snapshot is byte-identical to the final local
+  gate snapshot at SHA-256
+  `ab012c3e93aa12973eae86af9a1068ae63d698b50d20a410f801cc4b227cdaec`.
+- The remote feature branch remains available until this evidence checkpoint is
+  recoverable from remote `main`. No tag, GitHub release, TestPyPI/PyPI
+  publication, active-controller update, cron resume, or cycle admission
+  occurred.
 
 ## Phase 7 — Restore and harden active controller operations
 
