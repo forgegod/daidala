@@ -5,9 +5,9 @@ Hermes v0.18.2 and v0.19.0 hosts, widen both bundled pack constraints to
 `>=0.18.2,<0.20.0` only after the complete compatibility matrix passes, and
 retain reproducible evidence without changing the active Hermes runtime.
 
-**Status:** in progress — Phases 0 through 4 are complete locally. Phase 5 is
-pending. Push, merge, active-runtime change, and publication
-remain separately gated.
+**Status:** in progress — Phases 0 through 5 are complete locally. Phase 6
+requires separate approval for its exact push scope. Push, merge,
+active-runtime change, and publication remain separately gated.
 
 ## Current state
 
@@ -38,6 +38,8 @@ remain separately gated.
   distribution into the release-only compatibility job, rejects ambiguous wheel
   selection, records its SHA-256, and runs one matrix across non-editable exact
   Hermes v0.18.2 and v0.19.0 installations without an editable Daidala install.
+  Each non-editable host receives its pinned `.hermes_build_sha`, so version
+  evidence identifies the exact upstream commit instead of silently omitting it.
 - Phase 2 produced a `compatible` verdict for exact Hermes v0.18.2 and v0.19.0
   using one Daidala wheel at source checkpoint `98254ea…`, SHA-256 `ea0ee80b…`.
   Both four-probe repetitions per host are byte-identical; both loaders report
@@ -47,9 +49,8 @@ remain separately gated.
   admission parity, the packaged manifest/assets/router, normalized setup
   preview, literal confirmation rejection, and mutation-free state. The matrix
   preflights one exact wheel and runs all three probes twice per explicit host.
-- Branch `feat/hermes-v019-support` contains the Phase 0 checkpoint and the
-  reviewed Phase 1 working batch. Any future push still requires its own exact
-  outgoing-range approval.
+- Branch `feat/hermes-v019-support` contains completed local Phases 0 through 5.
+  Any future push still requires its own exact outgoing-range approval.
 - The active Hermes installation changed independently before this plan began.
   It now reports v0.19.0 build `2026.7.20` at
   `de5ece994415276d215976836161f871f1d6d8f5`, with local `main` equal to its
@@ -98,7 +99,7 @@ installation, tag, release, and publication each remain separately gated.
 | 2 | Execute the two-host compatibility matrix | done (`c202459b…` matrix; `f09febde…` isolation) | Repeated v0.18.2 and v0.19.0 legs use one verified wheel, all required rows pass, retained evidence reproduces, temporary roots are gone, and active runtime projections are identical. |
 | 3 | Remediate deterministic host incompatibilities | done (no remediation required; compatible matrix `c202459b…`) | Phase 2 reports no deterministic candidate failure; no source change or compatibility-contract weakening occurred. |
 | 4 | Widen support policy and make CI enforce it | done (bounded range `>=0.18.2,<0.20.0`; exact two-host release matrix) | Both packs accept 0.18.2 and 0.19.0 but reject 0.20.0; release CI pins and probes both exact hosts with one verified wheel; current docs agree. |
-| 5 | Run the complete local release gate and checkpoint | pending | Repository, docs, test, lint, pack, build, Twine, wheel-content, and fresh-wheel smoke gates exit 0; reviewed commits are clean; no runtime or remote mutation occurred. |
+| 5 | Run the complete local release gate and checkpoint | done (450 tests; wheel `5096da5b…`; matrix `64dfbc8d…`) | Repository, docs, test, lint, pack, build, Twine, wheel-content, and fresh-wheel smoke gates exit 0; reviewed commits are clean; no runtime or remote mutation occurred. |
 | 6 | Verify remote CI and public Git installation | pending | Separately approved push/merge scope, exact-SHA two-host CI, and a post-merge isolated v0.19 public-Git install all pass before any tag or release. |
 | 7 | Restore and harden active controller operations | pending — deferred; enter only before reconciliation resumes or a new cycle is admitted, with separate runtime approval | The exact detached controller is enabled and healthy on the then-current host; native and standalone diagnosis pass 11/11; restricted-container availability is restored; startup delivery and non-loopback API exposure are reviewed; cron remains paused and no cycle is admitted. |
 
@@ -491,6 +492,44 @@ Steps:
 Verification gate: all commands exit 0, the final wheel smoke and repeated
 matrix pass, commits match the approved semantic seams and author identity, the
 branch is clean, and active plus remote state remain unchanged.
+
+Observed Phase 5 result:
+
+- The first full gate correctly failed closed because widening the pack support
+  constraint changed each packaged-resource digest while the strict committed
+  project manifest still pinned the old identities. Commit `8847b40` propagated
+  the new Addyosmani digest `b9658b5e…` and AI-DLC digest `74c58cda…`; the full
+  suite then passed with 450 tests.
+- The first final-matrix attempt correctly rejected non-editable Hermes hosts
+  that omitted upstream identity. Commit `a0e30a2` makes release CI bake each
+  exact checkout SHA into the installed host's `.hermes_build_sha`; both hosts
+  then report the required semantic version, build, and upstream identity.
+- Lefthook, 450 tests, Ruff, both pack validators, Markdown links across 46
+  files, and diff hygiene pass. The final build passes Twine and release-content
+  inspection for 175 tracked files and 51 wheel members.
+- The exact final wheel is `daidala-0.2.0-py3-none-any.whl`, SHA-256
+  `5096da5b36ecd810baa71d85bb93080e625543ee4614e9fb93ce9d221757179b`.
+  Fresh Python 3.11 installation proves the module-valued entry point,
+  standalone CLI, both pack validations, dashboard manifest/assets, all 12
+  tools, all three skills, and no `HERMES_HOME` mutation.
+- The final two-host matrix runs all four probe legs twice for Hermes v0.18.2
+  build `2026.7.7.2` upstream `4281151a` and Hermes v0.19.0 build `2026.7.20`
+  upstream `3ef6bbd2`. All runs pass with byte-identical repeated outputs; the
+  private evidence SHA-256 is
+  `64dfbc8d8d3dd5fc8a054d140aaa506f3685828e5bfee146c5376ea75a98fe32`
+  and its mode is `0600`.
+- Active Hermes checkout, controller revision and cleanliness, cron listing,
+  gateway invocation, plugin set, and sticky profile remain unchanged from the
+  pre-matrix snapshot. Snapshot SHA-256 is
+  `ab012c3e93aa12973eae86af9a1068ae63d698b50d20a410f801cc4b227cdaec`
+  at mode `0600`. The read-only doctor reflects the intentional new manifest
+  digest and the repository becoming clean; its known blocked controller setup
+  remains a separately gated Phase 7 concern.
+- Local and remote `main` remain at `c091ec4fd587424bb0bb83df943266fc2e3edb85`;
+  the feature branch is absent from the remote. No push, merge, tag, release,
+  publication, active-controller update, cron resume, or cycle admission
+  occurred. The DOX pass requires no AGENTS.md update because structure,
+  ownership, and operating contracts did not change.
 
 Suggested checkpoint: `docs(plan): complete Hermes v0.19 support gate`.
 
