@@ -21,8 +21,10 @@ Own dependency-free development and repository verification utilities.
   dashboard extension surface using the packaged manifest, assets, and router;
   it also proves preview and declined setup remain non-mutating.
 - `run_hermes_support_matrix.py` preflights one exact wheel, installs it into
-  complete explicit Hermes host tuples, and runs every compatibility probe twice
-  per host before bounded canonical evidence and cleanup.
+  complete explicit Hermes host tuples, and runs the core, entry-point plugin,
+  directory plugin, and dashboard probes twice per host before bounded canonical
+  evidence and cleanup. The directory leg restores disabled entry-point metadata
+  in `finally`.
 
 ## Local Contracts
 

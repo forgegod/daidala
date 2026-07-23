@@ -216,7 +216,7 @@ def test_matrix_rejects_root_inside_active_hermes_home(
         )
 
 
-def test_matrix_runs_all_three_probes_twice_per_host(
+def test_matrix_runs_entrypoint_and_directory_probes_twice_per_host(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     module = load_matrix()
@@ -224,15 +224,20 @@ def test_matrix_runs_all_three_probes_twice_per_host(
     selected = host(module)
     root = tmp_path / "root"
     root.mkdir()
+    entry_points = tmp_path / "entry_points.txt"
+    entry_points.write_text("[hermes_agent.plugins]\ndaidala = daidala\n")
     monkeypatch.delenv("HERMES_HOME", raising=False)
     monkeypatch.setattr(module, "_host_executable", lambda *_args: Path("/bin/true"))
+    monkeypatch.setattr(module, "_entry_points_file", lambda _host: entry_points)
 
     def run(command: list[str], **_kwargs: object) -> str:
         probe = Path(command[1]).name if len(command) > 1 else ""
         if probe == "probe_hermes_plugin_compatibility.py":
+            discovery = "directory" if "--plugin-directory" in command else "entrypoint"
             return json.dumps(
                 {
                     "success": True,
+                    "plugin": {"discovery": discovery},
                     "cli": {
                         "admission_preview": {
                             "byte_identical": True,
@@ -264,12 +269,53 @@ def test_matrix_runs_all_three_probes_twice_per_host(
 
     repetitions = evidence["repetitions"]
     assert len(repetitions) == 2
-    assert [len(row["probes"]) for row in repetitions] == [3, 3]
+    assert [len(row["probes"]) for row in repetitions] == [4, 4]
     assert {
         probe["probe"]
         for repetition in repetitions
         for probe in repetition["probes"]
-    } == set(module.PROBES)
+    } == {*module.PROBES, "probe_hermes_plugin_directory_compatibility.py"}
+    assert entry_points.is_file()
+    assert not entry_points.with_suffix(".txt.matrix-disabled").exists()
+
+
+def test_matrix_restores_entrypoint_metadata_when_directory_probe_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    module = load_matrix()
+    wheel, _ = wheel_file(tmp_path)
+    root = tmp_path / "root"
+    root.mkdir()
+    entry_points = tmp_path / "entry_points.txt"
+    entry_points.write_text("[hermes_agent.plugins]\ndaidala = daidala\n")
+    monkeypatch.delenv("HERMES_HOME", raising=False)
+    monkeypatch.setattr(module, "_host_executable", lambda *_args: Path("/bin/true"))
+    monkeypatch.setattr(module, "_entry_points_file", lambda _host: entry_points)
+
+    def record(
+        _host: object,
+        probe: str,
+        _repetition: int,
+        _env: dict[str, str],
+        *,
+        extra_args: tuple[str, ...] = (),
+        evidence_name: str | None = None,
+    ) -> dict[str, object]:
+        if extra_args:
+            raise module.MatrixError("directory failed")
+        return {
+            "probe": evidence_name or probe,
+            "evidence": {"success": True},
+        }
+
+    monkeypatch.setattr(module, "_record_probe", record)
+    monkeypatch.setattr(module, "_run", lambda *_args, **_kwargs: "")
+
+    with pytest.raises(module.MatrixError, match="directory failed"):
+        module.run_host(host(module), wheel, root)
+
+    assert entry_points.is_file()
+    assert not entry_points.with_suffix(".txt.matrix-disabled").exists()
 
 
 def test_matrix_output_is_canonical_and_private(

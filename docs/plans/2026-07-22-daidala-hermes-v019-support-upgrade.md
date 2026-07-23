@@ -5,9 +5,9 @@ Hermes v0.18.2 and v0.19.0 hosts, widen both bundled pack constraints to
 `>=0.18.2,<0.20.0` only after the complete compatibility matrix passes, and
 retain reproducible evidence without changing the active Hermes runtime.
 
-**Status:** in progress — Phases 0 and 1 are complete; the local Phase 1
-checkpoint is pending. Phase 2 remains unstarted. Push, merge, active-runtime
-change, and publication remain separately gated.
+**Status:** in progress — Phases 0 and 1 are complete and checkpointed locally;
+Phase 2 is active. Push, merge, active-runtime change, and publication remain
+separately gated.
 
 ## Current state
 
@@ -91,7 +91,7 @@ installation, tag, release, and publication each remain separately gated.
 |---|---|---|---|
 | 0 | Freeze the release and execution contract | done (operator-approved plan `a03d4e7f…`; local plan-only checkpoint) | Exact v0.19 tag/build/source, baseline source, Daidala checkpoint, active-state snapshot, outgoing Git range, and plan digest are recorded; the operator explicitly approves the plan and branch creation. |
 | 1 | Close the probe and exact-wheel evidence gaps | done (`63dd099e…` wheel; `c4fc1792…` baseline matrix evidence) | Focused probe/workflow tests pass; actual packaged setup and admission previews are mutation-free; unconfirmed setup is rejected; the exact wheel is inspected before cleanup. |
-| 2 | Execute the two-host compatibility matrix | pending | Repeated v0.18.2 and v0.19.0 legs use one verified wheel, all required rows pass, retained evidence reproduces, temporary roots are gone, and active snapshots are identical. |
+| 2 | Execute the two-host compatibility matrix | in-progress | Repeated v0.18.2 and v0.19.0 legs use one verified wheel, all required rows pass, retained evidence reproduces, temporary roots are gone, and active snapshots are identical. |
 | 3 | Remediate deterministic host incompatibilities | pending | Every candidate failure is fixed without weakening v0.18.2, approval, isolation, or evidence contracts; focused and complete gates pass, or the plan stops with support unchanged. |
 | 4 | Widen support policy and make CI enforce it | pending | Both packs accept 0.18.2 and 0.19.0 but reject 0.20.0; release CI pins and probes both exact hosts with one verified wheel; current docs agree. |
 | 5 | Run the complete local release gate and checkpoint | pending | Repository, docs, test, lint, pack, build, Twine, wheel-content, and fresh-wheel smoke gates exit 0; reviewed commits are clean; no runtime or remote mutation occurred. |

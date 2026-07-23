@@ -167,6 +167,51 @@ def _validate_probe(probe: str, payload: Any) -> None:
             raise MatrixError("dashboard literal-confirmation evidence is incompatible")
 
 
+def _record_probe(
+    host: Host,
+    probe: str,
+    repetition: int,
+    env: dict[str, str],
+    *,
+    extra_args: tuple[str, ...] = (),
+    evidence_name: str | None = None,
+) -> dict[str, object]:
+    output = _run(
+        [*_probe_command(host, probe, repetition), *extra_args],
+        env=env,
+    )
+    try:
+        payload = json.loads(output)
+    except json.JSONDecodeError as error:
+        raise MatrixError(f"{probe} returned invalid JSON") from error
+    _validate_probe(probe, payload)
+    return {
+        "probe": evidence_name or probe,
+        "exit_code": 0,
+        "output_sha256": hashlib.sha256(output.encode()).hexdigest(),
+        "evidence": payload,
+    }
+
+
+def _entry_points_file(host: Host) -> Path:
+    output = _run(
+        [
+            str(host.python),
+            "-c",
+            (
+                "from importlib.metadata import distribution;"
+                "d=distribution('daidala');"
+                "print(next(p.locate() for p in d.files "
+                "if str(p).endswith('.dist-info/entry_points.txt')))"
+            ),
+        ]
+    )
+    path = Path(output.strip())
+    if not path.is_file():
+        raise MatrixError(f"{host.label} Daidala entry-point metadata is missing")
+    return path
+
+
 def run_host(host: Host, wheel: Path, root: Path) -> dict[str, object]:
     active_home = os.environ.get("HERMES_HOME")
     if active_home is not None:
@@ -200,21 +245,39 @@ def run_host(host: Host, wheel: Path, root: Path) -> dict[str, object]:
         env.pop("HERMES_PROFILE", None)
         probe_results: list[dict[str, object]] = []
         for probe in PROBES:
-            output = _run(_probe_command(host, probe, repetition), env=env)
-            try:
-                payload = json.loads(output)
-            except json.JSONDecodeError as error:
-                raise MatrixError(f"{probe} returned invalid JSON") from error
-            _validate_probe(probe, payload)
-            probe_results.append(
-                {
-                    "probe": probe,
-                    "exit_code": 0,
-                    "output_sha256": hashlib.sha256(output.encode()).hexdigest(),
-                    "evidence": payload,
-                }
-            )
+            probe_results.append(_record_probe(host, probe, repetition, env))
         repetitions.append({"run": repetition + 1, "probes": probe_results})
+
+    entry_points = _entry_points_file(host)
+    disabled_entry_points = entry_points.with_suffix(".txt.matrix-disabled")
+    entry_points.rename(disabled_entry_points)
+    try:
+        for repetition, run in enumerate(repetitions):
+            temp_root = host_root / f"run-{repetition + 1}"
+            env = os.environ.copy()
+            env["TMPDIR"] = str(temp_root)
+            env.pop("HERMES_HOME", None)
+            env.pop("HERMES_PROFILE", None)
+            directory_result = _record_probe(
+                host,
+                "probe_hermes_plugin_compatibility.py",
+                repetition,
+                env,
+                extra_args=("--plugin-directory", str(ROOT)),
+                evidence_name="probe_hermes_plugin_directory_compatibility.py",
+            )
+            evidence = directory_result["evidence"]
+            if not isinstance(evidence, dict):
+                raise MatrixError("directory plugin probe returned invalid evidence")
+            discovery = evidence.get("plugin", {}).get("discovery")
+            if discovery != "directory":
+                raise MatrixError("directory plugin probe did not use directory discovery")
+            run_probes = run["probes"]
+            if not isinstance(run_probes, list):
+                raise MatrixError("support matrix repetition has invalid probe evidence")
+            run_probes.append(directory_result)
+    finally:
+        disabled_entry_points.rename(entry_points)
     return {"host": host.to_dict(), "repetitions": repetitions}
 
 
