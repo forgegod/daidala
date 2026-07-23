@@ -5,9 +5,9 @@ Hermes v0.18.2 and v0.19.0 hosts, widen both bundled pack constraints to
 `>=0.18.2,<0.20.0` only after the complete compatibility matrix passes, and
 retain reproducible evidence without changing the active Hermes runtime.
 
-**Status:** in progress — Phases 0 and 1 are complete and checkpointed locally;
-Phase 2 is active. Push, merge, active-runtime change, and publication remain
-separately gated.
+**Status:** in progress — Phases 0 through 2 are complete locally; Phase 2 awaits
+its documentation checkpoint. Push, merge, active-runtime change, and
+publication remain separately gated.
 
 ## Current state
 
@@ -39,6 +39,11 @@ separately gated.
   selection, records its SHA-256, and runs the support matrix without an editable
   Daidala install. The v0.18.2 host pin remains unchanged; the second supported
   host is still reserved for Phase 4 after the Phase 2 verdict.
+- Phase 2 produced a `compatible` verdict for exact Hermes v0.18.2 and v0.19.0
+  using one Daidala wheel at source checkpoint `98254ea…`, SHA-256 `ea0ee80b…`.
+  Both four-probe repetitions per host are byte-identical; both loaders report
+  exact 12-tool and three-skill inventory; setup/admission, exact-wheel, cleanup,
+  and normalized active-runtime isolation gates pass.
 - The plugin and dashboard probes now exercise packaged native/standalone
   admission parity, the packaged manifest/assets/router, normalized setup
   preview, literal confirmation rejection, and mutation-free state. The matrix
@@ -91,7 +96,7 @@ installation, tag, release, and publication each remain separately gated.
 |---|---|---|---|
 | 0 | Freeze the release and execution contract | done (operator-approved plan `a03d4e7f…`; local plan-only checkpoint) | Exact v0.19 tag/build/source, baseline source, Daidala checkpoint, active-state snapshot, outgoing Git range, and plan digest are recorded; the operator explicitly approves the plan and branch creation. |
 | 1 | Close the probe and exact-wheel evidence gaps | done (`63dd099e…` wheel; `c4fc1792…` baseline matrix evidence) | Focused probe/workflow tests pass; actual packaged setup and admission previews are mutation-free; unconfirmed setup is rejected; the exact wheel is inspected before cleanup. |
-| 2 | Execute the two-host compatibility matrix | in-progress | Repeated v0.18.2 and v0.19.0 legs use one verified wheel, all required rows pass, retained evidence reproduces, temporary roots are gone, and active snapshots are identical. |
+| 2 | Execute the two-host compatibility matrix | done (`c202459b…` matrix; `f09febde…` isolation) | Repeated v0.18.2 and v0.19.0 legs use one verified wheel, all required rows pass, retained evidence reproduces, temporary roots are gone, and active runtime projections are identical. |
 | 3 | Remediate deterministic host incompatibilities | pending | Every candidate failure is fixed without weakening v0.18.2, approval, isolation, or evidence contracts; focused and complete gates pass, or the plan stops with support unchanged. |
 | 4 | Widen support policy and make CI enforce it | pending | Both packs accept 0.18.2 and 0.19.0 but reject 0.20.0; release CI pins and probes both exact hosts with one verified wheel; current docs agree. |
 | 5 | Run the complete local release gate and checkpoint | pending | Repository, docs, test, lint, pack, build, Twine, wheel-content, and fresh-wheel smoke gates exit 0; reviewed commits are clean; no runtime or remote mutation occurred. |
@@ -298,6 +303,21 @@ Steps:
    homes, credentials, issue bodies, private destinations, or unbounded logs.
 7. Remove evaluator roots, rerun the active-state snapshot, and require it to be
    byte-identical. Keep reconciliation paused.
+
+Result: source checkpoint `98254eac06579b67d8e71581542a3090d7b387fd`
+produced exact wheel SHA-256 `ea0ee80b8cf0a934a5d8741ee6a56f291d55b91f655b7371ade901412e0c5053`.
+Both repetitions of all four probes pass byte-identically on both exact hosts.
+Fresh-process inventory confirms exact 12 tools and three bundled skills.
+Canonical input `6957614a…`, matrix result `c202459b…`, inventory `e7c227b1…`,
+and isolation result `f09febde…` are retained mode `0600`. The evaluator root,
+matrix roots, and diagnostic files are removed; entry-point metadata is restored
+and both ports are closed. Raw snapshots differ only at `SI-REPOSITORY` and its
+derived `SI-REGISTRATION` aggregate because the repository became clean after
+checkpointing. The projection retaining every runtime-owned check is
+byte-identical at `7d4f42d2…`. The verdict is `compatible`; no deterministic
+candidate remediation is required.
+Full pytest, Ruff, Lefthook, both pack validators, the 46-file Markdown link
+check, and diff hygiene pass at closeout.
 
 Verification gate: both repetitions for both hosts use one verified wheel and
 agree byte-for-byte; `TC-F03-01`, `TC-F03-02`, `TC-F04-01`, `TC-F11-01`,
