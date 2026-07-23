@@ -23,12 +23,12 @@ if args == ["--version"]:
     mode = os.environ.get("FAKE_VERSION_MODE", "ok")
     if mode == "missing":
         print("Hermes Agent unknown")
-    elif mode == "candidate":
-        print("Hermes Agent v0.19.0 (2026.7.20) · upstream 3ef6bbd2")
+    elif mode == "baseline":
+        print("Hermes Agent v0.18.2 (2026.7.7.2) · upstream 4281151a")
     elif mode == "changed":
         print("Hermes Agent v0.19.0 (2026.8.1) · upstream deadbeef")
     else:
-        print("Hermes Agent v0.18.2 (2026.7.7.2) · upstream 4281151a")
+        print("Hermes Agent v0.19.0 (2026.7.20) · upstream 3ef6bbd2")
     raise SystemExit(0)
 
 if args[:2] == ["kanban", "boards"] or args[-1:] == ["init"]:
@@ -91,9 +91,9 @@ def test_probe_parses_supported_host_and_cleans_isolated_home(tmp_path: Path) ->
     payload = json.loads(result.stdout)
     assert payload["success"] is True
     assert payload["hermes"] == {
-        "semver": "0.18.2",
-        "build": "2026.7.7.2",
-        "upstream": "4281151a",
+        "semver": "0.19.0",
+        "build": "2026.7.20",
+        "upstream": "3ef6bbd2",
     }
     assert payload["skill"]["name"] == "policy-probe"
     assert len(payload["skill"]["digest"]) == 64
@@ -109,25 +109,25 @@ def test_probe_rejects_changed_supported_host_identity(tmp_path: Path) -> None:
     assert "0.19.0" in result.stderr
 
 
-def test_probe_accepts_one_complete_explicit_candidate_identity(tmp_path: Path) -> None:
+def test_probe_accepts_one_complete_explicit_baseline_identity(tmp_path: Path) -> None:
     result = run_probe(
         tmp_path,
         [
             "--expected-semver",
-            "0.19.0",
+            "0.18.2",
             "--expected-build",
-            "2026.7.20",
+            "2026.7.7.2",
             "--expected-upstream",
-            "3ef6bbd2",
+            "4281151a",
         ],
-        FAKE_VERSION_MODE="candidate",
+        FAKE_VERSION_MODE="baseline",
     )
 
     assert result.returncode == 0, result.stderr
     assert json.loads(result.stdout)["hermes"] == {
-        "semver": "0.19.0",
-        "build": "2026.7.20",
-        "upstream": "3ef6bbd2",
+        "semver": "0.18.2",
+        "build": "2026.7.7.2",
+        "upstream": "4281151a",
     }
 
 

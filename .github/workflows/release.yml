@@ -88,16 +88,24 @@ jobs:
           path: dist
       - name: Install pinned Hermes host
         run: |
-          git clone https://github.com/NousResearch/hermes-agent.git /tmp/hermes-agent
-          git -C /tmp/hermes-agent checkout 4281151ae859241351ba14d8c7682dc67ff4c126
-          git -C /tmp/hermes-agent update-ref refs/remotes/origin/main 4281151ae859241351ba14d8c7682dc67ff4c126
-          git -C /tmp/hermes-agent remote set-url origin file:///tmp/hermes-agent-pinned-origin
-          (cd /tmp/hermes-agent && npm ci --workspace web && npm run build -w web)
+          git clone https://github.com/NousResearch/hermes-agent.git /tmp/hermes-v0182-source
+          git -C /tmp/hermes-v0182-source checkout 4281151ae859241351ba14d8c7682dc67ff4c126
+          git -C /tmp/hermes-v0182-source update-ref refs/remotes/origin/main 4281151ae859241351ba14d8c7682dc67ff4c126
+          git -C /tmp/hermes-v0182-source remote set-url origin file:///tmp/hermes-v0182-pinned-origin
+          git clone https://github.com/NousResearch/hermes-agent.git /tmp/hermes-v0190-source
+          git -C /tmp/hermes-v0190-source checkout 3ef6bbd201263d354fd83ec55b3c306ded2eb72a
+          git -C /tmp/hermes-v0190-source update-ref refs/remotes/origin/main 3ef6bbd201263d354fd83ec55b3c306ded2eb72a
+          git -C /tmp/hermes-v0190-source remote set-url origin file:///tmp/hermes-v0190-pinned-origin
+          (cd /tmp/hermes-v0182-source && npm ci --workspace web && npm run build -w web)
+          (cd /tmp/hermes-v0190-source && npm ci --workspace web && npm run build -w web)
           python -m pip install --upgrade pip
           python -m pip install twine
           python -m venv /tmp/hermes-v0182
           /tmp/hermes-v0182/bin/pip install --upgrade pip
-          /tmp/hermes-v0182/bin/pip install -e /tmp/hermes-agent
+          /tmp/hermes-v0182/bin/pip install /tmp/hermes-v0182-source
+          python -m venv /tmp/hermes-v0190
+          /tmp/hermes-v0190/bin/pip install --upgrade pip
+          /tmp/hermes-v0190/bin/pip install /tmp/hermes-v0190-source
       - name: Probe exact wheel on supported Hermes boundary
         run: |
           mapfile -t wheels < <(printf '%s\n' dist/*.whl)
@@ -109,4 +117,6 @@ jobs:
             --wheel "$wheel" \
             --expected-wheel-sha256 "$wheel_sha256" \
             --host supported-v0182 0.18.2 2026.7.7.2 4281151a \
-              /tmp/hermes-v0182/bin/python 9120
+              /tmp/hermes-v0182/bin/python 9120 \
+            --host supported-v0190 0.19.0 2026.7.20 3ef6bbd2 \
+              /tmp/hermes-v0190/bin/python 9130

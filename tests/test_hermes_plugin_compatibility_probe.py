@@ -16,10 +16,10 @@ import sys
 
 args = sys.argv[1:]
 if args == ["--version"]:
-    if os.environ.get("FAKE_VERSION_MODE") == "candidate":
-        print("Hermes Agent v0.19.0 (2026.7.20) · upstream 3ef6bbd2")
-    else:
+    if os.environ.get("FAKE_VERSION_MODE") == "baseline":
         print("Hermes Agent v0.18.2 (2026.7.7.2) · upstream 4281151a")
+    else:
+        print("Hermes Agent v0.19.0 (2026.7.20) · upstream 3ef6bbd2")
     raise SystemExit(0)
 
 if args == ["plugins", "list", "--enabled", "--json"]:
@@ -187,9 +187,9 @@ def test_probe_loads_plugin_and_compares_native_standalone_packs(tmp_path: Path)
     payload = json.loads(result.stdout)
     assert payload["success"] is True
     assert payload["hermes"] == {
-        "semver": "0.18.2",
-        "build": "2026.7.7.2",
-        "upstream": "4281151a",
+        "semver": "0.19.0",
+        "build": "2026.7.20",
+        "upstream": "3ef6bbd2",
     }
     assert payload["plugin"] == {
         "name": "daidala",
@@ -221,22 +221,22 @@ def test_probe_output_is_byte_identical_across_isolated_runs(tmp_path: Path) -> 
     assert first.stdout == second.stdout
 
 
-def test_probe_accepts_explicit_candidate_identity(tmp_path: Path) -> None:
+def test_probe_accepts_explicit_baseline_identity(tmp_path: Path) -> None:
     result = run_probe(
         tmp_path,
         [
             "--expected-semver",
-            "0.19.0",
+            "0.18.2",
             "--expected-build",
-            "2026.7.20",
+            "2026.7.7.2",
             "--expected-upstream",
-            "3ef6bbd2",
+            "4281151a",
         ],
-        FAKE_VERSION_MODE="candidate",
+        FAKE_VERSION_MODE="baseline",
     )
 
     assert result.returncode == 0, result.stderr
-    assert json.loads(result.stdout)["hermes"]["semver"] == "0.19.0"
+    assert json.loads(result.stdout)["hermes"]["semver"] == "0.18.2"
 
 
 def test_probe_accepts_native_plugin_load_when_inventory_omits_entrypoint(

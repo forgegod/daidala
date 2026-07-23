@@ -11,18 +11,37 @@ def test_live_probe_runs_only_for_tags_and_manual_dispatch() -> None:
     assert "github.ref, 'refs/tags/v'" in job
     assert "needs: [test, package]" in job
     assert 'node-version: "22"' in job
-    assert "git -C /tmp/hermes-agent checkout 4281151ae859241351ba14d8c7682dc67ff4c126" in job
     assert (
-        "git -C /tmp/hermes-agent update-ref refs/remotes/origin/main "
+        "git -C /tmp/hermes-v0182-source checkout "
         "4281151ae859241351ba14d8c7682dc67ff4c126"
     ) in job
     assert (
-        "git -C /tmp/hermes-agent remote set-url origin "
-        "file:///tmp/hermes-agent-pinned-origin"
+        "git -C /tmp/hermes-v0182-source update-ref refs/remotes/origin/main "
+        "4281151ae859241351ba14d8c7682dc67ff4c126"
     ) in job
-    assert "npm ci --workspace web && npm run build -w web" in job
+    assert (
+        "git -C /tmp/hermes-v0182-source remote set-url origin "
+        "file:///tmp/hermes-v0182-pinned-origin"
+    ) in job
+    assert (
+        "git -C /tmp/hermes-v0190-source checkout "
+        "3ef6bbd201263d354fd83ec55b3c306ded2eb72a"
+    ) in job
+    assert (
+        "git -C /tmp/hermes-v0190-source update-ref refs/remotes/origin/main "
+        "3ef6bbd201263d354fd83ec55b3c306ded2eb72a"
+    ) in job
+    assert (
+        "git -C /tmp/hermes-v0190-source remote set-url origin "
+        "file:///tmp/hermes-v0190-pinned-origin"
+    ) in job
+    assert job.count("npm ci --workspace web && npm run build -w web") == 2
     assert "python scripts/run_hermes_support_matrix.py" in job
     assert "--host supported-v0182 0.18.2 2026.7.7.2 4281151a" in job
+    assert "--host supported-v0190 0.19.0 2026.7.20 3ef6bbd2" in job
+    assert "/tmp/hermes-v0182/bin/pip install /tmp/hermes-v0182-source" in job
+    assert "/tmp/hermes-v0190/bin/pip install /tmp/hermes-v0190-source" in job
+    assert "pip install -e /tmp/hermes" not in job
     assert "python -m pip install -e ." not in job
     assert "github.event_name == 'push'" not in job
     assert "github.event_name == 'pull_request'" not in job
