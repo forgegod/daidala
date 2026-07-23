@@ -104,6 +104,7 @@ jobs:
           test "${#wheels[@]}" -eq 1
           wheel="${wheels[0]}"
           wheel_sha256="$(sha256sum "$wheel" | cut -d' ' -f1)"
+          python -m pip install "$wheel"
           python scripts/run_hermes_support_matrix.py \
             --wheel "$wheel" \
             --expected-wheel-sha256 "$wheel_sha256" \

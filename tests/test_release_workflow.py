@@ -40,6 +40,7 @@ def test_release_workflow_checks_and_hashes_one_exact_wheel_before_matrix() -> N
     assert "actions/download-artifact@v6" in compatibility
     assert 'test "${#wheels[@]}" -eq 1' in compatibility
     hash_index = compatibility.index('wheel_sha256="$(sha256sum')
+    orchestrator_install_index = compatibility.index('python -m pip install "$wheel"')
     matrix_index = compatibility.index("python scripts/run_hermes_support_matrix.py")
-    assert hash_index < matrix_index
+    assert hash_index < orchestrator_install_index < matrix_index
     assert '--expected-wheel-sha256 "$wheel_sha256"' in compatibility
