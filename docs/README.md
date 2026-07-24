@@ -102,6 +102,7 @@ carry that manifest's digest and active skill names.
 | Why is a loaded skill not necessarily active? | [Skill usage and user control](11-skill-usage-and-user-control.md#what-using-a-skill-means) |
 | How do I recover a blocked card? | [Operator runbook](07-runbook.md#recovery) |
 | Which Hermes version and commands are verified? | [Hermes integration](08-hermes-integration.md) |
+| How do I install Daidala's dashboard tab into one specific Hermes profile, and how do I verify it mounted? | [Per-profile installation](08-hermes-integration.md#per-profile-installation) |
 | How do packs change stage workers without engine branches? | [Authoring packs](04-authoring-packs.md) |
 | Which autonomous-development tasks fit, how do skills hand off, and where can I intervene? | [Autonomous development use cases](10-autonomous-development-use-cases.md) |
 | What does “using” a pack skill mean, and can I select or override stage skills? | [Skill usage and user control](11-skill-usage-and-user-control.md) |

@@ -65,6 +65,76 @@ produce byte-equivalent native and standalone pack-validation JSON. The exact
 
 Daidala does not override built-in tools.
 
+## Per-profile installation
+
+Daidala is a directory plugin that depends on the local repository state
+(`plugin.yaml`, the root `__init__.py`, the bundled `dashboard/manifest.json`
++ `dashboard/dist/` assets, and the `daidala/` package). The supported
+ways to make it appear in a *specific* Hermes profile are:
+
+1. **Public Git install** — the single command recommended for an
+   upstream-only operator. The plugin is fetched from `forgegod/daidala`
+   into the active profile only; other profiles remain unchanged.
+
+   ```bash
+   hermes -p <profile> plugins install forgegod/daidala --enable
+   hermes -p <profile> plugins list           # daidala must appear as `user`
+   ```
+
+2. **Local checkout via symlink** — the supported *development* path.
+   The local Daidala repository is symlinked into the target profile's
+   `plugins/` directory; the active working tree is what Hermes loads.
+   Verified example using `$PWD` for `daidala-self-improvement`:
+
+   ```bash
+   mkdir -p ~/.hermes/profiles/<profile>/plugins
+   ln -s "$PWD" ~/.hermes/profiles/<profile>/plugins/daidala
+   hermes -p <profile> plugins enable daidala
+   ```
+
+   The symlink target must be the Daidala repository root containing
+   `plugin.yaml` and the dashboard `manifest.json`. A symlink to an inner
+   subdirectory will register the plugin but break dashboard asset
+   discovery.
+
+3. **Public Git + local symlink together are not additive.** Hermes
+   resolves one directory slot per plugin name; cloning `forgegod/daidala`
+   on top of an existing local symlink fails with `plugin already present`.
+   Pick one path per profile; if both are needed, install in one
+   profile and symlink the same checkout into a second profile without
+   re-running `hermes plugins install`.
+
+| Profile state | Dashboard tab `/daidala` | `/api/plugins/daidala/health` |
+|---|---|---|
+| Plugin installed and enabled in this profile | Visible after the dashboard host reads `dashboard/manifest.json` | `200 {"success": true, "plugin": "daidala", "read_only": true}` |
+| Plugin installed in another profile only | Not visible (the host only mounts plugins for the active profile) | `404` or `401` on the unauthenticated request |
+| Plugin symlink present but `hermes plugins enable` not run | Not enabled | `404` |
+| `hermes plugins install` from a stale daemon-cached entry | Visible only after the dashboard host is restarted | Reports the cached entry until restart |
+
+The dashboard host reads `dashboard/manifest.json`, exposes `/daidala`
+and `sessions:top`, and serves the `dist/index.js` + `dist/style.css`
+bundle built from `dashboard/`. Python entry-point installs do not
+materialize those assets, so the dashboard subtree must remain beside
+the manifest whether the plugin is installed via public Git or local
+symlink.
+
+### Verifying the dashboard mounted
+
+After either install path, restart the Hermes dashboard process and run
+both checks against the active profile:
+
+```bash
+hermes -p <profile> gateway restart   # or restart the dashboard service
+curl -fsS http://127.0.0.1:9119/plugins\?profile=<profile> | grep -q '<title>Hermes Agent - Dashboard</title>'
+# Browser: open /plugins?profile=<profile>; the tab list now shows "Daidala".
+```
+
+The dashboard tab's existence is governed entirely by the active profile.
+Switch profiles (`hermes -p other dashboard`) and the Daidala tab
+disappears again unless Daidala is enabled there too. This is by design:
+each profile owns its own plugin set, and cross-profile plugin leakage
+would violate the documented `HERMES_HOME`-scoped contract.
+
 ## Public Git verification
 
 Phase 6 installed `forgegod/daidala` into a fresh mode-`0700` `HERMES_HOME`

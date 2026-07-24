@@ -193,3 +193,4 @@ tools use the in-process plugin tool registry. Both produce the same graph.
 - [Architecture and authority split](01-architecture.md)
 - [Lifecycle stages and handoffs](05-lifecycle-stages.md)
 - [Hermes compatibility boundary](08-hermes-integration.md)
+- [Install the dashboard into one specific profile](08-hermes-integration.md#per-profile-installation) — symlink or public-Git install per Hermes profile, plus the dashboard-tab verification recipe
