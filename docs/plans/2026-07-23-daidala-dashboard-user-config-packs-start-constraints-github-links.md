@@ -6,7 +6,7 @@ before Phase 0 creates a fresh `daidala-dashboard` profile, installs the
 local-checkout plugin link, starts implementation, or makes any implementation
 edit.
 
-**Last review:** 2026-07-23
+**Last review:** 2026-07-24
 
 For the implementing agent: read `/AGENTS.md`, `docs/AGENTS.md`,
 `daidala/AGENTS.md`, `dashboard/AGENTS.md`, `tests/AGENTS.md`, this plan,
@@ -17,9 +17,10 @@ and the completed
 official Hermes [dashboard extension documentation](https://hermes-agent.nousresearch.com/docs/user-guide/features/extending-the-dashboard).
 Stop when any gate fails.
 
-This plan was reviewed against the live Hermes CLI installed on the
+This plan was reviewed against the live Hermes and GitHub CLIs installed on the
 implementing machine (`hermes profile`, `hermes plugins enable`,
-`hermes dashboard`, `gh project view`) on 2026-07-23. CLI flags below are
+`hermes dashboard`, `hermes kanban show`, `hermes kanban runs`, and
+`gh project view`) on 2026-07-24. CLI flags below are
 pinned against the verified outputs; if any `--help` text drifts, treat the
 local CLI as authoritative and stop.
 
@@ -158,22 +159,26 @@ pinned here so the corresponding phases consume them directly.
 - **Browser mutation allowlist:** the complete authority-bearing HTTP surface is
   confirmed pack installation; `POST /wizard/boards`; `POST /wizard/start`;
   `POST /constraints/replace`; workflow approve, card comment/unblock, and cancel;
-  `PUT /github-project-links/{project_id}`; `PUT /checkout-root`; checkout adopt,
+  `PUT`/`DELETE /github-project-links/{project_id}`; `PUT /checkout-root`; checkout adopt,
   refresh, and named-backup prune; and `PUT /checkouts/policy`. Preview, verify,
   inventory, readiness, sweep, and status calls are non-mutating even when HTTP
   transport uses `POST`. No general command/tool dispatch route is permitted.
 
 - **Credential boundary:** a link stores no credential alias. Link verification
   derives the existing `ControllerRegistration.intake_credential` and its
-  binding for the same `project_id`. Dashboard and API payloads never accept,
-  persist, log, or return a GitHub token or resolved credential value.
+  binding for the same `project_id`. Authorization comes from the matching,
+  unexpired `github-intake` capability row in sibling
+  `prerequisite-evidence.json`, not from a field that does not exist in the
+  registration. Dashboard and API payloads never accept, persist, log, or return
+  a GitHub token or resolved credential value.
 
 - **Checkout-root change:** replacing `checkouts.root` returns `409 Conflict`
   while any owned checkout directory exists under the current root. GitHub
   Project links do not own checkout paths and do not block a root change. The
   operator must explicitly remove or migrate owned checkout directories before
   changing the root; the service never moves, re-clones, or orphans a checkout
-  automatically. Existing registrations remain immutable: configuration is
+  automatically. An unchanged-root preview is a no-op and does not conflict or
+  rewrite the file. Existing registrations remain immutable: configuration is
   valid only when every `ControllerRegistration.checkout` equals
   `<checkouts.root>/<project_id>`. A mismatch is a blocking verification error,
   never a second dashboard-managed clone.
@@ -185,6 +190,17 @@ pinned here so the corresponding phases consume them directly.
   sidecar is the durable on-disk witness. It is written only after a successful
   clone/swap and refreshed only after a successful checkout refresh. A GitHub
   Project link never creates or owns a checkout path.
+
+- **Checkout freshness receipt:** `<resolved-data-root>/checkout-refresh-state.json`
+  (mode `0600`) owns the strict `daidala.checkout-refresh-state/v1` object. One
+  row per adopted or Daidala-created checkout records `project_id`, normalized
+  checkout path, registration digest, observed HEAD, and the UTC completion time
+  of the last successful adopt/clone/swap. TTL age is computed from this receipt,
+  never from `git log` commit time. Missing, stale-path, registration-digest, or
+  HEAD-mismatched receipts produce `refresh_unknown`/`refresh_due`; they never
+  authorize unattended mutation. `registration_digest` is lowercase SHA-256 over
+  the strict parsed registration's compact sorted-key UTF-8 JSON projection; one
+  shared helper computes it for receipt creation and validation.
 
 - **Backup retention:** persistent, prune-on-demand only. Backups in
   `<checkouts.root>/_backups/` are never auto-deleted. The TTL manager
@@ -238,15 +254,21 @@ Two related facts shape the implementation, not just the install:
     The manager requires this derived path to equal the existing
     `ControllerRegistration.checkout`; it never creates or refreshes a separate
     cache checkout and never rewrites registration state.
-  - **Collision safety.** `project_id` is validated as
-    `^[a-z0-9]+(?:-[a-z0-9]+)*$` by the shared `_require_slug` helper used in
-    `daidala/projects.py`; the same slug is reused on disk so two registrations
-    with different `verified_remote` values can never share a checkout directory.
+  - **Collision safety.** `project_id` is validated by the live `_SLUG`
+    regex `^[a-z0-9][a-z0-9-]{0,127}$` (`daidala/projects.py:27`) and the
+    shared `_require_slug` helper. v1 does not tighten or replace this regex;
+    the existing lax shape (permits trailing hyphens, double hyphens, single
+    characters) is documented and reused as-is. The new checkout-root and link
+    modules call `_require_slug` and `parse_strict_yaml` rather than defining
+    new patterns. The same slug is reused on disk so two registrations with
+    different `verified_remote` values can never share a checkout directory.
     `<checkouts.root>/<project_id>/.daidala-owner` (mode `0600`) is the
-    durable on-disk witness: it carries the `project_id` that owns the
-    path and is written or refreshed only after a successful checkout clone or
-    replacement. The data model
-    rejects a path whose `.daidala-owner` disagrees with the incoming
+    durable on-disk witness: it is JSON
+    `{"schema": "daidala.checkout-owner/v1", "project_id": "<slug>"}`,
+    written atomically via the shared `atomic_write_text_mode_0600` helper
+    only after a successful checkout clone or replacement. The validator reads
+    the file and asserts both fields match the current registration. The data
+    model rejects a path whose `.daidala-owner` disagrees with the incoming
     `project_id`. The UI surfaces the resolved absolute path before any
     preview is generated.
   - GitHub Projects v2 links are independent profile-local metadata keyed by
@@ -258,18 +280,19 @@ Two related facts shape the implementation, not just the install:
 
 - **Q2 — Stale-checkout behaviour is a configurable policy.** Resolved.
   - The TTL manager exposes three explicit modes; default is `disabled`.
-  - **`wipe-if-clean`** — only re-clones if `git status --porcelain
+  - **`wipe-if-clean`** — only re-clones if `git status --porcelain=v1 -z
     --untracked-files=all --ignored=matching` has no row other than the separately
-    validated exact `?? .daidala-owner` witness and the head age exceeds the TTL;
+    validated exact `?? .daidala-owner` witness and refresh-receipt age exceeds the TTL;
     otherwise aborts with a 409 and classified tracked/untracked/ignored paths.
     The marker is never treated as user work.
-  - **`backup-then-wipe`** — tar/gzips the working tree into
-    `<checkouts.root>/_backups/<project_id>.<unix-ts>.tar.gz` (root-owned
-    directory with mode `0700`), prepares and verifies a replacement clone, then
-    swaps it into place. Clone failure leaves the old checkout intact.
+  - **`backup-then-wipe`** — tar/gzips the bounded working-tree entries into
+    `<checkouts.root>/_backups/<project_id>.<unix-ns>.tar.gz` (backup directory
+    mode `0700`, archive mode `0600`), prepares and verifies a replacement clone,
+    then swaps it into place. Clone failure leaves the old checkout intact.
   - **`disabled`** — checkout TTL is ignored; only the manual "Refresh
     now" button can re-clone, and only via the same
-    `git status --porcelain` abort.
+    `git status --porcelain=v1 -z --untracked-files=all --ignored=matching`
+    classification.
   - **Backup retention is persistent.** `_backups/` is never
     auto-pruned by the TTL manager. A `POST
     /api/plugins/daidala/checkouts/_backups/prune` endpoint lists
@@ -283,6 +306,16 @@ Two related facts shape the implementation, not just the install:
     later Hermes cron job may invoke `daidala_checkouts_status`, but that
     tool is hard-locked to a report-only dry run and never changes
     checkouts, backups, GitHub Project links, or registration state.
+
+- **Q3 — How does the dashboard setup envelope preserve `SetupRequest`?** Resolved.
+  `POST /wizard/preview` accepts `{request: <SetupRequest payload>}` and
+  `POST /wizard/start` accepts `{request: <same payload>, preview_digest,
+  confirm: true}`. The router passes only `request` to
+  `SetupRequest.from_payload`; route confirmation and digest fields never enter
+  the setup model. A blank workflow-ID control omits `workflow_id`, allowing the
+  existing service ID factory to create the durable ID. A supplied ID must match
+  the existing 1–128 character workflow-ID rule. The dashboard never derives an
+  ID from goal text because repeated goals would collide.
 
 The remaining plan treats these decisions as pinned: `daidala-dashboard` is
 the registration-free dashboard host; browser state uses an isolated dashboard
@@ -313,7 +346,8 @@ This is proposed scope only; it requires a fresh approval before Phase 0 starts.
   slipped through; it is not the primary DOX surface.
 - New modules under `daidala/` are pre-registered in the `daidala/AGENTS.md`
   Ownership table *before* their first commit. Phase 4 will add
-  `checkout_root.py` and `github_project_links.py`; Phase 6 will add
+  `profile_files.py`, `checkout_root.py`, and `github_project_links.py`; Phase 6
+  will add
   `checkouts.py`. The Phase 6 step 8 `daidala_checkouts_status` tool
   (renamed from `daidala_checkout_sweep` to match its report-only contract)
   pre-registers in `daidala/AGENTS.md` Ownership and `plugin.yaml`'s
@@ -426,8 +460,9 @@ changes; its transient operational evidence remains outside the repository.
    hang under non-TTY execution:
 
    ```bash
-   mkdir -p ~/.hermes/profiles/daidala-dashboard/plugins
-   ln -s "$PWD" ~/.hermes/profiles/daidala-dashboard/plugins/daidala
+   DASHBOARD_PROFILE_ROOT="$(dirname "$(hermes -p daidala-dashboard config path)")"
+   mkdir -p "$DASHBOARD_PROFILE_ROOT/plugins"
+   ln -s "$PWD" "$DASHBOARD_PROFILE_ROOT/plugins/daidala"
    hermes -p daidala-dashboard plugins enable daidala --no-allow-tool-override
    # daidala must appear enabled; record the version-specific source label.
    hermes -p daidala-dashboard plugins list
@@ -480,7 +515,10 @@ changes; its transient operational evidence remains outside the repository.
    has no separate `DAIDALA_DATA_ROOT` variable. Populate temporary non-secret
    `registration.yaml` and
    `credential-bindings.yaml` fixture state, then launch a second isolated
-   dashboard under that fixture with `--port 0 --no-open`. Run the stateful
+   dashboard under that fixture with `--port 0 --no-open`. Set the registration
+   checkout to exactly `<fixture resolve_data_root()>/work/<project_id>` so later
+   checkout-root invariants are testable without rewriting the registration.
+   Run the stateful
    browser gate only against the second process's printed URL. Do not attempt to
    reach fixture state by changing `?profile=` on the host process, and do not
    source, copy, or display a real credential value. The fixture name must
@@ -593,15 +631,15 @@ request, and confirm creation of the workflow graph.
    override), `workflow_id`, and the mutually exclusive
    `constraints_content` / `constraints_skill` +
    `constraints_skill_digest` triple
-   (`daidala/setup_wizard.py:19-98`). The wizard form always supplies a
-   stable, user-visible `workflow_id` (defaulted to a slug-safe variant
-   derived from `goal`, editable, and shown alongside the preview) because
-   `daidala/schemas.py::START` lists `workflow_id` in `required`
-   (`daidala/schemas.py:57-63`) and the strict payload rejects a `null`.
-   `SetupRequest.from_payload` accepts `None`
-   (`daidala/setup_wizard.py:81`, the `workflow_id=_optional_text(...)`
-   constructor line), so the form forwards the user-edited value as-is and the
-   wizard UX never relies on a server-side default.
+   (`daidala/setup_wizard.py:19-98`). Render `workflow_id` as an optional
+   advanced control. Blank means omit the key and use the existing
+   `WorkflowService` ID factory; never derive it from `goal`. When supplied,
+   validate the same 1–128 letters/digits/dots/underscores/hyphens contract as
+   `ExecutionWorkspace.validate_workflow_id`
+   (`daidala/execution.py:38-40`, `daidala/execution.py:382-387`). The
+   `daidala_start` tool schema requires `workflow_id`, but this dashboard route
+   uses `SetupRequest` directly and must not copy the tool-only requirement into
+   a second setup model.
 3. Render `board_slug` as a `<select>` fed from `/wizard/inventory.boards`, plus
    a `Create board` action for the Getting started path. The existing
    `/wizard/boards` route mutates immediately and must be replaced with `POST
@@ -624,14 +662,17 @@ request, and confirm creation of the workflow graph.
    constraint revision; the last option sends all three constraint fields as
    `null`/absent.
 6. Preserve endpoint and payload parity with `daidala:setup`: `/wizard/preview`
-   must validate with `SetupRequest.from_payload` and return that request's
+   accepts exactly `{request: object}`; `/wizard/start` accepts exactly
+   `{request: object, preview_digest: 64-hex, confirm: true}`. Both reject
+   unknown outer fields, and only the nested `request` is passed to
+   `SetupRequest.from_payload`. Preview returns that request's
    `SetupRequest.preview()` projection plus a canonical digest over the normalized
    request and start-readiness evidence. `/wizard/start` accepts that digest as a
-   route envelope field, reruns readiness, returns conflict if the digest changed,
-   then calls `confirmed_start(payload, service.start)` with the existing setup
-   fields and literal `confirm: true`. The browser must not introduce a
+   route-envelope field, reruns readiness, returns conflict if the digest changed,
+   then calls the existing confirmed-start service path with only the nested setup
+   request and the separately validated literal confirmation. The browser must not introduce a
    dashboard-only setup schema or second start path. Before invoking start, the
-   server checks a supplied stable `workflow_id`; if a ledger already exists, it
+   server checks a supplied explicit `workflow_id`; if a ledger already exists, it
    does not invoke start and returns `409 Conflict` with a safe reference to the
    existing workflow. The browser treats that response as "open existing", not
    as successful creation. The new `/wizard/readiness` route from step 1 and
@@ -641,9 +682,11 @@ request, and confirm creation of the workflow graph.
 7. On success, route directly to the created workflow and show the next user
    action: keep the gateway running and watch `define` then `plan`.
 8. Extend the existing Python API and source-contract tests rather than adding a
-   JavaScript DOM harness: assert the serialized wizard request matches
-   `schemas.py::START` and that the server rejects `confirm: false` before it
-   constructs the workflow service.
+   JavaScript DOM harness: assert the nested request is accepted by
+   `SetupRequest.from_payload`, blank workflow ID is omitted and receives a
+   service-generated ID, an explicit invalid ID is rejected, and the server
+   rejects unknown envelope fields or `confirm: false` before it constructs the
+   workflow service.
 9. Correct the stale GET-only claims in the `dashboard/dist/index.js` header
    comment (line 10: "only GET requests are issued, no write path is ever
    invoked") and the `tests/test_dashboard_assets.py` module docstring (line 9:
@@ -694,6 +737,14 @@ remediate a blocked card, or preview and confirm cancellation.
    read-only.
    The implementation must retain the existing hidden-tab pause and snapshot-only
    client authorization rules in `dashboard/AGENTS.md`.
+   Daidala's `KanbanCardStatus` contains only stage, task ID, status, and assignee;
+   it does not contain comments or attempts (`daidala/kanban.py:28-41`). Add
+   bounded read adapters for exactly `hermes kanban --board <derived-board> show
+   <card_id> --json` and `hermes kanban --board <derived-board> runs <card_id>
+   --json`. Parse allowlisted fields with 64 KiB output and 10-second timeout
+   bounds, verify every requested card belongs to the workflow ledger, and return
+   sanitized comments/events/run summaries in the detail snapshot. Never read the
+   Kanban SQLite database or persist these host-owned records in Daidala.
 2. When planning completes, render the plan artifact reference, full
    64-character pending digest, and scope/risk/verification prompt. `Approve
    exact plan` requires the displayed digest plus a literal confirmation and
@@ -715,15 +766,19 @@ remediate a blocked card, or preview and confirm cancellation.
    /workflows/{workflow_id}/cards/{card_id}/comment` and `POST
    /workflows/{workflow_id}/cards/{card_id}/unblock`. Comment accepts
    `{comment: string, confirm: true}`; unblock accepts `{reason: string,
-   confirm: true}`. Both text fields must be non-empty. The server loads the
+   confirm: true}`. Comment is 1–8192 UTF-8 bytes and reason is 1–512 UTF-8
+   bytes after trimming; control characters other than newline/tab are rejected.
+   The server loads the
    current workflow ledger, verifies `card_id` belongs to that workflow, and
    derives the board slug from durable state; it never accepts a board selector
    from the browser. Neither action changes Daidala approval state or rewrites
    captured evidence. Invoke argv without a shell, fail closed on timeout or
    nonzero exit, and bound captured subprocess output before returning a sanitized
    route error.
-4. Add `Cancel workflow` as a dashboard-composed preview followed by confirmed
-   mutation. The existing read-only workflow detail projection supplies the
+4. Add `POST /workflows/{workflow_id}/cancel/preview` and the confirmed `POST
+   /workflows/{workflow_id}/cancel` mutation. Preview accepts exactly `{reason}`;
+   apply accepts exactly `{reason, preview_digest, confirm: true}`. The existing
+   read-only workflow detail projection supplies the
    affected cards and Daidala-owned worktree, but the action must also compute a
    canonical cancellation preview digest over workflow ID, current ledger token,
    card identities, owned worktree identity, and normalized reason. Submit
@@ -739,12 +794,18 @@ remediate a blocked card, or preview and confirm cancellation.
    is server-side authorized from current durable state, not client state. Along
    with the preview/confirm actions explicitly named in Phases 1 and 4–7, these
    are the complete browser mutation surface; no route may proxy an arbitrary
-   Daidala tool or Hermes command. The `_run_command`-adjacent private
-   subprocess-adapter count beside `dashboard.plugin_api._run_command` rises
-   from 0 to 2 (`kanban_comment`, `kanban_unblock`); future phases that add a
-   third must update this count. (`daidala/cli.py`'s existing
-   `_dispatch_kanban_cli` is a separate native-CLI dispatch layer, not a
-   dashboard `_run_command` adapter, and does not count toward this number.)
+   Daidala tool or Hermes command. The private subprocess-adapter count
+   beside `dashboard.plugin_api._run_command` rises from 1 (the existing
+   `_run_command`) to 5: the existing `_run_command` plus the four new
+   private helpers `kanban_show`, `kanban_runs`, `kanban_comment`, and
+   `kanban_unblock`. Each new adapter passes `board=ControllerRegistration.board`
+   resolved from the workflow's project-cycle admission ledger — never a board
+   selector from the browser. The `kanban_unblock` adapter requires a new
+   `kanban_unblock` branch in `_dispatch_kanban_cli` (`daidala/cli.py:974-980`)
+   in the same commit. Future phases that add a sixth must update this count.
+   (`daidala/cli.py`'s `_dispatch_kanban_cli` is a separate native-CLI dispatch
+   layer, not a dashboard `_run_command` adapter, and the new `kanban_unblock`
+   branch does not count toward the adapter count.)
    The `dashboard/dist/index.js` header comment (line 10: "only GET requests
    are issued") and the `tests/test_dashboard_assets.py` module docstring
    (line 9: "never invokes POST/PUT/DELETE") both claim a GET-only bundle even
@@ -758,14 +819,16 @@ remediate a blocked card, or preview and confirm cancellation.
    cancellation, and public Kanban boundaries. It must not create a scheduler,
    persist live card status, access the Kanban database directly, or expose the
    self-improvement `doctor` diagnostic.
-7. Add the four named workflow-action routes to `dashboard/plugin_api.py` as
+7. Add the five named workflow-action routes (including cancellation preview) to
+   `dashboard/plugin_api.py` as
    thin adapters only: validate the literal confirmation and route-specific text
    fields, resolve the current service, then call the existing Daidala service or
    public Hermes Kanban adapter. Do not reimplement approval, cancellation, or
    Kanban state transitions in the router.
 
 **Verification gate:** Add focused dashboard API and asset-contract coverage for
-read-only watch/refresh; the exact-digest approval payload and stale/unchecked
+read-only watch/refresh plus bounded Kanban show/runs projection; the exact-digest
+approval payload and stale/unchecked
 rejection; public-Kanban comment/unblock forwarding with required text,
 confirmation, and workflow-owned-card checks; and cancellation with a required
 reason, fresh preview digest, confirmation, and detail projection that names the
@@ -803,7 +866,21 @@ or weakening `ControllerRegistration`.
    are two separate invariants: the sidecar proves the *on-disk* path is
    reusable; the derived-path equality is the fail-closed registration
    invariant. Both must hold before any phase accepts the configuration
-   as valid.
+   as valid. An absent file still resolves to the documented default even when
+   existing registrations do not match it, but the projection is `blocked` and
+   no root/policy/checkout mutation is allowed. The error lists mismatching
+   project IDs and points to `docs/16-self-improvement-setup.md` for manual
+   registration migration and renewed prerequisite approval; the dashboard does
+   not offer an automatic rewrite. `checkouts.yaml` is at most 16 KiB and root is
+   at most 4096 UTF-8 bytes. Add `daidala/profile_files.py` for the new stores' one
+   atomic private-file replacement helper: same-parent mode-`0600` temporary file,
+   flush + file `fsync`, `os.replace`, parent-directory `fsync`, and `finally`
+   cleanup without following symlinks.
+   Update `docs/16-self-improvement-setup.md` with the blocked-root remediation:
+   stop the controller, repeat its existing registration-materialization and
+   prerequisite-check steps for the new checkout, then restart only after the
+   strict registration and renewed evidence pass. Do not tell operators to edit a
+   trusted registration or evidence file in place.
 2. Add collision-safety helpers that refuse a pre-existing project path unless
    its mode-`0600` `.daidala-owner` contains the same strict `project_id` and its
    Git `origin` equals the registration's `verified_remote`. A missing marker on
@@ -812,59 +889,100 @@ or weakening `ControllerRegistration`.
    be the exact untracked file written by Daidala. Root replacement returns
    conflict while any owned checkout exists
    beneath the current root or any existing registration would not match its
-   derived path under the proposed root. GitHub Project links are independent
-   and do not block root replacement.
+   derived path under the proposed root. Discover ownership by scanning at most
+   1024 direct child directories only, without following links; overflow or an
+   unreadable entry blocks the change rather than silently omitting a checkout.
+   GitHub Project links are independent and do not block root replacement.
 3. Add `daidala/github_project_links.py` with a frozen `GitHubProjectLink`
    dataclass containing exactly `project_id`, canonical GitHub `owner`,
-   positive `project_number`, and bounded `project_node_id`. `owner`
-   is validated by a strict regex equivalent to the GitHub user/org login
-   shape (an alphanumeric first character followed by up to 38 alphanumerics
-   or hyphens, total length ≤ 39 characters) so the field is symmetric with
-   the `_REPOSITORY` regex in `daidala/registrations.py:27`. The strict
+   `project_number` in `1..2_147_483_647`, and a 1–256-byte non-control
+   `project_node_id`. `owner`
+   is validated conservatively as 1–39 alphanumeric/hyphen characters with an
+   alphanumeric first and last character and no consecutive hyphens. Do not call
+   this symmetric with `_REPOSITORY` in `daidala/registrations.py:27`; that
+   broader repository parser also permits `_` and `.` and is not a GitHub-login
+   validator. The strict
    `daidala.github-project-links/v1` store holds zero or one row per registered
    `project_id`, rejects unknown fields and duplicate YAML keys/rows, and lives
-   only at `<resolved-data-root>/github-project-links.yaml` mode `0600`.
+   only at `<resolved-data-root>/github-project-links.yaml` mode `0600`. Bound the
+   file to 256 KiB and 1024 rows before parsing.
    Repository identity, verified remote, checkout path, and credential alias are
    never persisted in a link; they remain registration/configuration data.
 4. Add a bounded verifier that resolves the registration's existing
    intake alias through `credential-bindings.yaml`, exposes it to only
    the child call as `GH_TOKEN`, and runs
    `gh project view <number> --owner <owner> --format json`. The intake
-   alias is the **Hermes Kanban intake alias** bound to
-   `read_credential_alias` in `credential-bindings.yaml`; the GitHub
-   Projects v2 read uses the same alias, not a dedicated Projects-only
-   binding. Pre-flight: the verifier asserts `gh --version` is on `PATH`
-   and parses `--help` for the `project view --owner --format json`
-   triple before the first live read. `gh project view` is not currently
+   alias is `ControllerRegistration.intake_credential`; its environment-variable
+   name comes from the matching binding row in `credential-bindings.yaml`. The
+   GitHub Projects v2 read uses that same alias, not a dedicated Projects-only
+   binding. `ControllerRegistration` has no `intake_capabilities` field today
+   and v1 does not introduce one — the `read-project` requirement is resolved
+   from `prerequisite-evidence.json` by matching the `intake_credential` alias
+   against `CredentialCapability.allowed` (`daidala/prerequisites.py:281-343`),
+   not from the registration record. Pre-flight asserts `gh --version >=
+   2.40.0` (parsed by regex from `gh --version` output) and that `gh project
+   view --help` contains the literal tokens `--owner`, `--format`, and `json`,
+   plus the positional `<number>` argument; it does not make a live project
+   read during preflight. For user-owned Projects, `--owner @me` is accepted
+   and resolved via `gh api user --jq .login`; for org-owned Projects the
+   literal owner login is passed. `gh project view` is not currently
    exercised by `live_adapters.py` (`daidala/live_adapters.py:101-105`
    shows only `gh issue` invocations); the verifier therefore needs its
-   own binary-shape proof. Require the registration's declared intake
-   capabilities to contain `read-project`; otherwise return a blocked
-   result before resolving credentials. Build a credential-minimal
-   child environment carrying `GH_TOKEN=<resolved>`,
-   `GH_PROMPT_DISABLED=1`, `GIT_TERMINAL_PROMPT=0`, `NO_COLOR=1`, and
-   `PATH` (so `gh` resolves); do not copy the whole dashboard
-   environment. Respect `${HTTPS_PROXY}` / `${NO_PROXY}` when set.
-   Give the child a 30-second timeout and accept at most 64 KiB combined
-   output. Parse strict JSON, require the returned node ID and
-   owner/number identity, and retain no token or raw output. Preview
+   own binary-shape proof. Load sibling `prerequisite-evidence.json` with the
+   existing strict parser. Before credential resolution, require exactly one
+   unexpired row matching the intake alias and `capability: github-intake`, the
+   complete allowed set `read-organization`, `read-project`, and
+   `read-public-repository`, and the repository-required denied-capability subset.
+   Extract and reuse the prerequisite capability check rather than maintaining a
+   dashboard-only interpretation. Build a **credential-minimal** child
+   environment that does **not** go through `safe_runtime_environment`
+   (`daidala/live_adapters.py:789-794`), whose allowlist
+   (`_SAFE_ENVIRONMENT_NAMES`, `daidala/live_adapters.py:37`) does not contain
+   `GH_PROMPT_DISABLED`, `GIT_TERMINAL_PROMPT`, or `NO_COLOR`. The allowed set
+   is exactly `PATH` (inherited), `HOME` (so `gh` reads `~/.config/gh/hosts.yml`),
+   the resolved `GH_TOKEN=<value>`, `GH_PROMPT_DISABLED=1`,
+   `GIT_TERMINAL_PROMPT=0`, `NO_COLOR=1`, `LANG=C.UTF-8`, `GIT_LOCALE=C`,
+   and parent `HTTPS_PROXY`/`NO_PROXY` only when already set. All other parent
+   env keys are dropped. Log the constructed env by **name set only**, never by
+   value. Use a **per-call `RuntimeRunner`** for `gh project view` with timeout
+   `30 s` and a hard output cap of `64 KiB`; exceeding either bound raises and
+   the route surfaces `409 Conflict`. Do not call `run_runtime_command`
+   (60 s / 1 MiB). Parse one JSON object, require bounded `id`, integer `number`, a
+   1–4096-byte HTTPS `url`, a 1–1024-byte non-control `title`, and `owner.login`;
+   compare number exactly and owner
+   case-insensitively, then persist the returned canonical login and node ID.
+   Reject malformed or unexpected output shape and retain no token or raw output. Preview
    accepts only `project_id`, owner, and number; the server, not the
    browser, supplies the node ID.
-5. Add `GET /api/plugins/daidala/github-project-links`, `POST
+5. Add `GET /api/plugins/daidala/github-project-links`, `GET
+   /api/plugins/daidala/github-project-links/{project_id}`, `POST
    /api/plugins/daidala/github-project-links/preview`, and `PUT
-   /api/plugins/daidala/github-project-links/{project_id}`, plus read-only `POST
+   and `DELETE /api/plugins/daidala/github-project-links/{project_id}`, plus read-only `POST
    /api/plugins/daidala/github-project-links/{project_id}/verify`. Preview performs the
    bounded read, returns sanitized Project title/URL plus node ID, canonical YAML
    diff, target path/mode, and digest, and makes no mutation. Upsert requires
    literal `confirm: true`, reruns the GitHub read, and requires the same preview
-   digest. Removal is local-only but still requires a dedicated removal preview,
-   matching digest, and confirmation. Verify performs the same bounded live read
+   digest. A no-change upsert returns an explicit no-op and does not rewrite the
+   file. Removal is local-only: `GET /github-project-links/{project_id}` returns a
+   `delete_preview_digest` over the current canonical store digest and exact row;
+   `DELETE /github-project-links/{project_id}` requires that digest and literal
+   confirmation, reruns no GitHub command, and conflicts if the row changed.
+   Verify performs the same bounded live read
    against a persisted row but never writes. Stale identity returns `409
    Conflict` for mutation and a structured unhealthy result for verify.
    Add read-only `GET /api/plugins/daidala/registrations` for the selectors used
-   by Phases 5 and 6. Return only project ID, checkout, repository identity,
-   verified remote, board, intake alias, and declared capabilities from strict
-   registrations; never return bindings, environment-variable names, or values.
+   by Phases 5 and 6. Return only `project_id`, `controller_profile`, `board`,
+   `repository_canonical`, `verified_remote` (validated against the canonical
+   GitHub allowlist at registration-parse time so it cannot carry
+   `user:token@`), `intake_credential` (alias slug only, never the binding's
+   environment-variable name), `notification_adapter`, `notification_target`,
+   `evaluator_backend`, `evaluator_network`, and a `checkout_match` boolean
+   (`true` iff `ControllerRegistration.checkout == <root>/<project_id>/` for
+   the active root). Never return `findings_credential`,
+   `notification_destination`, `maintainers`, the credential binding's
+   `environment_variable`, or any resolved credential value. Missing, malformed,
+   duplicate, mismatched, or expired evidence is a blocked capability status,
+   not an empty successful declaration.
    The route resolves registrations from the **active dashboard profile's**
    `<data-root>/projects/<project_id>/registration.yaml` (controller-profile
    data, not the registration-store surface); on `daidala-dashboard` the
@@ -879,7 +997,9 @@ or weakening `ControllerRegistration`.
    registrations and no owned checkout, an absent file resolves to the defaults
    and a confirmed root replacement is allowed.
 
-**Verification gate:** New `tests/test_checkout_root.py` covers defaults, exact
+**Verification gate:** New `tests/test_profile_files.py` and
+`tests/test_checkout_root.py` cover atomic mode-`0600` replacement, conflict/no-op
+behavior, cleanup on failure, defaults, exact
 schema, mode-`0600` round-trip, POSIX/symlink rejection, unowned-directory
 refusal, origin/marker mismatch, and root-change blocking while an owned checkout
 exists. New `tests/test_github_project_links.py` covers strict one-link-per-
@@ -888,7 +1008,9 @@ field rejection, bounded credential-minimal `gh project view`, no secret/raw
 output retention, no registration-file writes, fresh preview/confirmation for
 upsert and removal, stale-node-ID conflict, safe registration projection, and
 concurrent first-read/write serialization across all new stores. Both test files
-exit 0.
+exit 0. Focused `tests/test_prerequisites.py` coverage proves the extracted
+capability check preserves existing prerequisite semantics, and the operator-doc
+link check passes with the new root-migration guidance.
 
 ## Phase 5 — GitHub Projects v2 link UI
 
@@ -910,6 +1032,9 @@ preview/replace compare-and-swap pattern.
    canonical diff, then send `PUT /github-project-links/{project_id}` with the
    matching digest and literal `confirm: true`. Never accept a credential alias,
    remote, token, or node ID from browser form state.
+   Edit uses the same preview/upsert path. Remove first displays the persisted
+   owner/number/node ID and then sends the `delete_preview_digest` returned by the
+   row read; it does not depend on live GitHub availability.
 3. Render distinct blocked states for missing registration/bindings, failed
    Project read capability, nonexistent/inaccessible Project, stale node ID, and
    missing or ownership-invalid checkout. A checkout warning does not prevent an
@@ -936,90 +1061,136 @@ confirmation, and clean-tree safeguards. This phase does not alter admission.
 1. Add `daidala/checkouts.py` with checkout status and lifecycle operations over
    Phase 4's persisted `CheckoutConfig`. A `TtlPolicy` projection exposes
    (`mode: "disabled" | "wipe-if-clean" | "backup-then-wipe"`,
-   `ttl_hours: int`) plus a `CheckoutStatus` projection (path exists, last
-   `git log -1 --format=%ct` age in hours, and classified
+   `ttl_hours: int`) plus a `CheckoutStatus` projection (path exists, owner/origin/
+   receipt health, receipt age in hours, observed HEAD, and classified
    tracked/untracked/ignored status counts). Default is `mode="disabled",
-   ttl_hours=0`.
+   ttl_hours=0`; disabled requires exactly `0`, while either TTL mode requires an
+   integer (not `bool`) in `1..8760`.
    `checkouts.py` owns status, refresh, backup, and report-only sweep behavior; it
    consumes but does not redefine `checkout_root.py`'s schema and remains
-   independent of `github_project_links.py`.
-2. Add `GET /api/plugins/daidala/checkouts` that returns status for every
-   registered project and a clear `missing_checkout` state when its derived path
-   does not exist. GitHub Project linkage is irrelevant. The read verifies the
-   sidecar and `origin` locally but never contacts GitHub or mutates the
-   filesystem.
-3. Add `POST /api/plugins/daidala/checkouts/{project_id}/refresh` that:
+   independent of `github_project_links.py`. It also owns the strict bounded
+   `daidala.checkout-refresh-state/v1` store at
+   `<resolved-data-root>/checkout-refresh-state.json`, bounded to 512 KiB and 1024
+   rows before parsing. Rows contain exactly
+   `project_id`, normalized checkout path, registration digest, HEAD 40-hex, and
+   RFC 3339 UTC `refreshed_at`; rows are unique by project ID, sorted canonically,
+   compare-and-swap written mode `0600`, and updated only after successful adopt,
+   clone, or swap. TTL age uses `refreshed_at`; commit author/committer time is
+   never a freshness clock.
+2. Add `GET /api/plugins/daidala/checkouts` that returns a `CheckoutStatus`
+   for every registered project. The status distinguishes these states:
+   `ok`, `missing_checkout`, `unowned`, `wrong_owner`, `wrong_origin`,
+   `symlink_path`, and `git_dirty` (with classified counts of
+   tracked/untracked/ignored rows). GitHub Project linkage is irrelevant.
+   The read verifies the sidecar and `origin` locally but never contacts
+   GitHub or mutates the filesystem.
+3. Add `POST /api/plugins/daidala/checkouts/{project_id}/refresh/preview`
+   (non-mutating, returns the canonical digest and classified status) and
+   `POST /api/plugins/daidala/checkouts/{project_id}/refresh` (confirmed
+   mutation requiring `{preview_digest, confirm: true}`) that:
    - refuses an unknown project, loads its strict registration, and clones only
      that registration's `verified_remote`; it never accepts a remote URL or
      checkout path in the refresh payload;
-   - preflights `git status --porcelain --untracked-files=all
-     --ignored=matching` by parsing `git --version` output and inspecting
-     `git status --help`; if the requested flag combination is not
-     advertised, the manager returns `409 Conflict` rather than running
-     the refresh against an unsupported git version;
-   - for a missing checkout, returns the planned clone in dry run and clones
-     only after literal `confirm: true`;
+   - preflights with `git status --porcelain=v1 -z --untracked-files=all
+     --ignored=matching`. Run the exact command and treat nonzero exit, timeout,
+     malformed NUL-delimited records, or output beyond 1 MiB as a blocked status;
+     do not scrape localized `git status --help` text;
+   - **Decision order for refresh:** (1) if path missing → preview plans a fresh
+     clone regardless of mode/TTL; (2) if path present and dirty (any
+     tracked/untracked row except the validated marker, or any ignored row under
+     `disabled`/`wipe-if-clean`) → return `409`; (3) if path present and clean:
+     under `disabled` → the explicit refresh proceeds using the
+     `wipe-if-clean` cleanup path, ignoring `ttl_hours` (manual "Refresh now"
+     bypasses the age predicate in all modes — mode controls replacement
+     strategy only); under `wipe-if-clean`/`backup-then-wipe` → no-op when
+     `head_age ≤ ttl_hours`, re-clone when `head_age > ttl_hours`;
    - for an existing checkout, revalidates the symlink-free derived path,
      mode-`0600` owner marker, exact registration checkout, and exact `origin`,
-     then runs `git status --porcelain --untracked-files=all --ignored=matching`
+     then runs `git status --porcelain=v1 -z --untracked-files=all --ignored=matching`
      through `subprocess.run(argv, …)` only (no `import git`, no `GitPython`:
-     the no-private-import contract from `daidala/AGENTS.md:171-173`
-     applies equally to `git`);
-     discard only the exact untracked marker row after validating its bytes/mode.
+     plugin code uses `subprocess.run(argv, ...)` rather than a `git` Python
+     wrapper, matching the existing `live_adapters.run_runtime_command` pattern
+     and keeping the subprocess boundary uniform without an extra runtime
+     dependency). The no-private-import contract from `daidala/AGENTS.md:170-173`
+     covers Kanban database access, not `import git`; the rationale for using
+     `subprocess.run` is pattern consistency, not that AGENTS citation.
+     Decode paths with the filesystem encoding plus `surrogateescape`; do not
+     split on spaces/newlines. Discard only the exact untracked marker record
+     after validating that its bytes are exactly `<project_id>\n`, its mode is
+     `0600`, and it is neither a symlink nor tracked/ignored.
      Any tracked/untracked row returns 409 before backup, clone, rename, or
      deletion. Ignored-only rows also abort `disabled`/`wipe-if-clean`; under
      `backup-then-wipe` they must be included in the archive before replacement;
-   - on `disabled`, permits this explicitly requested refresh after the clean
-     check, ignores `ttl_hours`, and uses the `wipe-if-clean` cleanup path;
-   - on `wipe-if-clean` or `backup-then-wipe`, re-clones only when a clean
-     checkout head age exceeds `ttl_hours`; otherwise returns an unchanged,
-     successful no-op report;
    - on `backup-then-wipe`, tar/gzips the clean working tree into
-     `<checkouts.root>/_backups/<project_id>.<unix-ts>.tar.gz` with the
-     `_backups` directory mode `0700` before the verified replacement swap;
-   - clones into a fresh sibling temporary directory first, validates its exact
-     `origin` and checkout shape, then uses a bounded same-parent swap so a clone
-     failure leaves the old checkout intact; cleanup touches only paths created
-     and marked by this operation;
+     `<checkouts.root>/_backups/<project_id>.<10-digit-zero-padded-unix-ts>.tar.gz`
+     mode `0600`, with `_backups` mode `0700`, before the verified replacement
+     swap. Archive only relative entries beneath the checkout, exclude `.git`,
+     `.daidala-owner`, and manager-created temporary paths, never follow
+     symlinks, and reject sockets, devices, FIFOs, or paths escaping the
+     checkout. On archive failure (ENOSPC, EACCES): abort, return `409`, do not
+     write the sidecar, do not leave a partial `.tar.gz`, name the failed path
+     in the error. Ignored files may contain secrets, so neither filenames nor
+     bytes are returned/logged;
+   - clones into a fresh sibling temporary directory first (named
+     `<checkouts.root>/.<project_id>.clone.<unix-ts>.<pid>/`, dot-prefixed to
+     keep it out of `ls` listings), validates its exact `origin` and checkout
+     shape, then uses `os.replace` for the same-parent swap (with copy-tree
+     fallback on `OSError` for cross-device moves on WSL) so a clone failure
+     leaves the old checkout intact. Replacement renames old to an
+     operation-owned sibling, renames verified new into place, rolls old back if
+     the second rename fails, and removes old only after the new marker and
+     refresh receipt are durable; cleanup touches only paths created and marked
+     by this operation. A crash-surviving operation-owned sibling is reported for
+     manual recovery and never silently deleted on a later read;
    - treats omitted or `confirm: false` as dry run and requires literal
      `confirm: true` plus a fresh preview digest for every clone, swap, backup,
      or sidecar write.
-4. Add preview/confirmed `POST
-   /api/plugins/daidala/checkouts/{project_id}/adopt` for an existing unowned
-   registration checkout. Adoption requires exact registration/derived-path and
-   origin equality, no symlink component, no tracked/ignored marker, and a fully
-   clean tracked/untracked inventory. It writes only the mode-`0600` witness
-   after a fresh matching digest and literal confirmation; there is no force or
-   arbitrary-path form.
-5. Add `POST /api/plugins/daidala/checkouts/_backups/prune` that lists
+4. Add `POST /api/plugins/daidala/checkouts/{project_id}/adopt/preview`
+   (non-mutating) and confirmed `POST /api/plugins/daidala/checkouts/{project_id}/adopt`
+   for an existing unowned registration checkout. Adoption requires exact
+   registration/derived-path and origin equality, no symlink component, no
+   tracked/ignored marker, and a fully clean tracked/untracked/ignored inventory.
+   It writes only the mode-`0600` witness and matching refresh receipt after a
+   fresh digest and literal confirmation; there is no force or arbitrary-path
+   form.
+5. Add `POST /api/plugins/daidala/checkouts/_backups/prune/preview` (non-mutating)
+   and `POST /api/plugins/daidala/checkouts/_backups/prune` that lists
    `<checkouts.root>/_backups/*.tar.gz` and deletes *only* request-named
    backups after literal `confirm: true` and matching preview digest. Reject
    absolute paths, separators, `..`, symlinks, non-regular files, and names not
-   returned by the preview. Backups are never auto-deleted; no
+   returned by the preview. Enforce that the basename starts with a slug
+   (`_require_slug` shape), is followed by a dot and a 10-digit
+   zero-padded Unix timestamp, then `.tar.gz`. Reject any other
+   characters, separators, absolute paths, `..`, symlinks, or
+   non-regular files. `Path.resolve(strict=True)` each file to
+   confirm its parent is
+   `<checkouts.root>/_backups/` and is not a symlink. List at most 1024 direct
+   regular entries without following links; overflow or unreadable metadata
+   blocks preview. Backups are never auto-deleted; no
    `backup_retention_hours` knob is introduced. Return remaining filenames.
 6. Add `POST /api/plugins/daidala/checkouts/policy/preview` and `PUT
    /api/plugins/daidala/checkouts/policy`. They preview then atomically replace
    only `mode` and `ttl_hours` inside Phase 4's strict mode-`0600`
    `daidala.checkouts/v1` document while preserving `root`, using an expected
-   digest and literal `confirm: true`. Every `/checkouts` read loads its live
-   policy from that file.
+   digest and literal `confirm: true`. Enforce the exact disabled/TTL bounds from
+   step 1. Every `/checkouts` read loads its live policy from that file.
 7. Render a `CheckoutManager` component with a mode selector (`disabled` by
    default), TTL number input, explicit policy preview/save confirmation,
    per-row adopt/dry-run/apply refresh actions, and named-backup pruning.
 8. Add a zero-argument `daidala_checkouts_status` plugin tool for
-   future Hermes cron consumption (renamed from
-   `daidala_checkout_sweep` so the name reflects the report-only
-   contract; v1 ships the tool without a cron schedule, so the name
-   must not imply one exists). Add its schema, handler mapping,
-   runtime registration, **Ownership-table entry in
+   future Hermes cron consumption. No `daidala_checkout_sweep` exists
+   today — this is net-new, not a rename. v1 ships the tool without a
+   cron schedule, so the name must not imply one exists. Add its schema,
+   handler mapping, runtime registration, **Ownership-table entry in
    `daidala/AGENTS.md`**, and `plugin.yaml` `provides_tools` entry
    together in `daidala/schemas.py`, `daidala/tools.py`,
-   `daidala/__init__.py`, `daidala/AGENTS.md`, and `plugin.yaml`;
-   `tests/test_plugin.py` must continue to prove exact
-   manifest/runtime parity. Its input schema is an object with no
+   `daidala/__init__.py`, `daidala/AGENTS.md`, and `plugin.yaml`.
+   All five edits must land in the **same commit**;
+   `tests/test_plugin.py` (`test_manifest_tool_inventory_matches_runtime_registration`)
+   will fail until they do. Its input schema is an object with no
    properties and `additionalProperties: false`; its handler follows
-   the plugin contract by returning a JSON string and never leaking
-   exceptions. `plugin.yaml` inventories only this Hermes tool; HTTP
+   the plugin contract by accepting `args: dict, **kwargs`, returning
+   a JSON string, and never leaking exceptions. `plugin.yaml` inventories only this Hermes tool; HTTP
    routes remain owned by `dashboard/plugin_api.py`. It returns
    checkout status projections only: no clone, marker write, backup,
    prune, link change, or policy change. This phase creates no cron
@@ -1034,7 +1205,10 @@ safe adoption requires a fresh confirmed preview; a failed replacement clone
 retains the old checkout; stale `wipe-if-clean` and `backup-then-wipe`
 behave as specified; missing checkouts need confirmation; only named backups
 are pruned after confirmation; policy persists across service reinstantiation;
-unsupported `git status` flag combinations return 409 without refresh; and
+nonzero, malformed, timed-out, or oversized `git status` returns 409 without
+refresh; receipt age rather than commit age drives TTL; stale/missing receipts do
+not mutate without confirmation; archive exclusions and special-file rejection
+hold; and
 `daidala_checkouts_status` is registered with no mutation path.
 
 ## Phase 7 — Constraint authoring UI
@@ -1050,14 +1224,28 @@ compare-and-swap replacement.
    of `/constraints/preview`. `/prerequisites.schema_limits.schema` currently
    contains only the schema identifier string (`CONSTRAINTS_SCHEMA` in
    `daidala/dashboard_backend.py:163`), not a JSON schema or template.
-   Extend the backend projection with a bounded `constraint_template` generated
-   from the implemented `WorkflowConstraints` shape and use that exact field;
-   the template content must match the starter-template paragraph in
-   `docs/14-workflow-constraints.md` (inlined here verbatim so the editor
-   never drifts from the docs and the implementer does not hand-author a
-   second template). Pin the field as
-   `{ "kind": "yaml-template", "source": "docs/14-workflow-constraints.md#starter-template",
-   "content": "..." }`.
+   Add one `DEFAULT_CONSTRAINT_TEMPLATE` string beside the parser in
+   `daidala/constraints.py` and project that exact bounded string as
+   `constraint_template`; do not generate YAML from dataclass fields. Add a
+   `## Starter template` section to `docs/14-workflow-constraints.md` containing
+   the exact same fenced block, and add a parity test that extracts the block and
+   compares it byte-for-byte with the runtime constant:
+
+   ```yaml
+   schema: daidala.workflow-constraints/v1
+   global:
+     - Preserve approved scope and repository instructions.
+   phases:
+     implement:
+       - Add or update tests for changed behavior.
+     verify:
+       - Run the repository's documented verification.
+   ```
+
+   Pin the API field as `{ "kind": "yaml-template", "source":
+   "docs/14-workflow-constraints.md#starter-template", "content": <exact string>
+   }`. The constant must parse with `parse_workflow_constraints` and remain below
+   `MAX_CANONICAL_BYTES`.
 2. The editor shows the canonical content returned by `/constraints/preview`
    so the user sees exactly what the ledger will store
    (`daidala/dashboard_backend.py:287-377`).
@@ -1074,7 +1262,9 @@ compare-and-swap replacement.
 editor rejects apply without a fresh valid preview, matching current digest, or
 literal `confirm: true`, and
 surfaces the schema bounds (`global_max`, `phase_max`, `constraint_bytes`,
-`canonical_bytes`) from `daidala/dashboard_backend.py:158-164`.
+`canonical_bytes`) from `daidala/dashboard_backend.py:158-164`. A focused
+constraint/docs parity test proves the starter template parses and exactly matches
+the fenced `docs/14-workflow-constraints.md#starter-template` block.
 
 ## Phase 8 — Configuration verification panel
 
@@ -1089,7 +1279,8 @@ and cancellation belong only to Phase 3.
    /api/plugins/daidala/configuration`. It returns `checkouts.root`, every
    registered `(project_id, <root>/<project_id>/)` pair, the persisted
    `checkouts.yaml` mapping (`root`, `mode`, `ttl_hours`), each zero-or-one GitHub Project
-   owner/number/node-ID state, intake capability declaration, evaluator backend
+   owner/number/node-ID state, sanitized intake-capability health from strict
+   prerequisite evidence, evaluator backend
    + network, notification adapter + target alias + destination-presence boolean,
    and `CheckoutStatus` summaries. The route is added to the closed route
    inventory assertion in `tests/test_dashboard_api.py` alongside the other
@@ -1097,9 +1288,11 @@ and cancellation belong only to Phase 3.
    values, tokens, raw probe output, or the private notification destination.
    It labels GitHub Project links as profile-local metadata that does not drive
    intake or admission in v1.
-2. Render the panel as a labeled list with a green/red status pill per
-   item; failures cite the exact missing element rather than a generic
-   "unreachable" banner.
+2. Render the panel as a labeled list with the finite statuses `healthy`,
+   `blocked`, `not_configured`, and `unavailable`; do not collapse missing optional
+   state or a registration-free host into a red failure. Blockers cite the exact
+   missing/malformed/mismatched element rather than a generic "unreachable"
+   banner.
 3. Render a yellow banner when `mode != "disabled"` warning that a confirmed
    manual stale refresh may wipe or back up clean local data; never say it runs
    during admission.
@@ -1133,8 +1326,9 @@ verification surface.
    persisted and that Phase 3's explicit mutation allowlist is documented;
    remove any contradictory language.
 2. Confirm the phase-local DOX passes updated `daidala/AGENTS.md` ownership for the separate
-   `checkout_root.py`, `github_project_links.py`, and `checkouts.py`
-   responsibilities; document the `/github-project-links/*`, `/checkout-root/*`, `/checkouts/*`, and
+   `profile_files.py`, `checkout_root.py`, `github_project_links.py`, and `checkouts.py`
+   responsibilities, including `checkout-refresh-state.json`; document the
+   `/github-project-links/*`, `/checkout-root/*`, `/checkouts/*`, and
    `/configuration` routes, three TTL modes, and report-only
    `daidala_checkouts_status` tool. Confirm Phase 6 updated `plugin.yaml` together
    with runtime tool registration so their inventories remain exact, and that
@@ -1143,6 +1337,10 @@ verification surface.
    `scripts/probe_hermes_dashboard_compatibility.py` describe and verify the
    session-authenticated `read_model: true` health contract without pinning an
    unauthenticated plugin-route status.
+   Confirm `docs/14-workflow-constraints.md` contains the exact Phase 7 starter
+   block and its parity test prevents drift.
+   Confirm `docs/16-self-improvement-setup.md` contains the blocked-root migration
+   procedure and still requires renewed strict evidence before restart.
 4. Re-read `docs/AGENTS.md`, `dashboard/AGENTS.md`, and `daidala/AGENTS.md`
    after implementation; update each only when its owned purpose, structure, or
    contract changed. Refresh any affected Child DOX Index; do not add a child
@@ -1155,10 +1353,11 @@ verification surface.
    `python scripts/probe_hermes_dashboard_compatibility.py`. `python -m build`
    must produce the wheel before either wheel-consuming command runs.
    `probe_hermes_dashboard_compatibility.py` requires the pinned Hermes
-   checkout's web distribution to be built once (see
-   `scripts/AGENTS.md`); on a non-interactive machine or in CI, invoke it
-   with `--skip-build`. These are the complete root/docs verification
-   surfaces for Phase 9, not Phase 0 teardown checks.
+   checkout's web distribution to be built once (see `scripts/AGENTS.md`); the
+   probe itself starts `hermes dashboard --skip-build` and has no script-level
+   `--skip-build` argument. If the host web distribution is absent, stop and build
+   it rather than passing an unsupported flag. These are the complete root/docs
+   verification surfaces for Phase 9, not Phase 0 teardown checks.
 
 **Verification gate:** Every command in the root AGENTS.md verification
 block exits 0; `dashboard/AGENTS.md` and `daidala/AGENTS.md` reflect the
