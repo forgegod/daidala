@@ -63,9 +63,13 @@ phases.
   `/workflows/{id}/recommendations`, `/constraints/preview`,
   `/constraints/replace`, and `/wizard/{inventory,boards,preview,start}`
   (`dashboard/plugin_api.py:85-251`).
-- `/health` currently returns `read_only: true`, but the plugin already exposes
-  scoped board, setup, and constraint mutations. Phase 2 narrows that misleading
-  capability label to `read_model: true`; it does not make the plugin read-only.
+- `/health` currently returns `read_only: true`
+  (`dashboard/plugin_api.py:96`), but the plugin already exposes scoped board,
+  setup, and constraint mutations. Phase 2 narrows that misleading capability
+  label to `read_model: true`; it does not make the plugin read-only. The
+  `buildHealth()` fallback in `dashboard/dist/index.js:62` also fabricates a
+  `read_only: true` on fetch failure and must be corrected in the same commit
+  so the offline stub does not resurrect the stale key.
 - A `SetupWizard` UI component already exists with a minimal board, repo,
   goal form, `Preview mutations`, and `Start workflow` confirmation
   (`dashboard/dist/index.js:467-531`).
@@ -75,9 +79,10 @@ phases.
 - Constraint preview/replace is exposed read-mostly and the backend uses
   compare-and-swap; there is no authoring UI for new constraint content yet.
 - GitHub intake already supports `read-organization`, `read-project`, and
-  `read-public-repository` (`daidala/AGENTS.md:109-110`) and is wired
+  `read-public-repository` (`daidala/AGENTS.md:109-112`) and is wired
   through `live_adapters.GitHubIssueIntakeAdapter`
-  (`daidala/live_adapters.py:101-105`). There is no current UI for managing
+  (`daidala/live_adapters.py:101-105`, `gh issue` inventory only — no
+  `gh project` call exists today). There is no current UI for managing
   a registration-to-GitHub-Projects-v2 binding or checkout TTL. Repository
   identity, verified remote, and intake alias already belong to the registration
   and must not be duplicated in the new link.
@@ -227,15 +232,16 @@ Two related facts shape the implementation, not just the install:
     `checkouts.yaml` key `checkouts.root`.
   - **(b)** A registered project's checkout lives at
     `<checkouts.root>/<project_id>/`, where `project_id` is the strict
-    registration slug already enforced by
-    `daidala/registrations.py:96` and `daidala/projects.py:240`.
+    registration slug already enforced by `_require_slug`
+    (`daidala/registrations.py:96`, called from
+    `daidala/projects.py:240`).
     The manager requires this derived path to equal the existing
     `ControllerRegistration.checkout`; it never creates or refreshes a separate
     cache checkout and never rewrites registration state.
-  - **Collision safety.** `project_id` is already validated as
-    `^[a-z0-9]+(?:-[a-z0-9]+)*$` in `daidala/projects.py`; the same
-    slug is reused on disk so two registrations with different
-    `verified_remote` values can never share a checkout directory.
+  - **Collision safety.** `project_id` is validated as
+    `^[a-z0-9]+(?:-[a-z0-9]+)*$` by the shared `_require_slug` helper used in
+    `daidala/projects.py`; the same slug is reused on disk so two registrations
+    with different `verified_remote` values can never share a checkout directory.
     `<checkouts.root>/<project_id>/.daidala-owner` (mode `0600`) is the
     durable on-disk witness: it carries the `project_id` that owns the
     path and is written or refreshed only after a successful checkout clone or
@@ -299,12 +305,12 @@ This is proposed scope only; it requires a fresh approval before Phase 0 starts.
 
 - The DOX pass must happen **before** any implementation commit, not after.
   When a phase introduces a new dashboard route, a new mutation surface, a
-  new module under `daidala/`, or any change to the `_run_command`-adjacent
-  subprocess adapter count, the matching DOX updates (`dashboard/AGENTS.md`
-  mutation allowlist, `daidala/AGENTS.md` Ownership table, `docs/AGENTS.md`
-  if scope shifts, and `plugin.yaml` tool inventory) ship in the same
-  commit as the source change. Phase 9 catches only what slipped through;
-  it is not the primary DOX surface.
+  new module under `daidala/`, or any change to the private subprocess-adapter
+  count beside `dashboard.plugin_api._run_command`, the matching DOX updates
+  (`dashboard/AGENTS.md` mutation allowlist, `daidala/AGENTS.md` Ownership
+  table, `docs/AGENTS.md` if scope shifts, and `plugin.yaml` tool inventory)
+  ship in the same commit as the source change. Phase 9 catches only what
+  slipped through; it is not the primary DOX surface.
 - New modules under `daidala/` are pre-registered in the `daidala/AGENTS.md`
   Ownership table *before* their first commit. Phase 4 will add
   `checkout_root.py` and `github_project_links.py`; Phase 6 will add
@@ -590,11 +596,12 @@ request, and confirm creation of the workflow graph.
    (`daidala/setup_wizard.py:19-98`). The wizard form always supplies a
    stable, user-visible `workflow_id` (defaulted to a slug-safe variant
    derived from `goal`, editable, and shown alongside the preview) because
-   `daidala/schemas.py::START` (`workflow_id` in the `required` list,
-   lines 57-63) refuses a `null` value. `SetupRequest.from_payload`
-   accepts `None` (`daidala/setup_wizard.py:81`), so the form forwards
-   the user-edited value as-is and the wizard UX never relies on a
-   server-side default.
+   `daidala/schemas.py::START` lists `workflow_id` in `required`
+   (`daidala/schemas.py:57-63`) and the strict payload rejects a `null`.
+   `SetupRequest.from_payload` accepts `None`
+   (`daidala/setup_wizard.py:81`, the `workflow_id=_optional_text(...)`
+   constructor line), so the form forwards the user-edited value as-is and the
+   wizard UX never relies on a server-side default.
 3. Render `board_slug` as a `<select>` fed from `/wizard/inventory.boards`, plus
    a `Create board` action for the Getting started path. The existing
    `/wizard/boards` route mutates immediately and must be replaced with `POST
@@ -637,20 +644,27 @@ request, and confirm creation of the workflow graph.
    JavaScript DOM harness: assert the serialized wizard request matches
    `schemas.py::START` and that the server rejects `confirm: false` before it
    constructs the workflow service.
-9. Correct the stale GET-only claims in the `dashboard/dist/index.js` header and
-   `tests/test_dashboard_assets.py` module docstring: the existing setup and
-   constraint preview/confirmation flows already use scoped `postJson()` calls.
-   Keep the read model and polling read-only, and update the existing asset
-   assertions to describe the bounded mutation allowlist rather than claiming
+9. Correct the stale GET-only claims in the `dashboard/dist/index.js` header
+   comment (line 10: "only GET requests are issued, no write path is ever
+   invoked") and the `tests/test_dashboard_assets.py` module docstring (line 9:
+   "the IIFE bundle is read-only, never invokes POST/PUT/DELETE"): the existing
+   setup and constraint preview/confirmation flows already use scoped
+   `postJson()` calls, and the module's own test at lines 73-85 already asserts
+   those POSTs exist. Keep the read model and polling read-only, and update the
+   stale prose to describe the bounded mutation allowlist rather than claiming
    the whole bundle never sends POST.
-10. Replace `/health`'s misleading `read_only: true` field with
-    `read_model: true`. Update `dashboard/plugin_api.py`, its health assertion in
+10. Replace `/health`'s misleading `read_only: true` field
+    (`dashboard/plugin_api.py:96`) with `read_model: true`. Update
+    `dashboard/plugin_api.py`, the `buildHealth()` offline fallback in
+    `dashboard/dist/index.js:62` (which currently fabricates
+    `{success: false, read_only: true}`), its health assertion in
     `tests/test_dashboard_api.py`,
     `scripts/probe_hermes_dashboard_compatibility.py`, and the per-profile
     installation table in `docs/08-hermes-integration.md` together. The probe
     must continue to use a dashboard session token for plugin API calls and must
     not assert any unauthenticated status. Assert that the new response contains
-    `read_model: true` and no `read_only` key.
+    `read_model: true` and no `read_only` key, and that the offline fallback
+    matches.
 
 **Verification gate:** the affected `tests/test_dashboard_api.py` and
 `tests/test_dashboard_assets.py` cases pass; board creation and workflow start
@@ -691,8 +705,9 @@ remediate a blocked card, or preview and confirm cancellation.
    `Comment remediation` and `Unblock for retry` actions through the public
    `hermes kanban` CLI boundary only. Add two private adapters beside
    `dashboard.plugin_api._run_command`, rather than extending the generic
-   `daidala/cli.py` dispatch table: it currently supports `kanban_comment` but
-   not `kanban_unblock`, and the dashboard needs no general dispatch surface.
+   `daidala/cli.py` dispatch table: `_dispatch_kanban_cli` currently supports
+   `kanban_comment` (`daidala/cli.py:974-980`) but has no `kanban_unblock`
+   branch, and the dashboard needs no general dispatch surface.
    The adapters run exactly `hermes kanban --board <derived-board> comment
    <card_id> <comment>` or `hermes kanban --board <derived-board> unblock
    <card_id> --reason <reason>` after server-side workflow/card validation.
@@ -724,14 +739,19 @@ remediate a blocked card, or preview and confirm cancellation.
    is server-side authorized from current durable state, not client state. Along
    with the preview/confirm actions explicitly named in Phases 1 and 4–7, these
    are the complete browser mutation surface; no route may proxy an arbitrary
-   Daidala tool or Hermes command. The `_run_command`-adjacent subprocess
-   adapter count rises from 0 to 2 (`kanban_comment`, `kanban_unblock`); future
-   phases that add a third must update this count. The `dashboard/dist/index.js`
-   header and the `tests/test_dashboard_assets.py` module docstring currently
-   claim a GET-only bundle even though the existing Phase 2 setup and
-   constraint flows already use `postJson()`; correct both stale statements as
-   part of Phase 2, then extend the asset contract for these named Phase 3
-   POST requests. Do not add a general tool-dispatch endpoint. Update
+   Daidala tool or Hermes command. The `_run_command`-adjacent private
+   subprocess-adapter count beside `dashboard.plugin_api._run_command` rises
+   from 0 to 2 (`kanban_comment`, `kanban_unblock`); future phases that add a
+   third must update this count. (`daidala/cli.py`'s existing
+   `_dispatch_kanban_cli` is a separate native-CLI dispatch layer, not a
+   dashboard `_run_command` adapter, and does not count toward this number.)
+   The `dashboard/dist/index.js` header comment (line 10: "only GET requests
+   are issued") and the `tests/test_dashboard_assets.py` module docstring
+   (line 9: "never invokes POST/PUT/DELETE") both claim a GET-only bundle even
+   though the existing Phase 2 setup and constraint flows already use
+   `postJson()`; correct both stale statements as part of Phase 2, then extend
+   the asset contract for these named Phase 3 POST requests. Do not add a
+   general tool-dispatch endpoint. Update
    `dashboard/AGENTS.md` **before** this source commit so its mutation
    allowlist matches this boundary.
 6. Keep supervision as a presentation layer over existing read, approval,
@@ -797,10 +817,10 @@ or weakening `ControllerRegistration`.
 3. Add `daidala/github_project_links.py` with a frozen `GitHubProjectLink`
    dataclass containing exactly `project_id`, canonical GitHub `owner`,
    positive `project_number`, and bounded `project_node_id`. `owner`
-   is validated by a strict regex equivalent to
-   `^[A-Za-z0-9][A-Za-z0-9-]{0,38}$` (GitHub user/org login shape, ≤
-   39 chars) so the field is symmetric with the `_REPOSITORY` regex in
-   `daidala/registrations.py:27`. The strict
+   is validated by a strict regex equivalent to the GitHub user/org login
+   shape (an alphanumeric first character followed by up to 38 alphanumerics
+   or hyphens, total length ≤ 39 characters) so the field is symmetric with
+   the `_REPOSITORY` regex in `daidala/registrations.py:27`. The strict
    `daidala.github-project-links/v1` store holds zero or one row per registered
    `project_id`, rejects unknown fields and duplicate YAML keys/rows, and lives
    only at `<resolved-data-root>/github-project-links.yaml` mode `0600`.
