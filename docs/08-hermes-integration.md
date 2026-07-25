@@ -156,7 +156,9 @@ The host probes cover separate public boundaries:
 
 - `probe_hermes_compatibility.py` verifies exact host identity, one complete
   policy-skill digest, public Kanban create/show/context/link/comment/complete/
-  archive operations, and the 8,192/8,300 worker-context boundary.
+  archive operations, and the 8,192/8,300 worker-context body visibility
+  boundary. Hermes stores larger card bodies; the probe verifies what reaches a
+  worker without silent loss.
 - `probe_hermes_plugin_compatibility.py` verifies fresh-process Daidala loading,
   public enabled-plugin inventory when the host reports entry points, and exact
   native/standalone validation parity for both bundled packs. Passing
@@ -280,7 +282,7 @@ clone on the pinned host.
 | Hermes host | Directory plugin | Python entry point | Public Git install | Native CLI | Kanban restart/idempotency | Status |
 |---|---|---|---|---|---|---|
 | v0.18.2 (`2026.7.7.2`, `4281151a`) | Passed | Passed | Passed | Passed | Passed | Supported through public Git installation |
-| v0.19.0 (`2026.7.20`, `3ef6bbd2`) | Passed | Passed | Pending post-merge probe | Passed | Passed | Supported through exact wheel and directory installation |
+| v0.19.0 (`2026.7.20`, `3ef6bbd2`) | Passed | Passed | Passed | Passed | Passed | Supported through public Git installation |
 | Other versions | Not probed | Not probed | Not probed | Not probed | Not probed | Unsupported |
 
 - Hermes v0.18.2 and v0.19.0 passed repeated exact-wheel version, plugin, CLI,
