@@ -1,4 +1,4 @@
-# Daidala artifact access and CLI review
+# Daidala artifact CLI review
 
 **Plan ID:** daidala-artifact-review-access-and-curation
 
@@ -6,28 +6,29 @@
 
 **Created:** 2026-07-24
 
-**Depends on:** daidala-dashboard-operator-runbook-parity
+**Depends on:** daidala-dashboard-operator-runbook-parity, daidala-artifact-access-core, daidala-shared-archive-io
 
 **Plan family:** daidala-artifact-review
 
-**Entry checkpoint:** P0240 completed with dashboard operator-runbook parity and full route, package, configuration, and browser gates verified; P0100 archive I/O is available transitively through P0220
+**Entry checkpoint:** P0240 completed with dashboard operator-runbook parity; P0205 completed active exact-ID access; P0100 completed verified archive I/O
 
-**Context sources:** [artifact current state](daidala-artifact-review-execution-contract.md#current-state), [risk call-out](daidala-artifact-review-execution-contract.md#risk-call-out), detailed [contract Phase 0](daidala-artifact-review-execution-contract.md#phase-0-add-the-ledger-owned-artifact-catalog-and-resolver), and [contract Phase 1](daidala-artifact-review-execution-contract.md#phase-1-add-native-and-standalone-cli-reviewexport-commands), plus `AGENTS.md`, `daidala/AGENTS.md`, and `tests/AGENTS.md`
+**Context sources:** [artifact current state](daidala-artifact-review-execution-contract.md#current-state), [risk call-out](daidala-artifact-review-execution-contract.md#risk-call-out), detailed [contract Phase 1](daidala-artifact-review-execution-contract.md#phase-1-add-native-and-standalone-cli-reviewexport-commands), [P0100 archive contract](P0100-daidala-shared-archive-io.md), P0205 and P0100 completion evidence, plus `AGENTS.md`, `daidala/AGENTS.md`, and `tests/AGENTS.md`
 
-**Produces:** a ledger-owned exact-ID artifact catalog/resolver and byte-equivalent native and standalone list/show/export commands
+**Produces:** archive-aware exact-ID resolution plus byte-equivalent native and standalone list/show/export commands over the P0205 resolver
 
-**Status:** pending — blocked until P0240 completes and human implementation approval is recorded
+**Status:** pending — blocked until P0100, P0205, and P0240 complete and human implementation approval is recorded
 
 ## Goal
 
-Expose active and archived workflow evidence through exact ledger identity and bounded CLI commands without arbitrary-path reads or changes to immutable ledger records.
+Expose active and archived workflow evidence through bounded native and standalone CLI commands over exact ledger identity without arbitrary-path reads or changes to immutable ledger records.
 
 ## Current state
 
-- Workflow status exposes ledger artifact paths and SHA-256 digests, but no list/show/export command exists.
+- P0205 provides the active exact-ID catalog and verified bounded text/export service.
+- P0100 provides policy-neutral verified archive creation, manifest validation, and bounded reads.
+- Workflow status exposes ledger artifact paths and SHA-256 digests, but no dedicated list/show/export command exists.
 - Runtime data is profile-local and must resolve through the active Hermes home/profile.
-- The dashboard deliberately refuses arbitrary filesystem reads.
-- The shared artifact contract owns the exact resolver, selector, output, export, and error semantics.
+- The shared artifact contract owns the CLI selector, output, export, and error semantics.
 
 ## Risk call-out
 
@@ -37,41 +38,28 @@ Artifact content may contain credentials or private paths. Selection is ledger-b
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Add the ledger-owned artifact catalog and resolver | pending | `pytest tests/test_artifact_access.py tests/test_store.py tests/test_workflow.py -q` exits 0 and proves exact-ID active/archive resolution without arbitrary-path reads |
-| 1 | Add native and standalone CLI review/export commands | pending | `pytest tests/test_cli.py tests/test_artifact_access.py -q` exits 0 and native/standalone commands return byte-identical JSON and equivalent exit codes |
+| 0 | Add archive-aware resolution and native/standalone CLI review | pending | `pytest tests/test_cli.py tests/test_artifact_access.py tests/test_archive_io.py -q` exits 0; active/archive bytes match and native/standalone commands return byte-identical JSON with equivalent exit codes |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
 
-## Phase 0 — Add the artifact catalog and resolver
-
-**Goal:** Add one profile-safe service that enumerates only ledger-owned evidence and resolves verified active or archived bytes by stable artifact identity.
-
-Steps:
-
-1. Read contract Phase 0, the complete risk call-out, and the linked AGENTS files.
-2. Implement the exact identity, catalog, archive-manifest, digest, size-bound, and error contracts from the shared specification.
-3. Keep the policy ledger immutable and reject arbitrary paths, traversal, symlinks, malformed manifests, and digest mismatches.
-4. Add focused active/archive, duplicate, tamper, and boundary tests.
-5. Update `daidala/AGENTS.md` ownership in the same change.
-
-Verification gate: The Phase 0 table command exits 0 and every failure remains metadata-only.
-
-## Phase 1 — Add native and standalone CLI commands
+## Phase 0 — Add archive-aware resolution and native/standalone CLI commands
 
 **Goal:** Let a local operator list, inspect, and export exact workflow evidence through equivalent native and standalone commands.
 
 Steps:
 
-1. Read contract Phase 1 and the CLI conventions named there.
-2. Add exact selectors and JSON projections for list/show/export without accepting a filesystem path.
-3. Keep stdout machine-readable and diagnostics content-free; write exports atomically at mode `0600` without overwrite by default.
-4. Prove native and standalone commands have byte-identical JSON, equivalent exit codes, and matching error classes.
-5. Update CLI documentation/DOX owned by the changed paths.
+1. Read contract Phase 1, P0205 and P0100 completion evidence, and the CLI conventions named there.
+2. Extend the P0205 resolver with verified archive-manifest lookup and read/export through `daidala.archive_io`; do not introduce a second tar implementation or change ledger identity.
+3. Add exact selectors and JSON projections for list/show/export without accepting a filesystem path.
+4. Keep stdout machine-readable and diagnostics content-free; write exports atomically at mode `0600` without overwrite by default.
+5. Prove active and archived bytes are equivalent and native/standalone commands have byte-identical JSON, equivalent exit codes, and matching error classes.
+6. Update CLI documentation/DOX owned by the changed paths.
 
-Verification gate: The Phase 1 table command exits 0 and export bytes match the resolver's verified bytes.
+Verification gate: The Phase 0 table command exits 0 and export bytes match the resolver's verified bytes.
 
 ## Out of scope
 
 - Do not archive, pin, restore, schedule, or delete artifact bytes.
+- Do not duplicate or weaken P0205 resolver checks.
 - Do not add dashboard review controls.
 - Do not change historical ledger paths or digests.

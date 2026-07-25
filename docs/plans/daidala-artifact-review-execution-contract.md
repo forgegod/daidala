@@ -4,7 +4,8 @@
 
 **Created:** 2026-07-24
 
-**Used by:** [P0300 artifact access and CLI](P0300-daidala-artifact-access-and-cli.md),
+**Used by:** [P0205 artifact access core](P0205-daidala-artifact-access-core.md),
+[P0300 artifact CLI](P0300-daidala-artifact-access-and-cli.md),
 [P0310 artifact curation](P0310-daidala-artifact-curation.md), and
 [P0320 artifact dashboard, cron, and verification](P0320-daidala-artifact-dashboard-cron-and-verification.md).
 
@@ -21,7 +22,7 @@ Daidala will expose ledger-bound workflow evidence through exact-ID CLI and auth
 - Workflow status returns the complete policy ledger, including artifact paths and SHA-256 digests, but there is no `artifacts list`, `show`, or `export` command (`daidala/cli.py:701-722`, `daidala/state.py:338-372`).
 - Runtime data resolves through the active Hermes home/profile and the CLI constructs `WorkflowStore` below `<resolved-data-root>/daidala`; no implementation may hard-code `~/.hermes` (`daidala/locations.py:33-52`, `daidala/cli.py:887-903`).
 - Revision-addressed stage evidence currently lives below `<profile-data-root>/daidala/workflows/<workflow-id>/artifacts/`; historical paths and digests are immutable evidence (`docs/15-self-improvement.md:211-227`, `docs/16-self-improvement-setup.md:123-145`).
-- The optional dashboard is a profile-safe read model and deliberately refuses arbitrary filesystem reads; it currently exposes artifact metadata but not artifact bytes or downloads (`daidala/dashboard_backend.py:1-14`).
+- The optional dashboard is a profile-safe read model and deliberately refuses arbitrary filesystem reads. Its pending approval item currently renders generic rationale but neither the plan body nor the complete tuple, so the user cannot make an informed approval from the browser (`daidala/dashboard_backend.py:466-481`, `dashboard/dist/index.js:149-166`).
 - Delivery releases the owned detached worktree after writing reviewed evidence, so completed review must use captured artifacts rather than a surviving mutable checkout (`daidala/service.py:656-721`).
 - Hermes Curator provides a useful lifecycle model—deterministic `active → stale → archived`, pinning, pre-mutation backup, restore, and no automatic deletion—but it is scoped to Hermes skills and is not a public artifact-storage API ([official Curator documentation](https://hermes-agent.nousresearch.com/docs/user-guide/features/curator)). Daidala must reuse the design, not import Hermes private curator modules or invoke the skill curator against workflow files.
 - The shared archive plan owns policy-neutral verified tar/gzip I/O
@@ -40,13 +41,14 @@ Workflow artifacts and verification output may contain credentials, private path
 
 | Contract sections | Active plan | Purpose |
 |---|---|---|
-| Phases 0–1 | [P0300](P0300-daidala-artifact-access-and-cli.md) | Ledger-owned resolver and native/standalone review/export commands |
+| Phase 0 | [P0205](P0205-daidala-artifact-access-core.md) | Ledger-owned resolver required before dashboard plan approval |
+| Phase 1 | [P0300](P0300-daidala-artifact-access-and-cli.md) | Native/standalone review/export commands |
 | Phase 2 | [P0310](P0310-daidala-artifact-curation.md) | Deterministic archive, pin, restore, and failure recovery |
 | Phases 3–5 | [P0320](P0320-daidala-artifact-dashboard-cron-and-verification.md) | Authenticated dashboard controls, opt-in cron, docs, package, and full verification |
 
 ## Phase 0 — Add the ledger-owned artifact catalog and resolver
 
-**Goal:** Give every review surface one profile-safe service that enumerates only ledger-owned evidence and resolves it from active or archived storage while preserving immutable ledger identity.
+**Goal:** Give every review surface one profile-safe service that enumerates only active ledger-owned evidence and resolves verified bytes while preserving immutable ledger identity; the first consumer is the dashboard's current-plan approval gate.
 
 **Steps:**
 
@@ -58,18 +60,18 @@ Workflow artifacts and verification output may contain credentials, private path
    - `WorkflowLedger.artifacts` stage references;
    - `WorkflowLedger.verification_evidence` output references;
    - constraint and activation references already carrying an exact path and digest when explicitly requested by kind.
-3. Keep ledger `path` and `digest` unchanged as provenance. Add availability as a read projection: `active`, `archived`, `active-and-archived`, or `missing`. Do not rewrite policy-ledger rows during list/show/export or curation.
+3. Keep ledger `path` and `digest` unchanged as provenance. Add active availability as a read projection without rewriting policy-ledger rows during list/show/export.
 4. Resolve active files only after proving the path is beneath the exact workflow artifact root, is a direct regular file, has no symlink component, satisfies the existing document bound, and hashes to the ledger digest. Never accept a caller-provided filesystem path.
-5. Resolve archived files only through a verified archive manifest keyed by the exact `artifact_id`. Reopen the tar file, revalidate its mode, manifest digest, member type, size, and content digest on each extraction/read. No temporary extraction is required for `show` or `export`.
-6. Treat files that exist below the workflow artifact directory but lack a ledger reference as supplemental archive bytes, not review evidence. They may be preserved and restored by the curator manifest, but `list/show/export` must not elevate them into ledger-bound artifacts. This distinction covers existing companion files such as `implementation-paths.json`; its reviewable changed-path content is already present in ledger-bound `delivery.json`.
-7. Add bounded APIs:
+5. Treat files that exist below the workflow artifact directory but lack a ledger reference as non-review evidence. `list/read_text/export` must not elevate them into ledger-bound artifacts. This distinction covers existing companion files such as `implementation-paths.json`; its reviewable changed-path content is already present in ledger-bound `delivery.json`.
+6. Add bounded APIs:
    - `list(workflow_id, kinds, revisions)` returns metadata only;
    - `read_text(workflow_id, artifact_id)` rejects NUL/binary content and output over 1 MiB;
    - `export(workflow_id, artifact_id, output)` writes mode `0600`, refuses an existing destination unless an explicit overwrite flag is supplied, and verifies the exported digest before success.
-8. Make `WorkflowService` construct and expose the catalog without importing dashboard or Hermes internals. Preserve current `status` JSON for compatibility; new artifact projections are additive and read-only.
-9. Add `tests/test_artifact_access.py` covering every reference kind, superseded revisions, missing/corrupt bytes, symlink/path escape, wrong workflow, stale/forged artifact IDs, text/binary bounds, active/archive equivalence, export collision, mode `0600`, and no ledger mutation.
+7. Make `WorkflowService` construct and expose the catalog without importing dashboard or Hermes internals. Preserve current `status` JSON for compatibility; new artifact projections are additive and read-only.
+8. Add an exact current-plan selection helper that returns one opaque artifact ID only when workflow, policy revision, plan revision, stage, and digest match the current ledger. Missing, binary, oversized, stale, or digest-mismatched plan content must block approval rather than fall back to a path or summary.
+9. Add `tests/test_artifact_access.py` covering every active reference kind, current and superseded plans, missing/corrupt bytes, symlink/path escape, wrong workflow, stale/forged artifact IDs, text/binary bounds, export collision, mode `0600`, and no ledger mutation.
 
-**Verification gate:** `pytest tests/test_artifact_access.py tests/test_store.py tests/test_workflow.py -q` exits 0; tests prove an arbitrary absolute path cannot reach the resolver and an archived artifact returns bytes matching its original ledger digest.
+**Verification gate:** `pytest tests/test_artifact_access.py tests/test_store.py tests/test_workflow.py -q` exits 0; tests prove an arbitrary absolute path cannot reach the resolver and the current plan returns bytes matching its exact ledger digest.
 
 ## Phase 1 — Add native and standalone CLI review/export commands
 
@@ -77,18 +79,20 @@ Workflow artifacts and verification output may contain credentials, private path
 
 **Steps:**
 
-1. Extend the shared parser/dispatcher in `daidala/cli.py` so both entry points expose the same commands:
+1. Extend the Phase 0 resolver with archive availability states `archived` and `active-and-archived`. Resolve archived files only through a verified archive manifest keyed by exact `artifact_id`; reopen the tar, revalidate mode, manifest digest, member type, size, and content digest on every read/export, and use only P0100's `daidala.archive_io` mechanics.
+2. Treat archived files lacking ledger references as supplemental restore bytes, never review evidence; preserve this distinction for companion files such as `implementation-paths.json`.
+3. Extend the shared parser/dispatcher in `daidala/cli.py` so both entry points expose the same commands:
    - `hermes daidala artifacts list <workflow-id> [--json]`;
    - `hermes daidala artifacts show <workflow-id> <artifact-id>`;
    - `hermes daidala artifacts export <workflow-id> <artifact-id> --output <path> [--overwrite]`;
    - equivalent standalone `daidala artifacts ...` forms.
-2. `list` prints artifact ID, kind/stage, policy and plan revisions, recorded digest, recorded time, size when known, and availability. It never prints artifact content or treats one revision as `latest`.
-3. `show` writes only verified bounded text to stdout. Binary or oversized evidence exits nonzero and directs the operator to `export`; errors never include artifact bytes.
-4. `export` accepts an operator-selected destination but never uses that path as a read source. It creates parent directories only when explicitly requested, refuses special-file/symlink destinations, writes through a same-directory temporary file, verifies the digest, and atomically replaces only with `--overwrite`.
-5. Add parser, fake-service, output-bound, native/standalone parity, collision, and nonzero-error tests in `tests/test_cli.py` and `tests/test_artifact_access.py`.
-6. Exercise the installed help and commands in an isolated `HERMES_HOME`; document only syntax proven by that probe.
+4. `list` prints artifact ID, kind/stage, policy and plan revisions, recorded digest, recorded time, size when known, and availability. It never prints artifact content or treats one revision as `latest`.
+5. `show` writes only verified bounded text to stdout. Binary or oversized evidence exits nonzero and directs the operator to `export`; errors never include artifact bytes.
+6. `export` accepts an operator-selected destination but never uses that path as a read source. It creates parent directories only when explicitly requested, refuses special-file/symlink destinations, writes through a same-directory temporary file, verifies the digest, and atomically replaces only with `--overwrite`.
+7. Add archive-equivalence, parser, fake-service, output-bound, native/standalone parity, collision, and nonzero-error tests in `tests/test_cli.py`, `tests/test_artifact_access.py`, and `tests/test_archive_io.py`.
+8. Exercise the installed help and commands in an isolated `HERMES_HOME`; document only syntax proven by that probe.
 
-**Verification gate:** `pytest tests/test_cli.py tests/test_artifact_access.py -q` exits 0, and isolated native/standalone probes produce byte-identical `list --json` output and equivalent exit codes for show/export success and failure.
+**Verification gate:** `pytest tests/test_cli.py tests/test_artifact_access.py tests/test_archive_io.py -q` exits 0, active/archive reads are digest-equivalent, and isolated native/standalone probes produce byte-identical `list --json` output with equivalent exit codes for show/export success and failure.
 
 ## Phase 2 — Add deterministic artifact curator, archive, pin, and restore
 

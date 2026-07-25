@@ -12,7 +12,7 @@
 
 **Plan family:** daidala-artifact-review
 
-**Entry checkpoint:** P0300 completed with exact-ID active/archive resolution and equivalent native/standalone review commands; P0100 archive I/O is available
+**Entry checkpoint:** P0205 completed active exact-ID resolution; P0300 completed archive-aware resolution and equivalent native/standalone review commands; P0100 archive I/O is available transitively
 
 **Context sources:** [artifact current state](daidala-artifact-review-execution-contract.md#current-state), [risk call-out](daidala-artifact-review-execution-contract.md#risk-call-out), detailed [contract Phase 2](daidala-artifact-review-execution-contract.md#phase-2-add-deterministic-artifact-curator-archive-pin-and-restore), [P0100 archive contract](P0100-daidala-shared-archive-io.md), plus `AGENTS.md`, `daidala/AGENTS.md`, and `tests/AGENTS.md`
 
@@ -26,7 +26,7 @@ Move eligible terminal-workflow artifact bytes into verified recoverable profile
 
 ## Current state
 
-- P0300 provides ledger-owned exact-ID resolution across active and archived storage.
+- P0205 provides active ledger-owned exact-ID resolution; P0300 extends it across archived storage and exposes both through native and standalone review commands.
 - P0100 provides policy-neutral safe archive creation, manifest verification, and extraction.
 - The policy ledger's historical artifact paths and digests remain immutable.
 - No artifact-specific eligibility, pinning, restore, or curation state exists.

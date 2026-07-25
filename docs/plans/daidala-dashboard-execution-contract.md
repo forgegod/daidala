@@ -102,6 +102,13 @@ phases.
 - A `SetupWizard` UI component already exists with a minimal board, repo,
   goal form, `Preview mutations`, and `Start workflow` confirmation
   (`dashboard/dist/index.js:467-531`).
+- The approval recommendation contains the current plan and constraint identity
+  (`daidala/recommendations.py:175-190`), but `_workflow_summary` omits artifact
+  references and `renderDecisionItem` renders only action kind, rationale, and an
+  optional card ID (`daidala/dashboard_backend.py:466-481`,
+  `dashboard/dist/index.js:149-166`). The current browser therefore cannot show
+  the plan being approved and must not enable approval until P0205 supplies a
+  verified ledger-bound text resolver.
 - `DashboardBackend.from_default_profile()` currently constructs
   `WorkflowStore(root)` eagerly (`daidala/dashboard_backend.py:88-100`), and
   `/health` calls the cached service factory (`dashboard/plugin_api.py:85-97`).
@@ -404,8 +411,9 @@ is touched.
 
 **Phase ordering (2026-07-25):** Phases 0–1 establish the mounted dashboard
 and a ready pack. Phase 2 starts a first workflow through the same
-`SetupRequest` path as `daidala:setup`; Phase 3 then makes the resulting
-workflow observable and controllable through its existing authority boundaries.
+`SetupRequest` path as `daidala:setup`; the P0205 artifact-access prerequisite
+lands before Phase 3, which then makes the resulting workflow understandable and
+controllable through its existing authority boundaries.
 Configuration and data work follows in Phases 4–8. Phase 9 adds dry-run-first
 profile initialization and strict prerequisite diagnosis, Phase 10 closes the
 remaining operator-runbook parity and host-owned upgrade guidance, and Phase 11
@@ -806,17 +814,27 @@ non-mutation checks.
 
 ## Phase 3 — Workflow supervision actions
 
-**Goal:** Immediately after a workflow starts, give the user the remaining
-Getting started actions without making the dashboard a second workflow engine:
-watch live card state, inspect the pending plan, approve its exact digest,
-remediate a blocked card, or preview and confirm cancellation.
+**Goal:** Immediately after a workflow starts, give the user a decision-first
+version of the remaining Getting started actions without making the dashboard a
+second workflow engine: inspect the exact verified pending plan before approval,
+understand the consequences of that approval, watch lower-priority live card
+state, remediate a blocked card, or preview and confirm cancellation.
 
 **Steps:**
 
-1. Extend the existing workflow detail view with a stage timeline from
+1. Extend the existing workflow detail view with a primary `Needs your decision`
+   panel followed by a lower-noise stage timeline from
    `DashboardBackend.workflow_view`, `/decisions`, and `/recommendations`. Show
-   the current card, live Kanban availability, run/comment diagnostics, artifact
-   references, and the finite next action. Poll only while the view is visible,
+   the finite next action, the exact evidence required to decide, and the
+   consequence of acting before showing current card state, live Kanban
+   availability, or audit diagnostics. Use progressive disclosure for run,
+   event, and full-comment history; do not make raw JSON or an unfiltered card
+   thread the default approval surface. Render one distinct `Human approval —
+   Daidala policy gate` timeline step between `plan` and `implement`; source it
+   only from the ledger approval tuple, give it no task ID or assignee, and never
+   create or imply a Kanban approval card. Before approval it links to the primary
+   decision panel; afterward it shows the recorded tuple and decision time. Poll
+   only while the view is visible,
    no faster than the existing five-second dashboard contract; manual refresh is
    read-only.
    The implementation must retain the existing hidden-tab pause and snapshot-only
@@ -829,14 +847,33 @@ remediate a blocked card, or preview and confirm cancellation.
    bounds, verify every requested card belongs to the workflow ledger, and return
    sanitized comments/events/run summaries in the detail snapshot. Never read the
    Kanban SQLite database or persist these host-owned records in Daidala.
-2. When planning completes, render the plan artifact reference, full
-   64-character pending digest, and scope/risk/verification prompt. `Approve
-   exact plan` requires the displayed digest plus a literal confirmation and
-   calls `POST /workflows/{workflow_id}/approve` with `{plan_digest,
-   confirm: true}`. That route delegates to `WorkflowService.approve`, the same
+2. When planning completes, resolve the current plan through P0205's exact
+   ledger-bound artifact ID and render its verified bounded text inline. Show
+   the goal, plan and policy revisions, full 64-character plan digest, nullable
+   constraint revision/digest, pack revision, verification state, and the
+   consequences: one detached worktree plus `implement → verify → review →
+   deliver`, with commit and push still false. Never return or accept an
+   absolute profile-local path in the browser API. Missing, binary, oversized,
+   stale, or digest-mismatched bytes produce a blocking `Plan unavailable`
+   decision with no approval control; a summary or digest alone is insufficient.
+   Add authenticated `GET /workflows/{workflow_id}/approval-review`, which
+   derives the current plan artifact ID server-side and returns only the verified
+   escaped text, complete tuple, pack identity, and fixed consequence projection;
+   it accepts no path, filename, revision shortcut, or remote URL. Render content
+   through React text nodes or `textContent`, never `innerHTML` or unsanitized
+   Markdown.
+   `Approve exact plan` requires the displayed verified artifact identity plus a
+   literal `I reviewed this exact plan` confirmation and
+   calls `POST /workflows/{workflow_id}/approve` with `{artifact_id,
+   plan_digest, confirm: true}`. The server re-resolves and re-verifies that exact
+   artifact immediately before approval so a client-cached body cannot authorize
+   changed state. That route delegates to `WorkflowService.approve`, the same
    service used by `daidala_approve`. A stale digest fails closed; generic Kanban
    unblock is never presented as approval.
-3. For a blocked card, show its comment and run history. Provide distinct
+3. For a blocked card, make the decision request—not the audit trail—the primary
+   content: show stage, blocker kind, exact requested decision/remediation,
+   latest relevant worker comment, and linked evidence first. Keep older comments,
+   events, and run history collapsed but available. Provide distinct
    `Comment remediation` and `Unblock for retry` actions through the public
    `hermes kanban` CLI boundary only. Add two private adapters beside
    `dashboard.plugin_api._run_command`, rather than extending the generic
@@ -912,14 +949,19 @@ remediate a blocked card, or preview and confirm cancellation.
    Kanban state transitions in the router.
 
 **Verification gate:** Add focused dashboard API and asset-contract coverage for
-read-only watch/refresh plus bounded Kanban show/runs projection; the exact-digest
-approval payload and stale/unchecked
-rejection; public-Kanban comment/unblock forwarding with required text,
+read-only watch/refresh plus bounded Kanban show/runs projection; verified
+current-plan rendering; the complete displayed tuple and consequences; approval
+payload rejection for stale, unchecked, missing, corrupt, binary, or oversized
+plan content; public-Kanban comment/unblock forwarding with required text,
 confirmation, and workflow-owned-card checks; and cancellation with a required
 reason, fresh preview digest, confirmation, and detail projection that names the
-affected cards and owned worktree. The affected `tests/test_dashboard_api.py` and
-`tests/test_dashboard_assets.py` cases pass; unblocking cannot approve a plan;
-and no dashboard route commits or pushes.
+affected cards and owned worktree. Isolated-browser evidence must prove the
+approval control is absent until the exact plan body verifies, the primary
+decision remains understandable without expanding audit detail, and a blocked
+card leads with its requested remediation. It must also prove the approval step
+has no Kanban task ID and no approval card is created. The affected
+`tests/test_dashboard_api.py` and `tests/test_dashboard_assets.py` cases pass;
+unblocking cannot approve a plan; and no dashboard route commits or pushes.
 
 ## Phase 4 — Checkout configuration + GitHub Projects v2 link model
 
