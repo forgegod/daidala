@@ -1,15 +1,26 @@
-# Daidala dashboard user configuration, packs, start UX, constraints, and GitHub Projects linking
+# Daidala dashboard execution contract
 
-**Status:** proposed — consistency/completeness review and incorporation of
-implementer-facing refinements are complete; human approval is still required
-before Phase 0 creates a fresh `daidala-dashboard` profile, installs the
-local-checkout plugin link, starts implementation, or makes any implementation
-edit.
+**Contract ID:** daidala-dashboard
+
+**Created:** 2026-07-23
+
+**Used by:**
+[P0200 dashboard profile and packs](P0200-daidala-dashboard-profile-and-packs.md),
+[P0210 setup and supervision](P0210-daidala-dashboard-setup-and-supervision.md),
+[P0220 checkouts and Projects links](P0220-daidala-dashboard-checkouts-and-project-links.md),
+and [P0230 constraints and verification](P0230-daidala-dashboard-constraints-and-verification.md).
+
+This repository-tracked document owns the pinned cross-unit decisions and the
+detailed implementation contracts for the dashboard plan family. It is not an
+executable plan: it has no execution slot, progress state, findings ledger, or
+approval authority. The `Pnnnn` files above own dependencies, current findings,
+phase gates, and progress. An execution session reads only the exact contract
+headings linked by its active plan.
 
 **Last review:** 2026-07-24
 
-For the implementing agent: read `/AGENTS.md`, `docs/AGENTS.md`,
-`daidala/AGENTS.md`, `dashboard/AGENTS.md`, `tests/AGENTS.md`, this plan,
+For an implementing agent: read `/AGENTS.md`, `docs/AGENTS.md`,
+the AGENTS chain named by the active unit, this contract's linked headings,
 and the completed
 `docs/plans/2026-07-12-dashboard-integration-and-guided-setup.md`. Also read the
 [Hermes integration guide](../08-hermes-integration.md), the normative
@@ -105,7 +116,7 @@ review added the fail-closed checkout/registration equality invariant; it is par
 of the recommended plan submitted for the remaining human approval. Decisions are
 pinned here so the corresponding phases consume them directly.
 
-**Operator pinning (2026-07-23):**
+### Operator pinning
 
 - **Target Hermes profile:** **`daidala-dashboard`**, a fresh, dedicated
   profile to be created solely for the development and testing
@@ -210,8 +221,10 @@ pinned here so the corresponding phases consume them directly.
   `backup_retention_hours` knob is *not* introduced in v1 — pruning is
   an explicit operator action.
 
-**Operator-visible precondition (verified 2026-07-23 against the live
-Hermes dashboard on `http://127.0.0.1:9119`):**
+### Operator-visible precondition
+
+Verified 2026-07-23 against the live Hermes dashboard on
+`http://127.0.0.1:9119`.
 
 A `daidala-dashboard` Hermes profile does not yet exist; `hermes
 profile list` does not include it. Daidala already installs cleanly
@@ -239,6 +252,8 @@ Two related facts shape the implementation, not just the install:
   verifies that contract on the supported host. Missing `SDK.React` is a host
   compatibility failure: stop and report it rather than adding a Vue fallback or
   bundling another framework.
+
+### Checkout location decision
 
 - **Q1 — Where do project checkouts live?** Resolved.
   - **(a)** Daidala maintains an explicit, user-configurable root
@@ -278,6 +293,8 @@ Two related facts shape the implementation, not just the install:
     not link fields. A new task against a different registration never touches
     another project's checkout.
 
+### Stale-checkout policy
+
 - **Q2 — Stale-checkout behaviour is a configurable policy.** Resolved.
   - The TTL manager exposes three explicit modes; default is `disabled`.
   - **`wipe-if-clean`** — only re-clones if `git status --porcelain=v1 -z
@@ -307,6 +324,8 @@ Two related facts shape the implementation, not just the install:
     tool is hard-locked to a report-only dry run and never changes
     checkouts, backups, GitHub Project links, or registration state.
 
+### Setup request envelope
+
 - **Q3 — How does the dashboard setup envelope preserve `SetupRequest`?** Resolved.
   `POST /wizard/preview` accepts `{request: <SetupRequest payload>}` and
   `POST /wizard/start` accepts `{request: <same payload>, preview_digest,
@@ -334,7 +353,7 @@ workflow observable and controllable through its existing authority boundaries.
 Configuration and data work follows in Phases 4–8, with closeout in Phase 9.
 This is proposed scope only; it requires a fresh approval before Phase 0 starts.
 
-**Implementer discipline (binding across every phase).**
+### Implementer discipline
 
 - The DOX pass must happen **before** any implementation commit, not after.
   When a phase introduces a new dashboard route, a new mutation surface, a
@@ -407,28 +426,20 @@ miss them.
   exists and is owned by a different `project_id` prevents accidental
   cross-project wipeouts.
 
-## Phase table
+## Execution-unit map
 
-| # | Phase | Status | Verification gate |
-|---|---|---|---|
-| 0 | Create the registration-free dashboard profile and disposable fixture profile, install Daidala, verify both mounts | pending | SPA, manifest, and packaged asset checks pass; session-authenticated health identifies Daidala without pinning unauthenticated status; fixture profile has an independent local symlink, seeded non-secret state, and passes the stateful browser gate; teardown removes the fixture |
-| 1 | Pack browser and readiness actions | pending | `dashboard/dist/index.js` renders both packs and their readiness; check and install-plan actions invoke installed Daidala services, external installation requires preview then confirmation, and focused dashboard tests pass |
-| 2 | First-workflow setup wizard UX | pending | Wizard is an alternative UI over the exact `SetupRequest`/`daidala:setup` path; it verifies prerequisites, creates or selects a board, renders profile/pack/repository/goal/stage/constraint controls, and preserves preview-then-confirm start semantics |
-| 3 | Workflow supervision actions | pending | Workflow views expose read-only watch/refresh, exact-digest approval, blocked-card comment/unblock recovery, and previewed cancellation through existing authority surfaces |
-| 4 | Checkout configuration + GitHub Projects v2 link data model | pending | New `daidala/checkout_root.py` and `daidala/github_project_links.py` modules own separate strict mode-`0600` stores, collision safety, root-change blocking, and verified owner/number/node-ID links; focused model tests pass |
-| 5 | GitHub Projects v2 link UI | pending | New section reads/writes one verified Projects v2 link per registered `project_id`; mutation requires a fresh bounded GitHub read, matching preview digest, and literal `confirm: true`; repository remote and intake alias are displayed only as registration-derived context |
-| 6 | Manual checkout TTL manager and report-only cron hook | pending | `GET /checkouts`, confirmed adopt/refresh/prune actions, and read-only `daidala_checkouts_status`; preflight verifies registration path, owner marker, origin, symlink-free path, and classified Git status; ignored-only files require backup mode; `checkouts.yaml` defaults to disabled TTL |
-| 7 | Constraint authoring UI | pending | Author modal renders schema-validated YAML editor with live preview, error list, and digest impact; preview feeds the existing `/constraints/preview` endpoint; replace path unchanged |
-| 8 | Configuration verification panel | pending | Configuration remains read-only and verifies persisted root, TTL, registration, checkout, and GitHub Projects v2 link state without supervising a workflow or exposing secrets/private destinations |
-| 9 | DOX pass and verification | pending | Owning AGENTS files and `plugin.yaml` are updated; all root verification commands pass; intended-path diff is clean except for the approved implementation changes |
+| Contract sections | Active plan | Purpose |
+|---|---|---|
+| Phases 0–1 | [P0200](P0200-daidala-dashboard-profile-and-packs.md) | Isolated host/fixture profiles, mounted plugin, pack browser and readiness actions |
+| Phases 2–3 | [P0210](P0210-daidala-dashboard-setup-and-supervision.md) | First-workflow wizard and workflow supervision |
+| Phases 4–6 | [P0220](P0220-daidala-dashboard-checkouts-and-project-links.md) | Checkout policy, GitHub Projects links, refresh and report-only cron hook |
+| Phases 7–9 | [P0230](P0230-daidala-dashboard-constraints-and-verification.md) | Constraint authoring, configuration verification, DOX and full gates |
 
-Mark a phase `in-progress` while running it, `done (<evidence>)` once its
-gate passes, `pending` otherwise.
-
-Every implementation phase ends with the root-required DOX pass for the paths it
+Every active-plan phase ends with the root-required DOX pass for the paths it
 changed. Update the nearest owning `AGENTS.md` in that phase when contracts,
 responsibilities, routes, tools, or structure changed; do not defer stale contract
-text to Phase 9. Phase 9 is the final cross-tree consistency check.
+text to the final verification unit. Contract Phase 9 remains the final
+cross-tree consistency specification.
 
 ## Phase 0 — Create `daidala-dashboard` profile, install Daidala, verify the dashboard mount
 
@@ -1121,7 +1132,14 @@ confirmation, and clean-tree safeguards. This phase does not alter admission.
      Any tracked/untracked row returns 409 before backup, clone, rename, or
      deletion. Ignored-only rows also abort `disabled`/`wipe-if-clean`; under
      `backup-then-wipe` they must be included in the archive before replacement;
-   - on `backup-then-wipe`, tar/gzips the clean working tree into
+   - on `backup-then-wipe`, use the policy-neutral safe archive helper delivered by
+     [`P0100-daidala-shared-archive-io.md`](P0100-daidala-shared-archive-io.md).
+     That dependency owns `daidala/archive_io.py`; this plan must consume the
+     helper rather than ship another tar implementation. Checkout eligibility,
+     storage location, replacement, and
+     pruning remain owned by this phase; workflow artifact policy remains owned
+     by the artifact plans. On `backup-then-wipe`, tar/gzip the clean working tree
+     into
      `<checkouts.root>/_backups/<project_id>.<10-digit-zero-padded-unix-ts>.tar.gz`
      mode `0600`, with `_backups` mode `0700`, before the verified replacement
      swap. Archive only relative entries beneath the checkout, exclude `.git`,
