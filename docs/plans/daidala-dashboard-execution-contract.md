@@ -8,7 +8,8 @@
 [P0200 dashboard profile and packs](P0200-daidala-dashboard-profile-and-packs.md),
 [P0210 setup and supervision](P0210-daidala-dashboard-setup-and-supervision.md),
 [P0220 checkouts and Projects links](P0220-daidala-dashboard-checkouts-and-project-links.md),
-and [P0230 constraints and verification](P0230-daidala-dashboard-constraints-and-verification.md).
+[P0230 constraints and configuration](P0230-daidala-dashboard-constraints-and-verification.md),
+and [P0240 operator runbook parity](P0240-daidala-dashboard-operator-runbook-parity.md).
 
 This repository-tracked document owns the pinned cross-unit decisions and the
 detailed implementation contracts for the dashboard plan family. It is not an
@@ -17,7 +18,17 @@ approval authority. The `Pnnnn` files above own dependencies, current findings,
 phase gates, and progress. An execution session reads only the exact contract
 headings linked by its active plan.
 
-**Last review:** 2026-07-24
+## Context-budget rationale
+
+This shared contract intentionally exceeds the 500-line / 40-KiB planning
+warning because twelve phases share one closed route inventory, credential and
+mutation boundaries, fixture lifecycle, and cross-phase verification order.
+Splitting those invariants across active files would duplicate authority and let
+the browser security contract drift between phases. Fresh sessions load only
+their active Pnnnn plan and the exact headings named in `Context sources`; they
+do not load this contract or completed predecessors in full.
+
+**Last review:** 2026-07-25
 
 For an implementing agent: read `/AGENTS.md`, `docs/AGENTS.md`,
 the AGENTS chain named by the active unit, this contract's linked headings,
@@ -38,26 +49,32 @@ local CLI as authoritative and stop.
 ## Goal
 
 Extend the existing Hermes dashboard Daidala extension so a user can, from
-the browser, (1) browse installed packs read-only and run the installed
-`packs check` or preview/apply installation actions, (2) create or select the
-board and launch a `hermes daidala start` invocation through a guided form,
-(3) watch and supervise that workflow through its existing approval, Kanban,
-and cancellation boundaries, (4) configure and verify the Daidala setup,
-including the `checkouts.root` directory and TTL mode, (5) author and manage
-workflow constraints, and (6) link each registered `project_id` to at most one
-GitHub Projects v2 board identified by owner, project number, and verified node
-ID, with a three-mode checkout TTL refresh policy (`disabled` /
+the browser, (1) inspect profile initialization and explicitly create the
+profile-local ledger schema, (2) run the bounded local or live prerequisite
+diagnosis from `docs/07-runbook.md`, (3) browse and validate installed packs and
+run `packs check` or preview/apply installation actions, (4) create or select
+the board and launch a `hermes daidala start` invocation through a guided form,
+(5) watch and supervise that workflow through its existing approval, Kanban,
+recovery, and cancellation boundaries, (6) configure and verify the Daidala
+setup, including the `checkouts.root` directory and TTL mode, (7) author and
+manage workflow constraints, and (8) link each registered `project_id` to at
+most one GitHub Projects v2 board identified by owner, project number, and
+verified node ID, with a three-mode checkout TTL refresh policy (`disabled` /
 `wipe-if-clean` / `backup-then-wipe`) — without weakening the deterministic
 policy ledger, exact approval gate, or existing read-only workflow views.
 
 After installation, a new user should be able to follow the same sequence as
-`docs/00-getting-started.md` without translating CLI arguments into dashboard
-concepts: verify the plugin and pack, create or choose a board, start and watch
-the workflow, inspect the pending plan and digest, approve that exact digest,
-follow implementation through delivery, remediate a blocked card, or cancel the
-workflow. Destructive or authority-bearing actions remain explicit,
-previewed/confirmed, and backed by the existing Daidala or Hermes command
-surfaces.
+`docs/00-getting-started.md` and operate the lifecycle documented in
+`docs/07-runbook.md` without translating CLI arguments into dashboard concepts:
+inspect or initialize the profile, diagnose prerequisites, verify the plugin and
+pack, create or choose a board, start or reopen and watch the workflow, inspect
+the pending plan and digest, approve that exact digest, follow implementation
+through delivery, remediate a blocked card, or cancel the workflow. Installation,
+enablement, and upgrade remain host-owned operations because a loaded plugin
+cannot safely replace or restart itself; the dashboard reports current identity
+and renders the exact operator commands but never executes those operations.
+Destructive or authority-bearing actions remain explicit, previewed/confirmed,
+and backed by the existing Daidala or Hermes service surfaces.
 
 The dashboard wizard is an alternative presentation over the same validated
 `daidala.setup_wizard.SetupRequest` and `confirmed_start` path used by
@@ -85,6 +102,19 @@ phases.
 - A `SetupWizard` UI component already exists with a minimal board, repo,
   goal form, `Preview mutations`, and `Start workflow` confirmation
   (`dashboard/dist/index.js:467-531`).
+- `DashboardBackend.from_default_profile()` currently constructs
+  `WorkflowStore(root)` eagerly (`daidala/dashboard_backend.py:88-100`), and
+  `/health` calls the cached service factory (`dashboard/plugin_api.py:85-97`).
+  That can create the schema before an operator uses the runbook's dry-run-first
+  `init` flow. Runbook parity therefore requires a non-initializing health/read
+  boundary before adding an initialization panel; the plan must not paper over
+  the discrepancy with a UI-only status.
+- The strict prerequisite checker already exists as
+  `prerequisites.run_prerequisite_diagnosis` and powers both native and
+  standalone `doctor`, but no dashboard route exposes its stable check IDs,
+  `pass`/`blocked`/`not-run`/`error` states, or exit semantics. The browser must
+  call that checker with server-derived registration and manifest paths rather
+  than accepting arbitrary paths or reimplementing the checklist.
 - Pack payloads including skills, sources, lifecycle, and digest are already
   returned by `/prerequisites` (`daidala/dashboard_backend.py:118-165`) but
   the dashboard UI only surfaces the `workflow_count` field today.
@@ -168,12 +198,14 @@ pinned here so the corresponding phases consume them directly.
   or lose an update.
 
 - **Browser mutation allowlist:** the complete authority-bearing HTTP surface is
-  confirmed pack installation; `POST /wizard/boards`; `POST /wizard/start`;
+  confirmed profile initialization; confirmed pack installation; `POST
+  /wizard/boards`; `POST /wizard/start`;
   `POST /constraints/replace`; workflow approve, card comment/unblock, and cancel;
   `PUT`/`DELETE /github-project-links/{project_id}`; `PUT /checkout-root`; checkout adopt,
   refresh, and named-backup prune; and `PUT /checkouts/policy`. Preview, verify,
-  inventory, readiness, sweep, and status calls are non-mutating even when HTTP
-  transport uses `POST`. No general command/tool dispatch route is permitted.
+  inventory, initialization preview, prerequisite diagnosis, readiness, sweep,
+  and status calls are non-mutating even when HTTP transport uses `POST`. No
+  general command/tool dispatch route is permitted.
 
 - **Credential boundary:** a link stores no credential alias. Link verification
   derives the existing `ControllerRegistration.intake_credential` and its
@@ -336,6 +368,30 @@ Two related facts shape the implementation, not just the install:
   the existing 1–128 character workflow-ID rule. The dashboard never derives an
   ID from goal text because repeated goals would collide.
 
+### Operator runbook coverage
+
+The dashboard family incorporates the operator lifecycle from
+[`docs/07-runbook.md`](../07-runbook.md) through existing services and narrowly
+scoped adapters. It does not expose an arbitrary CLI bridge.
+
+| Runbook section | Dashboard-family owner | Contract |
+|---|---|---|
+| [Install and enable](../07-runbook.md#install-and-enable) | P0200 host setup; P0240 operator guidance | Verify the mounted plugin and current host/profile identity. Display the exact native install/enable commands; never install, enable, remove, or reload the currently running plugin from its own dashboard process. |
+| [Initialize](../07-runbook.md#initialize) | P0240 Phase 0 | Preview the resolved profile-local data root without creating it; apply only after a fresh digest and literal confirmation; repeated apply is an explicit no-op. |
+| [Diagnose prerequisites](../07-runbook.md#diagnose-prerequisites) | P0200 pack readiness; P0240 Phase 0 strict diagnosis | Reuse pack list/validate/check/install services and `run_prerequisite_diagnosis`. Derive trusted project paths from `project_id`; never accept arbitrary browser paths or return credential values. |
+| [Start and resume a workflow](../07-runbook.md#start-and-resume-a-workflow) | P0210 Phases 0–1 | Start through `SetupRequest`; resume means reopen the existing exact workflow and continue read-only watch/recovery, not create a second scheduler or a new workflow. |
+| [Approve the exact plan](../07-runbook.md#approve-the-exact-plan) | P0210 Phase 1 | Delegate to `WorkflowService.approve`; stale digests fail closed and Kanban unblock never substitutes for approval. |
+| [Cancel](../07-runbook.md#cancel) | P0210 Phase 1 | Preview current cards/worktree/reason, require digest + confirmation, then delegate to `WorkflowService.cancel`; retain the policy/artifact ledger. |
+| [Recovery](../07-runbook.md#recovery) | P0210 Phase 1 | Show bounded Kanban comments/runs and use public comment/unblock operations after workflow/card validation. Refresh remains read-only. |
+| [Upgrade](../07-runbook.md#upgrade) | P0240 Phase 1 | Show current plugin/host identity, supported range, and exact host-owned update + post-update verification commands. Never self-update or restart the dashboard/gateway. |
+| [Standalone diagnostics](../07-runbook.md#standalone-diagnostics) | P0240 Phase 1 | Preserve native/standalone parser and exit-code parity in CLI tests; the dashboard consumes the same services but does not claim byte-identical HTTP output. |
+
+Installation and upgrade are deliberately guidance-only in the browser. A
+loaded plugin cannot atomically replace its own package, restart the dashboard
+host, or prove the new process mounted the replacement. Treating those as a
+dashboard mutation would create a half-upgraded process and bypass the runbook's
+post-update `doctor` and `packs check` gates.
+
 The remaining plan treats these decisions as pinned: `daidala-dashboard` is
 the registration-free dashboard host; browser state uses an isolated dashboard
 process under only the disposable fixture controller profile; `checkouts.yaml`
@@ -343,14 +399,17 @@ and `github-project-links.yaml` are separate profile-local stores; existing
 registration storage is untouched; link verification derives the registration's
 intake alias without persisting it; root changes block rather than migrate;
 manual refresh is the only mutating trigger; and cron uses only the report-only
-tool. If any change, Phases 0–9 must be re-read against this section before it
+tool. If any change, Phases 0–11 must be re-read against this section before it
 is touched.
 
-**Phase ordering (2026-07-23):** Phases 0–1 establish the mounted dashboard
+**Phase ordering (2026-07-25):** Phases 0–1 establish the mounted dashboard
 and a ready pack. Phase 2 starts a first workflow through the same
 `SetupRequest` path as `daidala:setup`; Phase 3 then makes the resulting
 workflow observable and controllable through its existing authority boundaries.
-Configuration and data work follows in Phases 4–8, with closeout in Phase 9.
+Configuration and data work follows in Phases 4–8. Phase 9 adds dry-run-first
+profile initialization and strict prerequisite diagnosis, Phase 10 closes the
+remaining operator-runbook parity and host-owned upgrade guidance, and Phase 11
+performs DOX reconciliation and full verification.
 This is proposed scope only; it requires a fresh approval before Phase 0 starts.
 
 ### Implementer discipline
@@ -361,7 +420,7 @@ This is proposed scope only; it requires a fresh approval before Phase 0 starts.
   count beside `dashboard.plugin_api._run_command`, the matching DOX updates
   (`dashboard/AGENTS.md` mutation allowlist, `daidala/AGENTS.md` Ownership
   table, `docs/AGENTS.md` if scope shifts, and `plugin.yaml` tool inventory)
-  ship in the same commit as the source change. Phase 9 catches only what
+  ship in the same commit as the source change. Phase 11 catches only what
   slipped through; it is not the primary DOX surface.
 - New modules under `daidala/` are pre-registered in the `daidala/AGENTS.md`
   Ownership table *before* their first commit. Phase 4 will add
@@ -384,13 +443,14 @@ This is proposed scope only; it requires a fresh approval before Phase 0 starts.
   `${DAIDALA_DASHBOARD_LOG_DIR:-${XDG_STATE_HOME:-~/.local/state}/daidala}/dashboard-setup/`,
   not in repo-tracked paths. The plan references but does not embed those
   artifacts.
-- The plan's verification commands run in the order pinned in Phase 9 step
+- The plan's verification commands run in the order pinned in Phase 11 step
   5. Reordering a verification step is a phase-change and requires
   re-approval.
 
 ## Risk call-out
 
-Four phases touch the filesystem or perform destructive cleanup; the
+Five phases touch the filesystem, perform destructive cleanup, or exercise
+credential-bearing live probes; the
 recovery path and safe default are pinned here so a future reader cannot
 miss them.
 
@@ -425,6 +485,14 @@ miss them.
   corresponding immutable `ControllerRegistration.checkout`. Refusing a path that already
   exists and is owned by a different `project_id` prevents accidental
   cross-project wipeouts.
+- **Phase 9 — profile initialization and live diagnosis.** Initialization is
+  dry-run-first and may create only the resolved profile-local
+  `daidala/workflows.sqlite3` schema after a fresh preview digest and literal
+  confirmation. Repeating apply is a no-op. Local diagnosis is the default;
+  `live: true` is an explicit bounded external-read action that may use existing
+  credential aliases for GitHub, gateway, and container probes but never returns
+  credential values or mutates setup state. Failure leaves the profile and
+  prerequisite evidence unchanged.
 
 ## Execution-unit map
 
@@ -433,12 +501,13 @@ miss them.
 | Phases 0–1 | [P0200](P0200-daidala-dashboard-profile-and-packs.md) | Isolated host/fixture profiles, mounted plugin, pack browser and readiness actions |
 | Phases 2–3 | [P0210](P0210-daidala-dashboard-setup-and-supervision.md) | First-workflow wizard and workflow supervision |
 | Phases 4–6 | [P0220](P0220-daidala-dashboard-checkouts-and-project-links.md) | Checkout policy, GitHub Projects links, refresh and report-only cron hook |
-| Phases 7–9 | [P0230](P0230-daidala-dashboard-constraints-and-verification.md) | Constraint authoring, configuration verification, DOX and full gates |
+| Phases 7–8 | [P0230](P0230-daidala-dashboard-constraints-and-verification.md) | Constraint authoring and configuration verification |
+| Phases 9–11 | [P0240](P0240-daidala-dashboard-operator-runbook-parity.md) | Initialization, strict diagnosis, operator-runbook parity, DOX and full gates |
 
 Every active-plan phase ends with the root-required DOX pass for the paths it
 changed. Update the nearest owning `AGENTS.md` in that phase when contracts,
 responsibilities, routes, tools, or structure changed; do not defer stale contract
-text to the final verification unit. Contract Phase 9 remains the final
+text to the final verification unit. Contract Phase 11 remains the final
 cross-tree consistency specification.
 
 ## Phase 0 — Create `daidala-dashboard` profile, install Daidala, verify the dashboard mount
@@ -557,8 +626,9 @@ notification state. No commit is created by this phase.
 
 ## Phase 1 — Pack browser and readiness actions
 
-**Goal:** Surface both packs on the `/daidala` tab so the user can review their
-provenance and determine whether each is ready before starting a workflow. The
+**Goal:** Surface both packs on the `/daidala` tab so the user can list and
+validate their definitions, review provenance, and determine whether each is
+ready before starting a workflow. The
 bundled `aidlc` path is check-only; `addyosmani` exposes the same preview then
 explicit-apply external-skill installation sequence documented in Getting
 started.
@@ -576,10 +646,12 @@ started.
    external flag, and content digest.
 3. The pack operations currently live behind the CLI's private
    `_run_pack_operation`; there is no dashboard-callable pack service yet.
-   Extract a typed service that returns the same `PackInstallPlan` projection,
-   and keep the CLI as one adapter over it. Add only the bounded routes `POST
+   Extract typed validation/readiness services that return the same pack and
+   `PackInstallPlan` projections, and keep the CLI as one adapter over them. Add
+   only the bounded routes `POST /packs/{name}/validate`, `POST
    /packs/{name}/check`, `POST /packs/{name}/install/preview`, and `POST
-   /packs/{name}/install`. Do not shell out to `hermes daidala` from the router
+   /packs/{name}/install`. The cards loaded from `/prerequisites` are the
+   runbook's list surface. Do not shell out to `hermes daidala` from the router
    and do not expose arbitrary pack operation or command fields.
 4. Add a canonical preview digest over pack name, source, pinned and resolved
    revisions, Hermes constraint and observed version, install actions, current
@@ -597,7 +669,7 @@ started.
    `dist/style.css` tokens.
 7. Extend `tests/test_dashboard_assets.py`'s source-contract assertions for the
    dependency-free IIFE bundle: both pack names, the pack fields above, and the
-   `/prerequisites` request must be present. Extend API tests for check,
+   `/prerequisites` request must be present. Extend API tests for validate, check,
    installation preview, stale-digest conflict, refusal without confirmation,
    and confirmed apply. Add service/CLI parity tests so extraction cannot drift.
    Do not introduce a JavaScript DOM harness merely for this panel.
@@ -607,8 +679,9 @@ started.
 
 **Verification gate:** `pytest tests/test_dashboard_assets.py
 tests/test_dashboard_api.py -q` exits 0; the bundle/API contract includes both
-pack names and non-empty skills supplied by `/prerequisites`; `aidlc` reports
-ready on a correctly installed fixture; and `addyosmani` cannot apply external
+pack names and non-empty skills supplied by `/prerequisites`; both definitions
+validate through the same loader as the CLI; `aidlc` reports ready on a correctly
+installed fixture; and `addyosmani` cannot apply external
 skill installation without a fresh matching preview and literal confirmation.
 
 ## Phase 2 — First-workflow setup wizard UX
@@ -828,8 +901,9 @@ remediate a blocked card, or preview and confirm cancellation.
    allowlist matches this boundary.
 6. Keep supervision as a presentation layer over existing read, approval,
    cancellation, and public Kanban boundaries. It must not create a scheduler,
-   persist live card status, access the Kanban database directly, or expose the
-   self-improvement `doctor` diagnostic.
+   persist live card status, access the Kanban database directly, or fold the
+   profile-level prerequisite diagnosis into a workflow action. Contract Phase 9
+   owns that separate runbook diagnostic surface.
 7. Add the five named workflow-action routes (including cancellation preview) to
    `dashboard/plugin_api.py` as
    thin adapters only: validate the literal confirmation and route-specific text
@@ -1329,36 +1403,160 @@ absent.
 The yellow warning appears only when `mode != "disabled"`. The panel issues no
 mutation request.
 
-## Phase 9 — DOX pass and verification
+## Phase 9 — Profile initialization and prerequisite diagnosis
 
-**Goal:** Update the relevant AGENTS.md files and run the documented
-verification surface.
+**Goal:** Add the runbook's dry-run-first `init` and non-mutating `doctor`
+functions to the dashboard without arbitrary path input, eager schema creation,
+or a generic CLI proxy.
+
+**Steps:**
+
+1. Add `daidala/initialization.py` with a frozen `InitializationPreview` and
+   pure `preview_initialization()` / confirmed `apply_initialization()` service
+   boundary. Preview resolves only `resolve_data_root() / "daidala"`, reports
+   the exact database path and initialized/uninitialized state, and computes a
+   canonical digest over that resolved identity and observed state without
+   creating directories or opening SQLite for write. Apply requires the fresh
+   digest plus literal confirmation, reruns preview, calls `WorkflowStore` only
+   after the match, and returns an explicit no-op when the schema already exists.
+   Keep `_run_init` as a CLI adapter over this service and preserve the documented
+   native/standalone JSON fields and exit codes.
+2. Remove eager initialization from the dashboard's health/read path.
+   `DashboardBackend.from_default_profile()` and `/health` must not create
+   `daidala/` or `workflows.sqlite3`; initialization preview must work on a fresh
+   profile. Workflow routes that require an absent ledger return a structured
+   `409`/uninitialized state pointing to the initialization panel rather than
+   creating the schema as a side effect. After confirmed initialization, reset
+   only the cached profile service and instantiate it against the newly created
+   schema. Concurrent first preview/apply requests use the existing service lock
+   plus an initialization-specific lock so only one apply wins.
+3. Add non-mutating `GET /api/plugins/daidala/initialization` and confirmed
+   `POST /api/plugins/daidala/initialization`. The apply payload contains exactly
+   `{preview_digest, confirm: true}`; no path, profile, schema, command, or force
+   field is accepted. Add an `InitializationPanel` that displays the resolved
+   profile-local target, dry-run result, confirmation, apply/no-op result, and
+   the runbook's native command equivalent.
+4. Add `POST /api/plugins/daidala/diagnostics/prerequisites` with exactly
+   `{project_id, live}`. Validate `project_id` with the existing registration
+   slug helper, load its trusted profile-local registration, and derive the
+   committed manifest as `<registration.checkout>/.daidala/project.yaml`; never
+   accept either path from the browser. Delegate directly to
+   `run_prerequisite_diagnosis` and preserve the report schema, checklist digest,
+   stable check IDs, evidence bounds, and exit semantics (`0` all pass, `2`
+   blocked/not-run, `1` invalid input/checker failure). `live` defaults to false;
+   a checked explicit action may set it true for the existing bounded GitHub,
+   gateway, and container probes. Return no credential value, environment-variable
+   value, raw subprocess output, private notification destination, or unbounded
+   filesystem path.
+5. Render a `PrerequisiteDiagnosisPanel` per registered project with the finite
+   statuses `pass`, `blocked`, `not-run`, and `error`, exact check ID, guide
+   section, bounded evidence, blocker, checklist digest, and report exit code.
+   Treat local-mode `not-run` live checks as incomplete rather than a checker
+   crash. The panel never fixes setup state, edits retained evidence, or invokes
+   `doctor --fix` (Daidala has no such command).
+6. Extend the closed route inventory and add focused tests in
+   `tests/test_cli.py`, `tests/test_dashboard_api.py`, and
+   `tests/test_dashboard_assets.py`. Prove health and preview leave a fresh
+   profile byte-for-byte absent, stale initialization digests conflict, repeated
+   confirmed apply is a no-op, concurrent apply creates one schema, diagnosis
+   rejects unknown projects and arbitrary path fields, local/live reports use the
+   existing checker, and all error payloads remain sanitized. Update
+   `daidala/AGENTS.md`, `dashboard/AGENTS.md`, and `tests/AGENTS.md` in the same
+   commit for the new module, routes, mutation, components, and tests.
+
+**Verification gate:** `pytest tests/test_cli.py tests/test_dashboard_api.py
+tests/test_dashboard_assets.py -q` exits 0; a fresh fixture proves health and
+initialization preview create no file, confirmed apply creates exactly the
+profile-local schema and is idempotent, and local/live diagnosis returns the
+same strict report semantics as the CLI without accepting browser paths or
+exposing protected values.
+
+## Phase 10 — Operator runbook parity and host-owned lifecycle guidance
+
+**Goal:** Make every `docs/07-runbook.md` operation discoverable from the
+dashboard while keeping install, enable, upgrade, gateway lifecycle, and
+standalone execution on their host-owned CLI boundaries.
+
+**Steps:**
+
+1. Add an `OperatorRunbookPanel` driven by the
+   [operator runbook coverage](#operator-runbook-coverage) table. Link each row
+   to the existing dashboard surface that owns it: initialization and strict
+   diagnosis from Phase 9; pack list/validate/check/install from Phase 1; start,
+   reopen/watch, exact approval, recovery, and cancellation from Phases 2–3;
+   configuration verification from Phase 8. A missing route or component is a
+   test failure, not a disabled placeholder.
+2. Extend the read-only health projection with sanitized current profile,
+   Daidala package/plugin version, install source when the host exposes it,
+   observed Hermes version, and supported host range. Missing host metadata is
+   `unavailable`, never fabricated. The panel renders copyable exact commands
+   from the runbook for install/enable and upgrade/post-upgrade verification but
+   exposes no execute button and no plugin/gateway restart route.
+3. Make the runbook's resume semantics explicit: selecting or entering an exact
+   existing workflow ID opens its current workflow view and resumes read-only
+   polling. It never calls start, duplicates a workflow, respawns a scheduler, or
+   treats a stale browser snapshot as authority.
+4. Preserve native/standalone command parity by extending the shared-CLI tests
+   for `init`, `doctor`, `status`, pack validation/check, approval, and
+   cancellation. The dashboard consumes the same typed services but its HTTP
+   response may add presentation metadata; do not claim byte-identical HTTP/CLI
+   output. Add a contract test that fails if a runbook heading in the coverage
+   table loses its owning plan/component or if a dashboard action claims a CLI
+   mutation that remains host-owned.
+5. Update `docs/07-runbook.md` with one concise dashboard-equivalence section:
+   name the browser surfaces for initialization, diagnosis, packs, workflow
+   supervision, approval, recovery, and cancellation; state that install,
+   enable, upgrade, and standalone diagnostics remain native CLI operations; and
+   preserve the native commands as the normative recovery path. Update
+   `docs/README.md` support evidence only if the implementation gates have
+   actually passed.
+6. Exercise the complete disposable-fixture journey in a supported authenticated
+   dashboard session: uninitialized health → init preview/apply → local doctor →
+   pack validate/check → create/select board → start → reopen/watch → exact
+   approval → blocked-card remediation → cancel preview/decline. Use seeded
+   fixtures for states that cannot be reached deterministically in one run; do
+   not use real controller credentials or the persistent self-improvement
+   profile. Tear down only the owned fixture process/profile.
+
+**Verification gate:** `pytest tests/test_cli.py tests/test_dashboard_api.py
+tests/test_dashboard_assets.py -q` and `python scripts/check_md_links.py .` exit
+0; the runbook coverage contract has one owner for every section; browser
+evidence completes the bounded lifecycle journey; and no route can install,
+enable, remove, update, restart, or dispatch an arbitrary command.
+
+## Phase 11 — DOX pass and full verification
+
+**Goal:** Reconcile every changed contract and prove the complete dashboard
+family is packaged, installable, and operational through supported Hermes
+boundaries.
 
 **Steps:**
 
 1. Update `dashboard/AGENTS.md` to reflect the new components
    (`PackBrowser`, `SetupWizard` overhaul, `GitHubProjectLinksPanel`,
-   `CheckoutManager`, `ConstraintEditor`, configuration verification
-   panel, and workflow actions) and the new read-only /
-   preview-then-confirm split. Verify that the Phase 2 GET-only-claim corrections
-   persisted and that Phase 3's explicit mutation allowlist is documented;
-   remove any contradictory language.
-2. Confirm the phase-local DOX passes updated `daidala/AGENTS.md` ownership for the separate
-   `profile_files.py`, `checkout_root.py`, `github_project_links.py`, and `checkouts.py`
-   responsibilities, including `checkout-refresh-state.json`; document the
-   `/github-project-links/*`, `/checkout-root/*`, `/checkouts/*`, and
-   `/configuration` routes, three TTL modes, and report-only
+   `CheckoutManager`, `ConstraintEditor`, configuration verification panel,
+   `InitializationPanel`, `PrerequisiteDiagnosisPanel`, `OperatorRunbookPanel`,
+   and workflow actions) and the read-only / preview-then-confirm split. Verify
+   that the Phase 2 GET-only-claim corrections persisted, that Phase 3's explicit
+   mutation allowlist includes confirmed initialization, and that host-owned
+   plugin/gateway lifecycle remains excluded; remove contradictory language.
+2. Confirm the phase-local DOX passes updated `daidala/AGENTS.md` ownership for
+   `profile_files.py`, `checkout_root.py`, `github_project_links.py`,
+   `checkouts.py`, and `initialization.py`, including
+   `checkout-refresh-state.json`; document the `/github-project-links/*`,
+   `/checkout-root/*`, `/checkouts/*`, `/configuration`, `/initialization`, and
+   `/diagnostics/prerequisites` routes, three TTL modes, and report-only
    `daidala_checkouts_status` tool. Confirm Phase 6 updated `plugin.yaml` together
    with runtime tool registration so their inventories remain exact, and that
-   `tests/test_plugin.py` re-asserts the manifest/runtime parity.
-3. Confirm `docs/08-hermes-integration.md` and
+   `tests/test_plugin.py` re-asserts manifest/runtime parity.
+3. Confirm `docs/07-runbook.md` documents dashboard equivalence and host-owned
+   exclusions; `docs/08-hermes-integration.md` and
    `scripts/probe_hermes_dashboard_compatibility.py` describe and verify the
    session-authenticated `read_model: true` health contract without pinning an
-   unauthenticated plugin-route status.
-   Confirm `docs/14-workflow-constraints.md` contains the exact Phase 7 starter
-   block and its parity test prevents drift.
-   Confirm `docs/16-self-improvement-setup.md` contains the blocked-root migration
-   procedure and still requires renewed strict evidence before restart.
+   unauthenticated plugin-route status; `docs/14-workflow-constraints.md`
+   contains the exact Phase 7 starter block and parity test; and
+   `docs/16-self-improvement-setup.md` retains the blocked-root migration and
+   renewed-evidence requirement.
 4. Re-read `docs/AGENTS.md`, `dashboard/AGENTS.md`, and `daidala/AGENTS.md`
    after implementation; update each only when its owned purpose, structure, or
    contract changed. Refresh any affected Child DOX Index; do not add a child
@@ -1373,16 +1571,15 @@ verification surface.
    `probe_hermes_dashboard_compatibility.py` requires the pinned Hermes
    checkout's web distribution to be built once (see `scripts/AGENTS.md`); the
    probe itself starts `hermes dashboard --skip-build` and has no script-level
-   `--skip-build` argument. If the host web distribution is absent, stop and build
-   it rather than passing an unsupported flag. These are the complete root/docs
-   verification surfaces for Phase 9, not Phase 0 teardown checks.
+   `--skip-build` argument. If the host web distribution is absent, stop and
+   build it rather than passing an unsupported flag.
 
-**Verification gate:** Every command in the root AGENTS.md verification
-block exits 0; `dashboard/AGENTS.md` and `daidala/AGENTS.md` reflect the
-new components, endpoints, ownership, and three-mode TTL policy;
-`git diff --check` exits 0; and the final status is reviewed against the
-Phase 0 baseline so pre-existing operator changes are neither modified nor
-mistaken for implementation output.
+**Verification gate:** Every command in the root AGENTS.md verification block
+exits 0; `dashboard/AGENTS.md`, `daidala/AGENTS.md`, `tests/AGENTS.md`, and the
+operator docs reflect the new components, endpoints, ownership, runbook parity,
+and three-mode TTL policy; `git diff --check` exits 0; and final status is
+reviewed against the Phase 0 baseline so pre-existing operator changes are
+neither modified nor mistaken for implementation output.
 
 ## Out of scope
 
@@ -1411,11 +1608,16 @@ mistaken for implementation output.
 - Starting or supervising the gateway from the dashboard. The UI reports
   gateway readiness and tells the user to keep the existing Hermes gateway
   running; Daidala still adds no service or dispatcher.
+- Installing, enabling, removing, updating, or reloading the Daidala plugin or
+  restarting Hermes from the dashboard. These remain host-owned commands; the
+  browser may report sanitized identity/version state and render copyable
+  runbook commands, but it exposes no execute button or command proxy.
 - Treating Kanban unblock as plan approval. Exact-digest approval remains a
   separate Daidala action.
-- Any dashboard mutation other than the named, confirmation-gated board creation,
-  setup, constraint replacement, approval, card comment/unblock, cancellation,
-  checkout, GitHub Project-link, and TTL-policy operations in this plan. In particular,
-  the dashboard never exposes a general tool dispatcher.
+- Any dashboard mutation other than the named, confirmation-gated profile
+  initialization, board creation, setup, constraint replacement, approval, card
+  comment/unblock, cancellation, checkout, GitHub Project-link, and TTL-policy
+  operations in this plan. In particular, the dashboard never exposes a general
+  tool or command dispatcher.
 - Commit or push controls. Delivery remains evidence-only with
   `committed: false` and `pushed: false`.

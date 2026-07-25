@@ -17,6 +17,10 @@ Own current architecture documentation, the numbered reading set, and executable
   and gates.
 - `06-security.md` owns current trust, activation-audit, and unavailable-control
   boundaries.
+- `07-runbook.md` owns the executable operator lifecycle for installation,
+  initialization, prerequisite diagnosis, pack readiness, workflow start/status,
+  exact approval, recovery, cancellation, upgrade, and native/standalone CLI
+  parity.
 - `08-hermes-integration.md` owns verified Hermes versions, discovery paths, and installation limitations.
 - `09-pack-adapters.md` owns implemented pack mappings, activation policy, and
   divergences.

@@ -6,17 +6,17 @@
 
 **Created:** 2026-07-24
 
-**Depends on:** daidala-dashboard-constraints-and-verification
+**Depends on:** daidala-dashboard-operator-runbook-parity
 
 **Plan family:** daidala-artifact-review
 
-**Entry checkpoint:** P0230 completed with dashboard route, package, configuration, and browser gates verified; P0100 archive I/O is available transitively through P0220
+**Entry checkpoint:** P0240 completed with dashboard operator-runbook parity and full route, package, configuration, and browser gates verified; P0100 archive I/O is available transitively through P0220
 
 **Context sources:** [artifact current state](daidala-artifact-review-execution-contract.md#current-state), [risk call-out](daidala-artifact-review-execution-contract.md#risk-call-out), detailed [contract Phase 0](daidala-artifact-review-execution-contract.md#phase-0-add-the-ledger-owned-artifact-catalog-and-resolver), and [contract Phase 1](daidala-artifact-review-execution-contract.md#phase-1-add-native-and-standalone-cli-reviewexport-commands), plus `AGENTS.md`, `daidala/AGENTS.md`, and `tests/AGENTS.md`
 
 **Produces:** a ledger-owned exact-ID artifact catalog/resolver and byte-equivalent native and standalone list/show/export commands
 
-**Status:** pending — blocked until P0230 completes and human implementation approval is recorded
+**Status:** pending — blocked until P0240 completes and human implementation approval is recorded
 
 ## Goal
 

@@ -12,15 +12,15 @@
 
 **Entry checkpoint:** none — this is the first dashboard-family execution unit
 
-**Context sources:** [shared goal and current state](daidala-dashboard-execution-contract.md#goal), [operator pinning](daidala-dashboard-execution-contract.md#operator-pinning), [operator-visible precondition](daidala-dashboard-execution-contract.md#operator-visible-precondition), [implementer discipline](daidala-dashboard-execution-contract.md#implementer-discipline), [risk call-out](daidala-dashboard-execution-contract.md#risk-call-out), and detailed [contract Phase 0](daidala-dashboard-execution-contract.md#phase-0-create-daidala-dashboard-profile-install-daidala-verify-the-dashboard-mount) and [contract Phase 1](daidala-dashboard-execution-contract.md#phase-1-pack-browser-and-readiness-actions)
+**Context sources:** [shared goal and current state](daidala-dashboard-execution-contract.md#goal), [operator pinning](daidala-dashboard-execution-contract.md#operator-pinning), [operator runbook coverage](daidala-dashboard-execution-contract.md#operator-runbook-coverage), [operator-visible precondition](daidala-dashboard-execution-contract.md#operator-visible-precondition), [implementer discipline](daidala-dashboard-execution-contract.md#implementer-discipline), [risk call-out](daidala-dashboard-execution-contract.md#risk-call-out), [runbook install and enable](../07-runbook.md#install-and-enable), [runbook pack diagnosis](../07-runbook.md#diagnose-prerequisites), and detailed [contract Phase 0](daidala-dashboard-execution-contract.md#phase-0-create-daidala-dashboard-profile-install-daidala-verify-the-dashboard-mount) and [contract Phase 1](daidala-dashboard-execution-contract.md#phase-1-pack-browser-and-readiness-actions)
 
-**Produces:** a verified registration-free `daidala-dashboard` host, a disposable stateful browser fixture recipe, and pack readiness/install-plan UI backed by installed Daidala services
+**Produces:** a verified registration-free `daidala-dashboard` host, a disposable stateful browser fixture recipe, and pack list/validate/readiness/install-plan UI backed by installed Daidala services
 
 **Status:** pending — context split is complete; human approval is required before implementation
 
 ## Goal
 
-Establish an isolated, verified dashboard host and implement the pack browser/readiness surface so later dashboard units start from a known mounted plugin and supported Hermes React SDK boundary.
+Establish an isolated, verified dashboard host and implement the runbook's pack list, validate, check, and dry-run-first install surface so later dashboard units start from a known mounted plugin and supported Hermes React SDK boundary.
 
 ## Current state
 
@@ -34,7 +34,7 @@ Establish an isolated, verified dashboard host and implement the pack browser/re
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
 | 0 | Create the registration-free dashboard profile and disposable fixture, install Daidala, and verify both mounts | pending | SPA, manifest, and packaged asset checks pass; authenticated health identifies Daidala; the fixture has independent non-secret state, passes the stateful browser gate, and is deleted after its owned process stops |
-| 1 | Add pack browser and readiness actions | pending | Both packs and readiness render; check/install-plan actions use installed services; external installation requires preview and confirmation; focused dashboard tests pass |
+| 1 | Add pack browser and readiness actions | pending | Both packs list and validate; readiness and check/install-plan actions use installed services; external installation requires preview and confirmation; focused dashboard tests pass |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
 
@@ -54,12 +54,12 @@ Verification gate: The Phase 0 table predicate passes using the exact host/fixtu
 
 ## Phase 1 — Add pack browser and readiness actions
 
-**Goal:** Let the mounted dashboard render both packs, explain readiness, run checks, and preview then confirm external skill installation through bounded installed services.
+**Goal:** Let the mounted dashboard render and validate both packs, explain readiness, run checks, and preview then confirm external skill installation through bounded installed services.
 
 Steps:
 
 1. Read the exact Phase 1 contract, `dashboard/AGENTS.md`, and `tests/AGENTS.md`.
-2. Implement the contract's pack projection, readiness details, check action, install-plan preview, and literal-confirmation apply path without adding a general dispatch endpoint.
+2. Implement the contract's list projection, explicit validation, readiness details, check action, install-plan preview, and literal-confirmation apply path without adding a general dispatch endpoint.
 3. Keep external-skill installation separate from bundled-skill readiness and preserve the closed route inventory.
 4. Update the nearest AGENTS contracts in the same change when routes or ownership change.
 5. Run the focused API, asset, and browser gates named by the contract.
