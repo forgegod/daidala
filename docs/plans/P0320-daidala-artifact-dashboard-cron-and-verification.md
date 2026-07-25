@@ -52,7 +52,7 @@ Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate p
 Steps:
 
 1. Read contract Phase 3, the complete risk call-out, and the dashboard/daidala/tests AGENTS chains.
-2. Implement ledger-bound list/detail/text/download projections without arbitrary-path parameters or unauthenticated content, reusing the same verified renderer and identity presentation as the P0210 plan-approval and review-disposition surfaces.
+2. Implement ledger-bound list/detail/text/download projections without arbitrary-path parameters or unauthenticated content, reusing the same verified escaped-text renderer and identity presentation as the P0210 plan-approval and review-disposition surfaces. Keep Version 1 format-neutral: Markdown, JSON, YAML, source, HTML, and diffs are literal text rather than semantically rendered content; binary or oversized artifacts are download-only.
 3. Implement preview-digest/literal-confirm pin, unpin, archive, and restore controls over P0310 services.
 4. Keep errors metadata-only and extend the closed dashboard route inventory and DOX in the same change.
 5. Run the focused API/assets/access/curator tests and isolated-browser archived-diff journey from the contract.

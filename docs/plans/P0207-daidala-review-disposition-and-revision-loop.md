@@ -14,7 +14,7 @@
 
 **Entry checkpoint:** P0205 completed with exact active-artifact identity, verified bounded reads, and export
 
-**Context sources:** [dashboard review contract](daidala-dashboard-execution-contract.md#review-disposition-and-revision-loop-contract), [dashboard current state](daidala-dashboard-execution-contract.md#current-state), [lifecycle blocking and recovery](../05-lifecycle-stages.md#blocking-and-recovery), P0205 completion evidence, plus `AGENTS.md`, `daidala/AGENTS.md`, and `tests/AGENTS.md`
+**Context sources:** [approval summary contract](daidala-dashboard-execution-contract.md#approval-summary-and-escaped-text-contract), [dashboard review contract](daidala-dashboard-execution-contract.md#review-disposition-and-revision-loop-contract), [dashboard current state](daidala-dashboard-execution-contract.md#current-state), [lifecycle blocking and recovery](../05-lifecycle-stages.md#blocking-and-recovery), P0205 completion evidence, plus `AGENTS.md`, `daidala/AGENTS.md`, and `tests/AGENTS.md`
 
 **Produces:** structured automated review evidence, an attended exact-evidence disposition gate before delivery, a revision-request loop that creates a new plan card and fresh approval without rewriting rejected history, and synchronized lifecycle/operator documentation
 
@@ -52,14 +52,14 @@ Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate p
 Steps:
 
 1. Read the dashboard review contract, current state, P0205 evidence, and the complete `daidala/` and `tests/` AGENTS chains.
-2. Add strict canonical review records binding workflow ID, plan/policy/constraint identity, implementation digest, sorted unique passing-verification digests, activation digest, outcome, summary, findings, and recorded time. Outcomes are exactly `accepted`, `changes_requested`, or `rejected`; accepted records cannot carry blocking findings.
+2. Add strict canonical review records binding workflow ID, plan/policy/constraint identity, implementation digest, sorted unique passing-verification digests, activation digest, outcome, the shared contract's structured approval summary, findings, and recorded time. The review worker may generate the summary from the exact diff, changed paths, verification, and findings; Daidala validates and binds it but performs no model call. Outcomes are exactly `accepted`, `changes_requested`, or `rejected`; accepted records cannot carry blocking findings.
 3. Add bounded findings with stable IDs, severity, blocking flag, title, rationale, and ledger-bound evidence references. Reject unknown fields, duplicates, empty evidence, oversized text, stale identities, and review records created outside the current review card.
 4. Replace free-form review submission with a review-specific worker operation. An accepted review completes the review card; `changes_requested` or `rejected` persists evidence, comments with the exact requested decision, and blocks the card as `needs_input`.
 5. Add a strict human disposition record binding the exact review, implementation, verification, plan, policy, and constraint tuple plus action, actor, rationale, and decision time. Actions are exactly `accept_delivery`, `request_revision`, or `reject_workflow`.
 6. Permit `accept_delivery` only for a current automated `accepted` review with no blocking findings and all required passing verification. Reject Kanban-worker authority exactly as plan approval does; a user who disputes reviewer judgment comments and unblocks the same review card instead of overriding a blocking review.
 7. Stop creating `deliver` during plan approval. Create `implement → verify → review` only; after attended acceptance, record the disposition and create exactly one delivery card parented to the accepted review card. Make `deliver()` fail closed without that current disposition.
 8. Handle legacy ledgers explicitly: terminal historical workflows remain readable, while active workflows lacking structured review identity cannot deliver and report migration/revision/cancellation as the available actions. Never synthesize acceptance from `review.md` prose.
-9. Add positive, stale-tuple, worker-rejection, malformed-record, blocking-finding, legacy-ledger, idempotency, no-delivery-card-before-acceptance, and delivery-enforcement tests. Update state/store migrations and owning DOX in the same implementation change.
+9. Add positive, stale-tuple, worker-rejection, malformed-record, malformed or source-unbound summary, blocking-finding, legacy-ledger, idempotency, no-delivery-card-before-acceptance, and delivery-enforcement tests. Update state/store migrations and owning DOX in the same implementation change.
 
 Verification gate: The Phase 0 command exits 0; an accepted automated review still cannot create or execute delivery until an attended actor accepts the exact current evidence tuple, and every stale or blocking state fails without mutation.
 

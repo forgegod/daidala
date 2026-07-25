@@ -822,6 +822,46 @@ The updated dashboard compatibility probe passes with `read_model: true` while
 preserving its manifest, packaged-asset, preview, and declined-start
 non-mutation checks.
 
+## Approval summary and escaped-text contract
+
+Both attended approval surfaces lead with a concise structured summary, followed
+by the complete evidence needed to verify it. The summary is orientation, never
+a replacement for the exact plan or captured implementation diff.
+
+1. The plan worker submits an `approval_summary` alongside `plan.md`. The review
+   worker includes the same shape in its strict review record. Daidala validates
+   and canonicalizes the summary, binds it to the exact source artifact digest,
+   and records its SHA-256 digest with the immutable evidence. The dashboard does
+   not call a model, regenerate a summary on read, or cache an unbound summary.
+2. The strict summary object contains `headline`, `changes`, `affected_areas`,
+   `risks`, and `verification`. `headline` is 1–200 UTF-8 bytes; `changes` and
+   `verification` contain 1–12 items; `affected_areas` and `risks` contain 0–12
+   items; each item is trimmed plain text of 1–500 UTF-8 bytes. Unknown fields,
+   invalid bounds, or invalid structured output block stage completion. Daidala
+   validates structure, provenance, and source identity, not the semantic truth
+   of model-authored prose; the complete evidence remains visible for comparison.
+3. The plan summary describes intended behavior and expected scope before any
+   worktree exists. The review summary describes the captured implementation,
+   actual affected areas, observed verification, and residual risk. The worker
+   must ground it in the supplied evidence and the user can compare it directly
+   with that evidence before acting.
+4. The approval UI shows the summary and its digest first, then the complete
+   escaped source artifact, exact tuple, and consequences. Plan approval submits
+   both the displayed plan digest and summary digest; the server re-resolves both.
+   Review disposition remains bound to the strict review digest, which includes
+   its summary. A summary alone never enables either action.
+5. Version 1 renders reviewable text literally through React text nodes or
+   `textContent`. It does not render Markdown, JSON, YAML, source code, HTML, or
+   diff syntax semantically; an implementation diff is visible as escaped unified
+   diff text. It does not use `innerHTML`, an iframe, content sniffing, or a
+   format-specific renderer. Binary or oversized content is download-only. Rich
+   per-format and side-by-side diff rendering remain future enhancements.
+
+New plan evidence without a valid bound summary is not approvable. Historical
+artifacts remain readable, but an active legacy plan without this summary must
+return through the normal plan-revision path; Daidala never fabricates a summary
+or asks the dashboard to infer one.
+
 ## Review disposition and revision-loop contract
 
 Automated review is evidence, not delivery authority. P0207 implements this
@@ -829,7 +869,8 @@ contract before dashboard Phase 3 consumes it:
 
 1. The review worker records a strict canonical review bound to the current
    workflow, plan/policy/constraint identity, implementation digest, passing
-   verification digests, activation digest, outcome, findings, and time.
+   verification digests, activation digest, source-bound approval summary,
+   outcome, findings, and time.
    Outcomes are exactly `accepted`, `changes_requested`, or `rejected`; an
    accepted review cannot contain blocking findings.
 2. `accepted` completes the review card and exposes an attended disposition.
@@ -912,34 +953,40 @@ card state, remediate a blocked card, or preview and confirm cancellation.
    sanitized comments/events/run summaries in the detail snapshot. Never read the
    Kanban SQLite database or persist these host-owned records in Daidala.
 2. When planning completes, resolve the current plan through P0205's exact
-   ledger-bound artifact ID and render its verified bounded text inline. Show
+   ledger-bound artifact ID and render its verified bounded text inline. Lead
+   with the exact bound approval summary and its digest, then show
    the goal, plan and policy revisions, full 64-character plan digest, nullable
    constraint revision/digest, pack revision, verification state, and the
    consequences: one detached worktree plus `implement → verify → review →
    deliver`, with commit and push still false. Never return or accept an
    absolute profile-local path in the browser API. Missing, binary, oversized,
-   stale, or digest-mismatched bytes produce a blocking `Plan unavailable`
-   decision with no approval control; a summary or digest alone is insufficient.
+   stale, or digest-mismatched bytes or a missing, invalid, stale, or unbound
+   summary produce a blocking `Plan unavailable` decision with no approval
+   control; a summary or digest alone is insufficient.
    Add authenticated `GET /workflows/{workflow_id}/approval-review`, which
    derives the current plan artifact ID server-side and returns only the verified
-   escaped text, complete tuple, pack identity, and fixed consequence projection;
+   structured summary, summary digest, escaped text, complete tuple, pack
+   identity, and fixed consequence projection;
    it accepts no path, filename, revision shortcut, or remote URL. Render content
    through React text nodes or `textContent`, never `innerHTML` or unsanitized
-   Markdown.
+   Markdown. Version 1 presents literal text and does not render the underlying
+   Markdown or any other source format.
    `Approve exact plan` requires the displayed verified artifact identity plus a
    literal `I reviewed this exact plan` confirmation and
    calls `POST /workflows/{workflow_id}/approve` with `{artifact_id,
-   plan_digest, confirm: true}`. The server re-resolves and re-verifies that exact
-   artifact immediately before approval so a client-cached body cannot authorize
-   changed state. That route delegates to `WorkflowService.approve`, the same
+   plan_digest, summary_digest, confirm: true}`. The server re-resolves and
+   re-verifies that exact artifact and summary immediately before approval so a
+   client-cached body cannot authorize changed state. That route delegates to
+   `WorkflowService.approve`, the same
    service used by `daidala_approve`. A stale digest fails closed; generic Kanban
    unblock is never presented as approval.
 3. After automated review, render a second distinct `Human review disposition —
    Daidala policy gate` timeline step with no Kanban task ID. Fetch its state from
-   P0207 services and show the exact captured diff, changed paths, verification
-   commands/outcomes, structured reviewer outcome/findings, complete tuple, and
-   fixed consequences before any action. Keep raw logs behind explicit evidence
-   links or progressive disclosure.
+   P0207 services and lead with the review record's exact bound change summary.
+   Then show the captured diff as escaped unified-diff text, changed paths,
+   verification commands/outcomes, structured reviewer outcome/findings,
+   complete tuple, and fixed consequences before any action. Keep raw logs behind
+   explicit evidence links or progressive disclosure.
    Add authenticated `GET /workflows/{workflow_id}/review-decision`, mutation-free
    `POST /workflows/{workflow_id}/review-disposition/preview`, and confirmed
    `POST /workflows/{workflow_id}/review-disposition`. Preview accepts exactly
