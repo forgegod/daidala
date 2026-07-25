@@ -49,6 +49,26 @@ Own current architecture documentation, the numbered reading set, and executable
 ## Local Contracts
 
 - Plans name exact files, verification gates, stop conditions, and unresolved decisions.
+- Active executable plans use `Pnnnn-<slug>.md` with matching `Plan ID`,
+  `Execution slot`, `Created`, `Depends on`, and `Status` headers. Creation dates
+  are provenance only; dependency-ready plans execute by ascending slot.
+- Reordering changes the slot prefix and header together and updates inbound
+  links. Split plans use distinct stable IDs and explicit dependencies so moved
+  phases appear in exactly one active file.
+- Active plans normally carry one to three context-local phases and name exact
+  `Context sources`, an `Entry checkpoint`, and a concrete `Produces` checkpoint.
+  A fresh session reads only those sources and direct-dependency evidence, not
+  completed predecessor plans in full.
+- Plans above 500 lines or 40 KiB require a split or an explicit atomicity
+  rationale. Repository-tracked family execution contracts may own shared pinned
+  invariants, but have no execution slot, status table, findings ledger, or
+  approval authority; active plans remain the execution source of truth.
+- Plans referenced by Git-tracked project content stay in this repository and
+  are Git-tracked in the same change. Never depend on profile-private plans,
+  `/tmp`, or another ephemeral location.
+- During phase execution, adopt actionable findings into the tracked active plan
+  before changing implementation scope. Do not persist plan fragments, findings,
+  evidence notes, or diff snapshots in temporary directories.
 - Describe the current intended design without iteration diaries or stale migration breadcrumbs.
 - Runtime claims must be grounded in Daidala source or current official Hermes documentation.
 - Future numbered documents appear as unlinked support-status entries until their behavior exists.
@@ -63,7 +83,8 @@ Own current architecture documentation, the numbered reading set, and executable
 
 ## Work Guidance
 
-- Update the active plan when a design decision changes before implementation begins.
+- Update the active plan when a design decision or actionable finding changes
+  scope, ordering, dependencies, or verification before implementation proceeds.
 - Move stable implemented contracts into normal architecture/operator docs rather than leaving the plan as the only source.
 - Give new operators one user-centric, executable starting path before directing
   them to architecture or reference material. State what starts the workflow,
