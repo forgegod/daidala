@@ -95,6 +95,7 @@ carry that manifest's digest and active skill names.
 | Question or symptom | Read |
 |---|---|
 | How do I start and approve the first workflow? | [Getting started](00-getting-started.md) |
+| What does a Daidala Kanban card contain, and where is completion metadata stored? | [Getting started: What a Daidala card contains](00-getting-started.md#what-a-daidala-card-contains) |
 | Is Daidala a separate service or scheduler? | [Architecture](01-architecture.md#process-boundary) |
 | Who owns status and retries? | [Policy ledger](02-workflow-state.md) |
 | Why is Kanban unblock not approval? | [Security](06-security.md#human-approval-boundary) |
