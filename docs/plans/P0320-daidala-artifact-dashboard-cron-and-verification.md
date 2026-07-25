@@ -12,7 +12,7 @@
 
 **Plan family:** daidala-artifact-review
 
-**Entry checkpoint:** P0310 completed with verified recoverable curation and idempotent failure recovery; P0240 completed the dashboard family and retained P0210's verified plan-review decision surface
+**Entry checkpoint:** P0310 completed with verified recoverable curation and idempotent failure recovery; P0240 completed the dashboard family and retained P0210's verified plan-approval, review-disposition, and revision-request evidence surfaces
 
 **Context sources:** [artifact current state](daidala-artifact-review-execution-contract.md#current-state), [risk call-out](daidala-artifact-review-execution-contract.md#risk-call-out), detailed [contract Phase 3](daidala-artifact-review-execution-contract.md#phase-3-add-authenticated-dashboard-review-and-curator-controls), [contract Phase 4](daidala-artifact-review-execution-contract.md#phase-4-add-opt-in-hermes-cron-scheduling), and [contract Phase 5](daidala-artifact-review-execution-contract.md#phase-5-reconcile-operator-docs-dox-package-contents-and-full-verification), plus the complete AGENTS chains for `daidala/`, `dashboard/`, `tests/`, and `docs/`
 
@@ -27,7 +27,7 @@ Expose verified artifact review and reversible curator controls through the auth
 ## Current state
 
 - P0205 provides exact-ID resolution, P0300 provides CLI review/export, and P0310 provides deterministic curation.
-- P0210 exposes the exact current plan only where required for informed approval; the dashboard still lacks a general historical artifact browser and curator actions.
+- P0210 exposes focused current plan and review evidence only where required for attended decisions; the dashboard still lacks a general historical artifact browser and curator actions.
 - Hermes Cron is the supported scheduler; Daidala must not add a daemon, nested agent, or model judgment.
 - The shared contract pins authentication, bounded text/download behavior, confirmation, cron idempotency, documentation, package, and full verification requirements.
 
@@ -47,12 +47,12 @@ Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate p
 
 ## Phase 0 — Add authenticated dashboard controls
 
-**Goal:** Extend P0210's current-plan approval view into a general authenticated artifact browser where users can inspect verified metadata and bounded text, download verified bytes, and preview/confirm reversible curator operations.
+**Goal:** Extend P0210's focused plan/review decision views into a general authenticated artifact browser where users can inspect verified metadata and bounded text, download verified bytes, and preview/confirm reversible curator operations.
 
 Steps:
 
 1. Read contract Phase 3, the complete risk call-out, and the dashboard/daidala/tests AGENTS chains.
-2. Implement ledger-bound list/detail/text/download projections without arbitrary-path parameters or unauthenticated content, reusing the same verified renderer and identity presentation as the P0210 plan-approval surface.
+2. Implement ledger-bound list/detail/text/download projections without arbitrary-path parameters or unauthenticated content, reusing the same verified renderer and identity presentation as the P0210 plan-approval and review-disposition surfaces.
 3. Implement preview-digest/literal-confirm pin, unpin, archive, and restore controls over P0310 services.
 4. Keep errors metadata-only and extend the closed dashboard route inventory and DOX in the same change.
 5. Run the focused API/assets/access/curator tests and isolated-browser archived-diff journey from the contract.

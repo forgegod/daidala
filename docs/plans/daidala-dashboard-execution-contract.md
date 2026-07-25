@@ -6,6 +6,7 @@
 
 **Used by:**
 [P0200 dashboard profile and packs](P0200-daidala-dashboard-profile-and-packs.md),
+[P0207 review disposition and revision loop](P0207-daidala-review-disposition-and-revision-loop.md),
 [P0210 setup and supervision](P0210-daidala-dashboard-setup-and-supervision.md),
 [P0220 checkouts and Projects links](P0220-daidala-dashboard-checkouts-and-project-links.md),
 [P0230 constraints and configuration](P0230-daidala-dashboard-constraints-and-verification.md),
@@ -109,6 +110,12 @@ phases.
   `dashboard/dist/index.js:149-166`). The current browser therefore cannot show
   the plan being approved and must not enable approval until P0205 supplies a
   verified ledger-bound text resolver.
+- Automated review is currently free-form worker prose: `submit_artifact()`
+  accepts any non-empty `review.md`, `deliver()` does not require a structured
+  accepted review or attended disposition, and plan approval creates `deliver`
+  before review occurs (`daidala/service.py:399-438`, `656-722`, `735-755`).
+  `replace_plan()` contains internal invalidation and cleanup mechanics but no
+  public tool, CLI, or dashboard revision-request flow (`daidala/service.py:224-280`).
 - `DashboardBackend.from_default_profile()` currently constructs
   `WorkflowStore(root)` eagerly (`daidala/dashboard_backend.py:88-100`), and
   `/health` calls the cached service factory (`dashboard/plugin_api.py:85-97`).
@@ -410,10 +417,12 @@ tool. If any change, Phases 0–11 must be re-read against this section before i
 is touched.
 
 **Phase ordering (2026-07-25):** Phases 0–1 establish the mounted dashboard
-and a ready pack. Phase 2 starts a first workflow through the same
-`SetupRequest` path as `daidala:setup`; the P0205 artifact-access prerequisite
-lands before Phase 3, which then makes the resulting workflow understandable and
-controllable through its existing authority boundaries.
+and a ready pack. P0205 lands verified active-artifact access and P0207 lands
+structured review, attended disposition, revision authority, CLI fallback, and
+current runtime documentation before P0210 starts. Phase 2 then starts a first
+workflow through the same `SetupRequest` path as `daidala:setup`; Phase 3 makes
+the resulting workflow understandable and controllable through those existing
+authority boundaries.
 Configuration and data work follows in Phases 4–8. Phase 9 adds dry-run-first
 profile initialization and strict prerequisite diagnosis, Phase 10 closes the
 remaining operator-runbook parity and host-owned upgrade guidance, and Phase 11
@@ -507,7 +516,8 @@ miss them.
 | Contract sections | Active plan | Purpose |
 |---|---|---|
 | Phases 0–1 | [P0200](P0200-daidala-dashboard-profile-and-packs.md) | Isolated host/fixture profiles, mounted plugin, pack browser and readiness actions |
-| Phases 2–3 | [P0210](P0210-daidala-dashboard-setup-and-supervision.md) | First-workflow wizard and workflow supervision |
+| Review disposition and revision loop | [P0207](P0207-daidala-review-disposition-and-revision-loop.md) | Structured review evidence, attended delivery gate, and revisioned replan authority |
+| Phases 2–3 | [P0210](P0210-daidala-dashboard-setup-and-supervision.md) | First-workflow wizard and decision-first workflow supervision |
 | Phases 4–6 | [P0220](P0220-daidala-dashboard-checkouts-and-project-links.md) | Checkout policy, GitHub Projects links, refresh and report-only cron hook |
 | Phases 7–8 | [P0230](P0230-daidala-dashboard-constraints-and-verification.md) | Constraint authoring and configuration verification |
 | Phases 9–11 | [P0240](P0240-daidala-dashboard-operator-runbook-parity.md) | Initialization, strict diagnosis, operator-runbook parity, DOX and full gates |
@@ -812,13 +822,67 @@ The updated dashboard compatibility probe passes with `read_model: true` while
 preserving its manifest, packaged-asset, preview, and declined-start
 non-mutation checks.
 
+## Review disposition and revision-loop contract
+
+Automated review is evidence, not delivery authority. P0207 implements this
+contract before dashboard Phase 3 consumes it:
+
+1. The review worker records a strict canonical review bound to the current
+   workflow, plan/policy/constraint identity, implementation digest, passing
+   verification digests, activation digest, outcome, findings, and time.
+   Outcomes are exactly `accepted`, `changes_requested`, or `rejected`; an
+   accepted review cannot contain blocking findings.
+2. `accepted` completes the review card and exposes an attended disposition.
+   `changes_requested` or `rejected` persists the same structured evidence,
+   comments with the required decision, and blocks the review card as
+   `needs_input`. Free-form `review.md` never implies acceptance.
+3. Human disposition is a ledger-owned gate, not a Kanban card. It binds the
+   exact review, implementation, verification, plan, policy, and constraint
+   tuple plus action, actor, rationale, and time. Actions are exactly
+   `accept_delivery`, `request_revision`, or `reject_workflow`.
+4. `accept_delivery` requires a current automated `accepted` review, no blocking
+   findings, complete passing verification, an attended non-worker caller, and a
+   fresh exact preview. It creates the delivery card only after recording the
+   disposition; plan approval creates `implement → verify → review`, never
+   `deliver` in advance. `deliver()` independently enforces the disposition.
+5. Reviewer judgment cannot be silently overridden. A user who disputes the
+   review comments and unblocks the same review card. Changed code, verification
+   scope, or implementation approach uses `request_revision`; a changed goal
+   starts a new workflow, and changed policy uses constraint replacement.
+6. `request_revision` first stores immutable feedback bound to the rejected
+   evidence, then invalidates plan/review approval, archives current post-gate
+   cards, and releases the old worktree after evidence verification. Replay is
+   convergent and historical artifacts/events remain unchanged.
+7. The revision request reserves plan revision N and creates exactly one new
+   `plan` card, parented to the source review when present, using the existing
+   plan profile and pack skills. The card receives references/digests and durable
+   goal/definition context, not copied logs. Its worker emits the revisioned plan
+   through normal activation/evidence checks.
+8. A new plan requires the same attended exact-digest approval before a fresh
+   worktree or new `implement → verify → review` graph can exist. There is no
+   generic “move to phase” or in-place mutation of the captured diff.
+9. Legacy active workflows with free-form reviews receive no inferred accepted
+   state. They remain blocked for explicit migration, revision, or cancellation;
+   terminal historical workflows remain readable.
+10. P0207 exposes the same dry-run-first attended CLI through native
+    `hermes daidala` and standalone `daidala`: `review show WORKFLOW_ID`; `review
+    decide WORKFLOW_ID ACTION --rationale-file PATH`; and apply with
+    `--apply --expected-review-digest SHA256 --expected-preview-digest SHA256`.
+    Actions are `accept-delivery`, `request-revision`, and `reject-workflow`.
+    Reviewer challenge remains the existing Hermes Kanban comment/unblock path.
+    Native syntax is documented only after isolated plugin discovery and parity
+    pass; failure to discover `hermes daidala` blocks that claim.
+11. P0207 updates all current lifecycle, architecture, security, runbook,
+    use-case, skill, CLI, and DOX documentation. P0210 adds the browser-specific
+    presentation only after those service contracts exist.
+
 ## Phase 3 — Workflow supervision actions
 
 **Goal:** Immediately after a workflow starts, give the user a decision-first
 version of the remaining Getting started actions without making the dashboard a
-second workflow engine: inspect the exact verified pending plan before approval,
-understand the consequences of that approval, watch lower-priority live card
-state, remediate a blocked card, or preview and confirm cancellation.
+second workflow engine: inspect and approve the exact plan, inspect automated
+review evidence, accept delivery or request a revision, watch lower-priority live
+card state, remediate a blocked card, or preview and confirm cancellation.
 
 **Steps:**
 
@@ -870,7 +934,26 @@ state, remediate a blocked card, or preview and confirm cancellation.
    changed state. That route delegates to `WorkflowService.approve`, the same
    service used by `daidala_approve`. A stale digest fails closed; generic Kanban
    unblock is never presented as approval.
-3. For a blocked card, make the decision request—not the audit trail—the primary
+3. After automated review, render a second distinct `Human review disposition —
+   Daidala policy gate` timeline step with no Kanban task ID. Fetch its state from
+   P0207 services and show the exact captured diff, changed paths, verification
+   commands/outcomes, structured reviewer outcome/findings, complete tuple, and
+   fixed consequences before any action. Keep raw logs behind explicit evidence
+   links or progressive disclosure.
+   Add authenticated `GET /workflows/{workflow_id}/review-decision`, mutation-free
+   `POST /workflows/{workflow_id}/review-disposition/preview`, and confirmed
+   `POST /workflows/{workflow_id}/review-disposition`. Preview accepts exactly
+   `{action, rationale}`; apply accepts exactly `{action, review_digest,
+   preview_digest, rationale, confirm: true}`. The server derives every other
+   identity, recomputes the preview, and delegates to P0207 service operations.
+   Render `Accept and continue to delivery` only for an automated accepted review
+   with no blocking findings. `Request revision` requires non-empty feedback and
+   returns the new plan card/revision; route the user directly to the new plan
+   approval decision. `Reject workflow` uses the same preserved-evidence
+   cancellation authority. If review is blocked and the user disputes judgment,
+   present `Challenge reviewer` as comment plus unblock—not as an override.
+   No delivery card or control may exist before attended acceptance.
+4. For a blocked card, make the decision request—not the audit trail—the primary
    content: show stage, blocker kind, exact requested decision/remediation,
    latest relevant worker comment, and linked evidence first. Keep older comments,
    events, and run history collapsed but available. Provide distinct
@@ -896,7 +979,7 @@ state, remediate a blocked card, or preview and confirm cancellation.
    captured evidence. Invoke argv without a shell, fail closed on timeout or
    nonzero exit, and bound captured subprocess output before returning a sanitized
    route error.
-4. Add `POST /workflows/{workflow_id}/cancel/preview` and the confirmed `POST
+5. Add `POST /workflows/{workflow_id}/cancel/preview` and the confirmed `POST
    /workflows/{workflow_id}/cancel` mutation. Preview accepts exactly `{reason}`;
    apply accepts exactly `{reason, preview_digest, confirm: true}`. The existing
    read-only workflow detail projection supplies the
@@ -909,9 +992,10 @@ state, remediate a blocked card, or preview and confirm cancellation.
    to the same `WorkflowService.cancel` used by `daidala_cancel`. The policy and
    artifact ledger remain. Do not expose commit or push controls; delivery
    remains `committed: false` and `pushed: false`.
-5. This phase extends the current mutation allowlist — board creation,
+6. This phase extends the current mutation allowlist — board creation,
    confirmed setup, and compare-and-swap constraint replacement — with the
-   confirmed approval, comment/unblock, and cancellation routes above. Each route
+   confirmed plan approval, review-disposition preview/apply, comment/unblock,
+   and cancellation routes above. Each route
    is server-side authorized from current durable state, not client state. Along
    with the preview/confirm actions explicitly named in Phases 1 and 4–7, these
    are the complete browser mutation surface; no route may proxy an arbitrary
@@ -936,12 +1020,13 @@ state, remediate a blocked card, or preview and confirm cancellation.
    general tool-dispatch endpoint. Update
    `dashboard/AGENTS.md` **before** this source commit so its mutation
    allowlist matches this boundary.
-6. Keep supervision as a presentation layer over existing read, approval,
+7. Keep supervision as a presentation layer over existing read, approval,
    cancellation, and public Kanban boundaries. It must not create a scheduler,
    persist live card status, access the Kanban database directly, or fold the
    profile-level prerequisite diagnosis into a workflow action. Contract Phase 9
    owns that separate runbook diagnostic surface.
-7. Add the five named workflow-action routes (including cancellation preview) to
+8. Add the seven named workflow-action routes (including review-disposition and
+   cancellation previews) to
    `dashboard/plugin_api.py` as
    thin adapters only: validate the literal confirmation and route-specific text
    fields, resolve the current service, then call the existing Daidala service or
@@ -952,14 +1037,19 @@ state, remediate a blocked card, or preview and confirm cancellation.
 read-only watch/refresh plus bounded Kanban show/runs projection; verified
 current-plan rendering; the complete displayed tuple and consequences; approval
 payload rejection for stale, unchecked, missing, corrupt, binary, or oversized
-plan content; public-Kanban comment/unblock forwarding with required text,
+plan content; exact review-evidence rendering; absence of delivery before
+attended acceptance; stale/unchecked review-disposition rejection; convergent
+revision request and navigation to new plan approval; public-Kanban
+comment/unblock forwarding with required text,
 confirmation, and workflow-owned-card checks; and cancellation with a required
 reason, fresh preview digest, confirmation, and detail projection that names the
 affected cards and owned worktree. Isolated-browser evidence must prove the
 approval control is absent until the exact plan body verifies, the primary
 decision remains understandable without expanding audit detail, and a blocked
 card leads with its requested remediation. It must also prove the approval step
-has no Kanban task ID and no approval card is created. The affected
+has no Kanban task ID and no approval card is created, the review-disposition
+step has no Kanban task ID, and no delivery card exists before attended review
+acceptance. The affected
 `tests/test_dashboard_api.py` and `tests/test_dashboard_assets.py` cases pass;
 unblocking cannot approve a plan; and no dashboard route commits or pushes.
 
