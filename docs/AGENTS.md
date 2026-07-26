@@ -48,7 +48,8 @@ Own current architecture documentation, the numbered reading set, and executable
 - `evaluation-results/` owns versioned, redacted evaluation definitions and
   observed case records; its child contract prevents unrun behavior from being
   reported as evidence.
-- `plans/` contains self-contained plans for future implementation sessions.
+- `plans/` contains self-contained plans, shared family contracts, and their
+  repository-tracked UX design sources and review renders.
 
 ## Local Contracts
 

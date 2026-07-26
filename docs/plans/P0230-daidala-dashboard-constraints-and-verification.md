@@ -14,7 +14,7 @@
 
 **Entry checkpoint:** P0220 completed with checkout/link state, mutation surfaces, and report-only status verification
 
-**Context sources:** [shared goal and current state](daidala-dashboard-execution-contract.md#goal), [browser mutation allowlist and persisted configuration decisions](daidala-dashboard-execution-contract.md#operator-pinning), [implementer discipline](daidala-dashboard-execution-contract.md#implementer-discipline), and detailed [contract Phase 7](daidala-dashboard-execution-contract.md#phase-7-constraint-authoring-ui) and [contract Phase 8](daidala-dashboard-execution-contract.md#phase-8-configuration-verification-panel)
+**Context sources:** [UX concept and design contract](P0250-daidala-dashboard-ux-concept.md), [shared goal and current state](daidala-dashboard-execution-contract.md#goal), [browser mutation allowlist and persisted configuration decisions](daidala-dashboard-execution-contract.md#operator-pinning), [implementer discipline](daidala-dashboard-execution-contract.md#implementer-discipline), and detailed [contract Phase 7](daidala-dashboard-execution-contract.md#phase-7-constraint-authoring-ui) and [contract Phase 8](daidala-dashboard-execution-contract.md#phase-8-configuration-verification-panel)
 
 **Produces:** schema-aware constraint authoring and a read-only configuration verification panel with synchronized phase-local DOX and route inventories
 

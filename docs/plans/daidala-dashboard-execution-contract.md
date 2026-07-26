@@ -12,6 +12,11 @@
 [P0230 constraints and configuration](P0230-daidala-dashboard-constraints-and-verification.md),
 and [P0240 operator runbook parity](P0240-daidala-dashboard-operator-runbook-parity.md).
 
+Presentation and layout across those units follow the
+[P0250 dashboard UX concept and design contract](P0250-daidala-dashboard-ux-concept.md),
+which owns the single-tab information architecture, decision-card pattern, and
+preview-confirm envelope for the whole family.
+
 This repository-tracked document owns the pinned cross-unit decisions and the
 detailed implementation contracts for the dashboard plan family. It is not an
 executable plan: it has no execution slot, progress state, findings ledger, or
@@ -729,11 +734,16 @@ request, and confirm creation of the workflow graph.
    the disabled reason names the failing prerequisite by its stable backend
    check ID.
 2. Extend the `SetupWizard` form state to carry `board_slug`,
-   `target_repository`, `goal`, `pack`, `stage_profiles` (per-stage
+   `target_repository`, `goal` (rendered to the operator as **Requested outcome**;
+   the browser never labels it `Goal` to avoid collision with Hermes' `/goal`
+   session feature), `pack`, `stage_profiles` (per-stage
    override), `workflow_id`, and the mutually exclusive
    `constraints_content` / `constraints_skill` +
    `constraints_skill_digest` triple
-   (`daidala/setup_wizard.py:19-98`). Render `workflow_id` as an optional
+   (`daidala/setup_wizard.py:19-98`). The browser labels `goal` as **Requested
+   outcome** and maps it to the existing payload key only at submission; it must
+   never display `Goal`, which would imply Hermes' unrelated `/goal` session
+   feature. Render `workflow_id` as an optional
    advanced control. Blank means omit the key and use the existing
    `WorkflowService` ID factory; never derive it from `goal`. When supplied,
    validate the same 1–128 letters/digits/dots/underscores/hyphens contract as
