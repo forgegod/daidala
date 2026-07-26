@@ -16,7 +16,7 @@
 
 **Context sources:** [UX concept and design contract](P0250-daidala-dashboard-ux-concept.md), [shared goal and current state](daidala-dashboard-execution-contract.md#goal), [browser mutation allowlist and persisted configuration decisions](daidala-dashboard-execution-contract.md#operator-pinning), [implementer discipline](daidala-dashboard-execution-contract.md#implementer-discipline), and detailed [contract Phase 7](daidala-dashboard-execution-contract.md#phase-7-constraint-authoring-ui) and [contract Phase 8](daidala-dashboard-execution-contract.md#phase-8-configuration-verification-panel)
 
-**Produces:** schema-aware constraint authoring with an exact reusable-source browser, a read-only configuration verification panel, and synchronized phase-local DOX and route inventories
+**Produces:** schema-aware maintenance and creation of workflow constraint revisions, with exact reusable templates copied into mutable drafts, a read-only configuration verification panel, and synchronized phase-local DOX and route inventories
 
 **Status:** pending — blocked until P0220 completes and human implementation approval is recorded
 
@@ -35,7 +35,7 @@ Add bounded constraint authoring and read-only configuration verification withou
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Add constraint authoring UI | pending | The modal provides a schema-validated YAML editor, live preview, error list, and digest impact through the existing preview endpoint; replace semantics remain unchanged |
+| 0 | Add constraint authoring UI | pending | The UI edits an existing workflow revision by its displayed digest or creates a null-digest revision for a workflow with no current identity; a reusable template may prefill a mutable draft without mutation; preview/confirm compare-and-swap semantics remain unchanged |
 | 1 | Add configuration verification panel | pending | The panel remains read-only and verifies persisted root, TTL, registration, checkout, and Projects-link state without exposing secrets/private destinations or supervising a workflow |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
@@ -51,20 +51,23 @@ Steps:
    constraints` action for existing workflows whose current constraint identity
    is null. New uses the same compare-and-swap route with a null current digest;
    workflows with existing constraints expose `Edit` and require their displayed
-   current digest. Start workflow remains the authoring surface for a workflow
-   that does not exist yet; reusable sources remain read-only.
+   current digest. The same authoring view must make this distinction visible in
+   its status, preview identity, confirmation, and authority label. Start
+   workflow remains the authoring surface for a workflow that does not exist yet.
 3. Implement the schema-aware YAML editor, live preview, error rendering,
    byte/card-bound display, digest-impact display, and a read-only inventory of
-   exact installed reusable policy sources. A selected source shows the complete
-   literal escaped skill document and its validated canonical constraint
-   content/digest; source lookup accepts only an inventory name, never a path or
-   arbitrary installed skill. Both the authoring editor and the source browser
-   use the same existing constraint parser, preview, and replace services.
-4. Keep creation and replacement on the existing preview/confirm compare-and-swap path and do not add a new parser or authority model. The source browser is read-only; selecting a source returns its name/digest to Start workflow only through the explicit browser-memory draft handoff defined by P0210. The authoring editor requires a null or displayed current digest and explicit confirmation, per `docs/14-workflow-constraints.md`.
+   exact installed reusable policy templates. Selecting a template copies its
+   complete literal canonical content/digest into the target workflow's mutable
+   draft; it never mutates the template or creates a workflow revision before
+   preview and confirmation. Template lookup accepts only an inventory name,
+   never a path or arbitrary installed skill. Both the authoring editor and the
+   template browser use the same existing constraint parser, preview, and replace
+   services.
+4. Keep creation and replacement on the existing preview/confirm compare-and-swap path and do not add a new parser or authority model. The template browser is read-only; selecting a source returns its name/digest to Start workflow only through the explicit browser-memory draft handoff defined by P0210, and may prefill a Config authoring draft only through an explicit copy. The authoring editor requires a null or displayed current digest and explicit confirmation, per `docs/14-workflow-constraints.md`.
 5. Extend route inventory and same-commit DOX contracts.
 6. Run the focused API, asset, constraint, and disposable-browser gates from the contract.
 
-Verification gate: The Phase 0 table predicate and detailed Phase 7 contract gates pass. Browser evidence proves the explicit new action is scoped to a workflow with null current constraint identity, create sends a null current digest, edit requires the displayed digest, invalid/non-policy skills never appear in the source inventory, source text is literal and complete within the documented UI bound, no browser path is accepted, the authoring editor shows live validation with digest impact, and return to Start requires an explicit source selection.
+Verification gate: The Phase 0 table predicate and detailed Phase 7 contract gates pass. Browser evidence proves the explicit new action is scoped to a workflow with null current constraint identity, create sends a null current digest, edit requires the displayed digest, a selected template copies its literal canonical content and source digest into a mutable draft without changing the template, invalid/non-policy skills never appear in the template inventory, no browser path is accepted, the authoring editor shows live validation with digest impact, and return to Start requires an explicit source selection.
 
 ## Phase 1 — Add the configuration verification panel
 

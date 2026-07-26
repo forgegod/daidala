@@ -142,18 +142,20 @@ Actor is always an attended human operator. Legend: ✅ implemented · 🟡 plan
 18. **Manage one GitHub Projects v2 link per project** 🟡 — fresh bounded read + matching preview digest + literal confirm; tokens never cross; remote/alias display-only.
 
 ### Surface E — Author constraints & verify config (P0230)
-19. **Author and select constraints** 🟡 — the Constraints tab serves two
+19. **Author, maintain, and select constraints** 🟡 — the Constraints tab serves two
    related use cases in one subtab: a schema-aware YAML editor with live
    preview, error list, byte/card-bound display, digest impact, and
-   compare-and-swap replace; and an exact installed reusable-source browser
+   compare-and-swap create/replace; and an exact reusable-template browser
    that returns a name/digest selection to Start workflow. The authoring
-   editor and the read-only source browser share the same existing constraint
-   parser, preview, and replace services; replacement stays preview/confirm
-   compare-and-swap in both paths. An inventory-backed workflow selector exposes
-   `New workflow constraints` only for an existing workflow with null current
-   constraint identity; create uses a null current digest. Existing constraints
-   expose `Edit` and require the displayed current digest. Start workflow owns
-   YAML authoring before a workflow exists; installed reusable sources remain
+   editor and the read-only template browser share the existing constraint
+   parser, preview, and replace services. An inventory-backed workflow selector
+   exposes `New workflow constraints` only for an existing workflow with null
+   current constraint identity; creation uses a null current digest. Existing
+   constraints expose `Edit` and require the displayed current digest. Selecting
+   a template copies its literal canonical content into the mutable workflow
+   draft, displays its source digest, and never changes the template; preview
+   and literal confirmation still bind only the target workflow revision. Start
+   workflow owns YAML authoring before a workflow exists; reusable sources remain
    read-only.
 20. **Verify configuration (read-only)** 🟡 — root, TTL, registrations, checkout
    ownership/freshness, link verification, and strict local/live prerequisite
@@ -255,7 +257,10 @@ Three primary views, all inside the single tab and ordered by workflow result:
   their canonical content for selection, and exposes an inventory-backed
   workflow selector plus explicit new/edit actions leading to a schema-aware YAML
   authoring subview with live validation, digest impact, and compare-and-swap
-  create/replacement over the existing preview/confirm path. Verification
+  create/replacement over the existing preview/confirm path. A template is a
+  read-only input: explicit selection copies its canonical content and source
+  digest into the target's mutable draft, while only the preview-confirm action
+  may change the selected workflow revision. Verification
   labels the current report scope, not a persisted mode: Local runs its local checks and
   reports live-only checks as `not run`; `Run live checks` explicitly requests a
   bounded, non-mutating live report. `Open initialization preview` replaces only
@@ -482,8 +487,8 @@ editing.
 | [`dashboard-ux-config-packs.png`](dashboard-ux-config-packs.png) | Config → Packs inventory, exact source/compatibility/readiness, entry to six-stage declared-skill content inspection, and dry-run-first external-skill installation |
 | [`dashboard-ux-pack-contents.png`](dashboard-ux-pack-contents.png) | Config → Packs read-only detail with every lifecycle stage visible, selected declared skill metadata/digest, literal `SKILL.md` content, and no install/activation side effect |
 | [`dashboard-ux-config-github-projects.png`](dashboard-ux-config-github-projects.png) | Config → GitHub Projects registration-derived identity, verified link, and fresh preview-confirm mutation flow |
-| [`dashboard-ux-config-constraints.png`](dashboard-ux-config-constraints.png) | Config → Constraints source-selection subview: exact reusable-source browser, literal content, explicit Start-draft return, and read-only digest |
-| [`dashboard-ux-config-constraints-authoring.png`](dashboard-ux-config-constraints-authoring.png) | Config → Constraints new-authoring subview: inventory-selected existing workflow with null current constraint identity, explicit `New workflow constraints` and `Insert schema skeleton` actions, schema-aware YAML editor with live validation and byte/card bounds, canonical preview, and confirmed compare-and-swap creation with a null current digest; existing constraints use the same editor in `Edit`/replacement mode |
+| [`dashboard-ux-config-constraints.png`](dashboard-ux-config-constraints.png) | Config → Constraints source-selection subview: exact reusable-template browser, literal content, explicit Start-draft return, read-only digest, and an explicit workflow-policy-maintenance entrypoint |
+| [`dashboard-ux-config-constraints-authoring.png`](dashboard-ux-config-constraints-authoring.png) | Config → Constraints authoring subview: inventory-selected workflow revision, explicit workflow change and `Insert schema skeleton` actions, schema-aware YAML editor with live validation and byte/card bounds, template-to-mutable-draft copy with a visible source digest, canonical preview, and confirmed compare-and-swap replacement using the displayed current digest; a workflow with no current identity uses this same editor for null-digest creation |
 | [`dashboard-ux-config-verification.png`](dashboard-ux-config-verification.png) | Config → Verification read-only Local report scope, explicit bounded live rerun, stable IDs, and separate non-mutating initialization-preview handoff |
 | [`dashboard-ux-initialization.png`](dashboard-ux-initialization.png) | Config → Verification → Initialize profile subview with back navigation, resolved target/state/effects/digest, native equivalent, and literal-confirmed idempotent apply |
 | [`dashboard-ux-artifacts.png`](dashboard-ux-artifacts.png) | Ledger-bound artifact browser, detail/escaped preview, and curator actions |
@@ -531,8 +536,9 @@ snapshot_layout({ parentId: "Wi001", maxDepth: 8, problemsOnly: true })
 snapshot_layout({ parentId: "Cf001", maxDepth: 8, problemsOnly: true })
 snapshot_layout({ parentId: "Ar001", maxDepth: 8, problemsOnly: true })
 snapshot_layout({ parentId: "G1ryL", maxDepth: 8, problemsOnly: true })
+snapshot_layout({ parentId: "Z8TvUt", maxDepth: 8, problemsOnly: true })
 snapshot_layout({ parentId: "ph1cP", maxDepth: 8, problemsOnly: true })
-export_nodes({ nodeIds: ["BUbxE", "Wi001", "Cf001", "Ar001", "G1ryL", "ph1cP"], outputDir: "/tmp/daidala-ux-export", format: "png", scale: 1 })
+export_nodes({ nodeIds: ["BUbxE", "Wi001", "Cf001", "Ar001", "G1ryL", "Z8TvUt", "ph1cP"], outputDir: "/tmp/daidala-ux-export", format: "png", scale: 1 })
 save()
 exit()
 ```

@@ -12,7 +12,8 @@ Own executable plans, shared plan-family contracts, and repository-tracked UX de
 - `dashboard-ux-*.png` files are canonical review renders exported from that
   source, including workflow inventory/detail and attended lifecycle decision
   states, collapsed/expanded start, Artifacts, and each Config subtab state
-  (Constraints covers both the source-selection and authoring subviews).
+  (Constraints covers source selection, template-to-draft creation, and
+  maintenance of existing workflow constraint revisions).
 - Date-prefixed plans and JSON scope/evaluation records remain historical or bounded planning material; active execution must identify its exact source explicitly.
 
 ## Local Contracts
