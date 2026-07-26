@@ -58,11 +58,13 @@ local CLI as authoritative and stop.
 ## Goal
 
 Extend the existing Hermes dashboard Daidala extension so a user can, from
-the browser, (1) inspect profile initialization and explicitly create the
+the browser, (1) inspect the mounted controller-profile identity and explicitly create the
 profile-local ledger schema, (2) run the bounded local or live prerequisite
 diagnosis from `docs/07-runbook.md`, (3) browse and validate installed packs and
 run `packs check` or preview/apply installation actions, (4) create or select
-the board and launch a `hermes daidala start` invocation through a guided form,
+the board and launch a `hermes daidala start` invocation through a guided form
+whose ready-pack, registered-repository, worker-profile, and board identities
+come from server inventory and whose repository capabilities pass preflight,
 (5) watch and supervise that workflow through its existing approval, Kanban,
 recovery, and cancellation boundaries, (6) configure and verify the Daidala
 setup, including the `checkouts.root` directory and TTL mode, (7) author and
@@ -191,9 +193,13 @@ pinned here so the corresponding phases consume them directly.
   Hermes dashboard process under the fixture profile on an OS-assigned
   port (`hermes -p <fixture> dashboard --isolated --port 0 --no-open`),
   and terminate that exact owned process before deleting the fixture. Do
-  not rely on SPA profile selection: `plugin_api.py` resolves and caches
+  Do not rely on SPA profile selection: `plugin_api.py` resolves and caches
   backend state from the dashboard process's `HERMES_HOME` and has no
-  documented request-profile API. The long-lived dashboard host profile
+  documented request-profile API. The Start workflow page therefore renders
+  that mounted controller profile read-only. Changing controller profile means
+  opening/restarting a Hermes dashboard under that profile and rerunning
+  inventory/readiness; no wizard-local selector may imply an in-process switch.
+  The long-lived dashboard host profile
   remains `daidala-dashboard` and stays registration-free. After the
   browser gate, `hermes profile delete <fixture> -y` removes the fixture
   and all of its profile-local state (`-y` is the documented skip-confirm
@@ -381,11 +387,19 @@ Two related facts shape the implementation, not just the install:
 ### Setup request envelope
 
 - **Q3 — How does the dashboard setup envelope preserve `SetupRequest`?** Resolved.
-  `POST /wizard/preview` accepts `{request: <SetupRequest payload>}` and
-  `POST /wizard/start` accepts `{request: <same payload>, preview_digest,
-  confirm: true}`. The router passes only `request` to
-  `SetupRequest.from_payload`; route confirmation and digest fields never enter
-  the setup model. A blank workflow-ID control omits `workflow_id`, allowing the
+  The browser never receives or submits `target_repository`. `GET
+  /wizard/inventory` returns registered project IDs with canonical verified
+  remote labels and no checkout paths. `POST /wizard/preview` accepts
+  `{selection: {project_id}, request: <SetupRequest payload without
+  target_repository>}` and `POST /wizard/start` accepts the same selection and
+  request plus `preview_digest` and `confirm: true`. The router validates the
+  exact mounted-profile registration, resolves its trusted checkout server-side,
+  inserts that path into a new request object, and passes only that resolved
+  request to `SetupRequest.from_payload`; route selection, confirmation, and
+  digest fields never enter the setup model. The digest binds the project ID,
+  registration identity, verified remote, resolved target identity, normalized
+  request, and fresh readiness evidence. A blank workflow-ID control omits
+  `workflow_id`, allowing the
   existing service ID factory to create the durable ID. A supplied ID must match
   the existing 1–128 character workflow-ID rule. The dashboard never derives an
   ID from goal text because repeated goals would collide.
@@ -401,7 +415,7 @@ scoped adapters. It does not expose an arbitrary CLI bridge.
 | [Install and enable](../07-runbook.md#install-and-enable) | P0200 host setup; P0240 operator guidance | Verify the mounted plugin and current host/profile identity. Display the exact native install/enable commands; never install, enable, remove, or reload the currently running plugin from its own dashboard process. |
 | [Initialize](../07-runbook.md#initialize) | P0240 Phase 0 | Preview the resolved profile-local data root without creating it; apply only after a fresh digest and literal confirmation; repeated apply is an explicit no-op. |
 | [Diagnose prerequisites](../07-runbook.md#diagnose-prerequisites) | P0200 pack readiness; P0240 Phase 0 strict diagnosis | Reuse pack list/validate/check/install services and `run_prerequisite_diagnosis`. Derive trusted project paths from `project_id`; never accept arbitrary browser paths or return credential values. |
-| [Start and resume a workflow](../07-runbook.md#start-and-resume-a-workflow) | P0210 Phases 0–1 | Start through `SetupRequest`; resume means reopen the existing exact workflow and continue read-only watch/recovery, not create a second scheduler or a new workflow. |
+| [Start and resume a workflow](../07-runbook.md#start-and-resume-a-workflow) | P0210 Phases 0–1 | Resolve one selected registered project to `SetupRequest` server-side; resume means reopen the existing exact workflow and continue read-only watch/recovery, not create a second scheduler or a new workflow. Delayed/recurring admission remains a link to Hermes Cron, and pausing admission never claims to freeze in-flight cards. |
 | [Approve the exact plan](../07-runbook.md#approve-the-exact-plan) | P0210 Phase 1 | Delegate to `WorkflowService.approve`; stale digests fail closed and Kanban unblock never substitutes for approval. |
 | [Cancel](../07-runbook.md#cancel) | P0210 Phase 1 | Preview current cards/worktree/reason, require digest + confirmation, then delegate to `WorkflowService.cancel`; retain the policy/artifact ledger. |
 | [Recovery](../07-runbook.md#recovery) | P0210 Phase 1 | Show bounded Kanban comments/runs and use public comment/unblock operations after workflow/card validation. Refresh remains read-only. |
@@ -666,7 +680,7 @@ started.
    `window.__HERMES_PLUGIN_SDK__` exposes `React.createElement` and the
    documented event hooks. If not, stop as a supported-host compatibility
    failure; do not bundle React or introduce an alternate framework.
-2. Render one card per pack with name, source, source revision (40-hex),
+2. Render Config → Packs with one card per pack containing name, source, source revision (40-hex),
    Hermes version constraint, lifecycle stage list, and a per-stage skill
    table with activation mode (`required`/`conditional`), bundled vs.
    external flag, and content digest.
@@ -690,7 +704,9 @@ started.
    confirmed `Apply installation` action backed by that service. Render the exact
    pinned install target and expected content digest before enabling apply.
    Never auto-install on page load or as part of workflow start. Packs with no
-   external install action remain check-only.
+   external install action remain check-only. V1 has no pack enable/disable state
+   and accepts no uploaded archive or arbitrary source. Selecting a ready pack in
+   Start workflow activates that definition only for the new workflow.
 6. Style the card to match existing host themes via the existing
    `dist/style.css` tokens.
 7. Extend `tests/test_dashboard_assets.py`'s source-contract assertions for the
@@ -719,9 +735,12 @@ request, and confirm creation of the workflow graph.
 
 **Steps:**
 
-1. Add a prerequisite step that shows plugin health, supported Hermes range,
-   target-repository cleanliness, gateway reachability, selected pack readiness,
-   and assigned-profile availability. `SetupRequest.preview()` currently checks
+1. Add a prerequisite step that shows the mounted controller-profile identity,
+   plugin health, supported Hermes range, registered-remote/checkout equality,
+   target-repository cleanliness and baseline, required repository read/write
+   capabilities, gateway reachability, selected pack readiness, board existence,
+   and assigned-profile availability. Group the returned stable checks into the
+   six UX categories defined by P0250. `SetupRequest.preview()` currently checks
    payload shape only; it does not run repository or skill preflight. Extract the
    non-mutating prefix of `WorkflowService.start` (today: board slug validation
    and pack readiness checks that gate policy-ledger creation) as one typed
@@ -735,9 +754,11 @@ request, and confirm creation of the workflow graph.
    skills, or create a board. Each failed item links to its actionable
    dashboard section; start remains disabled while a required check fails, and
    the disabled reason names the failing prerequisite by its stable backend
-   check ID.
+   check ID. Capability checks follow the selected registration and actual remote
+   transport: do not require `GH_TOKEN` for SSH, infer vault entries, or return
+   credential aliases, environment-variable names, or values.
 2. Extend the `SetupWizard` form state to carry `board_slug`,
-   `target_repository`, `goal` (rendered to the operator as **Requested outcome**;
+   selected `project_id`, `goal` (rendered to the operator as **Requested outcome**;
    the browser never labels it `Goal` to avoid collision with Hermes' `/goal`
    session feature), `pack`, `stage_profiles` (per-stage
    override), `workflow_id`, and the mutually exclusive
@@ -764,29 +785,41 @@ request, and confirm creation of the workflow graph.
    requires that digest plus literal `confirm: true`, reruns inventory, and
    returns conflict if the slug now exists. Refresh inventory and select the new
    board after success.
-4. Render
-   `pack` as a `<select>` fed from `prerequisites.packs`, and a
-   per-stage profile `<select>` per executable stage fed from
-   `/wizard/inventory.profiles`. The form must submit all six executable stages
-   exactly once because `SetupRequest` has no `default_profile` field; preselect
-   the actual profile named `default` only when inventory contains it, otherwise
-   require an explicit selection. Do not model the CLI's convenience
-   `--default-profile` flag as a seventh dashboard field.
+4. Render `pack` as a `<select>` containing only installed definitions whose
+   validation/readiness passes; `Manage` opens Config → Packs. Render a **Worker
+   profile default** `<select>` from `/wizard/inventory.profiles` as a UI-only
+   convenience that fills all six per-stage selectors, and expose those selectors
+   under Advanced for overrides. The resolved form must submit all six executable
+   stages exactly once because `SetupRequest` has no `default_profile` field;
+   preselect the actual profile named `default` only when inventory contains it,
+   otherwise require an explicit selection. Never submit the convenience default
+   as a seventh field.
+   `Save as default` persists only `{project_id, pack, board_slug,
+   stage_profiles}` in browser storage under
+   `daidala:start-default:v1:<mounted-profile>`. It omits requested outcome,
+   workflow ID, checkout
+   path, constraints, credential aliases, and values. Loading a preset reruns
+   inventory/readiness and leaves stale or missing IDs unselected; client storage
+   never authorizes preview or start.
 5. Render a constraint source tab group: "Write YAML", "Reference skill
    (name + digest)", or "No constraints". A new workflow has no currently bound
    constraint revision; the last option sends all three constraint fields as
    `null`/absent.
-6. Preserve endpoint and payload parity with `daidala:setup`: `/wizard/preview`
-   accepts exactly `{request: object}`; `/wizard/start` accepts exactly
-   `{request: object, preview_digest: 64-hex, confirm: true}`. Both reject
-   unknown outer fields, and only the nested `request` is passed to
-   `SetupRequest.from_payload`. Preview returns that request's
+6. Preserve engine parity with `daidala:setup` through the resolved envelope from
+   the Setup request decision: `/wizard/preview` accepts exactly `{selection:
+   {project_id}, request: object}`; `/wizard/start` accepts exactly `{selection:
+   {project_id}, request: object, preview_digest: 64-hex, confirm: true}`. Both
+   reject unknown outer fields and any browser-supplied `target_repository`. The
+   router resolves the trusted registered checkout, adds it to a new request
+   object, and only that object is passed to `SetupRequest.from_payload`. Preview
+   returns that resolved request's
    `SetupRequest.preview()` projection plus a canonical digest over the normalized
    request and start-readiness evidence. `/wizard/start` accepts that digest as a
    route-envelope field, reruns readiness, returns conflict if the digest changed,
-   then calls the existing confirmed-start service path with only the nested setup
-   request and the separately validated literal confirmation. The browser must not introduce a
-   dashboard-only setup schema or second start path. Before invoking start, the
+   then calls the existing confirmed-start service path with only the resolved
+   setup request and the separately validated literal confirmation. The
+   selection envelope is a profile-safe adapter, not a second setup model or
+   start path. Before invoking start, the
    server checks a supplied explicit `workflow_id`; if a ledger already exists, it
    does not invoke start and returns `409 Conflict` with a safe reference to the
    existing workflow. The browser treats that response as "open existing", not
@@ -796,12 +829,22 @@ request, and confirm creation of the workflow graph.
    `test_router_exports_all_phase_two_routes` harness).
 7. On success, route directly to the created workflow and show the next user
    action: keep the gateway running and watch `define` then `plan`.
+   A secondary `Open Hermes Cron` link handles one-shot or recurring future
+   admission without creating a Daidala scheduler or prefilled hidden job. Its
+   helper text states that pausing the cron blocks future admissions only; active
+   workflow cards continue until they reach their existing gate, block, complete,
+   or are explicitly cancelled.
 8. Extend the existing Python API and source-contract tests rather than adding a
-   JavaScript DOM harness: assert the nested request is accepted by
-   `SetupRequest.from_payload`, blank workflow ID is omitted and receives a
+   JavaScript DOM harness: assert the selected project resolves to the immutable
+   registered remote/checkout before the resolved request reaches
+   `SetupRequest.from_payload`; browser-supplied paths and unknown projects are
+   rejected; blank workflow ID is omitted and receives a
    service-generated ID, an explicit invalid ID is rejected, and the server
    rejects unknown envelope fields or `confirm: false` before it constructs the
-   workflow service.
+   workflow service. Asset tests pin separate mounted-controller and worker-profile
+   labels, inventory-backed pack/repository/profile/board controls, versioned
+   non-secret preset fields, stable readiness check IDs, and the Cron boundary
+   copy; a stale preset must never enable start.
 9. Correct the stale GET-only claims in the `dashboard/dist/index.js` header
    comment (line 10: "only GET requests are issued, no write path is ever
    invoked") and the `tests/test_dashboard_assets.py` module docstring (line 9:
@@ -827,7 +870,8 @@ request, and confirm creation of the workflow graph.
 **Verification gate:** the affected `tests/test_dashboard_api.py` and
 `tests/test_dashboard_assets.py` cases pass; board creation and workflow start
 both fail without fresh matching preview/confirmation; readiness is mutation-free
-and shares start's preflight; a clean repository and ready
+and shares start's preflight; a registered clean repository with the required
+transport-specific capabilities and a ready
 pack can create a board and start one workflow; and manual review confirms the
 rendered form covers every field accepted by `SetupRequest` and preserves the
 semantics of the CLI conveniences documented in `daidala/AGENTS.md:178-198`.

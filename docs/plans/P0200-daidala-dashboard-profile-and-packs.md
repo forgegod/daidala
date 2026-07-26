@@ -14,13 +14,13 @@
 
 **Context sources:** [UX concept and design contract](P0250-daidala-dashboard-ux-concept.md), [shared goal and current state](daidala-dashboard-execution-contract.md#goal), [operator pinning](daidala-dashboard-execution-contract.md#operator-pinning), [operator runbook coverage](daidala-dashboard-execution-contract.md#operator-runbook-coverage), [operator-visible precondition](daidala-dashboard-execution-contract.md#operator-visible-precondition), [implementer discipline](daidala-dashboard-execution-contract.md#implementer-discipline), [risk call-out](daidala-dashboard-execution-contract.md#risk-call-out), [runbook install and enable](../07-runbook.md#install-and-enable), [runbook pack diagnosis](../07-runbook.md#diagnose-prerequisites), and detailed [contract Phase 0](daidala-dashboard-execution-contract.md#phase-0-create-daidala-dashboard-profile-install-daidala-verify-the-dashboard-mount) and [contract Phase 1](daidala-dashboard-execution-contract.md#phase-1-pack-browser-and-readiness-actions)
 
-**Produces:** a verified registration-free `daidala-dashboard` host, a disposable stateful browser fixture recipe, and pack list/validate/readiness/install-plan UI backed by installed Daidala services
+**Produces:** a verified registration-free `daidala-dashboard` host, a disposable stateful browser fixture recipe, and Config → Packs list/validate/readiness/external-skill-install UI backed by installed Daidala services
 
 **Status:** pending — context split is complete; human approval is required before implementation
 
 ## Goal
 
-Establish an isolated, verified dashboard host and implement the runbook's pack list, validate, check, and dry-run-first install surface so later dashboard units start from a known mounted plugin and supported Hermes React SDK boundary.
+Establish an isolated, verified dashboard host and implement the runbook's Config → Packs list, validate, check, and dry-run-first external-skill install surface so later dashboard units start from a known mounted plugin and supported Hermes React SDK boundary.
 
 ## Current state
 
@@ -59,7 +59,7 @@ Verification gate: The Phase 0 table predicate passes using the exact host/fixtu
 Steps:
 
 1. Read the exact Phase 1 contract, `dashboard/AGENTS.md`, and `tests/AGENTS.md`.
-2. Implement the contract's list projection, explicit validation, readiness details, check action, install-plan preview, and literal-confirmation apply path without adding a general dispatch endpoint.
+2. Implement the contract's Config → Packs list projection, explicit validation, readiness details, check action, install-plan preview, and literal-confirmation apply path without adding a general dispatch endpoint.
 3. Keep external-skill installation separate from bundled-skill readiness and preserve the closed route inventory.
 4. Update the nearest AGENTS contracts in the same change when routes or ownership change.
 5. Run the focused API, asset, and browser gates named by the contract.
@@ -70,5 +70,8 @@ Verification gate: The Phase 1 table predicate and its focused tests pass agains
 
 - Do not create registrations or workflow state in the long-lived `daidala-dashboard` host.
 - Do not start a Daidala workflow; the next plan owns setup and supervision.
+- Do not add pack enable/disable state, arbitrary source entry, or uploaded pack
+  archives. Workflow selection activates one installed ready definition; this
+  phase installs only a definition's exact pinned external skills.
 - Do not implement checkout, GitHub Projects, constraints, or artifact-review surfaces.
 - Do not commit, push, or begin implementation without the mandatory human approval gate.

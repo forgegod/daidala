@@ -894,35 +894,77 @@
                 },
                 {
                   "type": "frame",
-                  "id": "n0235",
+                  "id": "cwONs",
                   "name": "Page content",
                   "width": 936,
                   "height": 608,
                   "fill": "#041c1c",
                   "layout": "vertical",
-                  "gap": 10.8,
+                  "gap": 8,
                   "padding": [
-                    24,
+                    18,
                     32,
-                    28,
+                    22,
                     32
                   ],
                   "children": [
                     {
                       "type": "frame",
-                      "id": "g8kG40",
+                      "id": "ZApnd",
                       "name": "Start workflow breadcrumb",
                       "width": "fill_container",
-                      "height": 20,
+                      "height": 18,
                       "gap": 8,
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
-                          "id": "xHgAm",
+                          "id": "nUSgX",
                           "name": "Back to workflows",
                           "fill": "#ffe6cb",
                           "content": "← BACK TO WORKFLOWS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "bold",
+                          "letterSpacing": 1.1
+                        },
+                        {
+                          "type": "text",
+                          "id": "uwnxs",
+                          "name": "Breadcrumb divider",
+                          "fill": "#665f55",
+                          "content": "/",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "f0Z0F",
+                          "name": "Breadcrumb current",
+                          "fill": "#ccbaa8",
+                          "content": "NEW WORKFLOW",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "T394Yt",
+                      "name": "Start title and host links",
+                      "width": "fill_container",
+                      "height": 22,
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Uy1ac",
+                          "name": "Start title",
+                          "fill": "#ffe6cb",
+                          "content": "START WORKFLOW · PROFILE-SCOPED",
                           "fontFamily": "Inter",
                           "fontSize": 11,
                           "fontWeight": "bold",
@@ -930,366 +972,1177 @@
                         },
                         {
                           "type": "text",
-                          "id": "oXmRi",
-                          "name": "Start breadcrumb divider",
-                          "fill": "#665f55",
-                          "content": "/",
-                          "fontFamily": "Inter",
-                          "fontSize": 11,
-                          "fontWeight": "normal"
-                        },
-                        {
-                          "type": "text",
-                          "id": "GD3Ng",
-                          "name": "Start breadcrumb current",
-                          "fill": "#ccbaa8",
-                          "content": "NEW WORKFLOW",
-                          "fontFamily": "Inter",
-                          "fontSize": 11,
+                          "id": "a7ph2F",
+                          "name": "Host-owned navigation",
+                          "fill": "#ffbd38",
+                          "content": "PACKS → CONFIG  ·  BOARDS → KANBAN  ·  SCHEDULE → CRON",
+                          "fontFamily": "Courier Prime",
+                          "fontSize": 8.5,
                           "fontWeight": "normal"
                         }
                       ]
                     },
                     {
-                      "type": "text",
-                      "id": "n0218",
-                      "name": "Wizard section",
-                      "fill": "#ffe6cb",
-                      "content": "GUIDED SETUP · PREVIEW → CONFIRM → START",
-                      "fontFamily": "Inter",
-                      "fontSize": 11,
-                      "fontWeight": "bold",
-                      "letterSpacing": 1.3
-                    },
-                    {
                       "type": "frame",
-                      "id": "n0194",
-                      "name": "Field PROFILE",
-                      "width": 872,
-                      "height": 48,
-                      "fill": "#00000000",
+                      "id": "J2HYx",
+                      "name": "Profile and default preset",
+                      "width": "fill_container",
+                      "height": 42,
                       "stroke": "#ffe6cb26",
                       "strokeWidth": 1,
                       "strokeAlignment": "inner",
-                      "layout": "vertical",
-                      "gap": 2,
                       "padding": [
                         5,
                         10
                       ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
                       "children": [
-                        {
-                          "type": "text",
-                          "id": "n0192",
-                          "name": "PROFILE label",
-                          "fill": "#9a8f80",
-                          "content": "PROFILE",
-                          "fontFamily": "Courier New",
-                          "fontSize": 9.5,
-                          "fontWeight": "bold",
-                          "letterSpacing": 1
-                        },
-                        {
-                          "type": "text",
-                          "id": "n0193",
-                          "name": "PROFILE value",
-                          "fill": "#ccbaa8",
-                          "content": "daidala-dashboard",
-                          "fontFamily": "Courier New",
-                          "fontSize": 11.5,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "n0197",
-                      "name": "Field PACK",
-                      "width": 872,
-                      "height": 48,
-                      "fill": "#00000000",
-                      "stroke": "#ffe6cb26",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "layout": "vertical",
-                      "gap": 2,
-                      "padding": [
-                        5,
-                        10
-                      ],
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "n0195",
-                          "name": "PACK label",
-                          "fill": "#9a8f80",
-                          "content": "PACK",
-                          "fontFamily": "Courier New",
-                          "fontSize": 9.5,
-                          "fontWeight": "bold",
-                          "letterSpacing": 1
-                        },
-                        {
-                          "type": "text",
-                          "id": "n0196",
-                          "name": "PACK value",
-                          "fill": "#ccbaa8",
-                          "content": "addyosmani",
-                          "fontFamily": "Courier New",
-                          "fontSize": 11.5,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "n0201",
-                      "name": "Field REPOSITORY URI",
-                      "width": 872,
-                      "height": 64,
-                      "fill": "#00000000",
-                      "stroke": "#ffe6cb26",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "layout": "vertical",
-                      "gap": 2,
-                      "padding": [
-                        5,
-                        10
-                      ],
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "n0198",
-                          "name": "REPOSITORY URI label",
-                          "fill": "#9a8f80",
-                          "content": "REPOSITORY URI",
-                          "fontFamily": "Courier New",
-                          "fontSize": 9.5,
-                          "fontWeight": "bold",
-                          "letterSpacing": 1
-                        },
-                        {
-                          "type": "text",
-                          "id": "n0199",
-                          "name": "REPOSITORY URI value",
-                          "fill": "#ccbaa8",
-                          "content": "git@github.com:forgegod/daidala.git",
-                          "fontFamily": "Courier New",
-                          "fontSize": 11.5,
-                          "fontWeight": "normal"
-                        },
-                        {
-                          "type": "text",
-                          "id": "n0200",
-                          "name": "REPOSITORY URI helper",
-                          "fill": "#9a8f80",
-                          "content": "resolved to a trusted local checkout; URI shown for identity only",
-                          "fontFamily": "Courier New",
-                          "fontSize": 8,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "n0204",
-                      "name": "Field REQUESTED OUTCOME",
-                      "width": 872,
-                      "height": 48,
-                      "fill": "#00000000",
-                      "stroke": "#ffe6cb26",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "layout": "vertical",
-                      "gap": 2,
-                      "padding": [
-                        5,
-                        10
-                      ],
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "n0202",
-                          "name": "REQUESTED OUTCOME label",
-                          "fill": "#9a8f80",
-                          "content": "REQUESTED OUTCOME",
-                          "fontFamily": "Courier New",
-                          "fontSize": 9.5,
-                          "fontWeight": "bold",
-                          "letterSpacing": 1
-                        },
-                        {
-                          "type": "text",
-                          "id": "n0203",
-                          "name": "REQUESTED OUTCOME value",
-                          "fill": "#ccbaa8",
-                          "content": "Repair calculator regression",
-                          "fontFamily": "Courier New",
-                          "fontSize": 11.5,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "n0207",
-                      "name": "Field BOARD",
-                      "width": 872,
-                      "height": 48,
-                      "fill": "#00000000",
-                      "stroke": "#ffe6cb26",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "layout": "vertical",
-                      "gap": 2,
-                      "padding": [
-                        5,
-                        10
-                      ],
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "n0205",
-                          "name": "BOARD label",
-                          "fill": "#9a8f80",
-                          "content": "BOARD",
-                          "fontFamily": "Courier New",
-                          "fontSize": 9.5,
-                          "fontWeight": "bold",
-                          "letterSpacing": 1
-                        },
-                        {
-                          "type": "text",
-                          "id": "n0206",
-                          "name": "BOARD value",
-                          "fill": "#ccbaa8",
-                          "content": "daidala-forgegod-daidala",
-                          "fontFamily": "Courier New",
-                          "fontSize": 11.5,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "n0217",
-                      "name": "Setup preview",
-                      "width": 872,
-                      "height": 82,
-                      "fill": "#0e2423",
-                      "cornerRadius": 9,
-                      "stroke": "#ffe6cb26",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "layout": "vertical",
-                      "gap": 4,
-                      "padding": [
-                        9,
-                        13
-                      ],
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "n0208",
-                          "name": "Preview legend",
-                          "fill": "#9a8f80",
-                          "content": "PREVIEW RESULT · NON-MUTATING · DIGEST-BOUND",
-                          "fontFamily": "Inter",
-                          "fontSize": 9.5,
-                          "fontWeight": "bold",
-                          "letterSpacing": 1
-                        },
-                        {
-                          "type": "text",
-                          "id": "n0209",
-                          "name": "Preview payload",
-                          "fill": "#ccbaa8",
-                          "content": "workflow ID: service-minted · six stage profiles · board daidala-forgegod-daidala",
-                          "fontFamily": "Courier New",
-                          "fontSize": 10.5,
-                          "fontWeight": "normal"
-                        },
                         {
                           "type": "frame",
-                          "id": "n0216",
-                          "name": "Setup actions",
-                          "width": 844,
-                          "height": 36,
-                          "fill": "#00000000",
-                          "justifyContent": "space_between",
-                          "alignItems": "center",
+                          "id": "TfzVA",
+                          "name": "Mounted controller profile",
+                          "width": 365,
+                          "height": 30,
+                          "layout": "vertical",
+                          "gap": 1,
                           "children": [
                             {
                               "type": "text",
-                              "id": "n0210",
-                              "name": "Setup confirmation",
-                              "fill": "#ffbd38",
-                              "content": "☐ I confirm applying the displayed mutations",
-                              "fontFamily": "Courier New",
-                              "fontSize": 10.5,
+                              "id": "qGslP",
+                              "name": "Mounted profile label",
+                              "fill": "#9a8f80",
+                              "content": "CONTROLLER PROFILE · MOUNTED",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "bold",
+                              "letterSpacing": 0.8
+                            },
+                            {
+                              "type": "text",
+                              "id": "Z88AH",
+                              "name": "Mounted profile value",
+                              "fill": "#ccbaa8",
+                              "content": "daidala-self-improvement · open another profile dashboard to change",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 9.5,
                               "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ovBvd",
+                          "name": "Start preset controls",
+                          "height": 30,
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "lojus",
+                              "name": "Start preset dropdown",
+                              "width": 238,
+                              "height": 30,
+                              "stroke": "#ffe6cb26",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                5,
+                                9
+                              ],
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "RKOos",
+                                  "name": "Start preset value",
+                                  "fill": "#ccbaa8",
+                                  "content": "PROFILE DEFAULT · forgegod/daidala",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 9,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "xcUSO",
+                                  "name": "Start preset arrow",
+                                  "fill": "#ffe6cb",
+                                  "content": "⌄",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
                             },
                             {
                               "type": "frame",
-                              "id": "n0215",
-                              "name": "Setup buttons",
-                              "width": 340,
-                              "height": 36,
-                              "fill": "#00000000",
-                              "gap": 8,
+                              "id": "sYAbX",
+                              "name": "Save current as default",
+                              "width": 146,
+                              "height": 30,
+                              "stroke": "#ffe6cb26",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                5,
+                                8
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "ycd5w",
+                                  "name": "Save default label",
+                                  "fill": "#ffe6cb",
+                                  "content": "SAVE AS DEFAULT",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8.8,
+                                  "fontWeight": "bold"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "e5bt4",
+                      "name": "Setup form and readiness",
+                      "width": "fill_container",
+                      "height": 320,
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "yriPj",
+                          "name": "Workflow request form",
+                          "width": "fill_container",
+                          "height": 320,
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "h0lUz",
+                              "name": "Pack and board selectors",
+                              "width": "fill_container",
+                              "height": 48,
+                              "gap": 6,
                               "children": [
                                 {
                                   "type": "frame",
-                                  "id": "n0212",
-                                  "name": "Preview mutations",
-                                  "width": 160,
-                                  "height": 30,
-                                  "fill": "#00000000",
+                                  "id": "tBMRz",
+                                  "name": "Pack selector",
+                                  "width": "fill_container",
+                                  "height": 48,
                                   "stroke": "#ffe6cb26",
                                   "strokeWidth": 1,
                                   "strokeAlignment": "inner",
+                                  "layout": "vertical",
+                                  "gap": 1,
                                   "padding": [
                                     5,
-                                    10
+                                    9
                                   ],
-                                  "justifyContent": "center",
-                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "o18NQ",
+                                      "name": "Pack label row",
+                                      "width": "fill_container",
+                                      "height": 13,
+                                      "justifyContent": "space_between",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "BmE5l",
+                                          "name": "Pack label",
+                                          "fill": "#9a8f80",
+                                          "content": "PACK · INSTALLED AND READY",
+                                          "fontFamily": "Courier Prime",
+                                          "fontSize": 8.5,
+                                          "fontWeight": "bold",
+                                          "letterSpacing": 0.7
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "q3wWAH",
+                                          "name": "Manage packs link",
+                                          "fill": "#ffbd38",
+                                          "content": "MANAGE",
+                                          "fontFamily": "Courier Prime",
+                                          "fontSize": 8.5,
+                                          "fontWeight": "bold"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "oMCW1",
+                                      "name": "Pack selected value",
+                                      "width": "fill_container",
+                                      "height": 22,
+                                      "justifyContent": "space_between",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "m4zDgT",
+                                          "name": "Pack value",
+                                          "fill": "#ccbaa8",
+                                          "content": "addyosmani",
+                                          "fontFamily": "Courier Prime",
+                                          "fontSize": 10.5,
+                                          "fontWeight": "normal"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "m9nqj",
+                                          "name": "Pack arrow",
+                                          "fill": "#ffe6cb",
+                                          "content": "⌄",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 11,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "vJbi1",
+                                  "name": "Board selector",
+                                  "width": "fill_container",
+                                  "height": 48,
+                                  "stroke": "#ffe6cb26",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "layout": "vertical",
+                                  "gap": 1,
+                                  "padding": [
+                                    5,
+                                    9
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "e45Pah",
+                                      "name": "Board label row",
+                                      "width": "fill_container",
+                                      "height": 13,
+                                      "justifyContent": "space_between",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "CJb5f",
+                                          "name": "Board label",
+                                          "fill": "#9a8f80",
+                                          "content": "BOARD · EXISTING",
+                                          "fontFamily": "Courier Prime",
+                                          "fontSize": 8.5,
+                                          "fontWeight": "bold",
+                                          "letterSpacing": 0.7
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "D74Zfq",
+                                          "name": "Create board link",
+                                          "fill": "#ffbd38",
+                                          "content": "+ CREATE",
+                                          "fontFamily": "Courier Prime",
+                                          "fontSize": 8.5,
+                                          "fontWeight": "bold"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "JPUfN",
+                                      "name": "Board selected value",
+                                      "width": "fill_container",
+                                      "height": 22,
+                                      "justifyContent": "space_between",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "THOPS",
+                                          "name": "Board value",
+                                          "fill": "#ccbaa8",
+                                          "content": "daidala-forgegod-daidala",
+                                          "fontFamily": "Courier Prime",
+                                          "fontSize": 9.8,
+                                          "fontWeight": "normal"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "OD9Fn",
+                                          "name": "Board arrow",
+                                          "fill": "#ffe6cb",
+                                          "content": "⌄",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 11,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "oRbWN",
+                              "name": "Registered repository selector",
+                              "width": "fill_container",
+                              "height": 60,
+                              "stroke": "#4ade8055",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "padding": [
+                                5,
+                                9
+                              ],
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "Qbpqo",
+                                  "name": "Repository label row",
+                                  "width": "fill_container",
+                                  "height": 14,
+                                  "justifyContent": "space_between",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "n0211",
-                                      "name": "Preview mutations label",
-                                      "fill": "#ffe6cb",
-                                      "content": "Preview mutations",
-                                      "fontFamily": "Courier New",
-                                      "fontSize": 9.5,
+                                      "id": "oYR1b",
+                                      "name": "Repository label",
+                                      "fill": "#9a8f80",
+                                      "content": "REGISTERED REPOSITORY",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 8.5,
+                                      "fontWeight": "bold",
+                                      "letterSpacing": 0.7
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "R4QpbY",
+                                      "name": "Repository verified badge",
+                                      "fill": "#4ade80",
+                                      "content": "● VERIFIED",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 8.5,
                                       "fontWeight": "bold"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "n0214",
-                                  "name": "Start workflow",
-                                  "width": 160,
-                                  "height": 30,
+                                  "id": "rNFKz",
+                                  "name": "Repository selected value",
+                                  "width": "fill_container",
+                                  "height": 17,
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "rNWP2",
+                                      "name": "Repository value",
+                                      "fill": "#ccbaa8",
+                                      "content": "forgegod/daidala",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 10.5,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "AnOpZ",
+                                      "name": "Repository arrow",
+                                      "fill": "#ffe6cb",
+                                      "content": "⌄",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "v3teLL",
+                                  "name": "Repository URI and checkout",
+                                  "fill": "#9a8f80",
+                                  "content": "git@github.com:forgegod/daidala.git  ·  trusted checkout · clean baseline",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8.5,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "ineQK",
+                              "name": "Requested outcome field",
+                              "width": "fill_container",
+                              "height": 56,
+                              "stroke": "#ffe6cb26",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "padding": [
+                                5,
+                                9
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "gDWHU",
+                                  "name": "Requested outcome label",
+                                  "fill": "#9a8f80",
+                                  "content": "REQUESTED OUTCOME",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8.5,
+                                  "fontWeight": "bold",
+                                  "letterSpacing": 0.7
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "n40l6",
+                                  "name": "Requested outcome value",
+                                  "fill": "#ccbaa8",
+                                  "content": "Repair calculator regression and preserve existing CLI behavior",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 10.2,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "wVBTE",
+                              "name": "Worker profile selector",
+                              "width": "fill_container",
+                              "height": 48,
+                              "stroke": "#ffe6cb26",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "layout": "vertical",
+                              "gap": 1,
+                              "padding": [
+                                5,
+                                9
+                              ],
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "KyMCx",
+                                  "name": "Worker profile label row",
+                                  "width": "fill_container",
+                                  "height": 13,
+                                  "justifyContent": "space_between",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "LuQDX",
+                                      "name": "Worker profile label",
+                                      "fill": "#9a8f80",
+                                      "content": "WORKER PROFILE DEFAULT · EXISTING HERMES PROFILE",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 8.5,
+                                      "fontWeight": "bold",
+                                      "letterSpacing": 0.6
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "V04YLC",
+                                      "name": "Stage override count",
+                                      "fill": "#ffbd38",
+                                      "content": "2 OVERRIDES",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 8.5,
+                                      "fontWeight": "bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "R61p3",
+                                  "name": "Worker profile selected value",
+                                  "width": "fill_container",
+                                  "height": 22,
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "O2tNz",
+                                      "name": "Worker profile value",
+                                      "fill": "#ccbaa8",
+                                      "content": "engineer · fills all six executable stages",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 9.8,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "cjjeD",
+                                      "name": "Worker profile arrow",
+                                      "fill": "#ffe6cb",
+                                      "content": "⌄",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Qzdfs",
+                              "name": "Advanced setup disclosure",
+                              "width": "fill_container",
+                              "height": 24,
+                              "stroke": "#ffe6cb26",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                4,
+                                9
+                              ],
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "zWo3Z",
+                                  "name": "Advanced setup label",
+                                  "fill": "#ccbaa8",
+                                  "content": "STAGE OVERRIDES · CONSTRAINTS · OPTIONAL WORKFLOW ID",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8.8,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "YAtUJ",
+                                  "name": "Advanced setup arrow",
                                   "fill": "#ffe6cb",
-                                  "padding": [
-                                    5,
-                                    10
-                                  ],
+                                  "content": "EXPAND  ›",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8.8,
+                                  "fontWeight": "bold"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ekU91",
+                          "name": "Start readiness",
+                          "width": 306,
+                          "height": 320,
+                          "fill": "#0e2423",
+                          "cornerRadius": 9,
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "padding": [
+                            4,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "AmDGG",
+                              "name": "Readiness header",
+                              "width": "fill_container",
+                              "height": 22,
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "DsBHn",
+                                  "name": "Readiness title",
+                                  "fill": "#ffe6cb",
+                                  "content": "START READINESS",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "bold",
+                                  "letterSpacing": 1
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "PVg0U",
+                                  "name": "Readiness count",
+                                  "fill": "#4ade80",
+                                  "content": "6/6 READY",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 9,
+                                  "fontWeight": "bold"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "MdGqz",
+                              "name": "Readiness CONTROLLER-PROFILE",
+                              "width": "fill_container",
+                              "height": 25,
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "tzyBn",
+                                  "name": "CONTROLLER-PROFILE status",
+                                  "fill": "#4ade80",
+                                  "content": "✓",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "bold"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "vA0is",
+                                  "name": "CONTROLLER-PROFILE detail",
+                                  "width": "fill_container",
+                                  "height": 24,
+                                  "layout": "vertical",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "L9wLn",
+                                      "name": "CONTROLLER-PROFILE label",
+                                      "fill": "#f1ded1",
+                                      "content": "CONTROLLER-PROFILE",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 7.5,
+                                      "fontWeight": "bold",
+                                      "letterSpacing": 0.55
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "IdBNb",
+                                      "name": "CONTROLLER-PROFILE helper",
+                                      "fill": "#8da09a",
+                                      "content": "mounted backend matches page scope",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 7.9,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "elfaR",
+                              "name": "Readiness PACK-READY",
+                              "width": "fill_container",
+                              "height": 25,
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "zPnGE",
+                                  "name": "PACK-READY status",
+                                  "fill": "#4ade80",
+                                  "content": "✓",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "bold"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "xOsO6",
+                                  "name": "PACK-READY detail",
+                                  "width": "fill_container",
+                                  "height": 24,
+                                  "layout": "vertical",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "ww5gT",
+                                      "name": "PACK-READY check ID",
+                                      "fill": "#ccbaa8",
+                                      "content": "PACK-READY",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 8.3,
+                                      "fontWeight": "bold"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "c6QkQx",
+                                      "name": "PACK-READY description",
+                                      "fill": "#9a8f80",
+                                      "content": "installed skills and digests",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 7.8,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "GlxMg",
+                              "name": "Readiness REPO-IDENTITY",
+                              "width": "fill_container",
+                              "height": 25,
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "JuIE2",
+                                  "name": "REPO-IDENTITY status",
+                                  "fill": "#4ade80",
+                                  "content": "✓",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "bold"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "P1OciH",
+                                  "name": "REPO-IDENTITY detail",
+                                  "width": "fill_container",
+                                  "height": 24,
+                                  "layout": "vertical",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "SYjtz",
+                                      "name": "REPO-IDENTITY check ID",
+                                      "fill": "#ccbaa8",
+                                      "content": "REPO-IDENTITY",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 8.3,
+                                      "fontWeight": "bold"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "n52pkC",
+                                      "name": "REPO-IDENTITY description",
+                                      "fill": "#9a8f80",
+                                      "content": "registered remote + clean baseline",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 7.8,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "if7MV",
+                              "name": "Readiness REPO-ACCESS",
+                              "width": "fill_container",
+                              "height": 25,
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "wghxE",
+                                  "name": "REPO-ACCESS status",
+                                  "fill": "#4ade80",
+                                  "content": "✓",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "bold"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "o0fQj",
+                                  "name": "REPO-ACCESS detail",
+                                  "width": "fill_container",
+                                  "height": 24,
+                                  "layout": "vertical",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "PqKbz",
+                                      "name": "REPO-ACCESS check ID",
+                                      "fill": "#ccbaa8",
+                                      "content": "REPO-ACCESS",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 8.3,
+                                      "fontWeight": "bold"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "ZKn9q",
+                                      "name": "REPO-ACCESS description",
+                                      "fill": "#9a8f80",
+                                      "content": "read and required write capability",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 7.8,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "W5FL5e",
+                              "name": "Readiness PROFILE-MAP",
+                              "width": "fill_container",
+                              "height": 25,
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "c04zz",
+                                  "name": "PROFILE-MAP status",
+                                  "fill": "#4ade80",
+                                  "content": "✓",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "bold"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "PoOr6",
+                                  "name": "PROFILE-MAP detail",
+                                  "width": "fill_container",
+                                  "height": 24,
+                                  "layout": "vertical",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "oMg7w",
+                                      "name": "PROFILE-MAP check ID",
+                                      "fill": "#ccbaa8",
+                                      "content": "PROFILE-MAP",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 8.3,
+                                      "fontWeight": "bold"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "X7gzTz",
+                                      "name": "PROFILE-MAP description",
+                                      "fill": "#9a8f80",
+                                      "content": "six existing worker profiles",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 7.8,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "eu0bj",
+                              "name": "Readiness KANBAN",
+                              "width": "fill_container",
+                              "height": 25,
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "R6N6MX",
+                                  "name": "KANBAN status",
+                                  "fill": "#4ade80",
+                                  "content": "✓",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "bold"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "IvSfn",
+                                  "name": "KANBAN detail",
+                                  "width": "fill_container",
+                                  "height": 24,
+                                  "layout": "vertical",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "T7IIpW",
+                                      "name": "KANBAN check ID",
+                                      "fill": "#ccbaa8",
+                                      "content": "KANBAN",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 8.3,
+                                      "fontWeight": "bold"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "X5HsbU",
+                                      "name": "KANBAN description",
+                                      "fill": "#9a8f80",
+                                      "content": "board exists; gateway reachable",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 7.8,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "nXm7u",
+                              "name": "Credential capability summary",
+                              "width": "fill_container",
+                              "height": 45,
+                              "fill": "#182c2a",
+                              "stroke": "#4ade8055",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "layout": "vertical",
+                              "gap": 1,
+                              "padding": [
+                                4,
+                                7
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "QL3gM",
+                                  "name": "Credential capability label",
+                                  "fill": "#4ade80",
+                                  "content": "CREDENTIALS · CAPABILITIES ONLY",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8.1,
+                                  "fontWeight": "bold"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "krX7e",
+                                  "name": "Credential capability value",
+                                  "fill": "#ccbaa8",
+                                  "content": "GitHub read + repository write available",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8.3,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "fFJSl",
+                                  "name": "Credential privacy helper",
+                                  "fill": "#9a8f80",
+                                  "content": "No token names or values are stored in presets.",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 7.7,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "jvyIP",
+                              "name": "Hermes Cron handoff",
+                              "width": "fill_container",
+                              "height": 60,
+                              "stroke": "#ffbd3866",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "padding": [
+                                5,
+                                7
+                              ],
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "oQBSc",
+                                  "name": "Cron heading row",
+                                  "width": "fill_container",
+                                  "height": 15,
+                                  "justifyContent": "space_between",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "pFMC9",
+                                      "name": "Cron heading",
+                                      "fill": "#ffbd38",
+                                      "content": "START LATER OR RECURRING",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 8.3,
+                                      "fontWeight": "bold"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "ypFLr",
+                                      "name": "Open Cron link",
+                                      "fill": "#ffe6cb",
+                                      "content": "OPEN HERMES CRON  ›",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 8.3,
+                                      "fontWeight": "bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "ByRGO",
+                                  "name": "Cron boundary helper",
+                                  "fill": "#9a8f80",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "Pause the cron to stop future admissions; in-flight cards are not frozen.",
+                                  "lineHeight": 1.15,
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 7.7,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ckv3y",
+                      "name": "Digest-bound setup preview",
+                      "width": "fill_container",
+                      "height": 84,
+                      "fill": "#0e2423",
+                      "cornerRadius": 9,
+                      "stroke": "#4ade8055",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "padding": [
+                        7,
+                        10
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "HLrpY",
+                          "name": "Preview result header",
+                          "width": "fill_container",
+                          "height": 16,
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "K6BG4x",
+                              "name": "Preview result label",
+                              "fill": "#4ade80",
+                              "content": "PREVIEW RESULT · NON-MUTATING · ALL CHECKS PASS",
+                              "fontFamily": "Inter",
+                              "fontSize": 8.8,
+                              "fontWeight": "bold",
+                              "letterSpacing": 0.8
+                            },
+                            {
+                              "type": "text",
+                              "id": "R9RFHd",
+                              "name": "Preview digest",
+                              "fill": "#9a8f80",
+                              "content": "DIGEST 18a7…9c2e",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "UqoYW",
+                          "name": "Preview mutation summary",
+                          "fill": "#ccbaa8",
+                          "content": "Create one policy ledger and approval-gated Kanban graph on the selected existing board.",
+                          "fontFamily": "Courier Prime",
+                          "fontSize": 8.8,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "dPVfJ",
+                          "name": "Preview confirmation and actions",
+                          "width": "fill_container",
+                          "height": 36,
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "sHDUw",
+                              "name": "Start confirmation",
+                              "fill": "#ffbd38",
+                              "content": "☐ I confirm applying this exact preview",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "r70Zu",
+                              "name": "Workflow start buttons",
+                              "height": 32,
+                              "gap": 6,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "dh0ae",
+                                  "name": "Preview request button",
+                                  "width": 130,
+                                  "height": 32,
+                                  "stroke": "#ffe6cb26",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
                                   "justifyContent": "center",
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "n0213",
-                                      "name": "Start workflow label",
+                                      "id": "gZh6x",
+                                      "name": "Preview request label",
+                                      "fill": "#ffe6cb",
+                                      "content": "PREVIEW AGAIN",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 8.7,
+                                      "fontWeight": "bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "q8Tkt",
+                                  "name": "Start workflow now button",
+                                  "width": 130,
+                                  "height": 32,
+                                  "fill": "#ffe6cb",
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "E0V7H",
+                                      "name": "Start workflow now label",
                                       "fill": "#041c1c",
-                                      "content": "Start workflow",
-                                      "fontFamily": "Courier New",
-                                      "fontSize": 9.5,
+                                      "content": "START NOW",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 8.7,
                                       "fontWeight": "bold"
                                     }
                                   ]
@@ -2254,9 +3107,35 @@
                       "children": [
                         {
                           "type": "frame",
+                          "id": "xvESr",
+                          "name": "Subtab PACKS",
+                          "width": 176,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Ve1UY",
+                              "name": "Subtab PACKS text",
+                              "fill": "#ccbaa8",
+                              "content": "PACKS",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
                           "id": "n0297",
                           "name": "Subtab CHECKOUTS & TTL",
-                          "width": 200,
+                          "width": 174,
                           "height": 36,
                           "fill": "#ffe6cb",
                           "stroke": "#ffe6cb26",
@@ -2282,7 +3161,7 @@
                           "type": "frame",
                           "id": "n0299",
                           "name": "Subtab GITHUB PROJECTS",
-                          "width": 200,
+                          "width": 174,
                           "height": 36,
                           "fill": "#00000000",
                           "stroke": "#ffe6cb26",
@@ -2308,7 +3187,7 @@
                           "type": "frame",
                           "id": "n0301",
                           "name": "Subtab CONSTRAINTS",
-                          "width": 200,
+                          "width": 174,
                           "height": 36,
                           "fill": "#00000000",
                           "stroke": "#ffe6cb26",
@@ -2334,7 +3213,7 @@
                           "type": "frame",
                           "id": "n0303",
                           "name": "Subtab VERIFICATION",
-                          "width": 200,
+                          "width": 174,
                           "height": 36,
                           "fill": "#00000000",
                           "stroke": "#ffe6cb26",

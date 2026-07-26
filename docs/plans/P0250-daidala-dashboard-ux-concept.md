@@ -16,7 +16,7 @@
 
 **Produces:** a single UX concept and design contract (information architecture, decision-card pattern, preview-confirm envelope, status semantics) that P0200–P0240 and P0320 cite for all dashboard presentation work
 
-**Status:** approved — consolidated Workflows IA and canonical wireframes approved for implementation
+**Status:** revision proposed — Start workflow selectors, readiness, defaults, and host handoffs require fresh human approval before implementation
 
 ## Goal
 
@@ -52,15 +52,48 @@ component patterns; it has no implementation phases and grants no approval autho
    decision first (the time its current gate became actionable), with stable
    workflow-ID tie-breaking. Urgency indicators remain visible but never reorder
    the approval queue.
-3. **Config as in-tab tabs.** Checkouts/TTL, GitHub Projects, Constraints, and
-   Verification are tabs inside the Config view, not separate manifest tabs or a
-   single merged settings panel.
+3. **Config as in-tab tabs.** Packs, Checkouts/TTL, GitHub Projects, Constraints,
+   and Verification are tabs inside the Config view, not separate manifest tabs
+   or a single merged settings panel.
 4. **Artifact browser in IA.** The Artifacts view (P0320) is part of this concept's
    IA from the start so its navigation and patterns land consistently.
 5. **Requested outcome terminology.** The Start workflow subpage labels the user-authored
    change description **Requested outcome**, not Goal. The browser still maps it
    to the existing `SetupRequest.goal` payload field; it does not invoke or imply
    Hermes' `/goal` session feature.
+6. **One controller profile, six worker assignments.** The Hermes profile and
+   dashboard lifecycle is the only controller-profile switch. The Start workflow
+   page shows
+   the mounted controller profile as read-only because the dashboard backend,
+   ledger, registrations, and credentials are process/profile scoped. A separate
+   **Worker profile default** selector is a UI convenience over existing Hermes
+   profiles: it fills all six executable stage selectors, while Advanced exposes
+   per-stage overrides. Only the resolved six-stage mapping reaches
+   `SetupRequest`; there is no seventh profile field.
+7. **Inventory-backed selections.** Pack, registered repository, worker profiles,
+   and board are selectors, never free-form identity fields. Pack offers only
+   installed, validated definitions that are ready for the mounted profile;
+   `Manage` opens Config → Packs. Board offers existing installation-global
+   Kanban boards; `Create` opens the preview-confirm board-creation flow. A
+   registered repository selection displays its canonical verified remote URI
+   while the server resolves its trusted checkout without returning that path.
+8. **Readiness before authority.** Preview and Start rerun the same server-owned
+   preflight over mounted profile identity, pack digests, repository identity and
+   clean baseline, required repository capabilities, six worker assignments,
+   board existence, and gateway reachability. The browser shows capability
+   results, never credential names or values. A GitHub repository does not imply
+   that `GH_TOKEN` is always the credential: HTTPS/token, SSH, and registration
+   alias bindings are checked according to the actual remote and required
+   operation.
+9. **Defaults and scheduling stay non-authoritative.** `Save as default` stores a
+   browser-local, mounted-profile-scoped preset containing only project ID, pack,
+   board, and six worker assignments. It never stores requested outcome,
+   workflow ID, checkout path, raw constraints, credential aliases, or values.
+   Applying a preset only repopulates selectors and always reruns inventory and
+   readiness; missing/stale identities are shown and left unselected. Delayed or
+   recurring admission links to Hermes Cron. Pausing that cron prevents future
+   admissions; it does not suspend already dispatched cards. Daidala adds no
+   scheduler or timed in-flight pause.
 
 ## Use-case catalog
 
@@ -68,13 +101,13 @@ Actor is always an attended human operator. Legend: ✅ implemented · 🟡 plan
 
 ### Surface A — Onboard & verify (P0200, P0240)
 1. **Verify mounted plugin/identity** 🟡 — show host/profile identity; install/enable commands displayed, never executed.
-2. **Browse & validate packs** 🟡 — list/validate both packs, readiness.
-3. **Preview/confirm external pack install** 🟡 — dry-run-first; apply needs confirmation.
+2. **Browse & validate packs** 🟡 — Config → Packs lists and validates both definitions and readiness.
+3. **Preview/confirm external skill install** 🟡 — dry-run-first; apply needs confirmation. Selecting a pack activates it for one workflow; v1 has no pack enable/disable or arbitrary archive upload.
 4. **Initialize profile (dry-run-first)** 🟡 — preview data root without creating schema; confirmed apply idempotent; health/preview create nothing.
 5. **Run prerequisite diagnosis** 🟡 — strict `doctor` with stable check IDs; local default + explicit bounded live; validated `project_id`; no credential values.
 
 ### Surface B — Start a workflow (P0210 Phase 0)
-6. **Guided setup wizard** 🟡 — profile, pack, repository, requested outcome, stage-profiles, constraints, board; the UI maps requested outcome to the existing `request.goal` field and only nested `request` reaches `SetupRequest.from_payload`; preview → literal confirm → start.
+6. **Guided setup wizard** 🟡 — read-only mounted controller profile, optional browser-local start preset, ready installed pack, registered repository, requested outcome, worker-profile default plus stage overrides, constraints, and existing/create board; the UI maps requested outcome to the existing `request.goal` field, the server resolves the selected registration to the trusted target, and only the resolved setup request reaches `SetupRequest.from_payload`; readiness → preview → literal confirm → start now. Delayed/recurring admission hands off to Hermes Cron.
 
 ### Surface C — Supervise & decide (P0210 Phase 1) ✅/🟡
 7. **Watch workflows (read-only)** ✅ — poll ≥5s while visible; manual refresh.
@@ -147,14 +180,20 @@ Three primary views, all inside the single tab and ordered by workflow result:
   workflow ID, so returning to inventory does not depend on re-clicking the
   already-selected tab.
 - **Start workflow subpage** — opened by the Workflows page's primary action,
-  keeps Workflows selected, and begins with `← Back to Workflows`. Its wizard is
-  identity → target → requested outcome → policy → board → preview → confirm →
-  start. `Requested outcome` maps to `SetupRequest.goal` only at the request
-  boundary and is not Hermes `/goal`. `Repository URI` shows the canonical remote
-  (e.g. `git@github.com:forgegod/daidala.git`) and resolves to a trusted local
-  checkout; it is an identity label, not a writable path.
-- **Config (secondary, tabbed)** — Checkouts/TTL, GitHub Projects, Constraints,
-  Verification (read-only).
+  keeps Workflows selected, and begins with `← Back to Workflows`. Its compact
+  flow is mounted-profile/default preset → pack + board → registered repository
+  → requested outcome → worker default + stage overrides → policy → readiness →
+  preview → literal confirm → start now. `Requested outcome` maps to
+  `SetupRequest.goal` only at the request boundary and is not Hermes `/goal`.
+  The registered-repository selector shows the canonical remote (e.g.
+  `git@github.com:forgegod/daidala.git`) while the server resolves the trusted
+  local checkout; the URI is an identity label, not a writable path. Start is
+  disabled until the selected profile's required repository capabilities and all
+  other stable readiness checks pass. Host-owned links route pack management to
+  Config → Packs, full board management to Kanban, and delayed/recurring
+  admission to Cron.
+- **Config (secondary, tabbed)** — Packs, Checkouts/TTL, GitHub Projects,
+  Constraints, Verification (read-only).
 - **Artifacts (secondary)** — workflow/kind/state filters; ledger-bound artifact
   list and selected-artifact detail/escaped preview; download plus
   preview-confirm curator controls; cron opt-in guidance.
@@ -190,6 +229,17 @@ Three primary views, all inside the single tab and ordered by workflow result:
   card does not combine evidence review with unrelated curation mutations.
 - **Preview → confirm envelope** — every mutating form renders the exact strict
   payload + digest on Preview, then a disabled-until-confirmed apply button.
+- **Inventory selector** — selected value plus dropdown affordance, readiness
+  state, and one contextual management link. Selector options carry stable IDs;
+  labels and helper text may show names/remotes, but no path or credential value
+  becomes browser authority.
+- **Start readiness panel** — six grouped server results: mounted profile/host,
+  pack, repository identity/baseline, repository capabilities, worker-profile
+  mapping, and Kanban board/gateway. A failed stable check ID disables Preview
+  and Start and links to Config, Kanban, or host guidance as appropriate.
+- **Start preset** — reversible browser-local preference scoped by mounted
+  controller profile. Saving and applying a preset never authorizes start; stale
+  IDs fail closed and requested outcome remains blank for every new workflow.
 - **Read-only by default** — Verification and all lists are read-only; mutations are
   separated behind explicit actions.
 - **Status semantics** — reuse the dashboard's gateway-status color language
@@ -347,8 +397,8 @@ editing.
 | [`hermes-dashboard-live-kanban.png`](hermes-dashboard-live-kanban.png) | Live Kanban plugin; plugin integration, fieldsets, filters, lanes, cards, empty states |
 | [`hermes-dashboard-ux-live.pen`](hermes-dashboard-ux-live.pen) | Editable Pen source with Workflows, Start workflow subpage, Config, Artifacts, and Request plan revision detail frames |
 | [`dashboard-ux-workflows.png`](dashboard-ux-workflows.png) | Default workflow inventory with `Start workflow`, source-bound awaiting-action summaries, autonomous progress, and recent results |
-| [`dashboard-ux-wizard.png`](dashboard-ux-wizard.png) | Workflows subpage for Start workflow (back → preview → confirm → start) |
-| [`dashboard-ux-configure.png`](dashboard-ux-configure.png) | Config tabs (Checkouts/TTL + read-only verification) |
+| [`dashboard-ux-wizard.png`](dashboard-ux-wizard.png) | Workflows subpage for Start workflow with mounted-profile scope, inventory selectors, repository capability readiness, browser-local preset, Cron handoff, and back → preview → confirm → start |
+| [`dashboard-ux-configure.png`](dashboard-ux-configure.png) | Config tabs including Packs, with Checkouts/TTL selected and read-only verification visible |
 | [`dashboard-ux-artifacts.png`](dashboard-ux-artifacts.png) | Ledger-bound artifact browser, detail/escaped preview, and curator actions |
 | [`dashboard-ux-revision.png`](dashboard-ux-revision.png) | Workflows detail for request plan revision, with explicit inventory back-navigation, stage state, expanded artifacts/evidence, successor packet, feedback, preview, and confirmation |
 | [`hermes-dashboard-live-plugins.png`](hermes-dashboard-live-plugins.png) | Live Plugins page; gap scale and fieldset/input rhythm reference |
@@ -418,9 +468,17 @@ Headless CLI verification avoids that stale-document boundary.
 
 - No implementation phases, routes, or code — P0200–P0240 and P0320 own those.
 - No manifest change; the single `/daidala` tab is preserved.
-- No new mutation surface, workflow engine, scheduler, or command-dispatch route.
+- No workflow engine, scheduler, timed in-flight pause, or command-dispatch route.
 - No change to `SetupRequest`, registration storage, review/revision semantics,
   Kanban authority, or the closed route inventory.
+- No wizard-local controller-profile switch. Change the mounted profile only by
+  opening/restarting Hermes Dashboard under that profile, then reload and
+  revalidate.
+- No arbitrary repository URI/path entry, pack archive upload, or pack
+  enable/disable state. Selecting a ready pack activates it only for that
+  workflow; Config → Packs owns validation and bounded external-skill install.
+- No credential names/values, checkout paths, requested outcomes, workflow IDs,
+  or raw constraint content in saved defaults.
 
 ## Risks & open questions
 

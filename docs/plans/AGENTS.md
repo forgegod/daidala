@@ -45,8 +45,24 @@ Additional UI contracts:
 - Breadcrumbs, workflow identity, evidence, forms, previews, confirmation, and actions belong inside the use-case workspace.
 - Evidence precedes authority controls. A summary never substitutes for exact evidence; preview is visibly non-mutating; apply requires literal confirmation.
 - Show **What the next card receives** only when an operation dispatches a successor card. Its deterministic identities are read-only; normalized operator feedback appears inside the packet before apply. Operations without a successor card use an operation-specific mutation preview and must not fabricate a handoff.
-- Banner profile, profile selector, mounted profile, workflow identity, revisions, digests, evidence references, action labels, and consequences must agree within one frame.
+- Banner profile, shell profile selector, mounted controller profile, worker-profile
+  assignments, workflow identity, revisions, digests, evidence references, action
+  labels, and consequences must agree within one frame. A Daidala form never
+  implies that a worker selector or browser-local control can switch the mounted
+  controller profile.
 - Use Hermes dashboard tokens and patterns: square structural tabs, cream selected/primary controls, bordered secondary controls, amber attention/confirmation, green verified/non-mutating states, and host-radius content cards. Do not introduce a second palette, sidebar, profile selector, or navigation model.
+- Config subtabs are Packs, Checkouts/TTL, GitHub Projects, Constraints, and
+  Verification. Start workflow selects only inventory-backed ready packs,
+  registered repositories, existing worker profiles, and existing Kanban boards;
+  contextual links open Config → Packs, board creation/full Kanban management, or
+  Hermes Cron rather than adding duplicate management surfaces.
+- Start workflow renders the mounted controller profile read-only and may offer a
+  worker-profile default only as a convenience that fills all six explicit stage
+  assignments. Repository access is shown as server-owned capability readiness,
+  never as credential names/values. Browser-local defaults are non-authoritative,
+  exclude task/constraint/credential/path data, and must be revalidated before
+  Preview or Start. Cron pause stops future admissions only; no screen may depict
+  an in-flight timed pause.
 
 ## Work Guidance
 
