@@ -15,7 +15,10 @@ and [P0240 operator runbook parity](P0240-daidala-dashboard-operator-runbook-par
 Presentation and layout across those units follow the
 [P0250 dashboard UX concept and design contract](P0250-daidala-dashboard-ux-concept.md),
 which owns the single-tab information architecture, decision-card pattern, and
-preview-confirm envelope for the whole family.
+preview-confirm envelope for the whole family. Every dashboard view preserves
+the Hermes-owned profile banner/sidebar shell and the Daidala-owned five-view
+header navigation; workflow review, revision, and confirmation flows replace
+only the use-case content workspace.
 
 This repository-tracked document owns the pinned cross-unit decisions and the
 detailed implementation contracts for the dashboard plan family. It is not an
@@ -964,7 +967,7 @@ card state, remediate a blocked card, or preview and confirm cancellation.
    Kanban SQLite database or persist these host-owned records in Daidala.
 2. When planning completes, resolve the current plan through P0205's exact
    ledger-bound artifact ID and render its verified bounded text inline. Lead
-   with the exact bound approval summary and its digest, then show
+   with the exact bound AI-assisted approval summary and its digest, then show
    the goal, plan and policy revisions, full 64-character plan digest, nullable
    constraint revision/digest, pack revision, verification state, and the
    consequences: one detached worktree plus `implement → verify → review →
@@ -972,7 +975,14 @@ card state, remediate a blocked card, or preview and confirm cancellation.
    absolute profile-local path in the browser API. Missing, binary, oversized,
    stale, or digest-mismatched bytes or a missing, invalid, stale, or unbound
    summary produce a blocking `Plan unavailable` decision with no approval
-   control; a summary or digest alone is insufficient.
+   control; a summary or digest alone is insufficient. Beside the evidence,
+   render a separately titled, read-only `What the next card receives` packet.
+   It is a server-derived projection of the workflow/stage identity, plan/policy/
+   nullable-constraint revisions and digests, pack and activation identities,
+   current artifact references, and (only after approval) the baseline/worktree
+   identities. It contains no raw logs, profile paths, secrets, or client-selected
+   values. The summary is never treated as an implicit handoff and the packet's
+   deterministic fields are never editable in the browser.
    Add authenticated `GET /workflows/{workflow_id}/approval-review`, which
    derives the current plan artifact ID server-side and returns only the verified
    structured summary, summary digest, escaped text, complete tuple, pack
@@ -995,8 +1005,14 @@ card state, remediate a blocked card, or preview and confirm cancellation.
    P0207 services and lead with the review record's exact bound change summary.
    Then show the captured diff as escaped unified-diff text, changed paths,
    verification commands/outcomes, structured reviewer outcome/findings,
-   complete tuple, and fixed consequences before any action. Keep raw logs behind
-   explicit evidence links or progressive disclosure.
+   complete tuple, a separately titled read-only successor packet, and fixed
+   consequences before any action. Keep raw logs behind explicit evidence links
+   or progressive disclosure. For `request_revision`, the packet is P0207's
+   canonical revision-request projection: source review/disposition,
+   implementation/verification artifact identities, plan/policy/nullable-
+   constraint revisions, target plan revision, pack/activation identities, and
+   normalized feedback. Preview renders it before confirmation; only the required
+   feedback is editable, and the apply response returns the same canonical packet.
    Add authenticated `GET /workflows/{workflow_id}/review-decision`, mutation-free
    `POST /workflows/{workflow_id}/review-disposition/preview`, and confirmed
    `POST /workflows/{workflow_id}/review-disposition`. Preview accepts exactly

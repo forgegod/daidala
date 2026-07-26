@@ -31,13 +31,22 @@ component patterns; it has no implementation phases and grants no approval autho
 1. **Single tab, internal views.** The manifest keeps one `/daidala` tab
    (`../dashboard/manifest.json`). All navigation is internal to the tab:
    Overview / Workflow / Start / Configure / Artifacts. No manifest change.
+   Every wireframe and implemented view preserves the same three-layer frame:
+   the Hermes-owned profile banner/sidebar shell; the Daidala-owned page header
+   and five-view navigation; and one use-case-specific content workspace. A
+   workflow detail, review, revision, or confirmation flow replaces only the
+   content workspace—it never redraws, abbreviates, or bypasses the first two
+   layers.
 2. **Workflow-grouped attention queue.** The Overview groups workflows by
    `Needs your decision`, `Active`, and `Recent`. Decision gates are embedded in
    their owning workflow card rather than detached into a global card, so the
    workflow identity, stage timeline, and artifacts remain visible beside every
    human action. Each attention card places an expanded-by-default, foldable
    artifact browser above the gate so the evidence is inspected before the
-   authority action. The `Needs your decision` group is sorted by urgency.
+   authority action. The `Needs your decision` group is sorted oldest actionable
+   decision first (the time its current gate became actionable), with stable
+   workflow-ID tie-breaking. Urgency indicators remain visible but never reorder
+   the approval queue.
 3. **Configure as in-tab tabs.** Checkouts/TTL, GitHub Projects, Constraints, and
    Verification are tabs inside the Configure view, not separate manifest tabs or a
    single merged settings panel.
@@ -64,9 +73,9 @@ Actor is always an attended human operator. Legend: ✅ implemented · 🟡 plan
 
 ### Surface C — Supervise & decide (P0210 Phase 1) ✅/🟡
 7. **Watch workflows (read-only)** ✅ — poll ≥5s while visible; manual refresh.
-8. **Approve the exact plan** 🟡 — decision-first panel; source-bound summary then verified bounded plan body, plan/constraint tuple, checklist, consequences; bound to verified artifact identity + literal "I reviewed this exact plan"; disabled on stale/mismatched identity; literal escaped text.
-9. **Review disposition before delivery** 🟡 — source-bound summary + exact escaped diff + verification + findings + ledger-owned gate; accept-and-deliver only for accepted non-blocking review.
-10. **Request revision** 🟡 — previewed consequences, literal confirm, navigate to new revisioned plan approval.
+8. **Approve the exact plan** 🟡 — decision-first panel; source-bound AI-assisted summary then verified bounded plan body, plan/constraint tuple, checklist, consequences, and a read-only next-stage packet; bound to verified artifact identity + literal "I reviewed this exact plan"; disabled on stale/mismatched identity; literal escaped text.
+9. **Review disposition before delivery** 🟡 — source-bound AI-assisted summary + exact escaped diff + verification + findings + ledger-owned gate and a read-only successor packet; accept-and-deliver only for accepted non-blocking review.
+10. **Request revision** 🟡 — previewed immutable-evidence/cards/worktree consequences, a visible successor packet, required feedback, literal confirm, then navigate to new revisioned plan approval.
 11. **Recover a blocked card** 🟡 — requested decision + latest relevant evidence + targeted comment/unblock.
 12. **Cancel a workflow** 🟡 — preview cards/worktree/reason, digest + confirm, name affected worktree first.
 13. **Reopen/resume by exact ID** 🟡 — reopen and continue read-only watch, not a new workflow.
@@ -106,17 +115,22 @@ Actor is always an attended human operator. Legend: ✅ implemented · 🟡 plan
 Three primary views + two secondary, all inside the single tab:
 
 - **Overview (default)** — mount/health metrics, then workflow groups: `Needs your
-  decision`, `Active`, and `Recent`. Each attention card contains workflow
+  decision`, `Active`, and `Recent`. `Needs your decision` is an oldest-actionable
+  first queue, not an urgency sort; display urgency as a badge without changing
+  that order. Each attention card contains workflow
   identity, compact stage timeline, an expanded-by-default artifact browser, and
   then its current plan, review, blocked-card, or cancellation gate. The artifact
   browser is foldable and reuses the Artifacts view's list/selected-detail pattern
-  scoped to the workflow. Multiple workflows remain distinct while urgent
-  decisions stay at the top. The page scrolls vertically rather than compressing
-  expanded evidence and authority controls into one viewport.
+  scoped to the workflow. Multiple workflows remain distinct while urgency stays
+  visible without changing oldest-actionable-first order. The page scrolls
+  vertically rather than compressing expanded evidence and authority controls
+  into one viewport.
 - **Workflow detail** — decision-first: the active decision panel (plan approval /
   review disposition / blocked-card / cancel-preview) occupies the top ~60% with
   source-bound summary + verified evidence; below it a lower-noise stage timeline and
-  card list; raw run/event detail behind progressive disclosure.
+  card list; raw run/event detail behind progressive disclosure. It remains inside
+  the standard Hermes shell and Daidala header with **Workflows** selected; only
+  the content workspace changes for review, revision, or other workflow actions.
 - **Start (wizard)** — identity → target → requested outcome → policy → board →
   preview → confirm → start. `Requested outcome` maps to `SetupRequest.goal` only
   at the request boundary and is not Hermes `/goal`. `Repository URI` shows the
@@ -137,12 +151,19 @@ Three primary views + two secondary, all inside the single tab:
   actionable gate; other workflows render as compact read-only rows under Active
   or Recent.
 - **Decision card** — one component for every authority action, always embedded
-  in its owning workflow context: action-kind title,
-  source-bound change summary, verified evidence (escaped text), identity tuple
-  (plan/constraint/digest), consequence preview, literal-confirm checkbox, action
-  button disabled until identity verified. Used for plan approval, review disposition,
-  revision, cancel, checkout refresh, backup prune, link edit, constraint replace,
-  pack install, profile init.
+  in its owning workflow context: action-kind title, source-bound AI-assisted
+  change summary, verified evidence (escaped text), identity tuple
+  (plan/constraint/digest), consequence preview, literal-confirm checkbox, and an
+  action button disabled until identity is verified. Actions that dispatch a
+  successor card additionally show a read-only **What the next card receives**
+  packet as a separately labelled projection of durable identities and references;
+  actions without a successor card show only their operation-specific mutation
+  preview and must not fabricate a handoff. The summary is an aid, not hidden
+  authority. Operators can inspect the packet but cannot edit deterministic fields.
+  A revision request additionally requires editable feedback; its normalized value
+  is shown inside the packet before apply.
+  Used for plan approval, review disposition, revision, cancel, checkout refresh,
+  backup prune, link edit, constraint replace, pack install, profile init.
 - **Embedded artifact browser** — a foldable, expanded-by-default workflow-scoped
   count/header above a compact artifact list and selected-artifact metadata plus
   literal escaped preview. `View all` opens the Artifacts view with a
@@ -292,21 +313,26 @@ Plugin mount contract: routes mount `<PluginPage name>`; the bundle calls
 ## Live references and Pen design source
 
 The live baseline and adapted concepts are stored beside this document. The Pen
-source is an open-format `.pen` file with three 1280×720 frames and a 1280×1000
-scroll-page Overview frame. The longer Overview preserves two expanded artifact
-browsers and their gates without compressing evidence or controls. The source is
-layout-checked and exported with the headless Pen CLI; Pen Desktop remains
-available through Irigate for interactive editing.
+source is an open-format `.pen` file with three 1280×720 frames and two 1280×1000
+scroll-page frames: Overview and Request revision. Every frame preserves the same
+Hermes shell and Daidala navigation; only the use-case workspace changes. The
+longer Overview preserves two expanded artifact browsers and their gates without
+compressing evidence or controls. The Request revision frame exposes immutable review evidence, the
+read-only successor packet, required operator feedback, and non-mutating preview
+before literal confirmation. The source is layout-checked and exported with the
+headless Pen CLI; Pen Desktop remains available through Irigate for interactive
+editing.
 
 | File | Purpose |
 |---|---|
 | [`hermes-dashboard-live-sessions.png`](hermes-dashboard-live-sessions.png) | Live Hermes v0.19.0 Sessions page; shell, metrics, tabs, list/status patterns |
 | [`hermes-dashboard-live-kanban.png`](hermes-dashboard-live-kanban.png) | Live Kanban plugin; plugin integration, fieldsets, filters, lanes, cards, empty states |
-| [`hermes-dashboard-ux-live.pen`](hermes-dashboard-ux-live.pen) | Editable Pen source with Overview, Start, Configure, and Artifacts frames |
-| [`dashboard-ux-overview.png`](dashboard-ux-overview.png) | Scroll-page workflow overview with expanded artifact browsers above plan/review gates |
+| [`hermes-dashboard-ux-live.pen`](hermes-dashboard-ux-live.pen) | Editable Pen source with Overview, Start, Configure, Artifacts, and Request revision frames |
+| [`dashboard-ux-overview.png`](dashboard-ux-overview.png) | Scroll-page workflow overview with oldest-actionable-first attention cards and expanded artifact browsers above plan/review gates |
 | [`dashboard-ux-wizard.png`](dashboard-ux-wizard.png) | Start wizard (preview → confirm → start) |
 | [`dashboard-ux-config.png`](dashboard-ux-config.png) | Configure tabs (Checkouts/TTL + read-only verification) |
 | [`dashboard-ux-artifacts.png`](dashboard-ux-artifacts.png) | Ledger-bound artifact browser, detail/escaped preview, and curator actions |
+| [`dashboard-ux-revision.png`](dashboard-ux-revision.png) | Request-revision evidence, successor-packet, feedback, preview, and confirmation concept |
 | [`hermes-dashboard-live-plugins.png`](hermes-dashboard-live-plugins.png) | Live Plugins page; gap scale and fieldset/input rhythm reference |
 
 The live comparison changed the concepts in five concrete ways: reproduce the
@@ -316,11 +342,15 @@ content cards; and separate the non-mutating preview result from confirmation to
 apply the displayed mutations. Configure subtabs use an accent surface rather
 than competing with primary navigation's cream selected state.
 
-The information model uses `Requested outcome` rather than `Goal`; Overview
-decision gates live inside workflow cards; the multiple-workflow example contains
-both plan approval and review disposition; each attention card expands its
-ledger-bound artifacts above the gate; and Artifacts has a complete two-pane
-concept rather than navigation-only scope.
+The information model uses `Requested outcome` rather than `Goal`. Every screen
+keeps the Hermes workspace and Daidala navigation invariant while changing only
+the use-case content. Overview decision gates live inside workflow cards and
+order waiting approvals oldest first;
+the multiple-workflow example contains both plan approval and review disposition;
+each attention card expands its ledger-bound artifacts above the gate; every
+AI-assisted approval/disposition summary has a separately visible read-only
+next-card packet; and Artifacts has a complete two-pane concept rather than
+navigation-only scope.
 
 ### Reproducible Pen workflow
 
@@ -339,7 +369,7 @@ Inside the interactive shell, use `snapshot_layout` before export and save:
 
 ```text
 snapshot_layout({ parentId: "Ov001", maxDepth: 8, problemsOnly: true })
-export_nodes({ nodeIds: ["Ov001", "Wi001", "Cf001", "Ar001"], outputDir: "/tmp/daidala-ux-export", format: "png", scale: 1 })
+export_nodes({ nodeIds: ["Ov001", "Wi001", "Cf001", "Ar001", "G1ryL"], outputDir: "/tmp/daidala-ux-export", format: "png", scale: 1 })
 save()
 exit()
 ```
