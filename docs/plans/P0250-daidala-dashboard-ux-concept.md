@@ -58,7 +58,10 @@ component patterns; it has no implementation phases and grants no approval autho
    the approval queue.
 3. **Config as in-tab tabs.** Packs, Checkouts/TTL, GitHub Projects, Constraints,
    and Verification are tabs inside the Config view, not separate manifest tabs
-   or a single merged settings panel.
+   or a single merged settings panel. A contextual management link opens its
+   owning Config subtab and retains an explicit return control to its origin;
+   Start-workflow draft state remains browser-memory-only and refreshes inventory
+   plus invalidates its preview on return.
 4. **Artifact browser in IA.** The Artifacts view (P0320) is part of this concept's
    IA from the start so its navigation and patterns land consistently.
 5. **Requested outcome terminology.** The Start workflow subpage labels the user-authored
@@ -105,13 +108,22 @@ Actor is always an attended human operator. Legend: ✅ implemented · 🟡 plan
 
 ### Surface A — Onboard & verify (P0200, P0240)
 1. **Verify mounted plugin/identity** 🟡 — show host/profile identity; install/enable commands displayed, never executed.
-2. **Browse & validate packs** 🟡 — Config → Packs lists and validates both definitions and readiness.
+2. **Browse & validate packs** 🟡 — Config → Packs lists and validates both
+   definitions and readiness, then opens a read-only pack detail for every
+   lifecycle stage and its exact installed skill content.
 3. **Preview/confirm external skill install** 🟡 — dry-run-first; apply needs confirmation. Selecting a pack activates it for one workflow; v1 has no pack enable/disable or arbitrary archive upload.
-4. **Initialize profile (dry-run-first)** 🟡 — preview data root without creating schema; confirmed apply idempotent; health/preview create nothing.
-5. **Run prerequisite diagnosis** 🟡 — strict `doctor` with stable check IDs; local default + explicit bounded live; validated `project_id`; no credential values.
+4. **Initialize profile (dry-run-first)** 🟡 — `Open initialization preview`
+   opens Config → Verification's dedicated Initialize profile subview; preview
+   reports the resolved target, observed state, effects, digest, and native
+   equivalent without creating schema; confirmed apply is idempotent; health and
+   preview create nothing.
+5. **Run prerequisite diagnosis** 🟡 — strict `doctor` with stable check IDs and
+   a report-scope indicator: Local is the default non-mutating check set, while
+   an explicit bounded live rerun adds gateway/container/GitHub probes; validated
+   `project_id`; no credential values.
 
 ### Surface B — Start a workflow (P0210 Phase 0)
-6. **Guided setup wizard** 🟡 — read-only mounted controller profile, optional browser-local start preset, ready installed pack, registered repository, requested outcome / prompt, worker-profile default plus stage overrides, constraints, and existing/create board; the UI maps requested outcome / prompt to the existing `request.goal` field, the server resolves the selected registration to the trusted target, and only the resolved setup request reaches `SetupRequest.from_payload`; readiness → preview → literal confirm → start now. Delayed/recurring admission hands off to Hermes Cron.
+6. **Guided setup wizard** 🟡 — read-only mounted controller profile, optional browser-local start preset, ready installed pack, registered repository, requested outcome / prompt, worker-profile default plus stage overrides, constraints, and existing/create board; `Manage sources` opens Config → Constraints with a return to the in-progress form. The UI maps requested outcome / prompt to the existing `request.goal` field, the server resolves the selected registration to the trusted target, and only the resolved setup request reaches `SetupRequest.from_payload`; readiness → preview → literal confirm → start now. Delayed/recurring admission hands off to Hermes Cron.
 
 ### Surface C — Supervise & decide (P0210 Phase 1) ✅/🟡
 7. **Watch workflows (read-only)** ✅ — poll ≥5s while visible; manual refresh.
@@ -130,8 +142,12 @@ Actor is always an attended human operator. Legend: ✅ implemented · 🟡 plan
 18. **Manage one GitHub Projects v2 link per project** 🟡 — fresh bounded read + matching preview digest + literal confirm; tokens never cross; remote/alias display-only.
 
 ### Surface E — Author constraints & verify config (P0230)
-19. **Author constraints** 🟡 — schema-aware YAML editor, live preview, error list, digest impact; replace stays preview/confirm compare-and-swap.
-20. **Verify configuration (read-only)** 🟡 — root, TTL, registrations, checkout ownership/freshness, link verification; no secrets; not a supervisor.
+19. **Author constraints** 🟡 — schema-aware YAML editor, live preview, error
+   list, digest impact, and an exact installed reusable-source browser; replace
+   stays preview/confirm compare-and-swap.
+20. **Verify configuration (read-only)** 🟡 — root, TTL, registrations, checkout
+   ownership/freshness, link verification, and strict local/live prerequisite
+   diagnosis; no secrets; not a supervisor.
 
 ### Surface F — Browse artifacts & curate (P0320)
 21. **Browse artifact history** 🟡 — authenticated ledger-bound list/detail/bounded-text/download; literal text; binary/oversized download-only.
@@ -211,11 +227,28 @@ Three primary views, all inside the single tab and ordered by workflow result:
 - **Start workflow advanced settings** — expanding Advanced renders exactly six
   inventory-backed stage assignments. Inherited assignments name the worker
   default; explicit overrides expose `Reset`. The section separately renders a
-  reusable constraint-source selector and optional workflow ID. Any change
-  invalidates the current preview and reruns readiness. Blank workflow ID uses
-  the server factory; an existing explicit ID resolves to `Open existing`.
+  reusable constraint-source selector and optional workflow ID. `Manage sources`
+  opens Config → Constraints, retains a `← Back to Start workflow` return
+  control, and leaves the in-progress form only in browser memory. Returning
+  refreshes the source inventory; selecting a source is explicit and any source
+  or form change invalidates the current preview and reruns readiness. Blank
+  workflow ID uses the server factory; an existing explicit ID resolves to
+  `Open existing`.
 - **Config (secondary, tabbed)** — Packs, Checkouts/TTL, GitHub Projects,
-  Constraints, Verification (read-only).
+  Constraints, Verification (read-only). Packs opens a read-only detail within
+  the selected subtab: all six lifecycle stages remain visible, each names its
+  required/conditional skills and exposes one selected skill's complete escaped
+  `SKILL.md`, expected/observed digest, source, and install state. The browser
+  permits only declared pack/skill identities; an unavailable external skill
+  exposes its pinned target and expected digest, never invented content or a
+  filesystem path. Constraints lists exact installed reusable policy sources and
+  their canonical content before returning a selection. Verification labels the
+  current report scope, not a persisted mode: Local runs its local checks and
+  reports live-only checks as `not run`; `Run live checks` explicitly requests a
+  bounded, non-mutating live report. `Open initialization preview` replaces only
+  this workspace with an Initialize profile subview showing target, observed
+  state, effect list, preview digest, native equivalent, back control, and a
+  literal-confirmed apply/no-op result.
 - **Artifacts (secondary)** — workflow/kind/state filters; ledger-bound artifact
   list and selected-artifact detail/escaped preview; download plus
   preview-confirm curator controls; cron opt-in guidance.
@@ -264,6 +297,18 @@ Three primary views, all inside the single tab and ordered by workflow result:
   IDs fail closed and requested outcome remains blank for every new workflow.
 - **Read-only by default** — Verification and all lists are read-only; mutations are
   separated behind explicit actions.
+- **Pack and source content** — read-only content follows a declared pack or
+  reusable-source identity, is rendered as literal escaped text, and is bounded
+  to the server's documented per-document UI limit. Content selection does not
+  install, enable, or activate a skill.
+- **Verification scope** — Local is the default diagnosis scope, not a setting:
+  it runs deterministic profile/registration/checkout/link/pack checks without
+  live probes. Live mode is an explicit bounded rerun; live-only `not run` rows
+  are incomplete, never passing or failing local checks.
+- **Initialization subview** — opening initialization preview is non-mutating.
+  It retains Config → Verification context and requires a fresh digest plus
+  literal confirmation before creating the profile-local schema; repeated apply
+  visibly reports a no-op.
 - **Status semantics** — reuse the dashboard's gateway-status color language
   (running=success, starting=warning, failed=destructive, stopped=muted) for
   workflow/card/decision states.
@@ -403,7 +448,7 @@ Plugin mount contract: routes mount `<PluginPage name>`; the bundle calls
 ## Pen design source and canonical renders
 
 The host-derived visual constraints are codified in this document and the
-owning `AGENTS.md`. The Pen source is an open-format `.pen` file with eight 1280×720 frames and three
+owning `AGENTS.md`. The Pen source is an open-format `.pen` file with ten 1280×720 frames and three
 1280×1000 workflow/start-detail frames. Every frame preserves the same Hermes shell and Daidala
 navigation; only the use-case workspace changes. The Request plan revision frame
 incorporates the former attention view's workflow identity, stage state, and
@@ -418,12 +463,14 @@ editing.
 | [`hermes-dashboard-ux-live.pen`](hermes-dashboard-ux-live.pen) | Editable Pen source with Workflows, collapsed/expanded Start workflow, completed/revision workflow details, Artifacts, Checkouts/TTL, Packs, GitHub Projects, Constraints, and Verification frames |
 | [`dashboard-ux-workflows.png`](dashboard-ux-workflows.png) | Default workflow inventory with `Start workflow`, source-bound awaiting-action summaries, autonomous progress, and the latest five recently finished workflows |
 | [`dashboard-ux-wizard.png`](dashboard-ux-wizard.png) | Workflows subpage for Start workflow with mounted-profile scope, inventory selectors, repository capability readiness, browser-local preset, Cron handoff, and back → preview → confirm → start |
-| [`dashboard-ux-wizard-advanced.png`](dashboard-ux-wizard-advanced.png) | Expanded Start workflow Advanced settings with six stage assignments, reusable workflow constraints, optional workflow identity, readiness, and preview invalidation semantics |
+| [`dashboard-ux-wizard-advanced.png`](dashboard-ux-wizard-advanced.png) | Expanded Start workflow Advanced settings with six stage assignments, reusable workflow constraints, `Manage sources` → Config → Constraints navigation with browser-memory-only draft return, optional workflow identity, readiness, and preview invalidation semantics |
 | [`dashboard-ux-configure.png`](dashboard-ux-configure.png) | Config tabs including Packs, with Checkouts/TTL selected and read-only verification visible |
-| [`dashboard-ux-config-packs.png`](dashboard-ux-config-packs.png) | Config → Packs inventory, exact source/compatibility/readiness, and dry-run-first external-skill installation entry |
+| [`dashboard-ux-config-packs.png`](dashboard-ux-config-packs.png) | Config → Packs inventory, exact source/compatibility/readiness, entry to six-stage declared-skill content inspection, and dry-run-first external-skill installation |
+| [`dashboard-ux-pack-contents.png`](dashboard-ux-pack-contents.png) | Config → Packs read-only detail with every lifecycle stage visible, selected declared skill metadata/digest, literal `SKILL.md` content, and no install/activation side effect |
 | [`dashboard-ux-config-github-projects.png`](dashboard-ux-config-github-projects.png) | Config → GitHub Projects registration-derived identity, verified link, and fresh preview-confirm mutation flow |
-| [`dashboard-ux-config-constraints.png`](dashboard-ux-config-constraints.png) | Config → Constraints reusable-source editor, YAML validation, digest impact, and compare-and-swap replacement preview |
-| [`dashboard-ux-config-verification.png`](dashboard-ux-config-verification.png) | Config → Verification read-only local/live checks with stable IDs and separate initialization handoff |
+| [`dashboard-ux-config-constraints.png`](dashboard-ux-config-constraints.png) | Config → Constraints exact reusable-source browser, literal content, explicit Start-draft return, YAML validation, digest impact, and compare-and-swap replacement preview |
+| [`dashboard-ux-config-verification.png`](dashboard-ux-config-verification.png) | Config → Verification read-only Local report scope, explicit bounded live rerun, stable IDs, and separate non-mutating initialization-preview handoff |
+| [`dashboard-ux-initialization.png`](dashboard-ux-initialization.png) | Config → Verification → Initialize profile subview with back navigation, resolved target/state/effects/digest, native equivalent, and literal-confirmed idempotent apply |
 | [`dashboard-ux-artifacts.png`](dashboard-ux-artifacts.png) | Ledger-bound artifact browser, detail/escaped preview, and curator actions |
 | [`dashboard-ux-revision.png`](dashboard-ux-revision.png) | Workflows detail for request plan revision, with explicit inventory back-navigation, stage state, expanded artifacts/evidence, successor packet, feedback, preview, and confirmation |
 | [`dashboard-ux-workflow-completed.png`](dashboard-ux-workflow-completed.png) | Read-only completed-workflow detail with final timeline, verified artifacts/evidence, review disposition, and explicit non-commit/non-push delivery result |

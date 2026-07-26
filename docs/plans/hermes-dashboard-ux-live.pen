@@ -13469,7 +13469,7 @@
                                       "id": "Oh84v",
                                       "name": "Constraints title",
                                       "fill": "#9a8f80",
-                                      "content": "WORKFLOW CONSTRAINTS · reusable source",
+                                      "content": "WORKFLOW CONSTRAINTS · reusable source · Config → Constraints",
                                       "fontFamily": "Courier Prime",
                                       "fontSize": 8,
                                       "fontWeight": "normal"
@@ -13505,7 +13505,7 @@
                                           "id": "rQObr",
                                           "name": "Constraint manage",
                                           "fill": "#ffe6cb",
-                                          "content": "MANAGE SOURCES →",
+                                          "content": "MANAGE SOURCES ↗",
                                           "fontFamily": "Inter",
                                           "fontSize": 8,
                                           "fontWeight": "normal"
@@ -15301,7 +15301,7 @@
                               "id": "KO3OL",
                               "name": "Packs description",
                               "fill": "#9a8f80",
-                              "content": "Installed workflow definitions and exact skill readiness for this mounted profile",
+                              "content": "Installed workflow definitions, exact readiness, and declared skill content",
                               "fontFamily": "Courier Prime",
                               "fontSize": 8.5,
                               "fontWeight": "normal"
@@ -15574,7 +15574,7 @@
                                   "id": "UjsjC",
                                   "name": "addyosmani action label",
                                   "fill": "#ffe6cb",
-                                  "content": "CHECK READINESS",
+                                  "content": "VIEW PACK CONTENTS",
                                   "fontFamily": "Inter",
                                   "fontSize": 8,
                                   "fontWeight": "bold"
@@ -15796,7 +15796,7 @@
                               "id": "wf9i5",
                               "name": "aidlc digest",
                               "fill": "#9a8f80",
-                              "content": "Exact content digests verified per skill; no enable/disable state",
+                              "content": "Exact content digests verified per skill · VIEW CONTENTS →",
                               "fontFamily": "Courier Prime",
                               "fontSize": 8,
                               "fontWeight": "normal"
@@ -18595,7 +18595,7 @@
                               "id": "sgP6E",
                               "name": "Constraints title",
                               "fill": "#ffe6cb",
-                              "content": "CONSTRAINT SOURCES",
+                              "content": "← BACK TO START WORKFLOW · CONSTRAINT SOURCES",
                               "fontFamily": "Inter",
                               "fontSize": 13,
                               "fontWeight": "bold",
@@ -18606,7 +18606,7 @@
                               "id": "x6Ymo4",
                               "name": "Constraints description",
                               "fill": "#9a8f80",
-                              "content": "Validate reusable workflow-scoped policy sources · apply them from Start or workflow detail",
+                              "content": "Exact installed policy sources · read literal content · select explicitly to return",
                               "fontFamily": "Courier Prime",
                               "fontSize": 8.5,
                               "fontWeight": "normal"
@@ -18633,7 +18633,7 @@
                               "id": "teMcF",
                               "name": "Constraint source status label",
                               "fill": "#4ade80",
-                              "content": "● VALID SOURCE",
+                              "content": "● SELECTED SOURCE",
                               "fontFamily": "Courier Prime",
                               "fontSize": 8.5,
                               "fontWeight": "bold"
@@ -18672,7 +18672,7 @@
                               "id": "aIhIV",
                               "name": "Constraint preview title",
                               "fill": "#ffbd38",
-                              "content": "SOURCE REPLACEMENT PREVIEW · NON-MUTATING",
+                              "content": "SELECTED SOURCE · LITERAL CONTENT · READ-ONLY",
                               "fontFamily": "Inter",
                               "fontSize": 9.5,
                               "fontWeight": "bold"
@@ -18696,7 +18696,7 @@
                           "fill": "#ccbaa8",
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
-                          "content": "Compare-and-swap revision 4 → 5. Historical source remains immutable. This does not alter any active workflow automatically.",
+                          "content": "secure-defaults · sha256:6f19…8ad2. Read the exact installed policy source; selection returns only its name and digest to the browser-memory Start draft.",
                           "fontFamily": "Courier Prime",
                           "fontSize": 8.5,
                           "fontWeight": "normal"
@@ -18715,7 +18715,7 @@
                               "id": "ddAw0",
                               "name": "Constraint confirmation",
                               "fill": "#ffbd38",
-                              "content": "☐ I confirm replacing this exact source revision",
+                              "content": "☐ I confirm selecting this exact source for the Start draft",
                               "fontFamily": "Courier Prime",
                               "fontSize": 8.5,
                               "fontWeight": "normal"
@@ -18738,7 +18738,7 @@
                                   "id": "NcZZp",
                                   "name": "Apply constraint source label",
                                   "fill": "#041c1c",
-                                  "content": "APPLY REPLACEMENT",
+                                  "content": "USE IN START DRAFT",
                                   "fontFamily": "Inter",
                                   "fontSize": 8,
                                   "fontWeight": "bold"
@@ -19864,7 +19864,7 @@
                               "id": "mQtec",
                               "name": "Verification description",
                               "fill": "#9a8f80",
-                              "content": "Read-only profile checks with stable IDs and bounded evidence · not workflow supervision",
+                              "content": "Local is the default report scope; live probes run only on an explicit bounded rerun",
                               "fontFamily": "Courier Prime",
                               "fontSize": 8.5,
                               "fontWeight": "normal"
@@ -19897,7 +19897,7 @@
                                   "id": "TcsFX",
                                   "name": "Verification mode label",
                                   "fill": "#ccbaa8",
-                                  "content": "MODE · LOCAL ⌄",
+                                  "content": "LOCAL · NO LIVE PROBES",
                                   "fontFamily": "Courier Prime",
                                   "fontSize": 8.5,
                                   "fontWeight": "normal"
@@ -19922,7 +19922,7 @@
                                   "id": "NDddq",
                                   "name": "Rerun verification label",
                                   "fill": "#041c1c",
-                                  "content": "RERUN VERIFICATION",
+                                  "content": "RUN LIVE CHECKS",
                                   "fontFamily": "Inter",
                                   "fontSize": 8.5,
                                   "fontWeight": "bold"
@@ -19973,7 +19973,7 @@
                               "id": "N8ZTZ",
                               "name": "Verification summary time",
                               "fill": "#9a8f80",
-                              "content": "Evidence refreshed 18 seconds ago · mounted profile daidala-self-improvement",
+                              "content": "Local runs profile/registration/checkout/link/pack checks · live-only rows are incomplete",
                               "fontFamily": "Courier Prime",
                               "fontSize": 8,
                               "fontWeight": "normal"
@@ -20715,6 +20715,3052 @@
                               "fontFamily": "Inter",
                               "fontSize": 8,
                               "fontWeight": "bold"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "Hf6hN",
+      "x": 14960,
+      "y": 0,
+      "name": "Config Pack contents detail concept",
+      "width": 1280,
+      "height": 720,
+      "fill": "#041c1c",
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "OOlTr",
+          "x": 0,
+          "y": 0,
+          "name": "Profile scope banner",
+          "width": 1280,
+          "height": 36,
+          "fill": "#2a2309",
+          "padding": [
+            8,
+            16
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "KWb1J",
+              "name": "Profile scope",
+              "fill": "#ffbd38",
+              "content": "Managing profile “daidala-self-improvement” — config, keys, skills, MCPs, model, and new chats apply to that profile.",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Ezrz2",
+          "x": 0,
+          "y": 36,
+          "name": "App body",
+          "width": 1280,
+          "height": 684,
+          "fill": "#041c1c",
+          "children": [
+            {
+              "type": "frame",
+              "id": "gCOjf",
+              "name": "Hermes sidebar",
+              "width": 344,
+              "height": 684,
+              "fill": "#041c1c",
+              "stroke": "#ffe6cb26",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "vertical",
+              "gap": 6,
+              "padding": [
+                12,
+                14
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "LMCF2",
+                  "name": "Brand row",
+                  "width": 316,
+                  "height": 44,
+                  "fill": "#00000000",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "hKJfo",
+                      "name": "Brand",
+                      "fill": "#ffe6cb",
+                      "content": "HERMES\nAGENT",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "bold",
+                      "letterSpacing": 1.4
+                    },
+                    {
+                      "type": "frame",
+                      "id": "f69Nwt",
+                      "name": "Collapse",
+                      "width": 36,
+                      "height": 36,
+                      "fill": "#00000000",
+                      "stroke": "#ffe6cb26",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "padding": [
+                        7,
+                        14
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "czgd2",
+                          "name": "Collapse label",
+                          "fill": "#ffe6cb",
+                          "content": "◀",
+                          "fontFamily": "Courier New",
+                          "fontSize": 12,
+                          "fontWeight": "bold"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "HrpCU",
+                  "name": "Profile select",
+                  "width": 316,
+                  "height": 34,
+                  "fill": "#00000000",
+                  "stroke": "#ffbd38",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "I3kgL",
+                      "name": "Profile",
+                      "fill": "#ccbaa8",
+                      "content": "daidala-self-improvement",
+                      "fontFamily": "Courier New",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "lRPHc",
+                      "name": "Profile arrow",
+                      "fill": "#ccbaa8",
+                      "content": "⌄",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "aAdju",
+                  "name": "Navigation list",
+                  "width": 316,
+                  "height": 440,
+                  "fill": "#00000000",
+                  "layout": "vertical",
+                  "gap": 1,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Dxm1h",
+                      "name": "Nav CHAT",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "grR35",
+                          "name": "Nav CHAT text",
+                          "fill": "#ccbaa8",
+                          "content": "CHAT",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "fVAXc",
+                      "name": "Nav SESSIONS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "m8ZdWS",
+                          "name": "Nav SESSIONS text",
+                          "fill": "#ccbaa8",
+                          "content": "SESSIONS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "FPjvb",
+                      "name": "Nav FILES",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "paSc2",
+                          "name": "Nav FILES text",
+                          "fill": "#ccbaa8",
+                          "content": "FILES",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "y9Pz3v",
+                      "name": "Nav MODELS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "oby0c",
+                          "name": "Nav MODELS text",
+                          "fill": "#ccbaa8",
+                          "content": "MODELS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "MDCtw",
+                      "name": "Nav LOGS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "SidUI",
+                          "name": "Nav LOGS text",
+                          "fill": "#ccbaa8",
+                          "content": "LOGS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "htQOn",
+                      "name": "Nav CRON",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "k7PApJ",
+                          "name": "Nav CRON text",
+                          "fill": "#ccbaa8",
+                          "content": "CRON",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "sB7Oq",
+                      "name": "Nav SKILLS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "eaDb6",
+                          "name": "Nav SKILLS text",
+                          "fill": "#ccbaa8",
+                          "content": "SKILLS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "RcTIs",
+                      "name": "Nav PLUGINS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "QIL1Q",
+                          "name": "Nav PLUGINS text",
+                          "fill": "#ccbaa8",
+                          "content": "PLUGINS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "N7tpwm",
+                      "name": "Nav MCP",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "klxq5",
+                          "name": "Nav MCP text",
+                          "fill": "#ccbaa8",
+                          "content": "MCP",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "el6dl",
+                      "name": "Nav CHANNELS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "NRPrg",
+                          "name": "Nav CHANNELS text",
+                          "fill": "#ccbaa8",
+                          "content": "CHANNELS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "AIjHG",
+                      "name": "Nav WEBHOOKS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "adoAA",
+                          "name": "Nav WEBHOOKS text",
+                          "fill": "#ccbaa8",
+                          "content": "WEBHOOKS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "HhQFv",
+                      "name": "Nav PAIRING",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "nJsi7",
+                          "name": "Nav PAIRING text",
+                          "fill": "#ccbaa8",
+                          "content": "PAIRING",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "iWbXk",
+                      "name": "Nav PROFILES",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "l6TEia",
+                          "name": "Nav PROFILES text",
+                          "fill": "#ccbaa8",
+                          "content": "PROFILES",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "fNlx7",
+                      "name": "Nav CONFIG",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "cxreX",
+                          "name": "Nav CONFIG text",
+                          "fill": "#ccbaa8",
+                          "content": "CONFIG",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "rfnmX",
+                      "name": "Nav KEYS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "roQQJ",
+                          "name": "Nav KEYS text",
+                          "fill": "#ccbaa8",
+                          "content": "KEYS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "utTyY",
+                      "name": "Nav SYSTEM",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ECz02",
+                          "name": "Nav SYSTEM text",
+                          "fill": "#ccbaa8",
+                          "content": "SYSTEM",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "XaY9t",
+                      "name": "Nav DOCUMENTATION",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "lGEuc",
+                          "name": "Nav DOCUMENTATION text",
+                          "fill": "#ccbaa8",
+                          "content": "DOCUMENTATION",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "Qfvy5",
+                      "name": "Plugins heading",
+                      "fill": "#9a8f80",
+                      "content": "Plugins",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal",
+                      "letterSpacing": 1.2
+                    },
+                    {
+                      "type": "frame",
+                      "id": "cvoQ1",
+                      "name": "Plugin KANBAN",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "F3v8qv",
+                          "name": "Plugin KANBAN text",
+                          "fill": "#ccbaa8",
+                          "content": "KANBAN",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "rGcSV",
+                      "name": "Plugin ACHIEVEMENTS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Jy5Q4",
+                          "name": "Plugin ACHIEVEMENTS text",
+                          "fill": "#ccbaa8",
+                          "content": "ACHIEVEMENTS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "L1GT6d",
+                      "name": "Plugin DAIDALA",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#1d302d",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Z3Nup",
+                          "name": "Plugin DAIDALA text",
+                          "fill": "#ffe6cb",
+                          "content": "DAIDALA",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "bold",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "I6omID",
+                  "name": "System block",
+                  "width": 316,
+                  "height": 88,
+                  "fill": "#00000000",
+                  "stroke": "#ffe6cb26",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "padding": [
+                    5,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "QZ2Os",
+                      "name": "System title",
+                      "fill": "#9a8f80",
+                      "content": "System",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal",
+                      "letterSpacing": 1.1
+                    },
+                    {
+                      "type": "text",
+                      "id": "k97hb",
+                      "name": "Gateway state",
+                      "fill": "#4ade80",
+                      "content": "Gateway Status: Running",
+                      "fontFamily": "Courier New",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "bnfQp",
+                      "name": "Session state",
+                      "fill": "#ccbaa8",
+                      "content": "Active Sessions: 0",
+                      "fontFamily": "Courier New",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "u5NbU",
+                      "name": "Theme label",
+                      "fill": "#9a8f80",
+                      "content": "HERMES TEAL (LARGE) · EN · v0.19.0",
+                      "fontFamily": "Courier New",
+                      "fontSize": 9,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "pTZcw",
+              "name": "Main region",
+              "width": 936,
+              "height": 684,
+              "fill": "#041c1c",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "A8R9b",
+                  "name": "Page header",
+                  "width": 936,
+                  "height": 76,
+                  "fill": "#041c1c",
+                  "stroke": "#ffe6cb26",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    19,
+                    32
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "KyZHa",
+                      "name": "Title group",
+                      "width": 400,
+                      "height": 38,
+                      "fill": "#00000000",
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "QSYX4",
+                          "name": "Page title",
+                          "fill": "#ffe6cb",
+                          "content": "CONFIGURE",
+                          "fontFamily": "Inter",
+                          "fontSize": 15.75,
+                          "fontWeight": "bold",
+                          "letterSpacing": 1.26
+                        },
+                        {
+                          "type": "frame",
+                          "id": "v7TpkC",
+                          "name": "Count badge",
+                          "width": 38,
+                          "height": 22,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            3,
+                            8
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "UtejS",
+                              "name": "Count",
+                              "fill": "#ffe6cb",
+                              "content": "0",
+                              "fontFamily": "Courier New",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "rkW6q",
+                      "name": "Header tabs",
+                      "width": 354,
+                      "height": 36,
+                      "fill": "#00000000",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "u2QfF1",
+                          "name": "Tab WORKFLOWS",
+                          "width": 118,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "r2ncU",
+                              "name": "Tab WORKFLOWS text",
+                              "fill": "#ccbaa8",
+                              "content": "WORKFLOWS",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 1.05
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "vs7x0",
+                          "name": "Tab ARTIFACTS",
+                          "width": 118,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "SZ8PS",
+                              "name": "Tab ARTIFACTS text",
+                              "fill": "#ccbaa8",
+                              "content": "ARTIFACTS",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 1.05
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "JdHgp",
+                          "name": "Tab CONFIG",
+                          "width": 118,
+                          "height": 36,
+                          "fill": "#ffe6cb",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "X1LH8x",
+                              "name": "Tab CONFIG text",
+                              "fill": "#041c1c",
+                              "content": "CONFIG",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "bold",
+                              "letterSpacing": 1.05
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "bsPvJ",
+                  "name": "Pack contents detail workspace",
+                  "width": 936,
+                  "height": 608,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "padding": [
+                    0,
+                    32,
+                    20,
+                    32
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "BH1LX",
+                      "name": "Packs detail subtabs",
+                      "width": 872,
+                      "height": 36,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "I1LlnS",
+                          "name": "Subtab PACKS",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#1d302d",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "KOMx2",
+                              "name": "PACKS tab label",
+                              "fill": "#ccbaa8",
+                              "content": "PACKS",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "bold",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "w8ddL3",
+                          "name": "Subtab CHECKOUTS & TTL",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "hfe2P",
+                              "name": "CHECKOUTS & TTL tab label",
+                              "fill": "#ccbaa8",
+                              "content": "CHECKOUTS & TTL",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "IgsAA",
+                          "name": "Subtab GITHUB PROJECTS",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Zxjoh",
+                              "name": "GITHUB PROJECTS tab label",
+                              "fill": "#ccbaa8",
+                              "content": "GITHUB PROJECTS",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "lI9EM",
+                          "name": "Subtab CONSTRAINTS",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Q4mCaY",
+                              "name": "CONSTRAINTS tab label",
+                              "fill": "#ccbaa8",
+                              "content": "CONSTRAINTS",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "hdOYR",
+                          "name": "Subtab VERIFICATION",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "I53EY",
+                              "name": "VERIFICATION tab label",
+                              "fill": "#ccbaa8",
+                              "content": "VERIFICATION",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "C6EUD",
+                      "name": "Pack contents heading",
+                      "width": "fill_container",
+                      "height": 42,
+                      "layout": "vertical",
+                      "gap": 3,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "CMnHY",
+                          "name": "Back to packs",
+                          "fill": "#ffe6cb",
+                          "content": "← BACK TO PACKS · ADDYOSMANI",
+                          "fontFamily": "Courier Prime",
+                          "fontSize": 9,
+                          "fontWeight": "bold"
+                        },
+                        {
+                          "type": "text",
+                          "id": "GQOai",
+                          "name": "Pack contents subtitle",
+                          "fill": "#9a8f80",
+                          "content": "All six lifecycle stages remain visible · select a declared installed skill to read literal content",
+                          "fontFamily": "Courier Prime",
+                          "fontSize": 8,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "f2A2b",
+                      "name": "Lifecycle stage list",
+                      "width": "fill_container",
+                      "height": 220,
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "o1VNV",
+                          "name": "DEFINE stage row",
+                          "width": "fill_container",
+                          "height": 30,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb15",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "gap": 14,
+                          "padding": [
+                            5,
+                            8
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "UwKlE",
+                              "name": "DEFINE",
+                              "fill": "#ccbaa8",
+                              "content": "DEFINE",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "bold"
+                            },
+                            {
+                              "type": "text",
+                              "id": "qqb0P",
+                              "name": "DEFINE skills",
+                              "fill": "#ccbaa8",
+                              "content": "interview-me · idea-refine · spec-driven-development",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "SpJHo",
+                              "name": "DEFINE action",
+                              "fill": "#ffe6cb",
+                              "content": "VIEW SKILLS →",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "jvtjm",
+                          "name": "PLAN stage row",
+                          "width": "fill_container",
+                          "height": 30,
+                          "fill": "#182c2a",
+                          "stroke": "#ffbd38",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "gap": 14,
+                          "padding": [
+                            5,
+                            8
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "LiF7R",
+                              "name": "PLAN",
+                              "fill": "#ffbd38",
+                              "content": "PLAN",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "bold"
+                            },
+                            {
+                              "type": "text",
+                              "id": "c59fu",
+                              "name": "PLAN skills",
+                              "fill": "#ccbaa8",
+                              "content": "planning-and-task-breakdown · required",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "IiAok",
+                              "name": "PLAN action",
+                              "fill": "#ffbd38",
+                              "content": "SELECTED ↘",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "EUcV5",
+                          "name": "IMPLEMENT stage row",
+                          "width": "fill_container",
+                          "height": 30,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb15",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "gap": 14,
+                          "padding": [
+                            5,
+                            8
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "o94yc",
+                              "name": "IMPLEMENT",
+                              "fill": "#ccbaa8",
+                              "content": "IMPLEMENT",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "bold"
+                            },
+                            {
+                              "type": "text",
+                              "id": "YbXic",
+                              "name": "IMPLEMENT skills",
+                              "fill": "#ccbaa8",
+                              "content": "incremental-implementation · test-driven-development · +2",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "ZQtus",
+                              "name": "IMPLEMENT action",
+                              "fill": "#ffe6cb",
+                              "content": "VIEW SKILLS →",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "UXRNP",
+                          "name": "VERIFY stage row",
+                          "width": "fill_container",
+                          "height": 30,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb15",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "gap": 14,
+                          "padding": [
+                            5,
+                            8
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "inIwH",
+                              "name": "VERIFY",
+                              "fill": "#ccbaa8",
+                              "content": "VERIFY",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "bold"
+                            },
+                            {
+                              "type": "text",
+                              "id": "u6L82k",
+                              "name": "VERIFY skills",
+                              "fill": "#ccbaa8",
+                              "content": "test-driven-development · debugging-and-error-recovery · +1",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "nk9T6",
+                              "name": "VERIFY action",
+                              "fill": "#ffe6cb",
+                              "content": "VIEW SKILLS →",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "MPsFD",
+                          "name": "REVIEW stage row",
+                          "width": "fill_container",
+                          "height": 30,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb15",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "gap": 14,
+                          "padding": [
+                            5,
+                            8
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "zIvDu",
+                              "name": "REVIEW",
+                              "fill": "#ccbaa8",
+                              "content": "REVIEW",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "bold"
+                            },
+                            {
+                              "type": "text",
+                              "id": "O6upQ",
+                              "name": "REVIEW skills",
+                              "fill": "#ccbaa8",
+                              "content": "code-review-and-quality · code-simplification · +2",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "QsVfR",
+                              "name": "REVIEW action",
+                              "fill": "#ffe6cb",
+                              "content": "VIEW SKILLS →",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "vzPIe",
+                          "name": "DELIVER stage row",
+                          "width": "fill_container",
+                          "height": 30,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb15",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "gap": 14,
+                          "padding": [
+                            5,
+                            8
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "a5yaE",
+                              "name": "DELIVER",
+                              "fill": "#ccbaa8",
+                              "content": "DELIVER",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "bold"
+                            },
+                            {
+                              "type": "text",
+                              "id": "E3SuP",
+                              "name": "DELIVER skills",
+                              "fill": "#ccbaa8",
+                              "content": "git-workflow-and-versioning · ci-cd-and-automation · +4",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "BbmAr",
+                              "name": "DELIVER action",
+                              "fill": "#ffe6cb",
+                              "content": "VIEW SKILLS →",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Djs47",
+                      "name": "Selected skill content",
+                      "width": "fill_container",
+                      "height": 180,
+                      "fill": "#0e2423",
+                      "cornerRadius": 7,
+                      "stroke": "#ffe6cb26",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 7,
+                      "padding": [
+                        10,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "j5EAx",
+                          "name": "Selected skill heading",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "tEHfk",
+                              "name": "Selected skill",
+                              "fill": "#ffe6cb",
+                              "content": "PLAN · planning-and-task-breakdown · REQUIRED",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 9,
+                              "fontWeight": "bold"
+                            },
+                            {
+                              "type": "text",
+                              "id": "BdL78",
+                              "name": "Observed digest",
+                              "fill": "#4ade80",
+                              "content": "OBSERVED sha256:35d6…8f51",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "G3Y0h",
+                          "name": "Selected skill source",
+                          "fill": "#9a8f80",
+                          "content": "external · addyosmani/agent-skills/skills/planning-and-task-breakdown",
+                          "fontFamily": "Courier Prime",
+                          "fontSize": 8,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "KJE1r",
+                          "name": "Skill document heading",
+                          "fill": "#ffbd38",
+                          "content": "SKILL.md · LITERAL ESCAPED TEXT · SCROLL TO READ COMPLETE DOCUMENT",
+                          "fontFamily": "Courier Prime",
+                          "fontSize": 8,
+                          "fontWeight": "bold"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "KqN87",
+                          "name": "Skill document preview",
+                          "width": "fill_container",
+                          "height": 72,
+                          "fill": "#041c1c",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            9
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "R8drOh",
+                              "name": "Skill document preview text",
+                              "fill": "#ccbaa8",
+                              "content": "# Planning and task breakdown — turn an approved outcome into bounded, ordered work. The full installed SKILL.md is readable in this pane; selection never installs or activates it.",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "glCHw",
+                      "name": "Pack contents actions",
+                      "width": "fill_container",
+                      "height": 28,
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "pb3di",
+                          "name": "Pack content restriction",
+                          "fill": "#9a8f80",
+                          "content": "Declared pack/skill identities only · unavailable external skills show pinned target and digest",
+                          "fontFamily": "Courier Prime",
+                          "fontSize": 8,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "GMVpi",
+                          "name": "Pack content action",
+                          "fill": "#ffe6cb",
+                          "content": "VALIDATE ADDYOSMANI",
+                          "fontFamily": "Courier Prime",
+                          "fontSize": 8,
+                          "fontWeight": "bold"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "lYUM1",
+      "x": 16320,
+      "y": 0,
+      "name": "Initialize profile preview concept",
+      "width": 1280,
+      "height": 720,
+      "fill": "#041c1c",
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "tYAeM",
+          "x": 0,
+          "y": 0,
+          "name": "Profile scope banner",
+          "width": 1280,
+          "height": 36,
+          "fill": "#2a2309",
+          "padding": [
+            8,
+            16
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "Vv2QS",
+              "name": "Profile scope",
+              "fill": "#ffbd38",
+              "content": "Managing profile “daidala-self-improvement” — config, keys, skills, MCPs, model, and new chats apply to that profile.",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "aFO1y",
+          "x": 0,
+          "y": 36,
+          "name": "App body",
+          "width": 1280,
+          "height": 684,
+          "fill": "#041c1c",
+          "children": [
+            {
+              "type": "frame",
+              "id": "v7M0Y8",
+              "name": "Hermes sidebar",
+              "width": 344,
+              "height": 684,
+              "fill": "#041c1c",
+              "stroke": "#ffe6cb26",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "vertical",
+              "gap": 6,
+              "padding": [
+                12,
+                14
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "NF33q",
+                  "name": "Brand row",
+                  "width": 316,
+                  "height": 44,
+                  "fill": "#00000000",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "ZLxC8",
+                      "name": "Brand",
+                      "fill": "#ffe6cb",
+                      "content": "HERMES\nAGENT",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "bold",
+                      "letterSpacing": 1.4
+                    },
+                    {
+                      "type": "frame",
+                      "id": "qvmb1",
+                      "name": "Collapse",
+                      "width": 36,
+                      "height": 36,
+                      "fill": "#00000000",
+                      "stroke": "#ffe6cb26",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "padding": [
+                        7,
+                        14
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "MawpR",
+                          "name": "Collapse label",
+                          "fill": "#ffe6cb",
+                          "content": "◀",
+                          "fontFamily": "Courier New",
+                          "fontSize": 12,
+                          "fontWeight": "bold"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "e2ftdj",
+                  "name": "Profile select",
+                  "width": 316,
+                  "height": 34,
+                  "fill": "#00000000",
+                  "stroke": "#ffbd38",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "d0llaf",
+                      "name": "Profile",
+                      "fill": "#ccbaa8",
+                      "content": "daidala-self-improvement",
+                      "fontFamily": "Courier New",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "HnpKH",
+                      "name": "Profile arrow",
+                      "fill": "#ccbaa8",
+                      "content": "⌄",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "boocV",
+                  "name": "Navigation list",
+                  "width": 316,
+                  "height": 440,
+                  "fill": "#00000000",
+                  "layout": "vertical",
+                  "gap": 1,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Yp7UY",
+                      "name": "Nav CHAT",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "GDv22",
+                          "name": "Nav CHAT text",
+                          "fill": "#ccbaa8",
+                          "content": "CHAT",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "hofDA",
+                      "name": "Nav SESSIONS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "P3NwW",
+                          "name": "Nav SESSIONS text",
+                          "fill": "#ccbaa8",
+                          "content": "SESSIONS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "B5Fa6n",
+                      "name": "Nav FILES",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "F3xRRE",
+                          "name": "Nav FILES text",
+                          "fill": "#ccbaa8",
+                          "content": "FILES",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "yiPuq",
+                      "name": "Nav MODELS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "m4tddo",
+                          "name": "Nav MODELS text",
+                          "fill": "#ccbaa8",
+                          "content": "MODELS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "dGM1g",
+                      "name": "Nav LOGS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "EByJp",
+                          "name": "Nav LOGS text",
+                          "fill": "#ccbaa8",
+                          "content": "LOGS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "R1eLrn",
+                      "name": "Nav CRON",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "g2clSb",
+                          "name": "Nav CRON text",
+                          "fill": "#ccbaa8",
+                          "content": "CRON",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "e8xXgk",
+                      "name": "Nav SKILLS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "V8Cz8",
+                          "name": "Nav SKILLS text",
+                          "fill": "#ccbaa8",
+                          "content": "SKILLS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "IJIzJ",
+                      "name": "Nav PLUGINS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ahVfc",
+                          "name": "Nav PLUGINS text",
+                          "fill": "#ccbaa8",
+                          "content": "PLUGINS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "S07q5",
+                      "name": "Nav MCP",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "bu7kh",
+                          "name": "Nav MCP text",
+                          "fill": "#ccbaa8",
+                          "content": "MCP",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "GvhuB",
+                      "name": "Nav CHANNELS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "yzVfT",
+                          "name": "Nav CHANNELS text",
+                          "fill": "#ccbaa8",
+                          "content": "CHANNELS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "UrhwU",
+                      "name": "Nav WEBHOOKS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "xprLB",
+                          "name": "Nav WEBHOOKS text",
+                          "fill": "#ccbaa8",
+                          "content": "WEBHOOKS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "LFwkL",
+                      "name": "Nav PAIRING",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "NELd8",
+                          "name": "Nav PAIRING text",
+                          "fill": "#ccbaa8",
+                          "content": "PAIRING",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "TxR0v",
+                      "name": "Nav PROFILES",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "AC7dm",
+                          "name": "Nav PROFILES text",
+                          "fill": "#ccbaa8",
+                          "content": "PROFILES",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "CbOq4",
+                      "name": "Nav CONFIG",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "th1P1",
+                          "name": "Nav CONFIG text",
+                          "fill": "#ccbaa8",
+                          "content": "CONFIG",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "JIDMn",
+                      "name": "Nav KEYS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "kUzJ8",
+                          "name": "Nav KEYS text",
+                          "fill": "#ccbaa8",
+                          "content": "KEYS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "krGUJ",
+                      "name": "Nav SYSTEM",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "cPao6",
+                          "name": "Nav SYSTEM text",
+                          "fill": "#ccbaa8",
+                          "content": "SYSTEM",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ABhZn",
+                      "name": "Nav DOCUMENTATION",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "qxDc2",
+                          "name": "Nav DOCUMENTATION text",
+                          "fill": "#ccbaa8",
+                          "content": "DOCUMENTATION",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "C32Qg0",
+                      "name": "Plugins heading",
+                      "fill": "#9a8f80",
+                      "content": "Plugins",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal",
+                      "letterSpacing": 1.2
+                    },
+                    {
+                      "type": "frame",
+                      "id": "MmKgI",
+                      "name": "Plugin KANBAN",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "g3vXEs",
+                          "name": "Plugin KANBAN text",
+                          "fill": "#ccbaa8",
+                          "content": "KANBAN",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ogbae",
+                      "name": "Plugin ACHIEVEMENTS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "E3Mk6",
+                          "name": "Plugin ACHIEVEMENTS text",
+                          "fill": "#ccbaa8",
+                          "content": "ACHIEVEMENTS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Gmf0g",
+                      "name": "Plugin DAIDALA",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#1d302d",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "NyIeE",
+                          "name": "Plugin DAIDALA text",
+                          "fill": "#ffe6cb",
+                          "content": "DAIDALA",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "bold",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "F1k1R",
+                  "name": "System block",
+                  "width": 316,
+                  "height": 88,
+                  "fill": "#00000000",
+                  "stroke": "#ffe6cb26",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "padding": [
+                    5,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "vFK3M",
+                      "name": "System title",
+                      "fill": "#9a8f80",
+                      "content": "System",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal",
+                      "letterSpacing": 1.1
+                    },
+                    {
+                      "type": "text",
+                      "id": "lZuIu",
+                      "name": "Gateway state",
+                      "fill": "#4ade80",
+                      "content": "Gateway Status: Running",
+                      "fontFamily": "Courier New",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "N8Z8Tp",
+                      "name": "Session state",
+                      "fill": "#ccbaa8",
+                      "content": "Active Sessions: 0",
+                      "fontFamily": "Courier New",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Znl1N",
+                      "name": "Theme label",
+                      "fill": "#9a8f80",
+                      "content": "HERMES TEAL (LARGE) · EN · v0.19.0",
+                      "fontFamily": "Courier New",
+                      "fontSize": 9,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "UY0ex",
+              "name": "Main region",
+              "width": 936,
+              "height": 684,
+              "fill": "#041c1c",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Gvg1L",
+                  "name": "Page header",
+                  "width": 936,
+                  "height": 76,
+                  "fill": "#041c1c",
+                  "stroke": "#ffe6cb26",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    19,
+                    32
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "FozAI",
+                      "name": "Title group",
+                      "width": 400,
+                      "height": 38,
+                      "fill": "#00000000",
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "x6mum8",
+                          "name": "Page title",
+                          "fill": "#ffe6cb",
+                          "content": "CONFIGURE",
+                          "fontFamily": "Inter",
+                          "fontSize": 15.75,
+                          "fontWeight": "bold",
+                          "letterSpacing": 1.26
+                        },
+                        {
+                          "type": "frame",
+                          "id": "EjY4f",
+                          "name": "Count badge",
+                          "width": 38,
+                          "height": 22,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            3,
+                            8
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "PfAyo",
+                              "name": "Count",
+                              "fill": "#ffe6cb",
+                              "content": "0",
+                              "fontFamily": "Courier New",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "l8BFv",
+                      "name": "Header tabs",
+                      "width": 354,
+                      "height": 36,
+                      "fill": "#00000000",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "bHPdS",
+                          "name": "Tab WORKFLOWS",
+                          "width": 118,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "l0Ff4",
+                              "name": "Tab WORKFLOWS text",
+                              "fill": "#ccbaa8",
+                              "content": "WORKFLOWS",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 1.05
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "yqqFr",
+                          "name": "Tab ARTIFACTS",
+                          "width": 118,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "OccwN",
+                              "name": "Tab ARTIFACTS text",
+                              "fill": "#ccbaa8",
+                              "content": "ARTIFACTS",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 1.05
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "YcSCB",
+                          "name": "Tab CONFIG",
+                          "width": 118,
+                          "height": 36,
+                          "fill": "#ffe6cb",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "e8QT8b",
+                              "name": "Tab CONFIG text",
+                              "fill": "#041c1c",
+                              "content": "CONFIG",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "bold",
+                              "letterSpacing": 1.05
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "BiMXd",
+                  "name": "Initialize profile preview workspace",
+                  "width": 936,
+                  "height": 608,
+                  "layout": "vertical",
+                  "gap": 12,
+                  "padding": [
+                    0,
+                    32,
+                    24,
+                    32
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "EYaU6",
+                      "name": "Initialize verification subtabs",
+                      "width": 872,
+                      "height": 36,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "YegO0",
+                          "name": "Subtab PACKS",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "J39cs",
+                              "name": "PACKS tab label",
+                              "fill": "#ccbaa8",
+                              "content": "PACKS",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "e4nJk",
+                          "name": "Subtab CHECKOUTS & TTL",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "BYwdh",
+                              "name": "CHECKOUTS & TTL tab label",
+                              "fill": "#ccbaa8",
+                              "content": "CHECKOUTS & TTL",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "jdt5Z",
+                          "name": "Subtab GITHUB PROJECTS",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "H7DUf",
+                              "name": "GITHUB PROJECTS tab label",
+                              "fill": "#ccbaa8",
+                              "content": "GITHUB PROJECTS",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ixT3U",
+                          "name": "Subtab CONSTRAINTS",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "ASp5J",
+                              "name": "CONSTRAINTS tab label",
+                              "fill": "#ccbaa8",
+                              "content": "CONSTRAINTS",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "t5S4U",
+                          "name": "Subtab VERIFICATION",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#1d302d",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "pBLQ1",
+                              "name": "VERIFICATION tab label",
+                              "fill": "#ccbaa8",
+                              "content": "VERIFICATION",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "bold",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "KH46j",
+                      "name": "Initialize heading",
+                      "width": "fill_container",
+                      "height": 46,
+                      "layout": "vertical",
+                      "gap": 3,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "FQHA8",
+                          "name": "Back to verification",
+                          "fill": "#ffe6cb",
+                          "content": "← BACK TO VERIFICATION",
+                          "fontFamily": "Courier Prime",
+                          "fontSize": 9,
+                          "fontWeight": "bold"
+                        },
+                        {
+                          "type": "text",
+                          "id": "zwg6V",
+                          "name": "Initialize title",
+                          "fill": "#ffbd38",
+                          "content": "INITIALIZE PROFILE · PREVIEW ONLY",
+                          "fontFamily": "Courier Prime",
+                          "fontSize": 13,
+                          "fontWeight": "bold"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "CG0Pe",
+                      "name": "Initialization target",
+                      "width": "fill_container",
+                      "height": 76,
+                      "fill": "#0e2423",
+                      "cornerRadius": 7,
+                      "stroke": "#4ade80",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 5,
+                      "padding": [
+                        10,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "JhQ07",
+                          "name": "Target label",
+                          "fill": "#9a8f80",
+                          "content": "PROFILE-LOCAL TARGET",
+                          "fontFamily": "Courier Prime",
+                          "fontSize": 8,
+                          "fontWeight": "bold"
+                        },
+                        {
+                          "type": "text",
+                          "id": "neAPu",
+                          "name": "Target value",
+                          "fill": "#ffe6cb",
+                          "content": "daidala/workflows.sqlite3 · currently uninitialized",
+                          "fontFamily": "Courier Prime",
+                          "fontSize": 9,
+                          "fontWeight": "bold"
+                        },
+                        {
+                          "type": "text",
+                          "id": "cSzSX",
+                          "name": "Target note",
+                          "fill": "#4ade80",
+                          "content": "Opening this view and previewing it create no directory, database, or schema.",
+                          "fontFamily": "Courier Prime",
+                          "fontSize": 8,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "JqTaE",
+                      "name": "Initialization effects",
+                      "width": "fill_container",
+                      "height": 176,
+                      "cornerRadius": 7,
+                      "stroke": "#ffe6cb26",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "B11xSK",
+                          "name": "PREVIEW-DIGEST",
+                          "width": "fill_container",
+                          "height": 42,
+                          "stroke": "#ffe6cb15",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            10
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "khAGA",
+                              "name": "PREVIEW-DIGEST detail",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "sn9BM",
+                                  "name": "PREVIEW-DIGEST label",
+                                  "fill": "#ccbaa8",
+                                  "content": "PREVIEW-DIGEST",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8.5,
+                                  "fontWeight": "bold"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "WhMJg",
+                                  "name": "PREVIEW-DIGEST value",
+                                  "fill": "#9a8f80",
+                                  "content": "sha256:8f4a…c112 · fresh identity and observed state",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "Pcr5j",
+                              "name": "PREVIEW-DIGEST state",
+                              "fill": "#4ade80",
+                              "content": "READY",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Z27ha2",
+                          "name": "ON CONFIRM",
+                          "width": "fill_container",
+                          "height": 42,
+                          "stroke": "#ffe6cb15",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            10
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "hKd47",
+                              "name": "ON CONFIRM detail",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "O4SLa",
+                                  "name": "ON CONFIRM label",
+                                  "fill": "#ccbaa8",
+                                  "content": "ON CONFIRM",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8.5,
+                                  "fontWeight": "bold"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "VCV6K",
+                                  "name": "ON CONFIRM value",
+                                  "fill": "#9a8f80",
+                                  "content": "create profile-local directory and SQLite schema exactly once",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "o4jJy",
+                              "name": "ON CONFIRM state",
+                              "fill": "#ffbd38",
+                              "content": "PENDING",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "lBst5",
+                          "name": "REPEATED APPLY",
+                          "width": "fill_container",
+                          "height": 42,
+                          "stroke": "#ffe6cb15",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            10
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "e9Dbk",
+                              "name": "REPEATED APPLY detail",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "sWN6O",
+                                  "name": "REPEATED APPLY label",
+                                  "fill": "#ccbaa8",
+                                  "content": "REPEATED APPLY",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8.5,
+                                  "fontWeight": "bold"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Hplf3",
+                                  "name": "REPEATED APPLY value",
+                                  "fill": "#9a8f80",
+                                  "content": "schema already present; report idempotent no-op",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "bzyBB",
+                              "name": "REPEATED APPLY state",
+                              "fill": "#4ade80",
+                              "content": "SAFE",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ErrGH",
+                          "name": "NATIVE EQUIVALENT",
+                          "width": "fill_container",
+                          "height": 42,
+                          "stroke": "#ffe6cb15",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            10
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "saH2E",
+                              "name": "NATIVE EQUIVALENT detail",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "jhGxW",
+                                  "name": "NATIVE EQUIVALENT label",
+                                  "fill": "#ccbaa8",
+                                  "content": "NATIVE EQUIVALENT",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8.5,
+                                  "fontWeight": "bold"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Vm9Gi",
+                                  "name": "NATIVE EQUIVALENT value",
+                                  "fill": "#9a8f80",
+                                  "content": "hermes daidala init --apply after matching preview",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "An94Y",
+                              "name": "NATIVE EQUIVALENT state",
+                              "fill": "#ccbaa8",
+                              "content": "GUIDANCE",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "qKAo1",
+                      "name": "Initialization confirmation",
+                      "width": "fill_container",
+                      "height": 112,
+                      "fill": "#182c2a",
+                      "cornerRadius": 7,
+                      "stroke": "#ffbd38",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": [
+                        10,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "AXlRT",
+                          "name": "Confirmation title",
+                          "fill": "#ffbd38",
+                          "content": "CONFIRM PROFILE INITIALIZATION",
+                          "fontFamily": "Courier Prime",
+                          "fontSize": 9,
+                          "fontWeight": "bold"
+                        },
+                        {
+                          "type": "text",
+                          "id": "WAbW3",
+                          "name": "Confirmation scope",
+                          "fill": "#ccbaa8",
+                          "content": "Apply rechecks this preview digest. No browser path, profile, schema, command, or force field is accepted.",
+                          "fontFamily": "Courier Prime",
+                          "fontSize": 8,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "TJMDJ",
+                          "name": "Initialization actions",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "mwTvM",
+                              "name": "Initialization confirmation checkbox",
+                              "fill": "#ffbd38",
+                              "content": "☐ I confirm initializing this exact profile target",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "JObir",
+                              "name": "Initialization apply button",
+                              "height": 28,
+                              "fill": "#ffe6cb",
+                              "stroke": "#ffe6cb26",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                5,
+                                9
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "OhpZB",
+                                  "name": "Initialization apply label",
+                                  "fill": "#041c1c",
+                                  "content": "INITIALIZE PROFILE",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 8,
+                                  "fontWeight": "bold"
+                                }
+                              ]
                             }
                           ]
                         }

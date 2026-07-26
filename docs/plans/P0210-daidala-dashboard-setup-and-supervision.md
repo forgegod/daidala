@@ -37,7 +37,7 @@ Add the browser path that resolves one mounted-profile registration into the exi
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Add first-workflow setup wizard UX | pending | The wizard resolves an inventory-selected registration into the exact `SetupRequest`/`daidala:setup` engine path, verifies transport-specific repository capabilities and all other prerequisites, creates or selects a board, applies only revalidated non-secret defaults, and preserves preview-then-confirm start semantics |
+| 0 | Add first-workflow setup wizard UX | pending | The wizard resolves an inventory-selected registration into the exact `SetupRequest`/`daidala:setup` engine path, verifies transport-specific repository capabilities and all other prerequisites, creates or selects a board, returns to its browser-memory-only draft from Config → Constraints source management, applies only revalidated non-secret defaults, and preserves preview-then-confirm start semantics |
 | 1 | Add decision-first workflow supervision | pending | Existing workflows reopen by exact ID; isolated-browser evidence proves verified plan approval, exact review disposition before delivery, review-driven revision to a new plan approval, bounded blocked-card recovery, and previewed cancellation |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
@@ -51,10 +51,20 @@ Steps:
 1. Read contract Phase 2, the SetupRequest decision, and all linked AGENTS files.
 2. Implement the contract's read-only mounted controller identity; ready-pack,
    registered-repository, worker-default/stage-profile, and existing-board
-   selectors; requested outcome / prompt (mapped to `SetupRequest.goal`); constraints;
-   browser-local non-secret default; six-category readiness; Cron handoff; preview;
-   and confirmation controls. Never label the browser control `Goal`, because
-   that implies Hermes' unrelated `/goal` session feature.
+   selectors; requested outcome / prompt (mapped to `SetupRequest.goal`);
+   constraints; browser-local non-secret default; six-category readiness; Cron
+   handoff; preview; and confirmation controls. The reference-skill constraint
+   mode lists installed policy skills from the same inventory the CLI uses
+   today (`ProfileSkillContentRegistry.installed_names()` in
+   `daidala/skills.py`); `Manage sources` is a navigation affordance that opens
+   Config → Constraints and preserves the in-progress Start draft only in
+   browser memory. P0230 ships the dedicated reusable-source browser, literal
+   content route, and `← Back to Start workflow` return that the link points
+   to; until then the selector resolves names from the installed-skill
+   inventory and the link routes to the Constraints subtab. Any source or form
+   change invalidates the current preview and reruns readiness. Never label the
+   browser control `Goal`, because that implies Hermes' unrelated `/goal`
+   session feature.
 3. Resolve `selection.project_id` to the mounted profile's exact registration and
    trusted checkout server-side, reject browser paths, then pass only the resolved
    request payload to `SetupRequest.from_payload`; keep selection, confirmation,
@@ -62,7 +72,7 @@ Steps:
 4. Recreate the disposable stateful fixture for browser evidence and remove it after stopping its owned process.
 5. Update route inventory and owning AGENTS contracts with the source changes, then run the focused setup/API/asset/browser gates from the contract.
 
-Verification gate: The Phase 0 table predicate and the exact detailed Phase 2 contract gates pass.
+Verification gate: The Phase 0 table predicate and the exact detailed Phase 2 contract gates pass. Browser evidence proves a Start draft is neither persisted nor included in defaults, a returned source selection invalidates the prior preview, and the old preview cannot authorize Start after a source change. The `Manage sources` link is present and routes to Config → Constraints; its full destination surface is verified under P0230.
 
 ## Phase 1 — Add decision-first workflow supervision
 

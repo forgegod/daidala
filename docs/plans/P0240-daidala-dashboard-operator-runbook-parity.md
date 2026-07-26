@@ -54,11 +54,19 @@ Steps:
 
 1. Read contract Phase 9 and the linked AGENTS files before editing.
 2. Extract the profile initialization service, preserve native/standalone `init` output and exit semantics, and remove eager schema creation from dashboard health/read paths.
-3. Add preview and confirmed initialization routes/panel with a fresh digest, literal confirmation, concurrency safety, and explicit repeated-apply no-op.
-4. Add the strict prerequisite diagnosis route/panel keyed only by a validated registered `project_id`; derive trusted paths server-side and keep `live` explicit and bounded.
+3. Add preview and confirmed initialization routes/panel with a fresh digest,
+   literal confirmation, concurrency safety, and explicit repeated-apply no-op.
+   `Open initialization preview` opens a Config → Verification subview, retaining
+   that tab context and a back control; its first render is the non-mutating
+   preview of target, observed state, effects, digest, and native equivalent.
+4. Add the strict prerequisite diagnosis route/panel keyed only by a validated
+   registered `project_id`; derive trusted paths server-side and keep `live`
+   explicit and bounded. Local is the default report scope rather than a saved
+   setting: live-only rows are `not run` and incomplete. `Run live checks` is the
+   sole explicit control that requests a bounded non-mutating live report.
 5. Extend the closed route inventory, focused CLI/API/asset tests, and same-commit DOX ownership exactly as contract Phase 9 requires.
 
-Verification gate: The Phase 0 table predicate passes, and a fresh fixture proves no read or preview creates profile state before confirmed apply.
+Verification gate: The Phase 0 table predicate passes, and a fresh fixture proves no read or preview creates profile state before confirmed apply. Browser evidence proves Local does not run live probes, live-only `not run` rows are not treated as passes, the explicit live rerun is sanitized and non-mutating, and initialization preview opens the dedicated subview without creating a schema.
 
 ## Phase 1 — Add operator runbook parity and host-owned lifecycle guidance
 

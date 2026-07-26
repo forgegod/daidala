@@ -683,16 +683,26 @@ started.
 2. Render Config → Packs with one card per pack containing name, source, source revision (40-hex),
    Hermes version constraint, lifecycle stage list, and a per-stage skill
    table with activation mode (`required`/`conditional`), bundled vs.
-   external flag, and content digest.
+   external flag, and expected/observed content digest. `View pack contents`
+   opens a read-only detail within Config → Packs: all six stage rows remain
+   visible, and selecting a declared skill shows its literal escaped `SKILL.md`,
+   source/install target, and readiness state. It never executes, installs,
+   enables, or activates the selected skill.
 3. The pack operations currently live behind the CLI's private
    `_run_pack_operation`; there is no dashboard-callable pack service yet.
    Extract typed validation/readiness services that return the same pack and
    `PackInstallPlan` projections, and keep the CLI as one adapter over them. Add
-   only the bounded routes `POST /packs/{name}/validate`, `POST
-   /packs/{name}/check`, `POST /packs/{name}/install/preview`, and `POST
-   /packs/{name}/install`. The cards loaded from `/prerequisites` are the
-   runbook's list surface. Do not shell out to `hermes daidala` from the router
-   and do not expose arbitrary pack operation or command fields.
+   only the bounded routes `GET /packs/{name}/skills/{skill_name}`, `POST
+   /packs/{name}/validate`, `POST /packs/{name}/check`, `POST
+   /packs/{name}/install/preview`, and `POST /packs/{name}/install`. The content
+   route accepts only a known bundled pack and a skill declared in that pack;
+   it returns the complete installed `SKILL.md` only when its UTF-8 size is at
+   most 1 MiB, otherwise a sanitized unavailable state with byte size and no
+   partial content. An absent external skill returns its pinned install target
+   and expected digest, never a path or invented content. The cards loaded from
+   `/prerequisites` are the runbook's list surface. Do not shell out to `hermes
+   daidala` from the router and do not expose arbitrary pack operation or command
+   fields.
 4. Add a canonical preview digest over pack name, source, pinned and resolved
    revisions, Hermes constraint and observed version, install actions, current
    content digests, mismatches, and blockers. Check displays missing exact skills
@@ -710,10 +720,12 @@ started.
 6. Style the card to match existing host themes via the existing
    `dist/style.css` tokens.
 7. Extend `tests/test_dashboard_assets.py`'s source-contract assertions for the
-   dependency-free IIFE bundle: both pack names, the pack fields above, and the
-   `/prerequisites` request must be present. Extend API tests for validate, check,
-   installation preview, stale-digest conflict, refusal without confirmation,
-   and confirmed apply. Add service/CLI parity tests so extraction cannot drift.
+   dependency-free IIFE bundle: both pack names, the pack fields above, the
+   per-stage content detail, and the `/prerequisites` request must be present.
+   Extend API tests for declared-skill content, undeclared-skill rejection,
+   unavailable/oversize content, validate, check, installation preview,
+   stale-digest conflict, refusal without confirmation, and confirmed apply. Add
+   service/CLI parity tests so extraction cannot drift.
    Do not introduce a JavaScript DOM harness merely for this panel.
    Phases 5 and 6 follow the same asset-contract pattern for their new
    panels (`GitHubProjectLinksPanel`, `CheckoutManager`); their verification
@@ -722,9 +734,10 @@ started.
 **Verification gate:** `pytest tests/test_dashboard_assets.py
 tests/test_dashboard_api.py -q` exits 0; the bundle/API contract includes both
 pack names and non-empty skills supplied by `/prerequisites`; both definitions
-validate through the same loader as the CLI; `aidlc` reports ready on a correctly
-installed fixture; and `addyosmani` cannot apply external
-skill installation without a fresh matching preview and literal confirmation.
+validate through the same loader as the CLI; `aidlc` reports ready on a correctly installed fixture; every rendered stage can
+select only its declared skills and read a matching literal installed document;
+and `addyosmani` cannot apply external skill installation without a fresh
+matching preview and literal confirmation.
 
 ## Phase 2 — First-workflow setup wizard UX
 
@@ -802,8 +815,18 @@ request, and confirm creation of the workflow graph.
    inventory/readiness and leaves stale or missing IDs unselected; client storage
    never authorizes preview or start.
 5. Render a constraint source tab group: "Write YAML", "Reference skill
-   (name + digest)", or "No constraints". A new workflow has no currently bound
-   constraint revision; the last option sends all three constraint fields as
+   (name + digest)", or "No constraints". The Reference-skill selector lists
+   installed policy skills from the same inventory the CLI uses
+   (`ProfileSkillContentRegistry.installed_names()`), so P0210 can ship it
+   before P0230. `Manage sources` is a navigation affordance that opens Config →
+   Constraints with a `return=start-workflow` context; the Start form is held in
+   browser memory only, no default is written, and returning refreshes the
+   inventory. P0230 owns the dedicated reusable-source browser, literal
+   content route, and `← Back to Start workflow` return that the link points
+   to. The operator must explicitly select a returned source before its
+   name/digest populate the form; every source/form change invalidates preview
+   and reruns readiness. A new workflow has no currently bound constraint
+   revision; the last option sends all three constraint fields as
    `null`/absent.
 6. Preserve engine parity with `daidala:setup` through the resolved envelope from
    the Setup request decision: `/wizard/preview` accepts exactly `{selection:
@@ -1597,11 +1620,21 @@ compare-and-swap replacement.
 4. Add a "Reference skill (name + digest)" mode that mirrors
    `setup_wizard.SetupRequest.constraints_skill` and
    `constraints_skill_digest` (`daidala/setup_wizard.py:54-74`).
+5. Add `GET /api/plugins/daidala/constraints/sources` and `GET
+   /api/plugins/daidala/constraints/sources/{name}`. The list contains only
+   exact installed skills whose complete document validates as a reusable policy
+   source; detail accepts only a listed name and returns source name, complete
+   literal `SKILL.md` (up to 1 MiB, otherwise sanitized unavailable state),
+   canonical constraint content, and verified digest. It accepts no path, glob,
+   arbitrary installed-skill name, or source mutation. The browser renders this
+   detail inside Config → Constraints and may return a selected name/digest to a
+   Start draft only through the explicit client-side return context.
 
 **Verification gate:** extend the existing `tests/test_dashboard_api.py` and
 `tests/test_dashboard_assets.py` contracts. The cases pass while proving the
 editor rejects apply without a fresh valid preview, matching current digest, or
-literal `confirm: true`, and
+literal `confirm: true`; reusable-source inventory rejects non-policy or
+undeclared source lookup, renders only literal bounded text, and
 surfaces the schema bounds (`global_max`, `phase_max`, `constraint_bytes`,
 `canonical_bytes`) from `daidala/dashboard_backend.py:158-164`. A focused
 constraint/docs parity test proves the starter template parses and exactly matches
@@ -1684,7 +1717,11 @@ or a generic CLI proxy.
    `{preview_digest, confirm: true}`; no path, profile, schema, command, or force
    field is accepted. Add an `InitializationPanel` that displays the resolved
    profile-local target, dry-run result, confirmation, apply/no-op result, and
-   the runbook's native command equivalent.
+   the runbook's native command equivalent. `Open initialization preview` is an
+   internal Config → Verification subview transition with `← Back to
+   verification`; opening it issues only the non-mutating preview and visibly
+   renders target, observed state, exact effect list, and preview digest before
+   its confirmation control.
 4. Add `POST /api/plugins/daidala/diagnostics/prerequisites` with exactly
    `{project_id, live}`. Validate `project_id` with the existing registration
    slug helper, load its trusted profile-local registration, and derive the
@@ -1700,16 +1737,21 @@ or a generic CLI proxy.
 5. Render a `PrerequisiteDiagnosisPanel` per registered project with the finite
    statuses `pass`, `blocked`, `not-run`, and `error`, exact check ID, guide
    section, bounded evidence, blocker, checklist digest, and report exit code.
-   Treat local-mode `not-run` live checks as incomplete rather than a checker
-   crash. The panel never fixes setup state, edits retained evidence, or invokes
-   `doctor --fix` (Daidala has no such command).
+   The visible `Local` label is report scope, not a saved configuration setting:
+   the default request sends `live: false`, and its live-only `not-run` checks
+   are incomplete rather than passing, failing, or a checker crash. `Run live
+   checks` is the sole explicit control that submits `live: true`; it reruns only
+   the existing bounded live probes and remains non-mutating and sanitized. The
+   panel never fixes setup state, edits retained evidence, or invokes `doctor
+   --fix` (Daidala has no such command).
 6. Extend the closed route inventory and add focused tests in
    `tests/test_cli.py`, `tests/test_dashboard_api.py`, and
    `tests/test_dashboard_assets.py`. Prove health and preview leave a fresh
    profile byte-for-byte absent, stale initialization digests conflict, repeated
    confirmed apply is a no-op, concurrent apply creates one schema, diagnosis
-   rejects unknown projects and arbitrary path fields, local/live reports use the
-   existing checker, and all error payloads remain sanitized. Update
+   rejects unknown projects and arbitrary path fields, Local does not invoke live
+   probes, explicit live rerun uses the existing checker, `not-run` live rows are
+   incomplete, and all error payloads remain sanitized. Update
    `daidala/AGENTS.md`, `dashboard/AGENTS.md`, and `tests/AGENTS.md` in the same
    commit for the new module, routes, mutation, components, and tests.
 

@@ -14,13 +14,13 @@
 
 **Context sources:** [UX concept and design contract](P0250-daidala-dashboard-ux-concept.md), [shared goal and current state](daidala-dashboard-execution-contract.md#goal), [operator pinning](daidala-dashboard-execution-contract.md#operator-pinning), [operator runbook coverage](daidala-dashboard-execution-contract.md#operator-runbook-coverage), [operator-visible precondition](daidala-dashboard-execution-contract.md#operator-visible-precondition), [implementer discipline](daidala-dashboard-execution-contract.md#implementer-discipline), [risk call-out](daidala-dashboard-execution-contract.md#risk-call-out), [runbook install and enable](../07-runbook.md#install-and-enable), [runbook pack diagnosis](../07-runbook.md#diagnose-prerequisites), and detailed [contract Phase 0](daidala-dashboard-execution-contract.md#phase-0-create-daidala-dashboard-profile-install-daidala-verify-the-dashboard-mount) and [contract Phase 1](daidala-dashboard-execution-contract.md#phase-1-pack-browser-and-readiness-actions)
 
-**Produces:** a verified registration-free `daidala-dashboard` host, a disposable stateful browser fixture recipe, and Config → Packs list/validate/readiness/external-skill-install UI backed by installed Daidala services
+**Produces:** a verified registration-free `daidala-dashboard` host, a disposable stateful browser fixture recipe, and Config → Packs list/validate/readiness/read-only per-stage skill-content/external-skill-install UI backed by installed Daidala services
 
 **Status:** pending — context split is complete; human approval is required before implementation
 
 ## Goal
 
-Establish an isolated, verified dashboard host and implement the runbook's Config → Packs list, validate, check, and dry-run-first external-skill install surface so later dashboard units start from a known mounted plugin and supported Hermes React SDK boundary.
+Establish an isolated, verified dashboard host and implement the runbook's Config → Packs list, validate, check, read-only declared-skill content, and dry-run-first external-skill install surface so later dashboard units start from a known mounted plugin and supported Hermes React SDK boundary.
 
 ## Current state
 
@@ -34,7 +34,7 @@ Establish an isolated, verified dashboard host and implement the runbook's Confi
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
 | 0 | Create the registration-free dashboard profile and disposable fixture, install Daidala, and verify both mounts | pending | SPA, manifest, and packaged asset checks pass; authenticated health identifies Daidala; the fixture has independent non-secret state, passes the stateful browser gate, and is deleted after its owned process stops |
-| 1 | Add pack browser and readiness actions | pending | Both packs list and validate; readiness and check/install-plan actions use installed services; external installation requires preview and confirmation; focused dashboard tests pass |
+| 1 | Add pack browser and readiness actions | pending | Both packs list and validate; every lifecycle stage exposes its declared skill metadata and exact installed content through a bounded read-only detail; readiness and check/install-plan actions use installed services; external installation requires preview and confirmation; focused dashboard tests pass |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
 
@@ -54,17 +54,24 @@ Verification gate: The Phase 0 table predicate passes using the exact host/fixtu
 
 ## Phase 1 — Add pack browser and readiness actions
 
-**Goal:** Let the mounted dashboard render and validate both packs, explain readiness, run checks, and preview then confirm external skill installation through bounded installed services.
+**Goal:** Let the mounted dashboard render and validate both packs, explain readiness, read every declared lifecycle skill's exact installed content, run checks, and preview then confirm external skill installation through bounded installed services.
 
 Steps:
 
 1. Read the exact Phase 1 contract, `dashboard/AGENTS.md`, and `tests/AGENTS.md`.
-2. Implement the contract's Config → Packs list projection, explicit validation, readiness details, check action, install-plan preview, and literal-confirmation apply path without adding a general dispatch endpoint.
+2. Implement the contract's Config → Packs list projection, explicit validation,
+   readiness details, all-six-stage read-only detail with declared-skill metadata
+   and selected installed `SKILL.md` content, check action, install-plan preview,
+   and literal-confirmation apply path without adding a general dispatch endpoint.
+   A content request accepts only a selected bundled pack and one of its declared
+   skill names, renders literal escaped text within the contract's document bound,
+   and returns an unavailable external skill's pinned target/digest instead of a
+   path or invented content.
 3. Keep external-skill installation separate from bundled-skill readiness and preserve the closed route inventory.
 4. Update the nearest AGENTS contracts in the same change when routes or ownership change.
 5. Run the focused API, asset, and browser gates named by the contract.
 
-Verification gate: The Phase 1 table predicate and its focused tests pass against the isolated dashboard host.
+Verification gate: The Phase 1 table predicate and its focused tests pass against the isolated dashboard host. Browser evidence proves each of the six stage rows remains visible, declared-skill selection cannot address an undeclared skill, installed content and observed digest agree, and unavailable external skills do not expose paths or fabricated content.
 
 ## Out of scope
 

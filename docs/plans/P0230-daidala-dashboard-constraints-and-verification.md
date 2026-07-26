@@ -16,7 +16,7 @@
 
 **Context sources:** [UX concept and design contract](P0250-daidala-dashboard-ux-concept.md), [shared goal and current state](daidala-dashboard-execution-contract.md#goal), [browser mutation allowlist and persisted configuration decisions](daidala-dashboard-execution-contract.md#operator-pinning), [implementer discipline](daidala-dashboard-execution-contract.md#implementer-discipline), and detailed [contract Phase 7](daidala-dashboard-execution-contract.md#phase-7-constraint-authoring-ui) and [contract Phase 8](daidala-dashboard-execution-contract.md#phase-8-configuration-verification-panel)
 
-**Produces:** schema-aware constraint authoring and a read-only configuration verification panel with synchronized phase-local DOX and route inventories
+**Produces:** schema-aware constraint authoring with an exact reusable-source browser, a read-only configuration verification panel, and synchronized phase-local DOX and route inventories
 
 **Status:** pending — blocked until P0220 completes and human implementation approval is recorded
 
@@ -42,17 +42,21 @@ Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate p
 
 ## Phase 0 — Add constraint authoring UI
 
-**Goal:** Add a guided schema-aware editor over the existing constraint preview and replace services.
+**Goal:** Add a guided schema-aware editor and exact reusable-source browser over the existing constraint preview and replace services, completing the `Manage sources` destination that P0210's Start wizard links to.
 
 Steps:
 
 1. Read contract Phase 7, `dashboard/AGENTS.md`, `daidala/AGENTS.md`, and the linked constraint documentation.
-2. Implement the schema-aware YAML editor, live preview, error rendering, and digest-impact display through the existing preview endpoint.
-3. Keep replacement on the existing preview/confirm path and do not add a new parser or authority model.
+2. Implement the schema-aware YAML editor, live preview, error rendering,
+   digest-impact display, and a read-only inventory of exact installed reusable
+   policy sources. A selected source shows the complete literal escaped skill
+   document and its validated canonical constraint content/digest; source lookup
+   accepts only an inventory name, never a path or arbitrary installed skill.
+3. Keep replacement on the existing preview/confirm path and do not add a new parser or authority model. The source browser is read-only; selecting a source returns its name/digest to Start workflow only through the explicit browser-memory draft handoff defined by P0210.
 4. Extend route inventory and same-commit DOX contracts.
 5. Run the focused API, asset, constraint, and disposable-browser gates from the contract.
 
-Verification gate: The Phase 0 table predicate and detailed Phase 7 contract gates pass.
+Verification gate: The Phase 0 table predicate and detailed Phase 7 contract gates pass. Browser evidence proves invalid/non-policy skills never appear in the source inventory, source text is literal and complete within the documented UI bound, no browser path is accepted, and return to Start requires an explicit source selection.
 
 ## Phase 1 — Add the configuration verification panel
 
