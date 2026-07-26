@@ -462,7 +462,7 @@ Plugin mount contract: routes mount `<PluginPage name>`; the bundle calls
 
 The host-derived visual constraints are codified in this document and the
 owning `AGENTS.md`. The Pen source is an open-format `.pen` file with ten
-1280×720 frames and four 1280×1000 workflow/start-detail/constraint-authoring
+1280×720 frames and nine 1280×1000 workflow/start-detail/constraint-authoring
 frames. Every frame preserves the same Hermes shell and Daidala
 navigation; only the use-case workspace changes. The Request plan revision frame
 incorporates the former attention view's workflow identity, stage state, and
@@ -487,6 +487,11 @@ editing.
 | [`dashboard-ux-config-verification.png`](dashboard-ux-config-verification.png) | Config → Verification read-only Local report scope, explicit bounded live rerun, stable IDs, and separate non-mutating initialization-preview handoff |
 | [`dashboard-ux-initialization.png`](dashboard-ux-initialization.png) | Config → Verification → Initialize profile subview with back navigation, resolved target/state/effects/digest, native equivalent, and literal-confirmed idempotent apply |
 | [`dashboard-ux-artifacts.png`](dashboard-ux-artifacts.png) | Ledger-bound artifact browser, detail/escaped preview, and curator actions |
+| [`dashboard-ux-plan-approval.png`](dashboard-ux-plan-approval.png) | Exact-plan approval detail with verified identity tuple, bounded literal plan evidence, next-card packet, non-mutating consequence preview, and literal confirmation |
+| [`dashboard-ux-review-disposition.png`](dashboard-ux-review-disposition.png) | Pre-delivery review-disposition detail with escaped diff, verification/findings, successor packet, and explicitly gated delivery/revision/rejection actions |
+| [`dashboard-ux-blocked-recovery.png`](dashboard-ux-blocked-recovery.png) | Blocked-card recovery detail with requested decision, latest relevant evidence, targeted operator comment, and non-fabricating unblock preview |
+| [`dashboard-ux-cancel.png`](dashboard-ux-cancel.png) | Workflow-cancellation detail with affected worktree named first, required reason, immutable-evidence/card consequences, preview digest, and literal confirmation |
+| [`dashboard-ux-reopen.png`](dashboard-ux-reopen.png) | Exact-ID reopen detail that restores the read-only watch and ledger-bound terminal history without creating a workflow or schedule |
 | [`dashboard-ux-revision.png`](dashboard-ux-revision.png) | Workflows detail for request plan revision, with explicit inventory back-navigation, stage state, expanded artifacts/evidence, successor packet, feedback, preview, and confirmation |
 | [`dashboard-ux-workflow-completed.png`](dashboard-ux-workflow-completed.png) | Read-only completed-workflow detail with final timeline, verified artifacts/evidence, review disposition, and explicit non-commit/non-push delivery result |
 
@@ -545,7 +550,7 @@ Headless CLI verification avoids that stale-document boundary.
 |---|---|---|
 | A Onboard/verify | 1–5 | Config → Verification |
 | B Start | 6 | Workflows → Start workflow subpage |
-| C Supervise/decide | 7–14 | Workflows inventory + workflow detail |
+| C Supervise/decide | 7–14 | Workflows inventory plus exact-plan approval, review-disposition, blocked-recovery, cancellation, revision, reopen, and terminal-detail workspaces |
 | D Checkouts/links | 15–18 | Config → Checkouts & GitHub |
 | E Constraints/config | 19–20 | Config → Constraints & Verification |
 | F Artifacts | 21–23 | Artifacts view; workflow-filtered entry from workflow detail |
