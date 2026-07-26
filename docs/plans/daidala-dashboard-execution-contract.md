@@ -16,7 +16,7 @@ Presentation and layout across those units follow the
 [P0250 dashboard UX concept and design contract](P0250-daidala-dashboard-ux-concept.md),
 which owns the single-tab information architecture, decision-card pattern, and
 preview-confirm envelope for the whole family. Every dashboard view preserves
-the Hermes-owned profile banner/sidebar shell and the Daidala-owned five-view
+the Hermes-owned profile banner/sidebar shell and the Daidala-owned three-view
 header navigation; workflow review, revision, and confirmation flows replace
 only the use-case content workspace.
 

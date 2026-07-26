@@ -31,14 +31,16 @@ Own executable plans, shared plan-family contracts, and repository-tracked UX de
 Every full-page Daidala wireframe follows one invariant composition:
 
 1. **Hermes workspace shell** — preserve the profile-scope banner, full Hermes sidebar, active profile, complete global navigation, Plugins group with Daidala selected, system status, version, geometry, and host theme treatment.
-2. **Daidala navigation** — preserve the five primary views in workflow-result order: Actions, Workflows, Start, Artifacts, Config. Exactly one is active and it matches the use case.
+2. **Daidala navigation** — preserve the three primary views in workflow-result order: Workflows, Artifacts, Config. Exactly one is active and it matches the use case.
 3. **Use-case workspace** — replace only the page-content subtree for the current workflow, configuration, start, artifact, review, revision, or confirmation task.
 
 Additional UI contracts:
 
-- Actions is the operator-attention queue; Workflows is the complete lifecycle inventory. Review, revision, approval, cancellation, and other workflow actions open as Workflows detail subviews, not new primary tabs or standalone shells.
-- Workflows inventory rows with a current gate show its compact finite action and open the matching detail workspace; they never duplicate the Actions tab's expanded evidence and authority controls.
-- Workflows detail subviews keep Workflows selected, omit the redundant `Daidala / Workflows` breadcrumb, and provide an explicit `← Back to Workflows` control followed by the exact workflow ID.
+- Workflows is the default view and complete lifecycle inventory. Its first section lists only workflows awaiting attended action; the page header exposes the primary `Start workflow` action.
+- Each awaiting-action row shows one source-bound sentence describing the next operator action. That sentence is orientation copy, not evidence or approval authority, and opens the matching workflow detail workspace.
+- Start, review, revision, approval, cancellation, and other workflow actions open as Workflows subviews, not primary tabs or standalone shells.
+- Workflows subviews keep Workflows selected, omit the redundant `Daidala / Workflows` breadcrumb, and provide an explicit `← Back to Workflows` control followed by the exact workflow ID when one exists.
+- Workflow detail subviews carry the expanded workflow identity, stage state, artifacts/evidence, consequence preview, and authority controls formerly associated with a separate attention view.
 - Start from the closest accepted complete frame. Copy its shell and navigation; do not reconstruct or abbreviate them.
 - Breadcrumbs, workflow identity, evidence, forms, previews, confirmation, and actions belong inside the use-case workspace.
 - Evidence precedes authority controls. A summary never substitutes for exact evidence; preview is visibly non-mutating; apply requires literal confirmation.
@@ -76,7 +78,7 @@ Then verify:
 
 - the canonical PNG matches the fresh export;
 - the complete Hermes shell is present;
-- all five Daidala tabs are present in canonical workflow-result order;
+- all three Daidala tabs are present in canonical workflow-result order;
 - exactly one tab is active and matches the use case;
 - only the use-case workspace differs from the accepted source frame;
 - no content is clipped or overlapping;
