@@ -16,7 +16,7 @@
 
 **Produces:** a verified registration-free `daidala-dashboard` host, a disposable stateful browser fixture recipe, and Config → Packs list/validate/readiness/read-only per-stage skill-content/external-skill-install UI backed by installed Daidala services
 
-**Status:** pending — context split is complete; human approval is required before implementation
+**Status:** in progress — Phase 0 complete; Phase 1 pending
 
 ## Goal
 
@@ -33,19 +33,19 @@ Establish an isolated, verified dashboard host and implement the runbook's Confi
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Create the registration-free dashboard profile and disposable fixture, install Daidala, and verify both mounts | pending | SPA, manifest, and packaged asset checks pass; authenticated health identifies Daidala; the fixture has independent non-secret state, passes the stateful browser gate, and is deleted after its owned process stops |
+| 0 | Create the registration-free dashboard profile and disposable fixture, install Daidala, and verify both mounts | done (Hermes v0.19.0/`3ef6bbd2`; compatibility, host/fixture browser, authority, teardown, and repository-status gates passed) | An exact supported Hermes identity hosts both processes; SPA GET, manifest, and packaged asset checks pass; authenticated health identifies Daidala; the registration-free host has no workflow records, registrations, credentials, or notification authority; the fixture has independent non-secret state, passes the stateful browser gate, and is deleted after its owned process stops |
 | 1 | Add pack browser and readiness actions | pending | Both packs list and validate; every lifecycle stage exposes its declared skill metadata and exact installed content through a bounded read-only detail; readiness and check/install-plan actions use installed services; external installation requires preview and confirmation; focused dashboard tests pass |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
 
 ## Phase 0 — Create and verify the isolated dashboard profiles
 
-**Goal:** Produce a mounted, registration-free dashboard host and a repeatable disposable fixture boundary without changing repository source.
+**Goal:** Produce a mounted, registration-free dashboard host and a repeatable disposable fixture boundary without changing runtime source.
 
 Steps:
 
 1. Read the exact Phase 0 contract and every linked AGENTS file before invoking Hermes.
-2. Follow the pinned `hermes profile`, local-checkout symlink, isolated dashboard, authenticated health, and fixture seeding commands from the contract; do not substitute `hermes-vc` or `daidala-self-improvement`.
+2. Follow the pinned exact-host resolution, `hermes profile`, local-checkout symlink, isolated dashboard, authenticated health, and fixture seeding commands from the contract; do not substitute `hermes-vc` or `daidala-self-improvement`, and do not downgrade or mutate the active global Hermes installation.
 3. Capture operational evidence only under the contract's resolved state-directory location, never in the repository, `/tmp`, or a profile-private plan.
 4. Stop the exact fixture-owned process before deleting the fixture profile; leave the registration-free host installed for Phase 1.
 5. Record command evidence in this phase row only after every predicate passes.
@@ -81,4 +81,4 @@ Verification gate: The Phase 1 table predicate and its focused tests pass agains
   archives. Workflow selection activates one installed ready definition; this
   phase installs only a definition's exact pinned external skills.
 - Do not implement checkout, GitHub Projects, constraints, or artifact-review surfaces.
-- Do not commit, push, or begin implementation without the mandatory human approval gate.
+- Do not push or begin Phase 1 before the approved Phase 0 gate and its plan-status checkpoint hold.

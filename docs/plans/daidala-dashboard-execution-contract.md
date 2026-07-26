@@ -175,7 +175,7 @@ pinned here so the corresponding phases consume them directly.
 - **Target Hermes profile:** **`daidala-dashboard`**, a fresh, dedicated
   profile to be created solely for the development and testing
   of this dashboard plan. `daidala-dashboard` is *not* a published
-  Daidala controller profile and does not own any workflow ledger,
+  Daidala controller profile and does not own any workflow records,
   registrations, or notification authority — it exists to host the
   dashboard under isolated conditions. The existing
   `daidala-self-improvement` controller profile and the everyday-chat
@@ -186,14 +186,14 @@ pinned here so the corresponding phases consume them directly.
 
 - **Browser-test controller state:** stateful browser integration runs against a
   freshly created disposable fixture controller profile/data root named
-  `daidala-dashboard-fixture-<UTC YYYYMMDDTHHMMSSZ>` (UTC ISO-8601 basic
-  format, `Z` suffix, generated at creation), seeded with one strict
+  `daidala-dashboard-fixture-<UTC yyyymmddthhmmssz>` (lowercase UTC ISO-8601
+  basic format, `z` suffix, generated at creation), seeded with one strict
   controller registration and non-secret explicit credential-alias bindings.
   The fixture gets its own local-checkout plugin symlink. Run an isolated
   Hermes dashboard process under the fixture profile on an OS-assigned
   port (`hermes -p <fixture> dashboard --isolated --port 0 --no-open`),
   and terminate that exact owned process before deleting the fixture. Do
-  Do not rely on SPA profile selection: `plugin_api.py` resolves and caches
+  not rely on SPA profile selection: `plugin_api.py` resolves and caches
   backend state from the dashboard process's `HERMES_HOME` and has no
   documented request-profile API. The Start workflow page therefore renders
   that mounted controller profile read-only. Changing controller profile means
@@ -560,12 +560,19 @@ changes; its transient operational evidence remains outside the repository.
 
 **Steps:**
 
-1. Confirm the host is one of the supported Hermes versions — v0.18.2 or
+1. Confirm the host is one of the exact supported Hermes identities — v0.18.2 or
    v0.19.0 within the bundled pack range `>=0.18.2,<0.20.0` — using
-   `docs/08-hermes-integration.md`. Then create the new profile using the
-   documented Hermes CLI. If the host identity is outside that exact support
-   set, stop and report it before creating the profile or symlink. The profile is
-   empty and ready to receive plugins:
+   `docs/08-hermes-integration.md`. If the active global CLI is outside that
+   exact set, stop before creating the profile or symlink. Resolve the mismatch
+   with operator approval by provisioning an isolated runtime from one of the
+   full pinned revisions under the resolved dashboard setup state directory
+   using the supported Python 3.11 interpreter; never downgrade or mutate the
+   active global Hermes installation. Install the exact Daidala wheel under
+   evaluation into that isolated runtime with `--force-reinstall --no-deps`, as
+   the release support matrix does. Verify the isolated binary's full identity,
+   prepend only its `bin/` directory to `PATH` for this phase, and then create
+   the new profile using that documented Hermes CLI. The profile is empty and
+   ready to receive plugins:
 
    ```bash
    hermes profile create daidala-dashboard
@@ -608,8 +615,9 @@ changes; its transient operational evidence remains outside the repository.
    three served plugin files with the working tree:
 
    ```bash
-   curl -fsSI "$DASHBOARD_URL/plugins?profile=daidala-dashboard"
-   # expect: HTTP/1.1 200 OK (SPA shell still served; client-side mounts the Daidala tab)
+   curl -fsS -o /dev/null -w '%{http_code}\n' \
+     "$DASHBOARD_URL/plugins?profile=daidala-dashboard"
+   # expect: 200 (SPA shell still served; client-side mounts the Daidala tab)
    for asset in manifest.json dist/index.js dist/style.css; do
      curl -fsS "$DASHBOARD_URL/dashboard-plugins/daidala/$asset" \
        | cmp - "dashboard/$asset"
@@ -642,7 +650,7 @@ changes; its transient operational evidence remains outside the repository.
    browser gate only against the second process's printed URL. Do not attempt to
    reach fixture state by changing `?profile=` on the host process, and do not
    source, copy, or display a real credential value. The fixture name must
-   contain the generated timestamp.
+   contain the generated lowercase timestamp.
 7. Tear down the two isolated dashboard processes started by this phase and
    verify their ports no longer answer. Record
    `git status --porcelain` in the normal repository
@@ -652,7 +660,8 @@ changes; its transient operational evidence remains outside the repository.
    supports existing operator worktree changes and does not require a
    globally clean checkout.
 8. Record the command output and browser result outside the repository's tracked
-   files. This plan is not an evidence log and Phase 0 does not create a commit.
+   files. This plan is not an evidence log; the Phase 0 checkpoint commit contains
+   only synchronized plan/contract state and no runtime implementation.
 
 **Verification gate:** This phase is `done` only when the SPA shell, manifest,
 and three served asset comparisons pass; session-authenticated SDK requests
@@ -661,8 +670,9 @@ discover the Daidala manifest and return health with `success: true` and
 registration-free host and
 the stateful fixture on its own isolated dashboard process; both owned dashboard
 processes have stopped; the fixture has been deleted after an exact-name check; and
-`daidala-dashboard` does not own any Daidala workflow ledger, registration, or
-notification state. No commit is created by this phase.
+`daidala-dashboard` has zero policy-ledger workflow rows and no registration,
+credential-binding, or notification authority. An eagerly initialized empty schema
+is allowed. The checkpoint commit contains no runtime implementation.
 
 ## Phase 1 — Pack browser and readiness actions
 
