@@ -400,10 +400,10 @@ Plugin mount contract: routes mount `<PluginPage name>`; the bundle calls
 `header-banner`, `sidebar`, `pre-main`, `post-main`, footer slots, `overlay`
 (`slots.ts:18-59,174-200`). Daidala uses `sessions:top` today and a `/daidala` tab.
 
-## Live references and Pen design source
+## Pen design source and canonical renders
 
-The live baseline and adapted concepts are stored beside this document. The Pen
-source is an open-format `.pen` file with eight 1280×720 frames and three
+The host-derived visual constraints are codified in this document and the
+owning `AGENTS.md`. The Pen source is an open-format `.pen` file with eight 1280×720 frames and three
 1280×1000 workflow/start-detail frames. Every frame preserves the same Hermes shell and Daidala
 navigation; only the use-case workspace changes. The Request plan revision frame
 incorporates the former attention view's workflow identity, stage state, and
@@ -415,8 +415,6 @@ editing.
 
 | File | Purpose |
 |---|---|
-| [`hermes-dashboard-live-sessions.png`](hermes-dashboard-live-sessions.png) | Live Hermes v0.19.0 Sessions page; shell, metrics, tabs, list/status patterns |
-| [`hermes-dashboard-live-kanban.png`](hermes-dashboard-live-kanban.png) | Live Kanban plugin; plugin integration, fieldsets, filters, lanes, cards, empty states |
 | [`hermes-dashboard-ux-live.pen`](hermes-dashboard-ux-live.pen) | Editable Pen source with Workflows, collapsed/expanded Start workflow, completed/revision workflow details, Artifacts, Checkouts/TTL, Packs, GitHub Projects, Constraints, and Verification frames |
 | [`dashboard-ux-workflows.png`](dashboard-ux-workflows.png) | Default workflow inventory with `Start workflow`, source-bound awaiting-action summaries, autonomous progress, and the latest five recently finished workflows |
 | [`dashboard-ux-wizard.png`](dashboard-ux-wizard.png) | Workflows subpage for Start workflow with mounted-profile scope, inventory selectors, repository capability readiness, browser-local preset, Cron handoff, and back → preview → confirm → start |
@@ -429,10 +427,8 @@ editing.
 | [`dashboard-ux-artifacts.png`](dashboard-ux-artifacts.png) | Ledger-bound artifact browser, detail/escaped preview, and curator actions |
 | [`dashboard-ux-revision.png`](dashboard-ux-revision.png) | Workflows detail for request plan revision, with explicit inventory back-navigation, stage state, expanded artifacts/evidence, successor packet, feedback, preview, and confirmation |
 | [`dashboard-ux-workflow-completed.png`](dashboard-ux-workflow-completed.png) | Read-only completed-workflow detail with final timeline, verified artifacts/evidence, review disposition, and explicit non-commit/non-push delivery result |
-| [`hermes-dashboard-live-plugins.png`](hermes-dashboard-live-plugins.png) | Live Plugins page; gap scale and fieldset/input rhythm reference |
 
-The live comparison changed the concepts in five concrete ways: reproduce the
-profile-scope banner and Large-scaled sidebar; use host segmented tabs and primary
+The concepts reproduce the profile-scope banner and Large-scaled sidebar, use host segmented tabs and primary
 buttons; use bordered metrics and fieldset-like controls; reserve rounding for
 content cards; and separate the non-mutating preview result from confirmation to
 apply the displayed mutations. Config subtabs use an accent surface rather
