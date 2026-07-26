@@ -40,23 +40,31 @@ Add bounded constraint authoring and read-only configuration verification withou
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
 
-## Phase 0 — Add constraint authoring UI
+## Phase 0 — Add constraint authoring and source-selection UI
 
-**Goal:** Add a guided schema-aware editor and exact reusable-source browser over the existing constraint preview and replace services, completing the `Manage sources` destination that P0210's Start wizard links to.
+**Goal:** Add a guided schema-aware editor and exact reusable-source browser over the existing constraint preview and replace services, completing the `Manage sources` destination that P0210's Start wizard links to. The Constraints tab serves two related sub-use-cases in one subtab, both rendered in [P0250](P0250-daidala-dashboard-ux-concept.md): source selection ([`dashboard-ux-config-constraints.png`](dashboard-ux-config-constraints.png)) and YAML authoring ([`dashboard-ux-config-constraints-authoring.png`](dashboard-ux-config-constraints-authoring.png)).
 
 Steps:
 
 1. Read contract Phase 7, `dashboard/AGENTS.md`, `daidala/AGENTS.md`, and the linked constraint documentation.
-2. Implement the schema-aware YAML editor, live preview, error rendering,
-   digest-impact display, and a read-only inventory of exact installed reusable
-   policy sources. A selected source shows the complete literal escaped skill
-   document and its validated canonical constraint content/digest; source lookup
-   accepts only an inventory name, never a path or arbitrary installed skill.
-3. Keep replacement on the existing preview/confirm path and do not add a new parser or authority model. The source browser is read-only; selecting a source returns its name/digest to Start workflow only through the explicit browser-memory draft handoff defined by P0210.
-4. Extend route inventory and same-commit DOX contracts.
-5. Run the focused API, asset, constraint, and disposable-browser gates from the contract.
+2. Add an inventory-backed workflow selector with an explicit `New workflow
+   constraints` action for existing workflows whose current constraint identity
+   is null. New uses the same compare-and-swap route with a null current digest;
+   workflows with existing constraints expose `Edit` and require their displayed
+   current digest. Start workflow remains the authoring surface for a workflow
+   that does not exist yet; reusable sources remain read-only.
+3. Implement the schema-aware YAML editor, live preview, error rendering,
+   byte/card-bound display, digest-impact display, and a read-only inventory of
+   exact installed reusable policy sources. A selected source shows the complete
+   literal escaped skill document and its validated canonical constraint
+   content/digest; source lookup accepts only an inventory name, never a path or
+   arbitrary installed skill. Both the authoring editor and the source browser
+   use the same existing constraint parser, preview, and replace services.
+4. Keep creation and replacement on the existing preview/confirm compare-and-swap path and do not add a new parser or authority model. The source browser is read-only; selecting a source returns its name/digest to Start workflow only through the explicit browser-memory draft handoff defined by P0210. The authoring editor requires a null or displayed current digest and explicit confirmation, per `docs/14-workflow-constraints.md`.
+5. Extend route inventory and same-commit DOX contracts.
+6. Run the focused API, asset, constraint, and disposable-browser gates from the contract.
 
-Verification gate: The Phase 0 table predicate and detailed Phase 7 contract gates pass. Browser evidence proves invalid/non-policy skills never appear in the source inventory, source text is literal and complete within the documented UI bound, no browser path is accepted, and return to Start requires an explicit source selection.
+Verification gate: The Phase 0 table predicate and detailed Phase 7 contract gates pass. Browser evidence proves the explicit new action is scoped to a workflow with null current constraint identity, create sends a null current digest, edit requires the displayed digest, invalid/non-policy skills never appear in the source inventory, source text is literal and complete within the documented UI bound, no browser path is accepted, the authoring editor shows live validation with digest impact, and return to Start requires an explicit source selection.
 
 ## Phase 1 — Add the configuration verification panel
 

@@ -11,7 +11,8 @@ Own executable plans, shared plan-family contracts, and repository-tracked UX de
 - `hermes-dashboard-ux-live.pen` is the editable Daidala dashboard wireframe source.
 - `dashboard-ux-*.png` files are canonical review renders exported from that
   source, including workflow inventory/detail, collapsed/expanded start,
-  Artifacts, and each Config subtab state.
+  Artifacts, and each Config subtab state (Constraints covers both the
+  source-selection and authoring subviews).
 - Date-prefixed plans and JSON scope/evaluation records remain historical or bounded planning material; active execution must identify its exact source explicitly.
 
 ## Local Contracts

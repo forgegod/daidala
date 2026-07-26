@@ -1579,11 +1579,22 @@ hold; and
 
 **Goal:** Add a guided authoring surface for new constraints so the user
 can author content, preview the canonical digest, and only then apply the
-compare-and-swap replacement.
+compare-and-swap creation or replacement.
 
 **Steps:**
 
-1. Add a `ConstraintEditor` component with a YAML `<textarea>`, an
+1. Config → Constraints starts with an inventory-backed workflow selector and
+   an explicit `New workflow constraints` action. The action is available only
+   for an existing workflow whose current constraint identity is null. It opens
+   the editor in create mode with `current_digest: null`; the confirmed action
+   is labelled `Create constraints` and uses the existing
+   `/constraints/replace` compare-and-swap route. A workflow with current
+   constraints instead exposes `Edit`, opens the same editor with its current
+   revision/digest, and labels the confirmed action `Apply replacement`. Start
+   workflow continues to own YAML authoring for a workflow that does not exist
+   yet. Installed reusable sources remain read-only and are never created or
+   edited by this surface.
+2. Add a `ConstraintEditor` component with a YAML `<textarea>`, an
    "Insert schema skeleton" button, and an inline error pane fed by the response
    of `/constraints/preview`. `/prerequisites.schema_limits.schema` currently
    contains only the schema identifier string (`CONSTRAINTS_SCHEMA` in
@@ -1610,17 +1621,17 @@ compare-and-swap replacement.
    "docs/14-workflow-constraints.md#starter-template", "content": <exact string>
    }`. The constant must parse with `parse_workflow_constraints` and remain below
    `MAX_CANONICAL_BYTES`.
-2. The editor shows the canonical content returned by `/constraints/preview`
+3. The editor shows the canonical content returned by `/constraints/preview`
    so the user sees exactly what the ledger will store
    (`daidala/dashboard_backend.py:287-377`).
-3. The "Apply replacement" button is disabled until the editor emits a
+4. The create/replacement authority button is disabled until the editor emits a
    `valid: true` preview and a checked confirmation; it calls
    `/constraints/replace` with the displayed `current_digest` to enforce
    the compare-and-swap contract.
-4. Add a "Reference skill (name + digest)" mode that mirrors
+5. Add a "Reference skill (name + digest)" mode that mirrors
    `setup_wizard.SetupRequest.constraints_skill` and
    `constraints_skill_digest` (`daidala/setup_wizard.py:54-74`).
-5. Add `GET /api/plugins/daidala/constraints/sources` and `GET
+6. Add `GET /api/plugins/daidala/constraints/sources` and `GET
    /api/plugins/daidala/constraints/sources/{name}`. The list contains only
    exact installed skills whose complete document validates as a reusable policy
    source; detail accepts only a listed name and returns source name, complete
@@ -1632,8 +1643,10 @@ compare-and-swap replacement.
 
 **Verification gate:** extend the existing `tests/test_dashboard_api.py` and
 `tests/test_dashboard_assets.py` contracts. The cases pass while proving the
-editor rejects apply without a fresh valid preview, matching current digest, or
-literal `confirm: true`; reusable-source inventory rejects non-policy or
+workflow selector exposes `New workflow constraints` only for null current
+identity; create submits `current_digest: null`; edit submits the displayed
+digest; the editor rejects either apply without a fresh valid preview or literal
+`confirm: true`; reusable-source inventory rejects non-policy or
 undeclared source lookup, renders only literal bounded text, and
 surfaces the schema bounds (`global_max`, `phase_max`, `constraint_bytes`,
 `canonical_bytes`) from `daidala/dashboard_backend.py:158-164`. A focused

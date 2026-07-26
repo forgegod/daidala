@@ -23773,6 +23773,1944 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "ph1cP",
+      "x": 17680,
+      "y": 0,
+      "name": "Config Constraints new authoring concept",
+      "width": 1280,
+      "height": 1000,
+      "fill": "#041c1c",
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "swz5K",
+          "x": 0,
+          "y": 0,
+          "name": "Profile scope banner",
+          "width": 1280,
+          "height": 36,
+          "fill": "#2a2309",
+          "padding": [
+            8,
+            16
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "aiNtm",
+              "name": "Profile scope",
+              "fill": "#ffbd38",
+              "content": "Managing profile “daidala-self-improvement” — config, keys, skills, MCPs, model, and new chats apply to that profile.",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "hCr32",
+          "x": 0,
+          "y": 36,
+          "name": "App body",
+          "width": 1280,
+          "height": 964,
+          "fill": "#041c1c",
+          "children": [
+            {
+              "type": "frame",
+              "id": "MAt9q",
+              "name": "Hermes sidebar",
+              "width": 344,
+              "height": 684,
+              "fill": "#041c1c",
+              "stroke": "#ffe6cb26",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "vertical",
+              "gap": 6,
+              "padding": [
+                12,
+                14
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "h1uj5",
+                  "name": "Brand row",
+                  "width": 316,
+                  "height": 44,
+                  "fill": "#00000000",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "BhIlV",
+                      "name": "Brand",
+                      "fill": "#ffe6cb",
+                      "content": "HERMES\nAGENT",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "bold",
+                      "letterSpacing": 1.4
+                    },
+                    {
+                      "type": "frame",
+                      "id": "OZfGq",
+                      "name": "Collapse",
+                      "width": 36,
+                      "height": 36,
+                      "fill": "#00000000",
+                      "stroke": "#ffe6cb26",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "padding": [
+                        7,
+                        14
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "k7DEyR",
+                          "name": "Collapse label",
+                          "fill": "#ffe6cb",
+                          "content": "◀",
+                          "fontFamily": "Courier New",
+                          "fontSize": 12,
+                          "fontWeight": "bold"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "u1LH9",
+                  "name": "Profile select",
+                  "width": 316,
+                  "height": 34,
+                  "fill": "#00000000",
+                  "stroke": "#ffbd38",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "RnBAY",
+                      "name": "Profile",
+                      "fill": "#ccbaa8",
+                      "content": "daidala-self-improvement",
+                      "fontFamily": "Courier New",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "ibsH3",
+                      "name": "Profile arrow",
+                      "fill": "#ccbaa8",
+                      "content": "⌄",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ixtOi",
+                  "name": "Navigation list",
+                  "width": 316,
+                  "height": 440,
+                  "fill": "#00000000",
+                  "layout": "vertical",
+                  "gap": 1,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "DTbiY",
+                      "name": "Nav CHAT",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "up64t",
+                          "name": "Nav CHAT text",
+                          "fill": "#ccbaa8",
+                          "content": "CHAT",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "fg9Cq",
+                      "name": "Nav SESSIONS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "pEM0J",
+                          "name": "Nav SESSIONS text",
+                          "fill": "#ccbaa8",
+                          "content": "SESSIONS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "lXFAB",
+                      "name": "Nav FILES",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "zt3GP",
+                          "name": "Nav FILES text",
+                          "fill": "#ccbaa8",
+                          "content": "FILES",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "byCXv",
+                      "name": "Nav MODELS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Y1Uim7",
+                          "name": "Nav MODELS text",
+                          "fill": "#ccbaa8",
+                          "content": "MODELS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "X516X",
+                      "name": "Nav LOGS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "l8YNE",
+                          "name": "Nav LOGS text",
+                          "fill": "#ccbaa8",
+                          "content": "LOGS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "uMfZt",
+                      "name": "Nav CRON",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "H9w2IW",
+                          "name": "Nav CRON text",
+                          "fill": "#ccbaa8",
+                          "content": "CRON",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "AXb7p",
+                      "name": "Nav SKILLS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "XGcoo",
+                          "name": "Nav SKILLS text",
+                          "fill": "#ccbaa8",
+                          "content": "SKILLS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "p2qwr",
+                      "name": "Nav PLUGINS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "tHFXq",
+                          "name": "Nav PLUGINS text",
+                          "fill": "#ccbaa8",
+                          "content": "PLUGINS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "y8iLI",
+                      "name": "Nav MCP",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "TzFIg",
+                          "name": "Nav MCP text",
+                          "fill": "#ccbaa8",
+                          "content": "MCP",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Dwhtp",
+                      "name": "Nav CHANNELS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "m0yEfb",
+                          "name": "Nav CHANNELS text",
+                          "fill": "#ccbaa8",
+                          "content": "CHANNELS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "BxBxx",
+                      "name": "Nav WEBHOOKS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "GlqLC",
+                          "name": "Nav WEBHOOKS text",
+                          "fill": "#ccbaa8",
+                          "content": "WEBHOOKS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "m5Whi",
+                      "name": "Nav PAIRING",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "DJst0",
+                          "name": "Nav PAIRING text",
+                          "fill": "#ccbaa8",
+                          "content": "PAIRING",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "LtgFI",
+                      "name": "Nav PROFILES",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "rCIRs",
+                          "name": "Nav PROFILES text",
+                          "fill": "#ccbaa8",
+                          "content": "PROFILES",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "rgKqE",
+                      "name": "Nav CONFIG",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "TMf6z",
+                          "name": "Nav CONFIG text",
+                          "fill": "#ccbaa8",
+                          "content": "CONFIG",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "qEK1L",
+                      "name": "Nav KEYS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "VnSSa",
+                          "name": "Nav KEYS text",
+                          "fill": "#ccbaa8",
+                          "content": "KEYS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "h8CKC",
+                      "name": "Nav SYSTEM",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "AmHKi",
+                          "name": "Nav SYSTEM text",
+                          "fill": "#ccbaa8",
+                          "content": "SYSTEM",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "XjWKo",
+                      "name": "Nav DOCUMENTATION",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "kWHPh",
+                          "name": "Nav DOCUMENTATION text",
+                          "fill": "#ccbaa8",
+                          "content": "DOCUMENTATION",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "Uw9HC",
+                      "name": "Plugins heading",
+                      "fill": "#9a8f80",
+                      "content": "Plugins",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal",
+                      "letterSpacing": 1.2
+                    },
+                    {
+                      "type": "frame",
+                      "id": "D2sdFb",
+                      "name": "Plugin KANBAN",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "vbZCi",
+                          "name": "Plugin KANBAN text",
+                          "fill": "#ccbaa8",
+                          "content": "KANBAN",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "eh7rJ",
+                      "name": "Plugin ACHIEVEMENTS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "tnDlU",
+                          "name": "Plugin ACHIEVEMENTS text",
+                          "fill": "#ccbaa8",
+                          "content": "ACHIEVEMENTS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "hrzqB",
+                      "name": "Plugin DAIDALA",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#1d302d",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "jv0Ag",
+                          "name": "Plugin DAIDALA text",
+                          "fill": "#ffe6cb",
+                          "content": "DAIDALA",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "bold",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "cV5Hy",
+                  "name": "System block",
+                  "width": 316,
+                  "height": 88,
+                  "fill": "#00000000",
+                  "stroke": "#ffe6cb26",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "padding": [
+                    5,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "PTk0k",
+                      "name": "System title",
+                      "fill": "#9a8f80",
+                      "content": "System",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal",
+                      "letterSpacing": 1.1
+                    },
+                    {
+                      "type": "text",
+                      "id": "soGwZ",
+                      "name": "Gateway state",
+                      "fill": "#4ade80",
+                      "content": "Gateway Status: Running",
+                      "fontFamily": "Courier New",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "KpuSh",
+                      "name": "Session state",
+                      "fill": "#ccbaa8",
+                      "content": "Active Sessions: 0",
+                      "fontFamily": "Courier New",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "OzKrI",
+                      "name": "Theme label",
+                      "fill": "#9a8f80",
+                      "content": "HERMES TEAL (LARGE) · EN · v0.19.0",
+                      "fontFamily": "Courier New",
+                      "fontSize": 9,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "NxyZm",
+              "name": "Main region",
+              "width": 936,
+              "height": 964,
+              "fill": "#041c1c",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "MNHVk",
+                  "name": "Page header",
+                  "width": 936,
+                  "height": 76,
+                  "fill": "#041c1c",
+                  "stroke": "#ffe6cb26",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    19,
+                    32
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "T9vr3",
+                      "name": "Title group",
+                      "width": 400,
+                      "height": 38,
+                      "fill": "#00000000",
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "vrDYH",
+                          "name": "Page title",
+                          "fill": "#ffe6cb",
+                          "content": "CONFIGURE",
+                          "fontFamily": "Inter",
+                          "fontSize": 15.75,
+                          "fontWeight": "bold",
+                          "letterSpacing": 1.26
+                        },
+                        {
+                          "type": "frame",
+                          "id": "sXbFf",
+                          "name": "Count badge",
+                          "width": 38,
+                          "height": 22,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            3,
+                            8
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "jGZ2g",
+                              "name": "Count",
+                              "fill": "#ffe6cb",
+                              "content": "0",
+                              "fontFamily": "Courier New",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "I0QbV",
+                      "name": "Header tabs",
+                      "width": 354,
+                      "height": 36,
+                      "fill": "#00000000",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "UhGzK",
+                          "name": "Tab WORKFLOWS",
+                          "width": 118,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "QgCY2",
+                              "name": "Tab WORKFLOWS text",
+                              "fill": "#ccbaa8",
+                              "content": "WORKFLOWS",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 1.05
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "TUbGv",
+                          "name": "Tab ARTIFACTS",
+                          "width": 118,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "xcexx",
+                              "name": "Tab ARTIFACTS text",
+                              "fill": "#ccbaa8",
+                              "content": "ARTIFACTS",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 1.05
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Jo8iz",
+                          "name": "Tab CONFIG",
+                          "width": 118,
+                          "height": 36,
+                          "fill": "#ffe6cb",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "QVIBN",
+                              "name": "Tab CONFIG text",
+                              "fill": "#041c1c",
+                              "content": "CONFIG",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "bold",
+                              "letterSpacing": 1.05
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "B3MHxG",
+                  "name": "Constraints config content",
+                  "width": 936,
+                  "height": 888,
+                  "layout": "vertical",
+                  "padding": [
+                    0,
+                    32,
+                    24,
+                    32
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "b87xfz",
+                      "name": "Constraints subtabs",
+                      "width": 872,
+                      "height": 36,
+                      "fill": "#00000000",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "Y3aIx",
+                          "name": "Subtab PACKS",
+                          "width": 176,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "F3KOI",
+                              "name": "Subtab PACKS text",
+                              "fill": "#ccbaa8",
+                              "content": "PACKS",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "IlM4t",
+                          "name": "Subtab CHECKOUTS & TTL",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Y3OgsB",
+                              "name": "Subtab CHECKOUTS & TTL text",
+                              "fill": "#ccbaa8",
+                              "content": "CHECKOUTS & TTL",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "bold",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "X8aHe",
+                          "name": "Subtab GITHUB PROJECTS",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "UaDoq",
+                              "name": "Subtab GITHUB PROJECTS text",
+                              "fill": "#ccbaa8",
+                              "content": "GITHUB PROJECTS",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "KUvMu",
+                          "name": "Subtab CONSTRAINTS",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#1d302d",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "STdZ6",
+                              "name": "Subtab CONSTRAINTS text",
+                              "fill": "#ccbaa8",
+                              "content": "CONSTRAINTS",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "BC5YZ",
+                          "name": "Subtab VERIFICATION",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "rNwrK",
+                              "name": "Subtab VERIFICATION text",
+                              "fill": "#ccbaa8",
+                              "content": "VERIFICATION",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "voArk",
+                      "name": "Authoring header",
+                      "width": "fill_container",
+                      "height": 58,
+                      "fill": "#00000000",
+                      "padding": [
+                        6,
+                        0
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "m1VPS",
+                          "name": "Title group",
+                          "fill": "#00000000",
+                          "layout": "vertical",
+                          "gap": 3,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Z0CRKj",
+                              "name": "Back label",
+                              "fill": "#ffe6cb",
+                              "content": "← CONFIG · WORKFLOW CONSTRAINTS",
+                              "fontFamily": "Inter",
+                              "fontSize": 13,
+                              "fontWeight": "bold",
+                              "letterSpacing": 0.8
+                            },
+                            {
+                              "type": "text",
+                              "id": "E8auk",
+                              "name": "Description",
+                              "fill": "#9a8f80",
+                              "content": "Create for a workflow with no constraint revision · edit existing revisions separately",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ZlDog",
+                          "name": "Editor state",
+                          "fill": "#00000000",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "XCahI",
+                              "name": "Dot",
+                              "fill": "#ffbd38",
+                              "content": "●",
+                              "fontFamily": "Inter",
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "f8bn2h",
+                              "name": "Status text",
+                              "fill": "#ffbd38",
+                              "content": "NEW · NO CURRENT REVISION",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "bold",
+                              "letterSpacing": 0.6
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "lclz3",
+                      "name": "Workflow constraint scope",
+                      "width": "fill_container",
+                      "height": 54,
+                      "fill": "#132826",
+                      "stroke": "#ffe6cb26",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "gap": 10,
+                      "padding": [
+                        8,
+                        10
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "jCLIS",
+                          "name": "Workflow scope identity",
+                          "fill": "#00000000",
+                          "layout": "vertical",
+                          "gap": 3,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Erm7f",
+                              "name": "Workflow scope label",
+                              "fill": "#9a8f80",
+                              "content": "WORKFLOW · EXISTING · NO CONSTRAINTS",
+                              "fontFamily": "Inter",
+                              "fontSize": 9,
+                              "fontWeight": "bold",
+                              "letterSpacing": 0.8
+                            },
+                            {
+                              "type": "text",
+                              "id": "I9hyB",
+                              "name": "Workflow scope value",
+                              "fill": "#ffe6cb",
+                              "content": "release-hardening-2026-07-26 · selected",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 11,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "s9hIVk",
+                          "name": "Workflow scope actions",
+                          "fill": "#00000000",
+                          "gap": 8,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "P76wou",
+                              "name": "New action hint",
+                              "fill": "#9a8f80",
+                              "content": "Current digest: none",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Lx3Xq",
+                              "name": "New workflow constraints button",
+                              "width": 206,
+                              "height": 32,
+                              "fill": "#ffe6cb",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "m1OxPV",
+                                  "name": "New workflow constraints label",
+                                  "fill": "#041c1c",
+                                  "content": "+ NEW WORKFLOW CONSTRAINTS",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 9.5,
+                                  "fontWeight": "bold",
+                                  "letterSpacing": 0.7
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "kTBMK",
+                      "name": "Authoring area",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "fill": "#00000000",
+                      "gap": 12,
+                      "padding": [
+                        4,
+                        0,
+                        8,
+                        0
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "sscr1",
+                          "name": "YAML editor column",
+                          "width": 456,
+                          "height": "fill_container",
+                          "fill": "#0e2423",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "layout": "vertical",
+                          "gap": 8,
+                          "padding": 12,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "TZXpx",
+                              "name": "Editor heading",
+                              "width": "fill_container",
+                              "height": 28,
+                              "fill": "#00000000",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "EDzwJ",
+                                  "name": "Editor title",
+                                  "fill": "#ccbaa8",
+                                  "content": "NEW CONSTRAINTS · WRITE YAML",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "bold",
+                                  "letterSpacing": 0.8
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "oVutD",
+                                  "name": "Revision",
+                                  "fill": "#9a8f80",
+                                  "content": "CURRENT DIGEST · NONE",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "ymSHr",
+                              "name": "Editor actions",
+                              "width": "fill_container",
+                              "height": 32,
+                              "fill": "#00000000",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "ufsrI",
+                                  "name": "Starter help",
+                                  "fill": "#9a8f80",
+                                  "content": "Start from the documented schema template",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 9.5,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "Abhzd",
+                                  "name": "Insert schema skeleton button",
+                                  "width": 176,
+                                  "height": 28,
+                                  "fill": "#00000000",
+                                  "stroke": "#ffe6cb55",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "BGv6H",
+                                      "name": "Insert schema skeleton label",
+                                      "fill": "#ffe6cb",
+                                      "content": "INSERT SCHEMA SKELETON",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 9,
+                                      "fontWeight": "bold",
+                                      "letterSpacing": 0.6
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "i0d7J",
+                              "name": "YAML body parent",
+                              "width": "fill_container",
+                              "height": "fill_container",
+                              "fill": "#00000000",
+                              "layout": "vertical",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "oTsKM",
+                                  "name": "YAML content",
+                                  "width": "fill_container",
+                                  "height": "fill_container",
+                                  "fill": "#041c1c",
+                                  "stroke": "#ffe6cb26",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "layout": "vertical",
+                                  "gap": 5,
+                                  "padding": 12,
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "QxD05",
+                                      "name": "YAML line schema",
+                                      "fill": "#9a8f80",
+                                      "content": "schema: daidala.workflow-constraints/v1",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 12,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "blNGf",
+                                      "name": "YAML line global",
+                                      "fill": "#ffbd38",
+                                      "content": "global:",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 12,
+                                      "fontWeight": "bold"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "jhgBY",
+                                      "name": "YAML g1",
+                                      "fill": "#ffe6cb",
+                                      "content": "  - Preserve approved scope and repository instructions.",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 12,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "V0nwuY",
+                                      "name": "YAML g2 edited",
+                                      "fill": "#ffbd38",
+                                      "content": "phases:",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 12,
+                                      "fontWeight": "bold"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "F6DwcU",
+                                      "name": "YAML g3 new",
+                                      "fill": "#ffbd38",
+                                      "content": "  implement:",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 12,
+                                      "fontWeight": "bold"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "hFVj8",
+                                      "name": "YAML phases",
+                                      "fill": "#ffe6cb",
+                                      "content": "    - Add or update tests for changed behavior.",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 12,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "o3Wol",
+                                      "name": "YAML review",
+                                      "fill": "#ffbd38",
+                                      "content": "  verify:",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 12,
+                                      "fontWeight": "bold"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "mRSiN",
+                                      "name": "YAML r1",
+                                      "fill": "#ffe6cb",
+                                      "content": "    - Run the repository’s documented verification.",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 12,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "VM3N1",
+                                      "name": "YAML cursor",
+                                      "fill": "#ffe6cb",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 12,
+                                      "fontWeight": "bold"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "ilHuy",
+                              "name": "Editor footer",
+                              "width": "fill_container",
+                              "height": 24,
+                              "fill": "#00000000",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "qEJq1",
+                                  "name": "Valid status",
+                                  "fill": "#4ade80",
+                                  "content": "✓ VALID · 3 CONSTRAINTS",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "xg8Zt",
+                                  "name": "Bounds",
+                                  "fill": "#9a8f80",
+                                  "content": "322 / 4096 bytes · card 1.5k / 8192",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "FYgtv",
+                          "name": "Preview column",
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "fill": "#0e2423",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "layout": "vertical",
+                          "gap": 8,
+                          "padding": 12,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "Hk72H",
+                              "name": "Preview heading",
+                              "width": "fill_container",
+                              "fill": "#00000000",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "srp1c",
+                                  "name": "Preview title",
+                                  "fill": "#ccbaa8",
+                                  "content": "CANONICAL PREVIEW · DIGEST",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "bold",
+                                  "letterSpacing": 0.8
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "s8IJe",
+                                  "name": "Non-mutating tag",
+                                  "fill": "#4ade80",
+                                  "content": "NON-MUTATING",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 9,
+                                  "fontWeight": "bold",
+                                  "letterSpacing": 0.6
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "cLUwo",
+                              "name": "Digest impact",
+                              "width": "fill_container",
+                              "fill": "#132826",
+                              "layout": "vertical",
+                              "gap": 6,
+                              "padding": 10,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "haP1r",
+                                  "name": "Digest label",
+                                  "fill": "#9a8f80",
+                                  "content": "COMPARE-AND-SWAP IDENTITY",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 9,
+                                  "fontWeight": "bold",
+                                  "letterSpacing": 0.8
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "fzfzZ",
+                                  "name": "Old digest row",
+                                  "width": "fill_container",
+                                  "fill": "#00000000",
+                                  "gap": 8,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "x8xNS",
+                                      "name": "Old label",
+                                      "fill": "#9a8f80",
+                                      "content": "CURRENT",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 10,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "OkhXP",
+                                      "name": "Old digest",
+                                      "fill": "#ccbaa8",
+                                      "content": "NONE · no constraints",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "DRIXU",
+                                  "name": "Arrow",
+                                  "fill": "#ffbd38",
+                                  "content": "↓",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "pj38k",
+                                  "name": "New digest row",
+                                  "width": "fill_container",
+                                  "fill": "#00000000",
+                                  "gap": 8,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "pVjZY",
+                                      "name": "New label",
+                                      "fill": "#9a8f80",
+                                      "content": "AFTER    ",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 10,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "pbrar",
+                                      "name": "New digest",
+                                      "fill": "#ffbd38",
+                                      "content": "9b4e…2c71 · revision 1",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 11,
+                                      "fontWeight": "bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "SnPDh",
+                                  "name": "Semantic change",
+                                  "fill": "#ffbd38",
+                                  "textGrowth": "fixed-width",
+                                  "width": 360,
+                                  "content": "CREATE — binds the first immutable constraint revision to the selected workflow.",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "iXERM",
+                              "name": "Source browser heading",
+                              "width": "fill_container",
+                              "fill": "#00000000",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "jwrAD",
+                                  "name": "Source title",
+                                  "fill": "#ccbaa8",
+                                  "content": "ALTERNATIVE INPUT · READ-ONLY",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "bold",
+                                  "letterSpacing": 0.8
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "KH7Au",
+                                  "name": "Source hint",
+                                  "fill": "#9a8f80",
+                                  "content": "Exact installed policy skills",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 9,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "ICUaX",
+                              "name": "Source list",
+                              "width": "fill_container",
+                              "height": "fill_container",
+                              "fill": "#041c1c",
+                              "stroke": "#ffe6cb26",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "layout": "vertical",
+                              "gap": 4,
+                              "padding": 8,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "UbR9x",
+                                  "name": "Source secure-defaults",
+                                  "width": "fill_container",
+                                  "height": 28,
+                                  "fill": "#1d302d",
+                                  "gap": 8,
+                                  "padding": [
+                                    4,
+                                    8
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "WanSO",
+                                      "name": "secure-defaults name",
+                                      "fill": "#ffe6cb",
+                                      "content": "REFERENCE INSTALLED SOURCE",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 11,
+                                      "fontWeight": "bold"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "r3827",
+                                      "name": "secure-defaults digest",
+                                      "fill": "#9a8f80",
+                                      "content": "BROWSE ›",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 10,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "gi76O",
+                                  "name": "Source no-push",
+                                  "width": "fill_container",
+                                  "height": 28,
+                                  "fill": "#00000000",
+                                  "stroke": "#ffe6cb26",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "gap": 8,
+                                  "padding": [
+                                    4,
+                                    8
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "e2lPGS",
+                                      "name": "no-push name",
+                                      "fill": "#ccbaa8",
+                                      "content": "Reusable sources cannot be created or edited here.",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "uHXjh",
+                                      "name": "no-push digest",
+                                      "fill": "#9a8f80",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 10,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "GEpYe",
+                                  "name": "Source docs-match",
+                                  "width": "fill_container",
+                                  "height": 28,
+                                  "fill": "#00000000",
+                                  "stroke": "#ffe6cb26",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "gap": 8,
+                                  "padding": [
+                                    4,
+                                    8
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "MlbCW",
+                                      "name": "docs-match name",
+                                      "fill": "#ccbaa8",
+                                      "content": "Start workflow owns YAML before a workflow exists.",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "olifS",
+                                      "name": "docs-match digest",
+                                      "fill": "#9a8f80",
+                                      "fontFamily": "Courier Prime",
+                                      "fontSize": 10,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Cfza1",
+                      "name": "Create constraints bar",
+                      "width": "fill_container",
+                      "fill": "#182c2a",
+                      "stroke": "#ffe6cb26",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "jfPe6",
+                          "name": "Replace heading",
+                          "width": "fill_container",
+                          "fill": "#00000000",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "iDZg1",
+                              "name": "Replace title",
+                              "fill": "#ffbd38",
+                              "content": "CREATE WORKFLOW CONSTRAINTS · NULL CURRENT DIGEST",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "bold",
+                              "letterSpacing": 0.8
+                            },
+                            {
+                              "type": "text",
+                              "id": "Avnz7",
+                              "name": "Replace digest",
+                              "fill": "#9a8f80",
+                              "content": "EXPECTED · NONE",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "y7vJq",
+                          "name": "Replace consequence",
+                          "fill": "#ccbaa8",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Create revision 1 for release-hardening-2026-07-26. The canonical preview becomes immutable policy and restarts define → plan under that policy.",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "hIImB",
+                          "name": "Confirm row",
+                          "width": "fill_container",
+                          "fill": "#00000000",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "u0kiF",
+                              "name": "Confirm checkbox",
+                              "fill": "#ffbd38",
+                              "content": "☐ I confirm creating these exact constraints for the selected workflow",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "z4ZQII",
+                              "name": "Replace button",
+                              "width": 180,
+                              "height": 30,
+                              "fill": "#ffe6cb",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "lDRgW",
+                                  "name": "Replace button label",
+                                  "fill": "#041c1c",
+                                  "content": "CREATE CONSTRAINTS",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "bold",
+                                  "letterSpacing": 0.8
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "fileToken": "bb6b54fd-faee-4673-836e-eaa8070088ee"

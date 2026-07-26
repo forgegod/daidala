@@ -142,9 +142,19 @@ Actor is always an attended human operator. Legend: ✅ implemented · 🟡 plan
 18. **Manage one GitHub Projects v2 link per project** 🟡 — fresh bounded read + matching preview digest + literal confirm; tokens never cross; remote/alias display-only.
 
 ### Surface E — Author constraints & verify config (P0230)
-19. **Author constraints** 🟡 — schema-aware YAML editor, live preview, error
-   list, digest impact, and an exact installed reusable-source browser; replace
-   stays preview/confirm compare-and-swap.
+19. **Author and select constraints** 🟡 — the Constraints tab serves two
+   related use cases in one subtab: a schema-aware YAML editor with live
+   preview, error list, byte/card-bound display, digest impact, and
+   compare-and-swap replace; and an exact installed reusable-source browser
+   that returns a name/digest selection to Start workflow. The authoring
+   editor and the read-only source browser share the same existing constraint
+   parser, preview, and replace services; replacement stays preview/confirm
+   compare-and-swap in both paths. An inventory-backed workflow selector exposes
+   `New workflow constraints` only for an existing workflow with null current
+   constraint identity; create uses a null current digest. Existing constraints
+   expose `Edit` and require the displayed current digest. Start workflow owns
+   YAML authoring before a workflow exists; installed reusable sources remain
+   read-only.
 20. **Verify configuration (read-only)** 🟡 — root, TTL, registrations, checkout
    ownership/freshness, link verification, and strict local/live prerequisite
    diagnosis; no secrets; not a supervisor.
@@ -242,8 +252,11 @@ Three primary views, all inside the single tab and ordered by workflow result:
   permits only declared pack/skill identities; an unavailable external skill
   exposes its pinned target and expected digest, never invented content or a
   filesystem path. Constraints lists exact installed reusable policy sources and
-  their canonical content before returning a selection. Verification labels the
-  current report scope, not a persisted mode: Local runs its local checks and
+  their canonical content for selection, and exposes an inventory-backed
+  workflow selector plus explicit new/edit actions leading to a schema-aware YAML
+  authoring subview with live validation, digest impact, and compare-and-swap
+  create/replacement over the existing preview/confirm path. Verification
+  labels the current report scope, not a persisted mode: Local runs its local checks and
   reports live-only checks as `not run`; `Run live checks` explicitly requests a
   bounded, non-mutating live report. `Open initialization preview` replaces only
   this workspace with an Initialize profile subview showing target, observed
@@ -448,8 +461,9 @@ Plugin mount contract: routes mount `<PluginPage name>`; the bundle calls
 ## Pen design source and canonical renders
 
 The host-derived visual constraints are codified in this document and the
-owning `AGENTS.md`. The Pen source is an open-format `.pen` file with ten 1280×720 frames and three
-1280×1000 workflow/start-detail frames. Every frame preserves the same Hermes shell and Daidala
+owning `AGENTS.md`. The Pen source is an open-format `.pen` file with ten
+1280×720 frames and four 1280×1000 workflow/start-detail/constraint-authoring
+frames. Every frame preserves the same Hermes shell and Daidala
 navigation; only the use-case workspace changes. The Request plan revision frame
 incorporates the former attention view's workflow identity, stage state, and
 expanded artifact evidence before exposing immutable review evidence, the
@@ -460,7 +474,7 @@ editing.
 
 | File | Purpose |
 |---|---|
-| [`hermes-dashboard-ux-live.pen`](hermes-dashboard-ux-live.pen) | Editable Pen source with Workflows, collapsed/expanded Start workflow, completed/revision workflow details, Artifacts, Checkouts/TTL, Packs, GitHub Projects, Constraints, and Verification frames |
+| [`hermes-dashboard-ux-live.pen`](hermes-dashboard-ux-live.pen) | Editable Pen source with Workflows, collapsed/expanded Start workflow, completed/revision workflow details, Artifacts, Checkouts/TTL, Packs, GitHub Projects, Constraints (source selection and authoring), and Verification frames |
 | [`dashboard-ux-workflows.png`](dashboard-ux-workflows.png) | Default workflow inventory with `Start workflow`, source-bound awaiting-action summaries, autonomous progress, and the latest five recently finished workflows |
 | [`dashboard-ux-wizard.png`](dashboard-ux-wizard.png) | Workflows subpage for Start workflow with mounted-profile scope, inventory selectors, repository capability readiness, browser-local preset, Cron handoff, and back → preview → confirm → start |
 | [`dashboard-ux-wizard-advanced.png`](dashboard-ux-wizard-advanced.png) | Expanded Start workflow Advanced settings with six stage assignments, reusable workflow constraints, `Manage sources` → Config → Constraints navigation with browser-memory-only draft return, optional workflow identity, readiness, and preview invalidation semantics |
@@ -468,7 +482,8 @@ editing.
 | [`dashboard-ux-config-packs.png`](dashboard-ux-config-packs.png) | Config → Packs inventory, exact source/compatibility/readiness, entry to six-stage declared-skill content inspection, and dry-run-first external-skill installation |
 | [`dashboard-ux-pack-contents.png`](dashboard-ux-pack-contents.png) | Config → Packs read-only detail with every lifecycle stage visible, selected declared skill metadata/digest, literal `SKILL.md` content, and no install/activation side effect |
 | [`dashboard-ux-config-github-projects.png`](dashboard-ux-config-github-projects.png) | Config → GitHub Projects registration-derived identity, verified link, and fresh preview-confirm mutation flow |
-| [`dashboard-ux-config-constraints.png`](dashboard-ux-config-constraints.png) | Config → Constraints exact reusable-source browser, literal content, explicit Start-draft return, YAML validation, digest impact, and compare-and-swap replacement preview |
+| [`dashboard-ux-config-constraints.png`](dashboard-ux-config-constraints.png) | Config → Constraints source-selection subview: exact reusable-source browser, literal content, explicit Start-draft return, and read-only digest |
+| [`dashboard-ux-config-constraints-authoring.png`](dashboard-ux-config-constraints-authoring.png) | Config → Constraints new-authoring subview: inventory-selected existing workflow with null current constraint identity, explicit `New workflow constraints` and `Insert schema skeleton` actions, schema-aware YAML editor with live validation and byte/card bounds, canonical preview, and confirmed compare-and-swap creation with a null current digest; existing constraints use the same editor in `Edit`/replacement mode |
 | [`dashboard-ux-config-verification.png`](dashboard-ux-config-verification.png) | Config → Verification read-only Local report scope, explicit bounded live rerun, stable IDs, and separate non-mutating initialization-preview handoff |
 | [`dashboard-ux-initialization.png`](dashboard-ux-initialization.png) | Config → Verification → Initialize profile subview with back navigation, resolved target/state/effects/digest, native equivalent, and literal-confirmed idempotent apply |
 | [`dashboard-ux-artifacts.png`](dashboard-ux-artifacts.png) | Ledger-bound artifact browser, detail/escaped preview, and curator actions |
@@ -511,7 +526,8 @@ snapshot_layout({ parentId: "Wi001", maxDepth: 8, problemsOnly: true })
 snapshot_layout({ parentId: "Cf001", maxDepth: 8, problemsOnly: true })
 snapshot_layout({ parentId: "Ar001", maxDepth: 8, problemsOnly: true })
 snapshot_layout({ parentId: "G1ryL", maxDepth: 8, problemsOnly: true })
-export_nodes({ nodeIds: ["BUbxE", "Wi001", "Cf001", "Ar001", "G1ryL"], outputDir: "/tmp/daidala-ux-export", format: "png", scale: 1 })
+snapshot_layout({ parentId: "ph1cP", maxDepth: 8, problemsOnly: true })
+export_nodes({ nodeIds: ["BUbxE", "Wi001", "Cf001", "Ar001", "G1ryL", "ph1cP"], outputDir: "/tmp/daidala-ux-export", format: "png", scale: 1 })
 save()
 exit()
 ```
