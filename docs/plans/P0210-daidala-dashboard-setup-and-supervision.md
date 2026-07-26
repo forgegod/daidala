@@ -51,7 +51,7 @@ Steps:
 1. Read contract Phase 2, the SetupRequest decision, and all linked AGENTS files.
 2. Implement the contract's read-only mounted controller identity; ready-pack,
    registered-repository, worker-default/stage-profile, and existing-board
-   selectors; requested outcome (mapped to `SetupRequest.goal`); constraints;
+   selectors; requested outcome / prompt (mapped to `SetupRequest.goal`); constraints;
    browser-local non-secret default; six-category readiness; Cron handoff; preview;
    and confirmation controls. Never label the browser control `Goal`, because
    that implies Hermes' unrelated `/goal` session feature.

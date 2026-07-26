@@ -62,7 +62,7 @@ component patterns; it has no implementation phases and grants no approval autho
 4. **Artifact browser in IA.** The Artifacts view (P0320) is part of this concept's
    IA from the start so its navigation and patterns land consistently.
 5. **Requested outcome terminology.** The Start workflow subpage labels the user-authored
-   change description **Requested outcome**, not Goal. The browser still maps it
+   change description **Requested outcome / Prompt**, not Goal. The browser still maps it
    to the existing `SetupRequest.goal` payload field; it does not invoke or imply
    Hermes' `/goal` session feature.
 6. **One controller profile, six worker assignments.** The Hermes profile and
@@ -111,7 +111,7 @@ Actor is always an attended human operator. Legend: ✅ implemented · 🟡 plan
 5. **Run prerequisite diagnosis** 🟡 — strict `doctor` with stable check IDs; local default + explicit bounded live; validated `project_id`; no credential values.
 
 ### Surface B — Start a workflow (P0210 Phase 0)
-6. **Guided setup wizard** 🟡 — read-only mounted controller profile, optional browser-local start preset, ready installed pack, registered repository, requested outcome, worker-profile default plus stage overrides, constraints, and existing/create board; the UI maps requested outcome to the existing `request.goal` field, the server resolves the selected registration to the trusted target, and only the resolved setup request reaches `SetupRequest.from_payload`; readiness → preview → literal confirm → start now. Delayed/recurring admission hands off to Hermes Cron.
+6. **Guided setup wizard** 🟡 — read-only mounted controller profile, optional browser-local start preset, ready installed pack, registered repository, requested outcome / prompt, worker-profile default plus stage overrides, constraints, and existing/create board; the UI maps requested outcome / prompt to the existing `request.goal` field, the server resolves the selected registration to the trusted target, and only the resolved setup request reaches `SetupRequest.from_payload`; readiness → preview → literal confirm → start now. Delayed/recurring admission hands off to Hermes Cron.
 
 ### Surface C — Supervise & decide (P0210 Phase 1) ✅/🟡
 7. **Watch workflows (read-only)** ✅ — poll ≥5s while visible; manual refresh.
@@ -189,11 +189,17 @@ Three primary views, all inside the single tab and ordered by workflow result:
   They show a distinct `← Back to Workflows` control followed by the exact
   workflow ID, so returning to inventory does not depend on re-clicking the
   already-selected tab.
+- **Terminal workflow detail** — completed, failed, and cancelled rows open the
+  same read-only detail template with their terminal outcome kept distinct. It
+  shows exact workflow identity, final stage timeline, ledger-bound artifacts,
+  verification and review disposition, and delivery state including explicit
+  commit/push results. It exposes read-only artifact download/filter actions but
+  no approval, revision, cancellation, or other authority controls.
 - **Start workflow subpage** — opened by the Workflows page's primary action,
   keeps Workflows selected, and begins with `← Back to Workflows`. Its compact
   flow is mounted-profile/default preset → pack + board → registered repository
-  → requested outcome → worker default + stage overrides → policy → readiness →
-  preview → literal confirm → start now. `Requested outcome` maps to
+  → requested outcome / prompt → worker default + stage overrides → policy → readiness →
+  preview → literal confirm → start now. `Requested outcome / Prompt` maps to
   `SetupRequest.goal` only at the request boundary and is not Hermes `/goal`.
   The registered-repository selector shows the canonical remote (e.g.
   `git@github.com:forgegod/daidala.git`) while the server resolves the trusted
@@ -202,6 +208,12 @@ Three primary views, all inside the single tab and ordered by workflow result:
   other stable readiness checks pass. Host-owned links route pack management to
   Config → Packs, full board management to Kanban, and delayed/recurring
   admission to Cron.
+- **Start workflow advanced settings** — expanding Advanced renders exactly six
+  inventory-backed stage assignments. Inherited assignments name the worker
+  default; explicit overrides expose `Reset`. The section separately renders a
+  reusable constraint-source selector and optional workflow ID. Any change
+  invalidates the current preview and reruns readiness. Blank workflow ID uses
+  the server factory; an existing explicit ID resolves to `Open existing`.
 - **Config (secondary, tabbed)** — Packs, Checkouts/TTL, GitHub Projects,
   Constraints, Verification (read-only).
 - **Artifacts (secondary)** — workflow/kind/state filters; ledger-bound artifact
@@ -391,8 +403,8 @@ Plugin mount contract: routes mount `<PluginPage name>`; the bundle calls
 ## Live references and Pen design source
 
 The live baseline and adapted concepts are stored beside this document. The Pen
-source is an open-format `.pen` file with four 1280×720 frames and one 1280×1000
-workflow-detail frame. Every frame preserves the same Hermes shell and Daidala
+source is an open-format `.pen` file with eight 1280×720 frames and three
+1280×1000 workflow/start-detail frames. Every frame preserves the same Hermes shell and Daidala
 navigation; only the use-case workspace changes. The Request plan revision frame
 incorporates the former attention view's workflow identity, stage state, and
 expanded artifact evidence before exposing immutable review evidence, the
@@ -405,12 +417,18 @@ editing.
 |---|---|
 | [`hermes-dashboard-live-sessions.png`](hermes-dashboard-live-sessions.png) | Live Hermes v0.19.0 Sessions page; shell, metrics, tabs, list/status patterns |
 | [`hermes-dashboard-live-kanban.png`](hermes-dashboard-live-kanban.png) | Live Kanban plugin; plugin integration, fieldsets, filters, lanes, cards, empty states |
-| [`hermes-dashboard-ux-live.pen`](hermes-dashboard-ux-live.pen) | Editable Pen source with Workflows, Start workflow subpage, Config, Artifacts, and Request plan revision detail frames |
+| [`hermes-dashboard-ux-live.pen`](hermes-dashboard-ux-live.pen) | Editable Pen source with Workflows, collapsed/expanded Start workflow, completed/revision workflow details, Artifacts, Checkouts/TTL, Packs, GitHub Projects, Constraints, and Verification frames |
 | [`dashboard-ux-workflows.png`](dashboard-ux-workflows.png) | Default workflow inventory with `Start workflow`, source-bound awaiting-action summaries, autonomous progress, and the latest five recently finished workflows |
 | [`dashboard-ux-wizard.png`](dashboard-ux-wizard.png) | Workflows subpage for Start workflow with mounted-profile scope, inventory selectors, repository capability readiness, browser-local preset, Cron handoff, and back → preview → confirm → start |
+| [`dashboard-ux-wizard-advanced.png`](dashboard-ux-wizard-advanced.png) | Expanded Start workflow Advanced settings with six stage assignments, reusable workflow constraints, optional workflow identity, readiness, and preview invalidation semantics |
 | [`dashboard-ux-configure.png`](dashboard-ux-configure.png) | Config tabs including Packs, with Checkouts/TTL selected and read-only verification visible |
+| [`dashboard-ux-config-packs.png`](dashboard-ux-config-packs.png) | Config → Packs inventory, exact source/compatibility/readiness, and dry-run-first external-skill installation entry |
+| [`dashboard-ux-config-github-projects.png`](dashboard-ux-config-github-projects.png) | Config → GitHub Projects registration-derived identity, verified link, and fresh preview-confirm mutation flow |
+| [`dashboard-ux-config-constraints.png`](dashboard-ux-config-constraints.png) | Config → Constraints reusable-source editor, YAML validation, digest impact, and compare-and-swap replacement preview |
+| [`dashboard-ux-config-verification.png`](dashboard-ux-config-verification.png) | Config → Verification read-only local/live checks with stable IDs and separate initialization handoff |
 | [`dashboard-ux-artifacts.png`](dashboard-ux-artifacts.png) | Ledger-bound artifact browser, detail/escaped preview, and curator actions |
 | [`dashboard-ux-revision.png`](dashboard-ux-revision.png) | Workflows detail for request plan revision, with explicit inventory back-navigation, stage state, expanded artifacts/evidence, successor packet, feedback, preview, and confirmation |
+| [`dashboard-ux-workflow-completed.png`](dashboard-ux-workflow-completed.png) | Read-only completed-workflow detail with final timeline, verified artifacts/evidence, review disposition, and explicit non-commit/non-push delivery result |
 | [`hermes-dashboard-live-plugins.png`](hermes-dashboard-live-plugins.png) | Live Plugins page; gap scale and fieldset/input rhythm reference |
 
 The live comparison changed the concepts in five concrete ways: reproduce the
@@ -420,7 +438,7 @@ content cards; and separate the non-mutating preview result from confirmation to
 apply the displayed mutations. Config subtabs use an accent surface rather
 than competing with primary navigation's cream selected state.
 
-The information model uses `Requested outcome` rather than `Goal`. Every screen
+The information model uses `Requested outcome / Prompt` rather than `Goal`. Every screen
 keeps the Hermes workspace and Daidala navigation invariant while changing only
 the use-case content. Workflows lists waiting approvals oldest first and adds a bounded next-action
 sentence to each row. Exact decision gates live in workflow details, where the

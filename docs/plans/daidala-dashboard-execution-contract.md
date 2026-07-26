@@ -758,14 +758,14 @@ request, and confirm creation of the workflow graph.
    transport: do not require `GH_TOKEN` for SSH, infer vault entries, or return
    credential aliases, environment-variable names, or values.
 2. Extend the `SetupWizard` form state to carry `board_slug`,
-   selected `project_id`, `goal` (rendered to the operator as **Requested outcome**;
+   selected `project_id`, `goal` (rendered to the operator as **Requested outcome / Prompt**;
    the browser never labels it `Goal` to avoid collision with Hermes' `/goal`
    session feature), `pack`, `stage_profiles` (per-stage
    override), `workflow_id`, and the mutually exclusive
    `constraints_content` / `constraints_skill` +
    `constraints_skill_digest` triple
    (`daidala/setup_wizard.py:19-98`). The browser labels `goal` as **Requested
-   outcome** and maps it to the existing payload key only at submission; it must
+   outcome / Prompt** and maps it to the existing payload key only at submission; it must
    never display `Goal`, which would imply Hermes' unrelated `/goal` session
    feature. Render `workflow_id` as an optional
    advanced control. Blank means omit the key and use the existing

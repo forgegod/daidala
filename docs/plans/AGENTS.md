@@ -9,7 +9,9 @@ Own executable plans, shared plan-family contracts, and repository-tracked UX de
 - `Pnnnn-<slug>.md` files are active executable plans.
 - `*-execution-contract.md` files own shared invariants consumed by multiple active plans; they carry no execution state or approval authority.
 - `hermes-dashboard-ux-live.pen` is the editable Daidala dashboard wireframe source.
-- `dashboard-ux-*.png` files are canonical review renders exported from that source.
+- `dashboard-ux-*.png` files are canonical review renders exported from that
+  source, including workflow inventory/detail, collapsed/expanded start,
+  Artifacts, and each Config subtab state.
 - `hermes-dashboard-live-*.png` files are live Hermes host references used for visual comparison.
 - Date-prefixed plans and JSON scope/evaluation records remain historical or bounded planning material; active execution must identify its exact source explicitly.
 
