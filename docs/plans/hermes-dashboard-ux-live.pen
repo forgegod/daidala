@@ -9617,9 +9617,9 @@
                     {
                       "type": "text",
                       "id": "ZsAV7",
-                      "name": "Completed section title",
+                      "name": "Recently finished workflows section title",
                       "fill": "#ffe6cb",
-                      "content": "RECENT RESULTS",
+                      "content": "RECENTLY FINISHED WORKFLOWS · LATEST 5",
                       "fontFamily": "Inter",
                       "fontSize": 10.5,
                       "fontWeight": "bold",
@@ -9628,7 +9628,7 @@
                     {
                       "type": "frame",
                       "id": "MIMFN",
-                      "name": "Recent results",
+                      "name": "Recently finished workflows",
                       "width": 872,
                       "height": 104,
                       "cornerRadius": 7,

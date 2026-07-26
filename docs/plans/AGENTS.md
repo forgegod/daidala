@@ -36,7 +36,7 @@ Every full-page Daidala wireframe follows one invariant composition:
 
 Additional UI contracts:
 
-- Workflows is the default view and complete lifecycle inventory. Its first section lists only workflows awaiting attended action; the page header exposes the primary `Start workflow` action.
+- Workflows is the default view and complete lifecycle inventory. Its first section lists only workflows awaiting attended action; the page header exposes the primary `Start workflow` action. Its compact finished section is named **Recently finished workflows** and shows the latest five terminal workflows matching the current filters, ordered by terminal timestamp descending with stable workflow-ID tie-breaking. Completed, failed, and cancelled workflow outcomes remain distinct from ledger-bound artifacts.
 - Each awaiting-action row shows one source-bound sentence describing the next operator action. That sentence is orientation copy, not evidence or approval authority, and opens the matching workflow detail workspace.
 - Start, review, revision, approval, cancellation, and other workflow actions open as Workflows subviews, not primary tabs or standalone shells.
 - Workflows subviews keep Workflows selected, omit the redundant `Daidala / Workflows` breadcrumb, and provide an explicit `← Back to Workflows` control followed by the exact workflow ID when one exists.

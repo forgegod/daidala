@@ -42,7 +42,11 @@ component patterns; it has no implementation phases and grants no approval autho
    content workspace—it never redraws, abbreviates, or bypasses the first two
    layers.
 2. **Workflow-first attention queue.** Workflows begins with only workflows that
-   currently need attended input, followed by autonomous and recent workflows.
+   currently need attended input, followed by autonomous and recently finished
+   workflows. `Recently finished workflows` means the latest five terminal
+   workflows matching the current filters, ordered by terminal timestamp
+   descending with stable workflow-ID tie-breaking. It includes completed,
+   failed, and cancelled states; these are workflow outcomes, not artifacts.
    Each compact awaiting-action row includes one source-bound sentence describing
    the next operator action and opens a workflow detail subpage. The sentence is
    orientation copy, never a substitute for evidence or authority. Decision gates
@@ -155,7 +159,13 @@ Three primary views, all inside the single tab and ordered by workflow result:
 - **Workflows (default)** — complete lifecycle inventory, independent of whether
   attended input is required. Its page header exposes the single primary `Start
   workflow` action. Show summary counts and filters, then awaiting-action rows,
-  active workflows with stage progress, and recent terminal results. Each
+  active workflows with stage progress, and the latest five terminal workflows
+  under **Recently finished workflows**. That section includes completed, failed,
+  and cancelled states matching the current filters, ordered by terminal
+  timestamp descending with stable workflow-ID tie-breaking. It contains workflow
+  outcomes, never artifacts; selecting a row opens workflow detail, where its
+  ledger-bound artifacts remain available through the embedded browser and
+  filtered Artifacts view. Each
   awaiting-action row names the current finite action—such as `Request revision`
   or `Review plan`—and adds one source-bound `Next action` sentence so the operator
   can triage without opening every workflow. The sentence is list-level orientation
@@ -396,7 +406,7 @@ editing.
 | [`hermes-dashboard-live-sessions.png`](hermes-dashboard-live-sessions.png) | Live Hermes v0.19.0 Sessions page; shell, metrics, tabs, list/status patterns |
 | [`hermes-dashboard-live-kanban.png`](hermes-dashboard-live-kanban.png) | Live Kanban plugin; plugin integration, fieldsets, filters, lanes, cards, empty states |
 | [`hermes-dashboard-ux-live.pen`](hermes-dashboard-ux-live.pen) | Editable Pen source with Workflows, Start workflow subpage, Config, Artifacts, and Request plan revision detail frames |
-| [`dashboard-ux-workflows.png`](dashboard-ux-workflows.png) | Default workflow inventory with `Start workflow`, source-bound awaiting-action summaries, autonomous progress, and recent results |
+| [`dashboard-ux-workflows.png`](dashboard-ux-workflows.png) | Default workflow inventory with `Start workflow`, source-bound awaiting-action summaries, autonomous progress, and the latest five recently finished workflows |
 | [`dashboard-ux-wizard.png`](dashboard-ux-wizard.png) | Workflows subpage for Start workflow with mounted-profile scope, inventory selectors, repository capability readiness, browser-local preset, Cron handoff, and back → preview → confirm → start |
 | [`dashboard-ux-configure.png`](dashboard-ux-configure.png) | Config tabs including Packs, with Checkouts/TTL selected and read-only verification visible |
 | [`dashboard-ux-artifacts.png`](dashboard-ux-artifacts.png) | Ledger-bound artifact browser, detail/escaped preview, and curator actions |
