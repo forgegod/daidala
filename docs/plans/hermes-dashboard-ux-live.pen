@@ -1155,654 +1155,11 @@
                       "id": "n0114",
                       "name": "Attention group label",
                       "fill": "#ffe6cb",
-                      "content": "NEEDS YOUR DECISION · 2 WORKFLOWS",
+                      "content": "NEEDS YOUR DECISION · OLDEST WAITING FIRST",
                       "fontFamily": "Inter",
                       "fontSize": 10.5,
                       "fontWeight": "bold",
                       "letterSpacing": 1.1
-                    },
-                    {
-                      "type": "frame",
-                      "id": "n0062",
-                      "name": "Plan attention workflow card",
-                      "width": 822,
-                      "height": 311,
-                      "fill": "#00000000",
-                      "cornerRadius": 7,
-                      "stroke": "#ffe6cb26",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "layout": "vertical",
-                      "gap": 10,
-                      "padding": [
-                        10,
-                        14
-                      ],
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "n0020",
-                          "name": "Plan attention header",
-                          "width": 790,
-                          "height": 24,
-                          "fill": "#00000000",
-                          "gap": 8,
-                          "justifyContent": "space_between",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "n0016",
-                              "name": "Plan attention identity",
-                              "width": 600,
-                              "height": 24,
-                              "fill": "#00000000",
-                              "gap": 10,
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "n0014",
-                                  "name": "Plan attention id",
-                                  "fill": "#ffe6cb",
-                                  "content": "calc-repair-2026-07-25",
-                                  "fontFamily": "Courier New",
-                                  "fontSize": 11.5,
-                                  "fontWeight": "bold"
-                                },
-                                {
-                                  "type": "text",
-                                  "id": "n0015",
-                                  "name": "Plan attention pack",
-                                  "fill": "#9a8f80",
-                                  "content": "addyosmani · daidala-forgegod-daidala",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 8.8,
-                                  "fontWeight": "normal"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "n0019",
-                              "name": "Plan attention status",
-                              "width": 130,
-                              "height": 22,
-                              "fill": "#132826",
-                              "cornerRadius": 4,
-                              "stroke": "#ffbd38",
-                              "strokeWidth": 1,
-                              "strokeAlignment": "inner",
-                              "gap": 5,
-                              "padding": [
-                                3,
-                                8
-                              ],
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "n0017",
-                                  "name": "Plan attention status dot",
-                                  "fill": "#ffbd38",
-                                  "content": "●",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 9,
-                                  "fontWeight": "bold"
-                                },
-                                {
-                                  "type": "text",
-                                  "id": "n0018",
-                                  "name": "Plan attention status label",
-                                  "fill": "#ffbd38",
-                                  "content": "Awaiting plan approval",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 9,
-                                  "fontWeight": "bold"
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "n0029",
-                          "name": "Plan attention stage strip",
-                          "width": 790,
-                          "height": 28,
-                          "fill": "#00000000",
-                          "gap": 6,
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "n0022",
-                              "name": "Plan attention PLAN",
-                              "width": 190,
-                              "height": 28,
-                              "fill": "#182c2a",
-                              "padding": [
-                                5,
-                                8
-                              ],
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "n0021",
-                                  "name": "Plan attention PLAN text",
-                                  "fill": "#4ade80",
-                                  "content": "PLAN · DONE",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 9,
-                                  "fontWeight": "bold"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "n0024",
-                              "name": "Plan attention IMPLEMENT",
-                              "width": 190,
-                              "height": 28,
-                              "fill": "#182c2a",
-                              "padding": [
-                                5,
-                                8
-                              ],
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "n0023",
-                                  "name": "Plan attention IMPLEMENT text",
-                                  "fill": "#ffbd38",
-                                  "content": "IMPLEMENT · READY",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 9,
-                                  "fontWeight": "bold"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "n0026",
-                              "name": "Plan attention VERIFY",
-                              "width": 190,
-                              "height": 28,
-                              "fill": "#182c2a",
-                              "padding": [
-                                5,
-                                8
-                              ],
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "n0025",
-                                  "name": "Plan attention VERIFY text",
-                                  "fill": "#ccbaa8",
-                                  "content": "VERIFY · PENDING",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 9,
-                                  "fontWeight": "bold"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "n0028",
-                              "name": "Plan attention REVIEW",
-                              "width": 190,
-                              "height": 28,
-                              "fill": "#182c2a",
-                              "padding": [
-                                5,
-                                8
-                              ],
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "n0027",
-                                  "name": "Plan attention REVIEW text",
-                                  "fill": "#ccbaa8",
-                                  "content": "REVIEW · PENDING",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 9,
-                                  "fontWeight": "bold"
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "n0051",
-                          "name": "Plan attention artifacts foldable",
-                          "width": 790,
-                          "height": 150,
-                          "fill": "#132826",
-                          "cornerRadius": 7,
-                          "stroke": "#ffe6cb26",
-                          "strokeWidth": 1,
-                          "strokeAlignment": "inner",
-                          "layout": "vertical",
-                          "gap": 6,
-                          "padding": [
-                            8,
-                            10
-                          ],
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "n0050",
-                              "name": "Plan attention fold header",
-                              "width": 766,
-                              "height": 20,
-                              "fill": "#00000000",
-                              "justifyContent": "space_between",
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "n0048",
-                                  "name": "Plan attention fold title",
-                                  "fill": "#ccbaa8",
-                                  "content": "▼ ARTIFACTS 3 · plan.md · constraints.yaml · verify.txt",
-                                  "fontFamily": "Courier New",
-                                  "fontSize": 9,
-                                  "fontWeight": "normal"
-                                },
-                                {
-                                  "type": "text",
-                                  "id": "n0049",
-                                  "name": "Plan attention fold link",
-                                  "fill": "#ffbd38",
-                                  "content": "View all →",
-                                  "fontFamily": "Courier New",
-                                  "fontSize": 9,
-                                  "fontWeight": "normal"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "n0047",
-                              "name": "Plan attention fold body",
-                              "width": 766,
-                              "height": 110,
-                              "fill": "#00000000",
-                              "gap": 10,
-                              "children": [
-                                {
-                                  "type": "frame",
-                                  "id": "n0046",
-                                  "name": "Plan attention artifact list",
-                                  "width": 220,
-                                  "height": 110,
-                                  "fill": "#00000000",
-                                  "cornerRadius": 7,
-                                  "stroke": "#ffe6cb26",
-                                  "strokeWidth": 1,
-                                  "strokeAlignment": "inner",
-                                  "layout": "vertical",
-                                  "gap": 6,
-                                  "padding": [
-                                    8,
-                                    10
-                                  ],
-                                  "children": [
-                                    {
-                                      "type": "frame",
-                                      "id": "n0032",
-                                      "name": "Plan attention artifact 0",
-                                      "width": 200,
-                                      "height": 27,
-                                      "fill": "#00000000",
-                                      "cornerRadius": 4,
-                                      "stroke": "#ffe6cb26",
-                                      "strokeWidth": 1,
-                                      "strokeAlignment": "inner",
-                                      "gap": 6,
-                                      "padding": [
-                                        3,
-                                        8
-                                      ],
-                                      "alignItems": "center",
-                                      "children": [
-                                        {
-                                          "type": "text",
-                                          "id": "n0030",
-                                          "name": "Plan attention artifact 0 title",
-                                          "fill": "#ffe6cb",
-                                          "content": "plan.md",
-                                          "fontFamily": "Inter",
-                                          "fontSize": 9,
-                                          "fontWeight": "bold"
-                                        },
-                                        {
-                                          "type": "text",
-                                          "id": "n0031",
-                                          "name": "Plan attention artifact 0 meta",
-                                          "fill": "#4ade80",
-                                          "content": "current · 8.2 KiB",
-                                          "fontFamily": "Courier New",
-                                          "fontSize": 8,
-                                          "fontWeight": "normal"
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "type": "frame",
-                                      "id": "n0035",
-                                      "name": "Plan attention artifact 1",
-                                      "width": 200,
-                                      "height": 27,
-                                      "fill": "#00000000",
-                                      "cornerRadius": 4,
-                                      "stroke": "#ffe6cb26",
-                                      "strokeWidth": 1,
-                                      "strokeAlignment": "inner",
-                                      "gap": 6,
-                                      "padding": [
-                                        3,
-                                        8
-                                      ],
-                                      "alignItems": "center",
-                                      "children": [
-                                        {
-                                          "type": "text",
-                                          "id": "n0033",
-                                          "name": "Plan attention artifact 1 title",
-                                          "fill": "#ffe6cb",
-                                          "content": "constraints.yaml",
-                                          "fontFamily": "Inter",
-                                          "fontSize": 9,
-                                          "fontWeight": "bold"
-                                        },
-                                        {
-                                          "type": "text",
-                                          "id": "n0034",
-                                          "name": "Plan attention artifact 1 meta",
-                                          "fill": "#4ade80",
-                                          "content": "current · 1.9 KiB",
-                                          "fontFamily": "Courier New",
-                                          "fontSize": 8,
-                                          "fontWeight": "normal"
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "type": "frame",
-                                      "id": "n0038",
-                                      "name": "Plan attention artifact 2",
-                                      "width": 200,
-                                      "height": 27,
-                                      "fill": "#00000000",
-                                      "cornerRadius": 4,
-                                      "stroke": "#ffe6cb26",
-                                      "strokeWidth": 1,
-                                      "strokeAlignment": "inner",
-                                      "gap": 6,
-                                      "padding": [
-                                        3,
-                                        8
-                                      ],
-                                      "alignItems": "center",
-                                      "children": [
-                                        {
-                                          "type": "text",
-                                          "id": "n0036",
-                                          "name": "Plan attention artifact 2 title",
-                                          "fill": "#ffe6cb",
-                                          "content": "verify.txt",
-                                          "fontFamily": "Inter",
-                                          "fontSize": 9,
-                                          "fontWeight": "bold"
-                                        },
-                                        {
-                                          "type": "text",
-                                          "id": "n0037",
-                                          "name": "Plan attention artifact 2 meta",
-                                          "fill": "#4ade80",
-                                          "content": "current · 4.1 KiB",
-                                          "fontFamily": "Courier New",
-                                          "fontSize": 8,
-                                          "fontWeight": "normal"
-                                        }
-                                      ]
-                                    }
-                                  ]
-                                },
-                                {
-                                  "type": "frame",
-                                  "id": "n0045",
-                                  "name": "Plan attention artifact detail",
-                                  "width": 536,
-                                  "height": 110,
-                                  "fill": "#182c2a",
-                                  "cornerRadius": 7,
-                                  "stroke": "#ffe6cb26",
-                                  "strokeWidth": 1,
-                                  "strokeAlignment": "inner",
-                                  "layout": "vertical",
-                                  "gap": 3,
-                                  "padding": [
-                                    8,
-                                    10
-                                  ],
-                                  "children": [
-                                    {
-                                      "type": "text",
-                                      "id": "n0039",
-                                      "name": "Plan attention detail title",
-                                      "fill": "#ffe6cb",
-                                      "content": "plan.md",
-                                      "fontFamily": "Inter",
-                                      "fontSize": 10,
-                                      "fontWeight": "bold"
-                                    },
-                                    {
-                                      "type": "text",
-                                      "id": "n0040",
-                                      "name": "Plan attention detail meta",
-                                      "fill": "#ccbaa8",
-                                      "content": "ba98856e…47bb9 · 8.2 KiB · current",
-                                      "fontFamily": "Courier New",
-                                      "fontSize": 8,
-                                      "fontWeight": "normal"
-                                    },
-                                    {
-                                      "type": "frame",
-                                      "id": "n0043",
-                                      "name": "Plan attention detail preview",
-                                      "width": 522,
-                                      "height": 50,
-                                      "fill": "#0e2423",
-                                      "cornerRadius": 6,
-                                      "stroke": "#ffe6cb26",
-                                      "strokeWidth": 1,
-                                      "strokeAlignment": "inner",
-                                      "layout": "vertical",
-                                      "gap": 2,
-                                      "padding": [
-                                        5,
-                                        8
-                                      ],
-                                      "children": [
-                                        {
-                                          "type": "text",
-                                          "id": "n0041",
-                                          "name": "Plan attention preview heading",
-                                          "fill": "#9a8f80",
-                                          "content": "LITERAL ESCAPED PREVIEW",
-                                          "fontFamily": "Inter",
-                                          "fontSize": 8,
-                                          "fontWeight": "bold"
-                                        },
-                                        {
-                                          "type": "text",
-                                          "id": "n0042",
-                                          "name": "Plan attention preview body",
-                                          "fill": "#ccbaa8",
-                                          "textGrowth": "fixed-width",
-                                          "width": 502,
-                                          "content": "# plan.md\n\nRaw ledger-bound content.",
-                                          "fontFamily": "Courier New",
-                                          "fontSize": 9,
-                                          "fontWeight": "normal"
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "type": "text",
-                                      "id": "n0044",
-                                      "name": "Plan attention detail note",
-                                      "fill": "#ffbd38",
-                                      "content": "Download available · curator actions in Artifacts tab",
-                                      "fontFamily": "Courier New",
-                                      "fontSize": 8,
-                                      "fontWeight": "normal"
-                                    }
-                                  ]
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "n0061",
-                          "name": "Plan attention embedded gate",
-                          "width": 790,
-                          "height": 59,
-                          "fill": "#0e2423",
-                          "cornerRadius": 7,
-                          "stroke": "#ffe6cb26",
-                          "strokeWidth": 1,
-                          "strokeAlignment": "inner",
-                          "gap": 10,
-                          "padding": [
-                            7,
-                            10
-                          ],
-                          "justifyContent": "space_between",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "n0059",
-                              "name": "Plan attention gate copy",
-                              "width": 450,
-                              "height": 45,
-                              "fill": "#00000000",
-                              "layout": "vertical",
-                              "gap": 3,
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "n0056",
-                                  "name": "Plan attention gate kind",
-                                  "fill": "#4ade80",
-                                  "content": "PLAN APPROVAL",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 9.5,
-                                  "fontWeight": "bold",
-                                  "letterSpacing": 0.8
-                                },
-                                {
-                                  "type": "text",
-                                  "id": "n0057",
-                                  "name": "Plan attention gate summary",
-                                  "fill": "#ffe6cb",
-                                  "textGrowth": "fixed-width",
-                                  "width": 440,
-                                  "content": "Repair parser tokenization and restore four failing tests.",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 10.2,
-                                  "fontWeight": "normal"
-                                },
-                                {
-                                  "type": "text",
-                                  "id": "n0058",
-                                  "name": "Plan attention gate meta",
-                                  "fill": "#ccbaa8",
-                                  "content": "plan rev 1 · digest ba98856e…47bb9",
-                                  "fontFamily": "Courier New",
-                                  "fontSize": 8.8,
-                                  "fontWeight": "normal"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "n0060",
-                              "name": "Plan attention gate actions",
-                              "width": 320,
-                              "height": 30,
-                              "fill": "#00000000",
-                              "gap": 6,
-                              "children": [
-                                {
-                                  "type": "frame",
-                                  "id": "n0053",
-                                  "name": "Plan attention action 0",
-                                  "width": 125,
-                                  "height": 30,
-                                  "fill": "#ffe6cb",
-                                  "padding": [
-                                    5,
-                                    10
-                                  ],
-                                  "justifyContent": "center",
-                                  "alignItems": "center",
-                                  "children": [
-                                    {
-                                      "type": "text",
-                                      "id": "n0052",
-                                      "name": "Plan attention action 0 label",
-                                      "fill": "#041c1c",
-                                      "content": "Approve exact plan",
-                                      "fontFamily": "Courier New",
-                                      "fontSize": 9.5,
-                                      "fontWeight": "bold"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "type": "frame",
-                                  "id": "n0055",
-                                  "name": "Plan attention action 1",
-                                  "width": 120,
-                                  "height": 30,
-                                  "fill": "#00000000",
-                                  "stroke": "#ffe6cb26",
-                                  "strokeWidth": 1,
-                                  "strokeAlignment": "inner",
-                                  "padding": [
-                                    5,
-                                    10
-                                  ],
-                                  "justifyContent": "center",
-                                  "alignItems": "center",
-                                  "children": [
-                                    {
-                                      "type": "text",
-                                      "id": "n0054",
-                                      "name": "Plan attention action 1 label",
-                                      "fill": "#ffe6cb",
-                                      "content": "Request revision",
-                                      "fontFamily": "Courier New",
-                                      "fontSize": 9.5,
-                                      "fontWeight": "bold"
-                                    }
-                                  ]
-                                }
-                              ]
-                            }
-                          ]
-                        }
-                      ]
                     },
                     {
                       "type": "frame",
@@ -2464,6 +1821,649 @@
                                       "name": "Review attention action 2 label",
                                       "fill": "#ffe6cb",
                                       "content": "Challenge",
+                                      "fontFamily": "Courier New",
+                                      "fontSize": 9.5,
+                                      "fontWeight": "bold"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "n0062",
+                      "name": "Plan attention workflow card",
+                      "width": 822,
+                      "height": 311,
+                      "fill": "#00000000",
+                      "cornerRadius": 7,
+                      "stroke": "#ffe6cb26",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 10,
+                      "padding": [
+                        10,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "n0020",
+                          "name": "Plan attention header",
+                          "width": 790,
+                          "height": 24,
+                          "fill": "#00000000",
+                          "gap": 8,
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "n0016",
+                              "name": "Plan attention identity",
+                              "width": 600,
+                              "height": 24,
+                              "fill": "#00000000",
+                              "gap": 10,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "n0014",
+                                  "name": "Plan attention id",
+                                  "fill": "#ffe6cb",
+                                  "content": "calc-repair-2026-07-25",
+                                  "fontFamily": "Courier New",
+                                  "fontSize": 11.5,
+                                  "fontWeight": "bold"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "n0015",
+                                  "name": "Plan attention pack",
+                                  "fill": "#9a8f80",
+                                  "content": "addyosmani · daidala-forgegod-daidala",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 8.8,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "n0019",
+                              "name": "Plan attention status",
+                              "width": 130,
+                              "height": 22,
+                              "fill": "#132826",
+                              "cornerRadius": 4,
+                              "stroke": "#ffbd38",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "gap": 5,
+                              "padding": [
+                                3,
+                                8
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "n0017",
+                                  "name": "Plan attention status dot",
+                                  "fill": "#ffbd38",
+                                  "content": "●",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 9,
+                                  "fontWeight": "bold"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "n0018",
+                                  "name": "Plan attention status label",
+                                  "fill": "#ffbd38",
+                                  "content": "Awaiting plan approval",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 9,
+                                  "fontWeight": "bold"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "n0029",
+                          "name": "Plan attention stage strip",
+                          "width": 790,
+                          "height": 28,
+                          "fill": "#00000000",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "n0022",
+                              "name": "Plan attention PLAN",
+                              "width": 190,
+                              "height": 28,
+                              "fill": "#182c2a",
+                              "padding": [
+                                5,
+                                8
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "n0021",
+                                  "name": "Plan attention PLAN text",
+                                  "fill": "#4ade80",
+                                  "content": "PLAN · DONE",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 9,
+                                  "fontWeight": "bold"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "n0024",
+                              "name": "Plan attention IMPLEMENT",
+                              "width": 190,
+                              "height": 28,
+                              "fill": "#182c2a",
+                              "padding": [
+                                5,
+                                8
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "n0023",
+                                  "name": "Plan attention IMPLEMENT text",
+                                  "fill": "#ffbd38",
+                                  "content": "IMPLEMENT · READY",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 9,
+                                  "fontWeight": "bold"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "n0026",
+                              "name": "Plan attention VERIFY",
+                              "width": 190,
+                              "height": 28,
+                              "fill": "#182c2a",
+                              "padding": [
+                                5,
+                                8
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "n0025",
+                                  "name": "Plan attention VERIFY text",
+                                  "fill": "#ccbaa8",
+                                  "content": "VERIFY · PENDING",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 9,
+                                  "fontWeight": "bold"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "n0028",
+                              "name": "Plan attention REVIEW",
+                              "width": 190,
+                              "height": 28,
+                              "fill": "#182c2a",
+                              "padding": [
+                                5,
+                                8
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "n0027",
+                                  "name": "Plan attention REVIEW text",
+                                  "fill": "#ccbaa8",
+                                  "content": "REVIEW · PENDING",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 9,
+                                  "fontWeight": "bold"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "n0051",
+                          "name": "Plan attention artifacts foldable",
+                          "width": 790,
+                          "height": 150,
+                          "fill": "#132826",
+                          "cornerRadius": 7,
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "n0050",
+                              "name": "Plan attention fold header",
+                              "width": 766,
+                              "height": 20,
+                              "fill": "#00000000",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "n0048",
+                                  "name": "Plan attention fold title",
+                                  "fill": "#ccbaa8",
+                                  "content": "▼ ARTIFACTS 3 · plan.md · constraints.yaml · verify.txt",
+                                  "fontFamily": "Courier New",
+                                  "fontSize": 9,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "n0049",
+                                  "name": "Plan attention fold link",
+                                  "fill": "#ffbd38",
+                                  "content": "View all →",
+                                  "fontFamily": "Courier New",
+                                  "fontSize": 9,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "n0047",
+                              "name": "Plan attention fold body",
+                              "width": 766,
+                              "height": 110,
+                              "fill": "#00000000",
+                              "gap": 10,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "n0046",
+                                  "name": "Plan attention artifact list",
+                                  "width": 220,
+                                  "height": 110,
+                                  "fill": "#00000000",
+                                  "cornerRadius": 7,
+                                  "stroke": "#ffe6cb26",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "layout": "vertical",
+                                  "gap": 6,
+                                  "padding": [
+                                    8,
+                                    10
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "n0032",
+                                      "name": "Plan attention artifact 0",
+                                      "width": 200,
+                                      "height": 27,
+                                      "fill": "#00000000",
+                                      "cornerRadius": 4,
+                                      "stroke": "#ffe6cb26",
+                                      "strokeWidth": 1,
+                                      "strokeAlignment": "inner",
+                                      "gap": 6,
+                                      "padding": [
+                                        3,
+                                        8
+                                      ],
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "n0030",
+                                          "name": "Plan attention artifact 0 title",
+                                          "fill": "#ffe6cb",
+                                          "content": "plan.md",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 9,
+                                          "fontWeight": "bold"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "n0031",
+                                          "name": "Plan attention artifact 0 meta",
+                                          "fill": "#4ade80",
+                                          "content": "current · 8.2 KiB",
+                                          "fontFamily": "Courier New",
+                                          "fontSize": 8,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "n0035",
+                                      "name": "Plan attention artifact 1",
+                                      "width": 200,
+                                      "height": 27,
+                                      "fill": "#00000000",
+                                      "cornerRadius": 4,
+                                      "stroke": "#ffe6cb26",
+                                      "strokeWidth": 1,
+                                      "strokeAlignment": "inner",
+                                      "gap": 6,
+                                      "padding": [
+                                        3,
+                                        8
+                                      ],
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "n0033",
+                                          "name": "Plan attention artifact 1 title",
+                                          "fill": "#ffe6cb",
+                                          "content": "constraints.yaml",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 9,
+                                          "fontWeight": "bold"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "n0034",
+                                          "name": "Plan attention artifact 1 meta",
+                                          "fill": "#4ade80",
+                                          "content": "current · 1.9 KiB",
+                                          "fontFamily": "Courier New",
+                                          "fontSize": 8,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "n0038",
+                                      "name": "Plan attention artifact 2",
+                                      "width": 200,
+                                      "height": 27,
+                                      "fill": "#00000000",
+                                      "cornerRadius": 4,
+                                      "stroke": "#ffe6cb26",
+                                      "strokeWidth": 1,
+                                      "strokeAlignment": "inner",
+                                      "gap": 6,
+                                      "padding": [
+                                        3,
+                                        8
+                                      ],
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "n0036",
+                                          "name": "Plan attention artifact 2 title",
+                                          "fill": "#ffe6cb",
+                                          "content": "verify.txt",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 9,
+                                          "fontWeight": "bold"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "n0037",
+                                          "name": "Plan attention artifact 2 meta",
+                                          "fill": "#4ade80",
+                                          "content": "current · 4.1 KiB",
+                                          "fontFamily": "Courier New",
+                                          "fontSize": 8,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "n0045",
+                                  "name": "Plan attention artifact detail",
+                                  "width": 536,
+                                  "height": 110,
+                                  "fill": "#182c2a",
+                                  "cornerRadius": 7,
+                                  "stroke": "#ffe6cb26",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "layout": "vertical",
+                                  "gap": 3,
+                                  "padding": [
+                                    8,
+                                    10
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "n0039",
+                                      "name": "Plan attention detail title",
+                                      "fill": "#ffe6cb",
+                                      "content": "plan.md",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 10,
+                                      "fontWeight": "bold"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "n0040",
+                                      "name": "Plan attention detail meta",
+                                      "fill": "#ccbaa8",
+                                      "content": "ba98856e…47bb9 · 8.2 KiB · current",
+                                      "fontFamily": "Courier New",
+                                      "fontSize": 8,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "n0043",
+                                      "name": "Plan attention detail preview",
+                                      "width": 522,
+                                      "height": 50,
+                                      "fill": "#0e2423",
+                                      "cornerRadius": 6,
+                                      "stroke": "#ffe6cb26",
+                                      "strokeWidth": 1,
+                                      "strokeAlignment": "inner",
+                                      "layout": "vertical",
+                                      "gap": 2,
+                                      "padding": [
+                                        5,
+                                        8
+                                      ],
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "n0041",
+                                          "name": "Plan attention preview heading",
+                                          "fill": "#9a8f80",
+                                          "content": "LITERAL ESCAPED PREVIEW",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 8,
+                                          "fontWeight": "bold"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "n0042",
+                                          "name": "Plan attention preview body",
+                                          "fill": "#ccbaa8",
+                                          "textGrowth": "fixed-width",
+                                          "width": 502,
+                                          "content": "# plan.md\n\nRaw ledger-bound content.",
+                                          "fontFamily": "Courier New",
+                                          "fontSize": 9,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "n0044",
+                                      "name": "Plan attention detail note",
+                                      "fill": "#ffbd38",
+                                      "content": "Download available · curator actions in Artifacts tab",
+                                      "fontFamily": "Courier New",
+                                      "fontSize": 8,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "n0061",
+                          "name": "Plan attention embedded gate",
+                          "width": 790,
+                          "height": 59,
+                          "fill": "#0e2423",
+                          "cornerRadius": 7,
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "gap": 10,
+                          "padding": [
+                            7,
+                            10
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "n0059",
+                              "name": "Plan attention gate copy",
+                              "width": 450,
+                              "height": 45,
+                              "fill": "#00000000",
+                              "layout": "vertical",
+                              "gap": 3,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "n0056",
+                                  "name": "Plan attention gate kind",
+                                  "fill": "#4ade80",
+                                  "content": "PLAN APPROVAL",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 9.5,
+                                  "fontWeight": "bold",
+                                  "letterSpacing": 0.8
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "n0057",
+                                  "name": "Plan attention gate summary",
+                                  "fill": "#ffe6cb",
+                                  "textGrowth": "fixed-width",
+                                  "width": 440,
+                                  "content": "Repair parser tokenization and restore four failing tests.",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10.2,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "n0058",
+                                  "name": "Plan attention gate meta",
+                                  "fill": "#ccbaa8",
+                                  "content": "plan rev 1 · digest ba98856e…47bb9",
+                                  "fontFamily": "Courier New",
+                                  "fontSize": 8.8,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "n0060",
+                              "name": "Plan attention gate actions",
+                              "width": 320,
+                              "height": 30,
+                              "fill": "#00000000",
+                              "gap": 6,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "n0053",
+                                  "name": "Plan attention action 0",
+                                  "width": 125,
+                                  "height": 30,
+                                  "fill": "#ffe6cb",
+                                  "padding": [
+                                    5,
+                                    10
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "n0052",
+                                      "name": "Plan attention action 0 label",
+                                      "fill": "#041c1c",
+                                      "content": "Approve exact plan",
+                                      "fontFamily": "Courier New",
+                                      "fontSize": 9.5,
+                                      "fontWeight": "bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "n0055",
+                                  "name": "Plan attention action 1",
+                                  "width": 120,
+                                  "height": 30,
+                                  "fill": "#00000000",
+                                  "stroke": "#ffe6cb26",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    5,
+                                    10
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "n0054",
+                                      "name": "Plan attention action 1 label",
+                                      "fill": "#ffe6cb",
+                                      "content": "Request revision",
                                       "fontFamily": "Courier New",
                                       "fontSize": 9.5,
                                       "fontWeight": "bold"
@@ -7541,6 +7541,1834 @@
                                   "fontFamily": "Courier New",
                                   "fontSize": 8.5,
                                   "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "G1ryL",
+      "x": 5440,
+      "y": 0,
+      "name": "Request revision workspace concept",
+      "clip": true,
+      "width": 1280,
+      "height": 1000,
+      "fill": "#041c1c",
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "aIWQU",
+          "x": 0,
+          "y": 0,
+          "name": "Profile scope banner",
+          "width": 1280,
+          "height": 36,
+          "fill": "#2a2309",
+          "padding": [
+            8,
+            16
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "ng29c",
+              "name": "Profile scope",
+              "fill": "#ffbd38",
+              "content": "Managing profile “daidala-self-improvement” — config, keys, skills, MCPs, model, and new chats apply to that profile.",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "LnhLb",
+          "x": 0,
+          "y": 36,
+          "name": "App body",
+          "width": 1280,
+          "height": 964,
+          "fill": "#041c1c",
+          "children": [
+            {
+              "type": "frame",
+              "id": "pnNJl",
+              "name": "Hermes sidebar",
+              "width": 344,
+              "height": 684,
+              "fill": "#041c1c",
+              "stroke": "#ffe6cb26",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "vertical",
+              "gap": 6,
+              "padding": [
+                12,
+                14
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "U1DNQ",
+                  "name": "Brand row",
+                  "width": 316,
+                  "height": 44,
+                  "fill": "#00000000",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "MjziL",
+                      "name": "Brand",
+                      "fill": "#ffe6cb",
+                      "content": "HERMES\nAGENT",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "bold",
+                      "letterSpacing": 1.4
+                    },
+                    {
+                      "type": "frame",
+                      "id": "eS8T8",
+                      "name": "Collapse",
+                      "width": 36,
+                      "height": 36,
+                      "fill": "#00000000",
+                      "stroke": "#ffe6cb26",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "padding": [
+                        7,
+                        14
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "zlXM7",
+                          "name": "Collapse label",
+                          "fill": "#ffe6cb",
+                          "content": "◀",
+                          "fontFamily": "Courier New",
+                          "fontSize": 12,
+                          "fontWeight": "bold"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "EwaRQ",
+                  "name": "Profile select",
+                  "width": 316,
+                  "height": 34,
+                  "fill": "#00000000",
+                  "stroke": "#ffbd38",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "kCIB7",
+                      "name": "Profile",
+                      "fill": "#ccbaa8",
+                      "content": "daidala-self-improvement",
+                      "fontFamily": "Courier New",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "EsoWs",
+                      "name": "Profile arrow",
+                      "fill": "#ccbaa8",
+                      "content": "⌄",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "r36FGA",
+                  "name": "Navigation list",
+                  "width": 316,
+                  "height": 440,
+                  "fill": "#00000000",
+                  "layout": "vertical",
+                  "gap": 1,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "guZQY",
+                      "name": "Nav CHAT",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "xir04",
+                          "name": "Nav CHAT text",
+                          "fill": "#ccbaa8",
+                          "content": "CHAT",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "lNeDT",
+                      "name": "Nav SESSIONS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "X8aRp",
+                          "name": "Nav SESSIONS text",
+                          "fill": "#ccbaa8",
+                          "content": "SESSIONS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ltHA7",
+                      "name": "Nav FILES",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "K7ODMO",
+                          "name": "Nav FILES text",
+                          "fill": "#ccbaa8",
+                          "content": "FILES",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "z6r4dh",
+                      "name": "Nav MODELS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "IupHW",
+                          "name": "Nav MODELS text",
+                          "fill": "#ccbaa8",
+                          "content": "MODELS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "cy3mt",
+                      "name": "Nav LOGS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "K4EsMU",
+                          "name": "Nav LOGS text",
+                          "fill": "#ccbaa8",
+                          "content": "LOGS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "UUlIi",
+                      "name": "Nav CRON",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "tvrIx",
+                          "name": "Nav CRON text",
+                          "fill": "#ccbaa8",
+                          "content": "CRON",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "P8qgVL",
+                      "name": "Nav SKILLS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "FinSm",
+                          "name": "Nav SKILLS text",
+                          "fill": "#ccbaa8",
+                          "content": "SKILLS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "gfatx",
+                      "name": "Nav PLUGINS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "TJpno",
+                          "name": "Nav PLUGINS text",
+                          "fill": "#ccbaa8",
+                          "content": "PLUGINS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "t0skxW",
+                      "name": "Nav MCP",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "JoXKu",
+                          "name": "Nav MCP text",
+                          "fill": "#ccbaa8",
+                          "content": "MCP",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "bGKyM",
+                      "name": "Nav CHANNELS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "yQZlc",
+                          "name": "Nav CHANNELS text",
+                          "fill": "#ccbaa8",
+                          "content": "CHANNELS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "h3Mkt",
+                      "name": "Nav WEBHOOKS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "A9zT5",
+                          "name": "Nav WEBHOOKS text",
+                          "fill": "#ccbaa8",
+                          "content": "WEBHOOKS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "rpZmm",
+                      "name": "Nav PAIRING",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "RDHsX",
+                          "name": "Nav PAIRING text",
+                          "fill": "#ccbaa8",
+                          "content": "PAIRING",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "l52xLo",
+                      "name": "Nav PROFILES",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "P82pQ4",
+                          "name": "Nav PROFILES text",
+                          "fill": "#ccbaa8",
+                          "content": "PROFILES",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "IIpF1",
+                      "name": "Nav CONFIG",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "h7KVWc",
+                          "name": "Nav CONFIG text",
+                          "fill": "#ccbaa8",
+                          "content": "CONFIG",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "jWTZ0",
+                      "name": "Nav KEYS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "l0UmY3",
+                          "name": "Nav KEYS text",
+                          "fill": "#ccbaa8",
+                          "content": "KEYS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ZjukQ",
+                      "name": "Nav SYSTEM",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "c5Qqgw",
+                          "name": "Nav SYSTEM text",
+                          "fill": "#ccbaa8",
+                          "content": "SYSTEM",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "c7QrVW",
+                      "name": "Nav DOCUMENTATION",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Dh5D0",
+                          "name": "Nav DOCUMENTATION text",
+                          "fill": "#ccbaa8",
+                          "content": "DOCUMENTATION",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "COVl7",
+                      "name": "Plugins heading",
+                      "fill": "#9a8f80",
+                      "content": "Plugins",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal",
+                      "letterSpacing": 1.2
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Wm1qa",
+                      "name": "Plugin KANBAN",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "T39eph",
+                          "name": "Plugin KANBAN text",
+                          "fill": "#ccbaa8",
+                          "content": "KANBAN",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "yCBwP",
+                      "name": "Plugin ACHIEVEMENTS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "t8Nxot",
+                          "name": "Plugin ACHIEVEMENTS text",
+                          "fill": "#ccbaa8",
+                          "content": "ACHIEVEMENTS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "JMA7o",
+                      "name": "Plugin DAIDALA",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#1d302d",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "KGLoH",
+                          "name": "Plugin DAIDALA text",
+                          "fill": "#ffe6cb",
+                          "content": "DAIDALA",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "bold",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "E4jx6",
+                  "name": "System block",
+                  "width": 316,
+                  "height": 88,
+                  "fill": "#00000000",
+                  "stroke": "#ffe6cb26",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "padding": [
+                    5,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "RNjHw",
+                      "name": "System title",
+                      "fill": "#9a8f80",
+                      "content": "System",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal",
+                      "letterSpacing": 1.1
+                    },
+                    {
+                      "type": "text",
+                      "id": "g68h4",
+                      "name": "Gateway state",
+                      "fill": "#4ade80",
+                      "content": "Gateway Status: Running",
+                      "fontFamily": "Courier New",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "tleDD",
+                      "name": "Session state",
+                      "fill": "#ccbaa8",
+                      "content": "Active Sessions: 0",
+                      "fontFamily": "Courier New",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "RdHoV",
+                      "name": "Theme label",
+                      "fill": "#9a8f80",
+                      "content": "HERMES TEAL (LARGE) · EN · v0.19.0",
+                      "fontFamily": "Courier New",
+                      "fontSize": 9,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "L4RUZO",
+              "name": "Main region",
+              "width": 936,
+              "height": 964,
+              "fill": "#041c1c",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "dVgQy",
+                  "name": "Page header",
+                  "width": 936,
+                  "height": 76,
+                  "fill": "#041c1c",
+                  "stroke": "#ffe6cb26",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    19,
+                    32
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "lDvYo",
+                      "name": "Title group",
+                      "width": 220,
+                      "height": 38,
+                      "fill": "#00000000",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "cm5M5",
+                          "name": "Page title",
+                          "fill": "#ffe6cb",
+                          "content": "WORKFLOWS",
+                          "fontFamily": "Inter",
+                          "fontSize": 15.75,
+                          "fontWeight": "bold",
+                          "letterSpacing": 1.26
+                        },
+                        {
+                          "type": "frame",
+                          "id": "WFuPI",
+                          "name": "Count badge",
+                          "width": 38,
+                          "height": 22,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "layout": "vertical",
+                          "padding": [
+                            3,
+                            8
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "VcmhR",
+                              "name": "Count",
+                              "fill": "#ffe6cb",
+                              "content": "1",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "u9yYnf",
+                      "name": "Header tabs",
+                      "width": 590,
+                      "height": 36,
+                      "fill": "#00000000",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "E6zs9W",
+                          "name": "Tab OVERVIEW",
+                          "width": 118,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "XfFH4",
+                              "name": "Tab OVERVIEW text",
+                              "fill": "#ccbaa8",
+                              "content": "OVERVIEW",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "bold",
+                              "letterSpacing": 1.05
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "JzNS8",
+                          "name": "Tab WORKFLOWS",
+                          "width": 118,
+                          "height": 36,
+                          "fill": "#ffe6cb",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "KgOhm",
+                              "name": "Tab WORKFLOWS text",
+                              "fill": "#041c1c",
+                              "content": "WORKFLOWS",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 1.05
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "e2vUH",
+                          "name": "Tab START",
+                          "width": 118,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "ijiUz",
+                              "name": "Tab START text",
+                              "fill": "#ccbaa8",
+                              "content": "START",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 1.05
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "MAvMm",
+                          "name": "Tab CONFIGURE",
+                          "width": 118,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "cnnSe",
+                              "name": "Tab CONFIGURE text",
+                              "fill": "#ccbaa8",
+                              "content": "CONFIGURE",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 1.05
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "zofti",
+                          "name": "Tab ARTIFACTS",
+                          "width": 118,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "YTwDV",
+                              "name": "Tab ARTIFACTS text",
+                              "fill": "#ccbaa8",
+                              "content": "ARTIFACTS",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 1.05
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "jjgtn",
+                  "name": "Workflow revision content",
+                  "width": 936,
+                  "height": 888,
+                  "layout": "vertical",
+                  "gap": 10.8,
+                  "padding": [
+                    24,
+                    32,
+                    28,
+                    32
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ACzNa",
+                      "name": "Revision breadcrumb",
+                      "width": "fill_container",
+                      "height": 20,
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "aprq5",
+                          "name": "Revision breadcrumb parent",
+                          "fill": "#ccbaa8",
+                          "content": "DAIDALA / WORKFLOWS",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "bold",
+                          "letterSpacing": 1.2
+                        },
+                        {
+                          "type": "text",
+                          "id": "eryMk",
+                          "name": "Revision breadcrumb divider",
+                          "fill": "#665f55",
+                          "content": "/",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "AaFyJ",
+                          "name": "Revision breadcrumb current",
+                          "fill": "#ffe6cb",
+                          "content": "api-hardening-2026-07-24",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "krGQl",
+                      "name": "Revision title row",
+                      "width": "fill_container",
+                      "height": 42,
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "FbaQR",
+                          "name": "Revision title group",
+                          "gap": 12,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "WnUjO",
+                              "name": "Revision workspace title",
+                              "fill": "#ffe6cb",
+                              "content": "Request plan revision",
+                              "fontFamily": "Inter",
+                              "fontSize": 25,
+                              "fontWeight": "bold"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "l4VRyZ",
+                              "name": "Revision state badge",
+                              "height": 28,
+                              "fill": "#2c2414",
+                              "stroke": "#ffbd38",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "layout": "vertical",
+                              "padding": [
+                                6,
+                                10
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "RI0NI",
+                                  "name": "Revision state text",
+                                  "fill": "#ffbd38",
+                                  "content": "REVIEW: CHANGES REQUESTED",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "bold",
+                                  "letterSpacing": 0.7
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "aMMzU",
+                          "name": "Revision workflow identity",
+                          "fill": "#ccbaa8",
+                          "content": "workflow 4cf9…e1d2",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "X6tDA",
+                      "name": "Revision workflow context",
+                      "width": "fill_container",
+                      "height": 94,
+                      "fill": "#0d2624",
+                      "stroke": "#ffe6cb26",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "padding": [
+                        16,
+                        18
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "amw63",
+                          "name": "Revision context copy",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "cgjML",
+                              "name": "Revision context eyebrow",
+                              "fill": "#48e1a1",
+                              "content": "HUMAN REVIEW DISPOSITION",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "bold",
+                              "letterSpacing": 1.2
+                            },
+                            {
+                              "type": "text",
+                              "id": "serho",
+                              "name": "Revision context summary",
+                              "fill": "#ffe6cb",
+                              "content": "Two non-blocking findings need a new plan before implementation resumes.",
+                              "fontFamily": "Inter",
+                              "fontSize": 15,
+                              "fontWeight": "bold"
+                            },
+                            {
+                              "type": "text",
+                              "id": "A9sWn",
+                              "name": "Revision context detail",
+                              "fill": "#ccbaa8",
+                              "content": "Current plan r1 · implementation, verification, and review evidence remain immutable.",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "u5KE7W",
+                          "name": "Revision context timestamp",
+                          "fill": "#ccbaa8",
+                          "content": "reviewed 2026-07-24 14:17 UTC",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "j1hb21",
+                      "name": "Revision evidence and handoff",
+                      "width": "fill_container",
+                      "height": 205,
+                      "gap": 16,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "S9RLkj",
+                          "name": "Revision immutable evidence",
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "fill": "#0d2624",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "layout": "vertical",
+                          "gap": 10,
+                          "padding": [
+                            14,
+                            16
+                          ],
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "y8LDev",
+                              "name": "Revision immutable evidence heading",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "uRxxU",
+                                  "name": "Revision immutable evidence title",
+                                  "fill": "#ffe6cb",
+                                  "content": "IMMUTABLE REVIEW EVIDENCE",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "bold",
+                                  "letterSpacing": 1.1
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "T1GmqB",
+                                  "name": "Revision immutable evidence source",
+                                  "fill": "#48e1a1",
+                                  "content": "review r1 · bound",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "RvoZ4",
+                              "name": "Revision finding title",
+                              "fill": "#ffe6cb",
+                              "content": "Two findings carried forward",
+                              "fontFamily": "Inter",
+                              "fontSize": 15,
+                              "fontWeight": "bold"
+                            },
+                            {
+                              "type": "text",
+                              "id": "YHvwx",
+                              "name": "Revision finding body",
+                              "fill": "#ccbaa8",
+                              "content": "• Parser tokenization misses malformed inputs\n• Verification needs a regression case for empty selectors",
+                              "lineHeight": 1.6,
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "GK64t",
+                              "name": "Revision immutable evidence refs",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "JL4Dd",
+                                  "name": "Revision immutable diff reference",
+                                  "fill": "#ccbaa8",
+                                  "content": "diff.patch · 18 KiB · pinned",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "m53FT7",
+                                  "name": "Revision immutable review reference",
+                                  "fill": "#ffbd38",
+                                  "content": "review.md ↗",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "bold"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "DykEX",
+                          "name": "Revision successor packet",
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "fill": "#182c2a",
+                          "stroke": "#ffbd38",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "layout": "vertical",
+                          "gap": 10,
+                          "padding": [
+                            14,
+                            16
+                          ],
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "JyXUR",
+                              "name": "Revision successor packet heading",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "EOR8r",
+                                  "name": "Revision successor packet title",
+                                  "fill": "#ffe6cb",
+                                  "content": "WHAT THE NEXT CARD RECEIVES",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "bold",
+                                  "letterSpacing": 1
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "hofEt",
+                                  "name": "Revision successor packet read only",
+                                  "fill": "#ffbd38",
+                                  "content": "READ-ONLY",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "bold"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "V5sLdY",
+                              "name": "Revision successor packet rows",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 6,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "rYBfg",
+                                  "name": "Revision packet New plan",
+                                  "width": "fill_container",
+                                  "justifyContent": "space_between",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "CKu3P",
+                                      "name": "Revision packet key New plan",
+                                      "fill": "#ccbaa8",
+                                      "content": "New plan",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "ULQpx",
+                                      "name": "Revision packet value New plan",
+                                      "fill": "#ffe6cb",
+                                      "content": "revision 2",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 11,
+                                      "fontWeight": "bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "tT8Xb",
+                                  "name": "Revision packet Policy / constraint",
+                                  "width": "fill_container",
+                                  "justifyContent": "space_between",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "Z8eS1W",
+                                      "name": "Revision packet key Policy / constraint",
+                                      "fill": "#ccbaa8",
+                                      "content": "Policy / constraint",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "qDN6y",
+                                      "name": "Revision packet value Policy / constraint",
+                                      "fill": "#ffe6cb",
+                                      "content": "p3 / c7",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 11,
+                                      "fontWeight": "bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "WBvZq",
+                                  "name": "Revision packet Source",
+                                  "width": "fill_container",
+                                  "justifyContent": "space_between",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "X5hjBp",
+                                      "name": "Revision packet key Source",
+                                      "fill": "#ccbaa8",
+                                      "content": "Source",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "nwtHW",
+                                      "name": "Revision packet value Source",
+                                      "fill": "#ffe6cb",
+                                      "content": "review r1 · diff 9d0313…",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 11,
+                                      "fontWeight": "bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "AtxY5",
+                                  "name": "Revision packet Pack / activation",
+                                  "width": "fill_container",
+                                  "justifyContent": "space_between",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "WQr8J",
+                                      "name": "Revision packet key Pack / activation",
+                                      "fill": "#ccbaa8",
+                                      "content": "Pack / activation",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "sl1iX",
+                                      "name": "Revision packet value Pack / activation",
+                                      "fill": "#ffe6cb",
+                                      "content": "addyosmani · act 7fd2…",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 11,
+                                      "fontWeight": "bold"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "UeQf5",
+                              "name": "Revision successor packet feedback",
+                              "fill": "#ffe6cb",
+                              "textGrowth": "fixed-width",
+                              "width": 396,
+                              "content": "FEEDBACK · Clarify malformed-selector handling and add a regression case for empty selectors.",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "lHp8m",
+                      "name": "Revision feedback form",
+                      "width": "fill_container",
+                      "height": 128,
+                      "fill": "#0d2624",
+                      "stroke": "#ffe6cb26",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": [
+                        12,
+                        16
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "pPDma",
+                          "name": "Revision feedback heading",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "L7MdlW",
+                              "name": "Revision feedback title",
+                              "fill": "#ffe6cb",
+                              "content": "REVISION FEEDBACK",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "bold",
+                              "letterSpacing": 1.1
+                            },
+                            {
+                              "type": "text",
+                              "id": "HuT2M",
+                              "name": "Revision feedback required",
+                              "fill": "#ffbd38",
+                              "content": "REQUIRED · OPERATOR-EDITABLE",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "dPITm",
+                          "name": "Revision feedback input",
+                          "width": "fill_container",
+                          "height": 63,
+                          "fill": "#041c1c",
+                          "stroke": "#ffe6cb40",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            10,
+                            12
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "IPYuT",
+                              "name": "Revision feedback value",
+                              "fill": "#ffe6cb",
+                              "content": "Clarify malformed-selector handling and add a regression case for empty selectors.",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ZMK9c",
+                      "name": "Revision nonmutating preview",
+                      "width": "fill_container",
+                      "height": 126,
+                      "fill": "#0d2624",
+                      "stroke": "#48e1a1",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 10,
+                      "padding": [
+                        13,
+                        16
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "iaT4t",
+                          "name": "Revision preview heading",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "I1MXZ",
+                              "name": "Revision preview title",
+                              "fill": "#ffe6cb",
+                              "content": "PREVIEW BEFORE APPLY",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "bold",
+                              "letterSpacing": 1.1
+                            },
+                            {
+                              "type": "text",
+                              "id": "bM0Mb",
+                              "name": "Revision preview state",
+                              "fill": "#48e1a1",
+                              "content": "NON-MUTATING · digest 3d91…c10f",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "PQGBg",
+                          "name": "Revision preview consequences",
+                          "width": "fill_container",
+                          "gap": 28,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "Rdm6Q",
+                              "name": "Revision preview Archive",
+                              "layout": "vertical",
+                              "gap": 4,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "A10Ye",
+                                  "name": "Revision preview label Archive",
+                                  "fill": "#ccbaa8",
+                                  "content": "ARCHIVE",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "bold",
+                                  "letterSpacing": 0.8
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "xVKS8",
+                                  "name": "Revision preview value Archive",
+                                  "fill": "#ffe6cb",
+                                  "content": "implement · verify · review",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "zWajw",
+                              "name": "Revision preview Release",
+                              "layout": "vertical",
+                              "gap": 4,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "smV0u",
+                                  "name": "Revision preview label Release",
+                                  "fill": "#ccbaa8",
+                                  "content": "RELEASE",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "bold",
+                                  "letterSpacing": 0.8
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "oMyKn",
+                                  "name": "Revision preview value Release",
+                                  "fill": "#ffe6cb",
+                                  "content": "worktree after evidence verifies",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "J0kgf",
+                              "name": "Revision preview Create",
+                              "layout": "vertical",
+                              "gap": 4,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "NMHds",
+                                  "name": "Revision preview label Create",
+                                  "fill": "#ccbaa8",
+                                  "content": "CREATE",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "bold",
+                                  "letterSpacing": 0.8
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "O5NOF",
+                                  "name": "Revision preview value Create",
+                                  "fill": "#ffe6cb",
+                                  "content": "plan r2 · assigned to plan profile",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "KmLpD",
+                      "name": "Revision action bar",
+                      "width": "fill_container",
+                      "height": 52,
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "VGKSx",
+                          "name": "Revision confirmation",
+                          "gap": 9,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "qHWWA",
+                              "name": "Revision confirmation checkbox",
+                              "width": 18,
+                              "height": 18,
+                              "stroke": "#ffe6cb",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "layout": "vertical",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "VETVX",
+                                  "name": "Revision confirmation check",
+                                  "fill": "#48e1a1",
+                                  "content": "✓",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "cvahC",
+                              "name": "Revision confirmation copy",
+                              "fill": "#ffe6cb",
+                              "content": "I reviewed this exact preview and want to request revision 2.",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "cXbTk",
+                          "name": "Revision actions",
+                          "gap": 10,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "sFQyP",
+                              "name": "Revision refresh preview button",
+                              "height": 38,
+                              "stroke": "#ffe6cb66",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "layout": "vertical",
+                              "padding": [
+                                9,
+                                14
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "X7CxS2",
+                                  "name": "Revision refresh preview label",
+                                  "fill": "#ffe6cb",
+                                  "content": "Refresh preview",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "bold"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "h1nT1Q",
+                              "name": "Revision apply button",
+                              "height": 38,
+                              "fill": "#ffe6cb",
+                              "layout": "vertical",
+                              "padding": [
+                                9,
+                                14
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "Z9SoTr",
+                                  "name": "Revision apply label",
+                                  "fill": "#041c1c",
+                                  "content": "Request revision",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "bold"
                                 }
                               ]
                             }
