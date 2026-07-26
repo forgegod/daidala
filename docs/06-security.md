@@ -61,6 +61,10 @@ verification in the Daidala-owned detached worktree.
 - Delivery uses the changed-path snapshot captured before verification, so test
   byproducts cannot silently expand reviewed scope.
 - Registration uses documented Hermes plugin APIs rather than Hermes internals.
+- `daidala.archive_io` accepts only caller-authorized roots and explicit relative
+  regular-file members. It bounds archive size, rejects traversal and links,
+  verifies a strict manifest and every SHA-256 digest before publication or
+  restore, and exposes only operation/cause classes on failure.
 
 These controls establish configured source and local-content integrity. They do
 not provide publisher signatures or prove that upstream instructions are safe
@@ -174,6 +178,7 @@ of these surfaces exists.
 - Policy ledger and persistence: `daidala/state.py`, `daidala/workflow.py`,
   `daidala/store.py`
 - Worktree and artifact isolation: `daidala/execution.py`
+- Verified archive transport: `daidala/archive_io.py`
 - Kanban graph adapter: `daidala/service.py`, `daidala/kanban.py`
 - Tool error boundary: `daidala/tools.py`
 - Bundled procedures: `daidala/skills/*/SKILL.md`
@@ -183,4 +188,5 @@ of these surfaces exists.
     `tests/test_workflow.py`
   - Persistence, artifact recovery, and executable path: `tests/test_store.py`,
     `tests/test_execution.py`
+  - Verified archive creation and restore: `tests/test_archive_io.py`
 - Host plugin trust model: [official Hermes plugin documentation](https://hermes-agent.nousresearch.com/docs/user-guide/features/plugins)

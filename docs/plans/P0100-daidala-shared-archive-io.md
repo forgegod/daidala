@@ -16,7 +16,7 @@
 
 **Produces:** policy-neutral verified archive creation, manifest validation, and safe extraction in `daidala/archive_io.py`
 
-**Status:** pending — design captured; human approval is required before Phase 0 implementation starts.
+**Status:** complete — Phase 0 implementation and its verification gate passed.
 
 Daidala will provide one policy-neutral, verified tar/gzip implementation for workflow artifact archives and dashboard checkout backups, without moving either feature's eligibility, retention, storage-root, or authorization policy into the shared helper.
 
@@ -35,7 +35,7 @@ Archive inputs may contain credentials, private paths, or other sensitive conten
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Add shared archive I/O | pending | `pytest tests/test_archive_io.py tests/test_execution.py -q` and `python scripts/check_md_links.py .` exit 0; both dependent plans name the shared helper instead of a second tar implementation |
+| 0 | Add shared archive I/O | done (`pytest tests/test_archive_io.py tests/test_execution.py -q`; `ruff check daidala/archive_io.py tests/test_archive_io.py`; `python scripts/check_md_links.py .`) | Both dependent plans name the shared helper instead of a second tar implementation. |
 
 Mark a phase `in-progress` while running it, `done (<sha-or-evidence>)` once its gate passes, and `pending` otherwise.
 

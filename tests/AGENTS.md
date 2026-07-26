@@ -78,6 +78,9 @@ completeness without touching a real Hermes profile.
 - Revision-addressed artifact tests cover policy and plan supersession, exact
   ledger references, historical-byte retention, create-or-verify replay,
   conflicting content, unsafe relative paths, and symlink rejection.
+- Archive I/O tests cover deterministic verified tar/gzip round trips, strict
+  member paths and bounds, source-file safety, tampering, interrupted writes,
+  retry conflicts, and safe idempotent restore.
 - Cross-pack fixture tests proving Addyosmani and AI-DLC use the same engine path
   and leave activation-gated structured handoff history across all executable
   cards.

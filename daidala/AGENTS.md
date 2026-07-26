@@ -34,6 +34,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `project_cycles.py` | Dry-run-first production project-cycle admission/completion/cancellation/reconciliation, prerequisite enforcement, stable one-item selection, exact identity confirmation, and profile-local runtime wiring. |
 | `reconciliation.py` | Two-authority claim recovery evidence, strict reconciliation previews/results, mode-`0600` content-addressed tick records, and local pending-to-published finding synchronization. |
 | `execution.py` | Immutable revision-addressed profile-local artifacts, detached worktrees, and diff capture. |
+| `archive_io.py` | Policy-neutral deterministic tar/gzip creation, manifest verification, inventory, and safe restore for caller-authorized roots. |
 | `kanban.py` | Public host-boundary adapter for the idempotent, approval-gated Hermes card graph. |
 | `schemas.py` | Tool schemas exposed to the model. |
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
