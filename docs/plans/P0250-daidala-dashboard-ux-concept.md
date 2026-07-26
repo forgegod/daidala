@@ -16,7 +16,7 @@
 
 **Produces:** a single UX concept and design contract (information architecture, decision-card pattern, preview-confirm envelope, status semantics) that P0200–P0240 and P0320 cite for all dashboard presentation work
 
-**Status:** pending — live-baseline concept drafted and preview-rendered; awaiting human design approval before implementation
+**Status:** pending — revised Actions/Workflows IA promoted and preview-rendered; awaiting human design approval before implementation
 
 ## Goal
 
@@ -29,16 +29,18 @@ component patterns; it has no implementation phases and grants no approval autho
 ## Design decisions (operator-pinned)
 
 1. **Single tab, internal views.** The manifest keeps one `/daidala` tab
-   (`../dashboard/manifest.json`). All navigation is internal to the tab:
-   Overview / Workflow / Start / Configure / Artifacts. No manifest change.
+   (`../dashboard/manifest.json`). All navigation is internal to the tab and
+   follows workflow-result order: Actions / Workflows / Start / Artifacts /
+   Config. No manifest change. Config intentionally uses the same concise label
+   as Hermes' host `/config` surface while remaining scoped to Daidala.
    Every wireframe and implemented view preserves the same three-layer frame:
    the Hermes-owned profile banner/sidebar shell; the Daidala-owned page header
    and five-view navigation; and one use-case-specific content workspace. A
    workflow detail, review, revision, or confirmation flow replaces only the
    content workspace—it never redraws, abbreviates, or bypasses the first two
    layers.
-2. **Workflow-grouped attention queue.** The Overview groups workflows by
-   `Needs your decision`, `Active`, and `Recent`. Decision gates are embedded in
+2. **Workflow-grouped attention queue.** Actions is the default view and groups
+   only workflows that currently need attended input. Decision gates are embedded in
    their owning workflow card rather than detached into a global card, so the
    workflow identity, stage timeline, and artifacts remain visible beside every
    human action. Each attention card places an expanded-by-default, foldable
@@ -47,8 +49,8 @@ component patterns; it has no implementation phases and grants no approval autho
    decision first (the time its current gate became actionable), with stable
    workflow-ID tie-breaking. Urgency indicators remain visible but never reorder
    the approval queue.
-3. **Configure as in-tab tabs.** Checkouts/TTL, GitHub Projects, Constraints, and
-   Verification are tabs inside the Configure view, not separate manifest tabs or a
+3. **Config as in-tab tabs.** Checkouts/TTL, GitHub Projects, Constraints, and
+   Verification are tabs inside the Config view, not separate manifest tabs or a
    single merged settings panel.
 4. **Artifact browser in IA.** The Artifacts view (P0320) is part of this concept's
    IA from the start so its navigation and patterns land consistently.
@@ -79,10 +81,10 @@ Actor is always an attended human operator. Legend: ✅ implemented · 🟡 plan
 11. **Recover a blocked card** 🟡 — requested decision + latest relevant evidence + targeted comment/unblock.
 12. **Cancel a workflow** 🟡 — preview cards/worktree/reason, digest + confirm, name affected worktree first.
 13. **Reopen/resume by exact ID** 🟡 — reopen and continue read-only watch, not a new workflow.
-14. **Inspect workflow artifacts** 🟡 — each workflow card expands its ledger-bound artifacts by default, reusing the Artifacts view's list/selected-detail pattern for the exact workflow; `View all` opens the Artifacts view filtered to that workflow ID without exposing a filesystem path.
+14. **Inspect workflow artifacts** 🟡 — each Actions card expands its ledger-bound artifacts by default, reusing the Artifacts view's list/selected-detail pattern for the exact workflow; `View all` opens the Artifacts view filtered to that workflow ID without exposing a filesystem path.
 
-### Surface D — Configure checkouts & GitHub links (P0220)
-15. **Configure checkout root + TTL** 🟡 — disabled / wipe-if-clean / backup-then-wipe, default disabled; root change 409 while owned checkouts exist; `.daidala-owner` marker.
+### Surface D — Config: checkouts & GitHub links (P0220)
+15. **Config: checkout root + TTL** 🟡 — disabled / wipe-if-clean / backup-then-wipe, default disabled; root change 409 while owned checkouts exist; `.daidala-owner` marker.
 16. **Manual checkout refresh** 🟡 — validate path/marker/origin/receipt/Git status; dry-run-first + confirm.
 17. **Prune named backups** 🟡 — explicit named payload + literal confirm; never auto-prune.
 18. **Manage one GitHub Projects v2 link per project** 🟡 — fresh bounded read + matching preview digest + literal confirm; tokens never cross; remote/alias display-only.
@@ -112,31 +114,49 @@ Actor is always an attended human operator. Legend: ✅ implemented · 🟡 plan
 
 ## Information architecture
 
-Three primary views + two secondary, all inside the single tab:
+Five views, all inside the single tab and ordered by workflow result rather than
+setup frequency:
 
-- **Overview (default)** — mount/health metrics, then workflow groups: `Needs your
-  decision`, `Active`, and `Recent`. `Needs your decision` is an oldest-actionable
-  first queue, not an urgency sort; display urgency as a badge without changing
-  that order. Each attention card contains workflow
+- **Actions (default)** — the attended operator inbox. It contains only workflows
+  with a current plan, review, blocked-card, cancellation, or other finite human
+  decision. The queue is oldest-actionable first, not an urgency sort; display
+  urgency as a badge without changing that order. Each attention card contains workflow
   identity, compact stage timeline, an expanded-by-default artifact browser, and
   then its current plan, review, blocked-card, or cancellation gate. The artifact
   browser is foldable and reuses the Artifacts view's list/selected-detail pattern
   scoped to the workflow. Multiple workflows remain distinct while urgency stays
-  visible without changing oldest-actionable-first order. The page scrolls
+  visible without changing oldest-actionable-first order. When no action is
+  required, show the explicit empty state `No actions waiting` with a link to
+  Workflows; do not fill the view with active or recent workflows. The page scrolls
   vertically rather than compressing expanded evidence and authority controls
   into one viewport.
-- **Workflow detail** — decision-first: the active decision panel (plan approval /
+- **Workflows** — complete lifecycle inventory, independent of whether attended
+  input is required. Show summary counts and filters, then compact actionable
+  workflow rows, active workflows with stage progress, and recent terminal
+  results. Actionable rows expose the workflow's current finite action—such as
+  `Request revision` or `Review plan`—and open the corresponding Workflows detail
+  workspace with the exact workflow and evidence context. They do not reproduce
+  the Actions tab's expanded artifact browser or decision card. An active workflow
+  without a gate is labelled `Running without operator input`. Empty inventory
+  uses a dashed `No workflows yet` state with a Start link. Selecting a row opens
+  the workflow detail workspace.
+- **Workflow detail** — decision-first when a gate exists: the active decision panel (plan approval /
   review disposition / blocked-card / cancel-preview) occupies the top ~60% with
   source-bound summary + verified evidence; below it a lower-noise stage timeline and
   card list; raw run/event detail behind progressive disclosure. It remains inside
   the standard Hermes shell and Daidala header with **Workflows** selected; only
   the content workspace changes for review, revision, or other workflow actions.
+  Because the selected Workflows tab already establishes both Daidala and list
+  context, detail screens do not repeat `Daidala / Workflows` as a breadcrumb.
+  They show a distinct `← Back to Workflows` control followed by the exact
+  workflow ID, so returning to inventory does not depend on re-clicking the
+  already-selected tab.
 - **Start (wizard)** — identity → target → requested outcome → policy → board →
   preview → confirm → start. `Requested outcome` maps to `SetupRequest.goal` only
   at the request boundary and is not Hermes `/goal`. `Repository URI` shows the
   canonical remote (e.g. `git@github.com:forgegod/daidala.git`) and resolves to a
   trusted local checkout; it is an identity label, not a writable path.
-- **Configure (secondary, tabbed)** — Checkouts/TTL, GitHub Projects, Constraints,
+- **Config (secondary, tabbed)** — Checkouts/TTL, GitHub Projects, Constraints,
   Verification (read-only).
 - **Artifacts (secondary)** — workflow/kind/state filters; ledger-bound artifact
   list and selected-artifact detail/escaped preview; download plus
@@ -144,7 +164,7 @@ Three primary views + two secondary, all inside the single tab:
 
 ## Core component patterns
 
-- **Workflow attention card** — the scalable Overview unit. Its header names and
+- **Workflow attention card** — the scalable Actions unit. Its header names and
   links the exact workflow, pack/board, current status, and artifact count. A
   compact stage timeline is followed by an expanded-by-default artifact browser
   and then the embedded decision card. One workflow may expose only its current
@@ -198,9 +218,9 @@ layout is a filter/summary bar above a two-pane browser:
 - **Actions:** Download is read-only. Pin/unpin/archive/restore use the common
   preview-digest/literal-confirm envelope over P0310 services. Error surfaces are
   metadata-only.
-- **Entry from Overview:** `View all` carries only the exact workflow ID and lands
+- **Entry from Actions:** `View all` carries only the exact workflow ID and lands
   on the filtered artifact list; the server resolves ledger identities. The
-  Overview's expanded browser uses the same list/detail semantics but remains
+  Actions' expanded browser uses the same list/detail semantics but remains
   scoped to one workflow and exposes no curator mutations.
 
 ## Hermes dashboard design system
@@ -313,10 +333,10 @@ Plugin mount contract: routes mount `<PluginPage name>`; the bundle calls
 ## Live references and Pen design source
 
 The live baseline and adapted concepts are stored beside this document. The Pen
-source is an open-format `.pen` file with three 1280×720 frames and two 1280×1000
-scroll-page frames: Overview and Request revision. Every frame preserves the same
+source is an open-format `.pen` file with four 1280×720 frames and two 1280×1000
+scroll-page frames: Actions and Request revision. Every frame preserves the same
 Hermes shell and Daidala navigation; only the use-case workspace changes. The
-longer Overview preserves two expanded artifact browsers and their gates without
+longer Actions view preserves two expanded artifact browsers and their gates without
 compressing evidence or controls. The Request revision frame exposes immutable review evidence, the
 read-only successor packet, required operator feedback, and non-mutating preview
 before literal confirmation. The source is layout-checked and exported with the
@@ -327,24 +347,25 @@ editing.
 |---|---|
 | [`hermes-dashboard-live-sessions.png`](hermes-dashboard-live-sessions.png) | Live Hermes v0.19.0 Sessions page; shell, metrics, tabs, list/status patterns |
 | [`hermes-dashboard-live-kanban.png`](hermes-dashboard-live-kanban.png) | Live Kanban plugin; plugin integration, fieldsets, filters, lanes, cards, empty states |
-| [`hermes-dashboard-ux-live.pen`](hermes-dashboard-ux-live.pen) | Editable Pen source with Overview, Start, Configure, Artifacts, and Request revision frames |
-| [`dashboard-ux-overview.png`](dashboard-ux-overview.png) | Scroll-page workflow overview with oldest-actionable-first attention cards and expanded artifact browsers above plan/review gates |
+| [`hermes-dashboard-ux-live.pen`](hermes-dashboard-ux-live.pen) | Editable Pen source with Actions, Workflows, Start, Config, Artifacts, and Request revision frames |
+| [`dashboard-ux-actions.png`](dashboard-ux-actions.png) | Scroll-page Actions queue with oldest-actionable-first attention cards and expanded artifact browsers above plan/review gates |
+| [`dashboard-ux-workflows.png`](dashboard-ux-workflows.png) | Complete workflow inventory with compact action entry points, active autonomous progress, and recent terminal results |
 | [`dashboard-ux-wizard.png`](dashboard-ux-wizard.png) | Start wizard (preview → confirm → start) |
-| [`dashboard-ux-config.png`](dashboard-ux-config.png) | Configure tabs (Checkouts/TTL + read-only verification) |
+| [`dashboard-ux-configure.png`](dashboard-ux-configure.png) | Config tabs (Checkouts/TTL + read-only verification) |
 | [`dashboard-ux-artifacts.png`](dashboard-ux-artifacts.png) | Ledger-bound artifact browser, detail/escaped preview, and curator actions |
-| [`dashboard-ux-revision.png`](dashboard-ux-revision.png) | Request-revision evidence, successor-packet, feedback, preview, and confirmation concept |
+| [`dashboard-ux-revision.png`](dashboard-ux-revision.png) | Workflows detail for request revision, with explicit inventory back-navigation, evidence, successor packet, feedback, preview, and confirmation |
 | [`hermes-dashboard-live-plugins.png`](hermes-dashboard-live-plugins.png) | Live Plugins page; gap scale and fieldset/input rhythm reference |
 
 The live comparison changed the concepts in five concrete ways: reproduce the
 profile-scope banner and Large-scaled sidebar; use host segmented tabs and primary
 buttons; use bordered metrics and fieldset-like controls; reserve rounding for
 content cards; and separate the non-mutating preview result from confirmation to
-apply the displayed mutations. Configure subtabs use an accent surface rather
+apply the displayed mutations. Config subtabs use an accent surface rather
 than competing with primary navigation's cream selected state.
 
 The information model uses `Requested outcome` rather than `Goal`. Every screen
 keeps the Hermes workspace and Daidala navigation invariant while changing only
-the use-case content. Overview decision gates live inside workflow cards and
+the use-case content. Actions decision gates live inside workflow cards and
 order waiting approvals oldest first;
 the multiple-workflow example contains both plan approval and review disposition;
 each attention card expands its ledger-bound artifacts above the gate; every
@@ -369,7 +390,8 @@ Inside the interactive shell, use `snapshot_layout` before export and save:
 
 ```text
 snapshot_layout({ parentId: "Ov001", maxDepth: 8, problemsOnly: true })
-export_nodes({ nodeIds: ["Ov001", "Wi001", "Cf001", "Ar001", "G1ryL"], outputDir: "/tmp/daidala-ux-export", format: "png", scale: 1 })
+snapshot_layout({ parentId: "BUbxE", maxDepth: 8, problemsOnly: true })
+export_nodes({ nodeIds: ["Ov001", "BUbxE", "Wi001", "Cf001", "Ar001", "G1ryL"], outputDir: "/tmp/daidala-ux-export", format: "png", scale: 1 })
 save()
 exit()
 ```
@@ -385,13 +407,13 @@ Headless CLI verification avoids that stale-document boundary.
 
 | Surface | Use cases | View |
 |---|---|---|
-| A Onboard/verify | 1–5 | Overview status strip + Configure → Verification |
+| A Onboard/verify | 1–5 | Config → Verification |
 | B Start | 6 | Start wizard |
-| C Supervise/decide | 7–14 | Workflow-grouped Overview attention cards + Workflow detail |
-| D Checkouts/links | 15–18 | Configure → Checkouts & GitHub |
-| E Constraints/config | 19–20 | Configure → Constraints & Verification |
-| F Artifacts | 21–23 | Artifacts view; workflow-filtered entry from Overview |
-| Runbook parity | 24 | Overview guidance panel (host-owned commands) |
+| C Supervise/decide | 7–14 | Actions queue + complete Workflows inventory + Workflow detail |
+| D Checkouts/links | 15–18 | Config → Checkouts & GitHub |
+| E Constraints/config | 19–20 | Config → Constraints & Verification |
+| F Artifacts | 21–23 | Artifacts view; workflow-filtered entry from Actions |
+| Runbook parity | 24 | Config → Verification guidance (host-owned commands) |
 
 ## Out of scope
 
