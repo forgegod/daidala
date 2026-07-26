@@ -107,14 +107,95 @@ its artifact through a Daidala evidence tool, and completes with structured
 `daidala.handoff/v1` metadata. The `plan` card becomes runnable after `define`
 completes.
 
+### What a Daidala card contains
+
+A card is both a normal Hermes Kanban task and the practical input envelope for
+one Daidala stage. Daidala sets its title, body, assignee, parent links, pinned
+skills, workspace, and deterministic idempotency key. Hermes then owns status,
+claims, comments, attempts, retries, and completion runs.
+
+A representative initial card looks like this:
+
+```text
+title: daidala first-workflow: define
+assignee: default
+parents: []
+workspace: dir:/absolute/path/to/repo
+skills:
+  - daidala:orchestrate
+  - <exact pack-stage candidate skills>
+
+body:
+  Daidala workflow: first-workflow
+  Stage: define
+  Plan revision: 0
+  Policy revision: 0
+  Pack: aidlc
+  Pack revision: <pinned source revision>
+  Goal: Implement the requested change
+  --- Workflow constraints ---
+  Constraint revision: none
+  Constraint digest: none
+  Constraint artifact: none
+  Block if a constraint conflicts with requested work or prescribes methodology/capabilities.
+  --- End workflow constraints ---
+  Use Daidala policy/evidence tools; Hermes Kanban owns lifecycle state.
+```
+
+The body is not the worker's entire context. `kanban_show` also exposes completed
+parent handoffs, comments, and prior attempts. This lets a later stage recover
+the durable output of its parent without copying large artifacts into the next
+card. Artifact bodies and raw logs stay in Daidala-owned files; cards and runs
+carry their paths, digests, and concise summaries.
+
+On success, the worker does not rewrite the opening body. It completes the
+Hermes run with a summary and structured metadata. The common handoff shape is:
+
+```json
+{
+  "schema": "daidala.handoff/v1",
+  "workflow_id": "first-workflow",
+  "stage": "define",
+  "plan_revision": 0,
+  "policy_revision": 0,
+  "constraints_revision": null,
+  "constraints_digest": null,
+  "pack": "aidlc",
+  "pack_revision": "<pinned source revision>",
+  "outcome": "completed",
+  "artifact_refs": ["<definition artifact digest>"],
+  "skill_activation_digest": "<activation manifest digest>",
+  "active_skills": ["<applicable skill name>"]
+}
+```
+
+This creates two complementary records: Hermes Kanban preserves the operational
+thread and handoff history, while the Daidala policy ledger remains authoritative
+for approval tuples, revisions, activation manifests, artifact integrity, and
+worktree ownership. Approval is therefore not metadata on a runnable card and
+has no card of its own. See [Lifecycle stages and handoffs](05-lifecycle-stages.md)
+for the stage-specific fields added after implementation begins.
+
+Current limitation: neither the Kanban board nor the current Daidala dashboard
+renders the plan artifact body at the approval gate. The dashboard can report a
+pending decision, but that is not enough evidence to approve. Until the planned
+artifact-review surface exists, the operator must run `hermes daidala status
+first-workflow`, find the current `plan` entry in `workflow.artifacts`, and open
+that exact profile-local `path`. Compare its recorded digest with the pending
+approval digest before approving. If the operator cannot read the plan artifact,
+the workflow is not reviewable and must remain unapproved.
+
 After planning, Daidala exposes the exact pending approval tuple from its ledger.
 It creates no approval card, implementation worktree, or implementation-capable
 card.
 
 ## 5. Approve the exact plan
 
-Read the plan artifact and its 64-character SHA-256 digest. Approve only after
-the plan, risks, scope, and verification criteria are acceptable:
+Run `hermes daidala status first-workflow` and inspect the current `plan` entry
+under `workflow.artifacts`. Open its exact profile-local path and review the plan
+body; do not approve from the dashboard's pending-decision label or a digest
+alone. Approve only after the plan, risks, scope, and verification criteria are
+visible and acceptable, and the displayed 64-character SHA-256 digest matches:
 
 ```bash
 hermes daidala approve first-workflow <64-character-plan-digest>
@@ -193,3 +274,4 @@ tools use the in-process plugin tool registry. Both produce the same graph.
 - [Architecture and authority split](01-architecture.md)
 - [Lifecycle stages and handoffs](05-lifecycle-stages.md)
 - [Hermes compatibility boundary](08-hermes-integration.md)
+- [Install the dashboard into one specific profile](08-hermes-integration.md#per-profile-installation) — symlink or public-Git install per Hermes profile, plus the dashboard-tab verification recipe

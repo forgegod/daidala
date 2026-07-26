@@ -41,7 +41,8 @@ completeness without touching a real Hermes profile.
   restart-safe plan-parented post-gate graphs, and idempotent Kanban mapping.
 - Constraint-card tests prove policy-aware idempotency, global and phase-specific
   projection, explicit board and constraint-revision identity, explicit null
-  identity, and fail-closed missing content.
+  identity, the exact 8,192-character rendered-body boundary, and fail-closed
+  missing or oversized content.
 - Bundled worker-contract tests for stage tool mapping, structured handoffs,
   external-versus-plugin-qualified skill names, blocking, retries, and immutable
   post-capture scope.
