@@ -17,6 +17,7 @@ from .state import (
     ApprovalSummary,
     ArtifactReference,
     CardReference,
+    PlanRevisionRequestReference,
     ReviewDisposition,
     ReviewDispositionAction,
     ReviewRecord,
@@ -100,6 +101,17 @@ def record_constraints(
         constraint_references=(*ledger.constraint_references, reference),
         approval=None,
         verification_evidence=(),
+        verification_history=(*ledger.verification_history, *ledger.verification_evidence),
+        review=None,
+        review_history=(
+            (*ledger.review_history, ledger.review) if ledger.review else ledger.review_history
+        ),
+        review_disposition=None,
+        review_disposition_history=(
+            (*ledger.review_disposition_history, ledger.review_disposition)
+            if ledger.review_disposition
+            else ledger.review_disposition_history
+        ),
         updated_at=recorded_at,
     )
 
@@ -201,7 +213,7 @@ def record_artifact(
     )
     existing = ledger.artifact_for(stage)
     if existing == candidate:
-        return ledger
+        return _resolve_revision_request(ledger, stage=stage, resolved_at=recorded_at)
     if existing is not None:
         raise PolicyViolationError(
             f"stage {stage.value!r} already has a different artifact"
@@ -215,11 +227,12 @@ def record_artifact(
     elif stage is WorkflowStage.DELIVER:
         _require_successful_verification(ledger)
         _require_review_disposition(ledger)
-    return replace(
+    updated = replace(
         ledger,
         artifacts=(*ledger.artifacts, candidate),
         updated_at=recorded_at,
     )
+    return _resolve_revision_request(updated, stage=stage, resolved_at=recorded_at)
 
 
 def record_review(ledger: WorkflowLedger, *, review: ReviewRecord) -> WorkflowLedger:
@@ -313,14 +326,143 @@ def invalidate_approval(
     invalidated_at: datetime,
 ) -> WorkflowLedger:
     """Durably clear approval and current verification before host cleanup."""
-    if ledger.approval is None and not ledger.verification_evidence:
+    if (
+        ledger.approval is None
+        and not ledger.verification_evidence
+        and ledger.review is None
+        and ledger.review_disposition is None
+    ):
         return ledger
     _require_not_before(ledger, invalidated_at)
     return replace(
         ledger,
         approval=None,
         verification_evidence=(),
+        verification_history=(*ledger.verification_history, *ledger.verification_evidence),
+        review=None,
+        review_history=(
+            (*ledger.review_history, ledger.review) if ledger.review else ledger.review_history
+        ),
+        review_disposition=None,
+        review_disposition_history=(
+            (*ledger.review_disposition_history, ledger.review_disposition)
+            if ledger.review_disposition
+            else ledger.review_disposition_history
+        ),
         updated_at=invalidated_at,
+    )
+
+
+def record_plan_revision_request(
+    ledger: WorkflowLedger,
+    *,
+    request: PlanRevisionRequestReference,
+) -> WorkflowLedger:
+    """Persist one exact review-driven revision intent before host mutation."""
+    existing = next(
+        (
+            row
+            for row in ledger.revision_requests
+            if row.target_plan_revision == request.target_plan_revision
+        ),
+        None,
+    )
+    if existing == request:
+        return ledger
+    if existing is not None or ledger.pending_revision_request is not None:
+        raise PolicyViolationError("workflow already has a different pending revision request")
+    review = ledger.review
+    disposition = ledger.review_disposition
+    review_card = ledger.card_for(WorkflowStage.REVIEW)
+    if review is None or disposition is None or review_card is None:
+        raise PolicyViolationError(
+            "plan revision request requires current review, disposition, and review card"
+        )
+    if disposition.action is not ReviewDispositionAction.REQUEST_REVISION:
+        raise PolicyViolationError("plan revision request requires request_revision disposition")
+    source_card_ids = tuple(
+        card.task_id
+        for stage in (
+            WorkflowStage.IMPLEMENT,
+            WorkflowStage.VERIFY,
+            WorkflowStage.REVIEW,
+            WorkflowStage.DELIVER,
+        )
+        if (card := ledger.card_for(stage)) is not None
+    )
+    if (
+        request.workflow_id != ledger.workflow_id
+        or request.source_review_digest != review.digest
+        or request.source_disposition_digest != disposition.digest
+        or request.source_plan_digest != review.plan_digest
+        or request.source_plan_revision != ledger.plan_revision
+        or request.source_policy_revision != ledger.policy_revision
+        or request.source_constraints_revision != ledger.current_constraints_revision
+        or request.source_constraints_digest != ledger.current_constraints_digest
+        or request.implementation_digest != review.implementation_digest
+        or request.verification_digests != review.verification_digests
+        or request.target_plan_revision != ledger.plan_revision + 1
+        or request.source_review_card_id != review_card.task_id
+        or request.source_card_ids != source_card_ids
+    ):
+        raise PolicyViolationError("plan revision request does not match the current review tuple")
+    _require_not_before(ledger, request.requested_at)
+    return replace(
+        ledger,
+        revision_requests=(*ledger.revision_requests, request),
+        updated_at=request.requested_at,
+    )
+
+
+def begin_plan_revision(
+    ledger: WorkflowLedger,
+    *,
+    preview_digest: str,
+    advanced_at: datetime,
+) -> WorkflowLedger:
+    """Advance to the pending Plan revision after archival and worktree release."""
+    request = ledger.pending_revision_request
+    if request is None:
+        if any(
+            row.preview_digest == preview_digest
+            and row.target_plan_revision == ledger.plan_revision
+            for row in ledger.revision_requests
+        ):
+            return ledger
+        raise PolicyViolationError("workflow has no pending plan revision request")
+    if request.preview_digest != preview_digest:
+        raise PolicyViolationError("plan revision preview digest does not match")
+    if ledger.plan_revision == request.target_plan_revision:
+        return ledger
+    if ledger.plan_revision != request.source_plan_revision:
+        raise PolicyViolationError("pending plan revision source is stale")
+    if ledger.worktree_owned or ledger.worktree_path is not None:
+        raise PolicyViolationError("release the owned worktree before advancing the plan")
+    if request.cards_archived_at is None or request.worktree_released_at is None:
+        raise PolicyViolationError(
+            "archive source cards and record worktree release before advancing the plan"
+        )
+    review = ledger.review
+    disposition = ledger.review_disposition
+    if (
+        review is None
+        or disposition is None
+        or review.digest != request.source_review_digest
+        or disposition.digest != request.source_disposition_digest
+    ):
+        raise PolicyViolationError("pending plan revision evidence changed before advance")
+    _require_not_before(ledger, advanced_at)
+    return replace(
+        ledger,
+        plan_revision=request.target_plan_revision,
+        approval=None,
+        verification_evidence=(),
+        verification_history=(*ledger.verification_history, *ledger.verification_evidence),
+        review=None,
+        review_history=(*ledger.review_history, review),
+        review_disposition=None,
+        review_disposition_history=(*ledger.review_disposition_history, disposition),
+        updated_at=advanced_at,
     )
 
 
@@ -571,8 +713,30 @@ def _require_stage_activation(ledger: WorkflowLedger, stage: WorkflowStage) -> N
         raise PolicyViolationError(f"{stage.value} skill activation is blocked")
 
 
+def _resolve_revision_request(
+    ledger: WorkflowLedger,
+    *,
+    stage: WorkflowStage,
+    resolved_at: datetime,
+) -> WorkflowLedger:
+    request = ledger.pending_revision_request
+    if (
+        stage is not WorkflowStage.PLAN
+        or request is None
+        or request.target_plan_revision != ledger.plan_revision
+    ):
+        return ledger
+    _require_not_before(ledger, resolved_at)
+    resolved = replace(request, resolved_at=resolved_at)
+    return replace(
+        ledger,
+        revision_requests=(*ledger.revision_requests[:-1], resolved),
+        updated_at=resolved_at,
+    )
+
+
 def _card_revision(ledger: WorkflowLedger, stage: WorkflowStage) -> int:
-    if stage in {WorkflowStage.DEFINE, WorkflowStage.PLAN}:
+    if stage is WorkflowStage.DEFINE:
         return 0
     return ledger.plan_revision
 

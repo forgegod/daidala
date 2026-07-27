@@ -92,11 +92,7 @@ class KanbanGraphAdapter:
             or ledger.worktree_path is None
         ):
             raise KanbanError("post-gate cards require approval and an owned worktree")
-        revision = (
-            0
-            if stage in {WorkflowStage.DEFINE, WorkflowStage.PLAN}
-            else ledger.plan_revision
-        )
+        revision = 0 if stage is WorkflowStage.DEFINE else ledger.plan_revision
         constraint_key = ledger.current_constraints_digest or "none"
         idempotency_key = (
             f"daidala:{ledger.workflow_id}:{revision}:{ledger.policy_revision}:"
@@ -201,29 +197,32 @@ class KanbanGraphAdapter:
     def archive(
         self,
         ledger: WorkflowLedger,
-        reason: str,
+        reason: str | None,
         *,
         stages: set[WorkflowStage] | None = None,
+        task_ids: set[str] | None = None,
         before_policy_revision: int | None = None,
     ) -> None:
         cards = tuple(
             card
             for card in ledger.card_references
             if stages is None or card.stage in stages
+            if task_ids is None or card.task_id in task_ids
             if before_policy_revision is None
             or card.policy_revision < before_policy_revision
         )
         if not cards:
             return
-        for card in cards:
-            self._tool_json(
-                "kanban_comment",
-                {
-                    "task_id": card.task_id,
-                    "body": f"Daidala cancellation: {reason}",
-                    "board": ledger.board_slug,
-                },
-            )
+        if reason is not None:
+            for card in cards:
+                self._tool_json(
+                    "kanban_comment",
+                    {
+                        "task_id": card.task_id,
+                        "body": f"Daidala cancellation: {reason}",
+                        "board": ledger.board_slug,
+                    },
+                )
         ids = " ".join(shlex.quote(card.task_id) for card in cards)
         self._terminal(
             f"hermes kanban --board {shlex.quote(ledger.board_slug)} archive {ids}"
@@ -246,8 +245,32 @@ class KanbanGraphAdapter:
         ]
         if ledger.current_plan_digest:
             lines.append(f"Plan digest: {ledger.current_plan_digest}")
+        definition = ledger.artifact_for(WorkflowStage.DEFINE)
+        if definition is not None:
+            lines.append(f"Definition digest: {definition.digest}")
         if ledger.worktree_path:
             lines.append(f"Persistent worktree: {ledger.worktree_path}")
+        request = ledger.pending_revision_request
+        if (
+            stage is WorkflowStage.PLAN
+            and request is not None
+            and request.target_plan_revision == ledger.plan_revision
+        ):
+            lines.extend(
+                [
+                    "--- Review-driven plan revision ---",
+                    f"Source review digest: {request.source_review_digest}",
+                    f"Source disposition digest: {request.source_disposition_digest}",
+                    f"Revision request digest: {request.request_digest}",
+                    f"Revision request artifact: {request.request_path}",
+                    f"Successor packet digest: {request.successor_packet_digest}",
+                    f"Successor packet artifact: {request.successor_packet_path}",
+                    f"Requested by: {request.actor}",
+                    "Normalized feedback:",
+                    request.normalized_feedback,
+                    "--- End review-driven plan revision ---",
+                ]
+            )
         if stage is not WorkflowStage.APPROVAL:
             current = ledger.current_constraints
             lines.extend(

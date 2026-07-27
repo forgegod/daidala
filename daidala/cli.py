@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import getpass
 import json
 import re
 import shlex
@@ -27,6 +28,7 @@ from .restricted_container import (
     probe_restricted_container,
     run_restricted_container_request,
 )
+from .revision import MAX_REVIEW_FEEDBACK_BYTES
 from .service import WorkflowService
 from .skills import ProfileSkillContentRegistry, SkillContentRegistry, SkillInventory
 from .state import WorkflowStage
@@ -199,6 +201,23 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     approve.add_argument("workflow_id")
     approve.add_argument("plan_digest")
 
+    review = sub.add_parser("review", help="Inspect or decide the attended review gate")
+    review_sub = review.add_subparsers(dest="review_command", required=True)
+    review_show = review_sub.add_parser("show", help="Show the bounded current review packet")
+    review_show.add_argument("workflow_id")
+    review_decide = review_sub.add_parser(
+        "decide", help="Preview or apply one exact attended review action"
+    )
+    review_decide.add_argument("workflow_id")
+    review_decide.add_argument(
+        "action",
+        choices=("accept-delivery", "request-revision", "reject-workflow"),
+    )
+    review_decide.add_argument("--rationale-file", required=True, type=Path)
+    review_decide.add_argument("--apply", action="store_true")
+    review_decide.add_argument("--expected-review-digest")
+    review_decide.add_argument("--expected-preview-digest")
+
     cancel = sub.add_parser(
         "cancel", help="Archive workflow cards and clean the Daidala-owned worktree"
     )
@@ -367,7 +386,9 @@ def run_command(
                 project_cycle_factory or ProjectCycleOperator
             )
             return _run_project_cycle(args, selected_project_cycle_factory)
-        if args.command in {"start", "status", "replace-constraints", "approve", "cancel"}:
+        if args.command in {
+            "start", "status", "replace-constraints", "approve", "review", "cancel"
+        }:
             selected_factory = service_factory or (
                 lambda: _default_service(command_runner=command_runner)
             )
@@ -725,10 +746,81 @@ def _run_lifecycle(args: argparse.Namespace, service_factory: ServiceFactory) ->
         )
     elif args.command == "approve":
         state = service.approve(args.workflow_id, plan_digest=args.plan_digest)
+    elif args.command == "review":
+        if args.review_command == "show":
+            _print(
+                {
+                    "success": True,
+                    "operation": "review-show",
+                    "review": service.review_packet(args.workflow_id),
+                }
+            )
+            return 0
+        rationale = _read_review_rationale(args.rationale_file)
+        action = args.action.replace("-", "_")
+        actor = f"cli:{getpass.getuser()}"
+        if not args.apply:
+            preview = service.preview_review_decision(
+                args.workflow_id,
+                action=action,
+                actor=actor,
+                rationale=rationale,
+            )
+            _print(
+                {
+                    "success": True,
+                    "operation": "review-decide",
+                    "dry_run": True,
+                    "preview": preview.to_dict(),
+                }
+            )
+            return 0
+        if args.expected_review_digest is None:
+            raise ValueError("--apply requires --expected-review-digest")
+        if args.expected_preview_digest is None:
+            raise ValueError("--apply requires --expected-preview-digest")
+        result = service.apply_review_decision(
+            args.workflow_id,
+            action=action,
+            actor=actor,
+            rationale=rationale,
+            expected_review_digest=args.expected_review_digest,
+            expected_preview_digest=args.expected_preview_digest,
+            confirm=True,
+        )
+        _print(
+            {
+                "success": True,
+                "operation": "review-decide",
+                "dry_run": False,
+                **result,
+            }
+        )
+        return 0
     else:
         state = service.cancel(args.workflow_id, reason=args.reason)
     _print({"success": True, "operation": args.command, "workflow": state.to_dict()})
     return 0
+
+
+def _read_review_rationale(path: Path) -> str:
+    if not isinstance(path, Path) or path.is_symlink() or not path.is_file():
+        raise ValueError("--rationale-file must name a direct regular file")
+    if path.stat().st_size > MAX_REVIEW_FEEDBACK_BYTES:
+        raise ValueError(
+            f"--rationale-file must be at most {MAX_REVIEW_FEEDBACK_BYTES} bytes"
+        )
+    try:
+        rationale = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as error:
+        raise ValueError("--rationale-file must be UTF-8 text") from error
+    if len(rationale.encode("utf-8")) > MAX_REVIEW_FEEDBACK_BYTES:
+        raise ValueError(
+            f"--rationale-file must be at most {MAX_REVIEW_FEEDBACK_BYTES} bytes"
+        )
+    if not rationale.strip():
+        raise ValueError("--rationale-file must not be empty")
+    return rationale
 
 
 def _parse_stage_profiles(default_profile: str, values: list[str]) -> dict[str, str]:

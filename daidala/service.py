@@ -28,6 +28,12 @@ from .errors import WorkflowError
 from .execution import ExecutionError, ExecutionWorkspace
 from .kanban import KanbanCardStatus, KanbanGraphAdapter
 from .packs import load_pack
+from .revision import (
+    ReviewDecisionPreview,
+    build_review_decision_preview,
+    build_review_packet,
+    normalize_review_feedback,
+)
 from .skills import (
     HermesSkillInventory,
     ProfileSkillContentRegistry,
@@ -45,6 +51,7 @@ from .state import (
     ActivationReferenceState,
     ApprovalSummary,
     ConstraintSourceProvenance,
+    PlanRevisionRequestReference,
     ReviewDisposition,
     ReviewDispositionAction,
     ReviewFinding,
@@ -61,11 +68,13 @@ from .store import StoreError, WorkflowStore
 from .workflow import (
     _require_stage_activation,
     approve_plan,
+    begin_plan_revision,
     invalidate_approval,
     new_workflow,
     record_artifact,
     record_card,
     record_constraints,
+    record_plan_revision_request,
     record_review,
     record_review_disposition,
     record_skill_activation,
@@ -561,6 +570,7 @@ class WorkflowService:
         action: str,
         actor: str,
         rationale: str,
+        _project_to_kanban: bool = True,
     ) -> WorkflowLedger:
         """Record one attended review disposition and open delivery only on acceptance."""
         observed = self.store.get_with_token(workflow_id)
@@ -592,6 +602,8 @@ class WorkflowService:
         updated = record_review_disposition(ledger, disposition=disposition)
         if updated is not ledger:
             updated = self.store.update(updated, expected_updated_at=observed.updated_at)
+        if not _project_to_kanban:
+            return updated
         if disposition.action is ReviewDispositionAction.ACCEPT_DELIVERY:
             review_card = updated.card_for(WorkflowStage.REVIEW)
             if review_card is None:
@@ -603,6 +615,253 @@ class WorkflowService:
                 parents=(review_card.task_id,),
             )
         return updated
+
+    def review_packet(self, workflow_id: str) -> dict[str, object]:
+        """Return the bounded current review/disposition decision surface."""
+        return build_review_packet(self.store.get(workflow_id))
+
+    def preview_review_decision(
+        self,
+        workflow_id: str,
+        *,
+        action: str,
+        actor: str,
+        rationale: str,
+    ) -> ReviewDecisionPreview:
+        """Preview one exact attended review action without mutation."""
+        try:
+            selected = ReviewDispositionAction(action)
+        except ValueError as error:
+            raise ServiceError(f"invalid review disposition action: {action!r}") from error
+        return build_review_decision_preview(
+            self.store.get(workflow_id),
+            action=selected,
+            actor=actor,
+            rationale=rationale,
+        )
+
+    def apply_review_decision(
+        self,
+        workflow_id: str,
+        *,
+        action: str,
+        actor: str,
+        rationale: str,
+        expected_review_digest: str,
+        expected_preview_digest: str,
+        confirm: bool,
+    ) -> dict[str, object]:
+        """Apply only a freshly recomputed review preview after literal confirmation."""
+        if confirm is not True:
+            raise ServiceError("explicit review decision confirmation is required")
+        try:
+            selected = ReviewDispositionAction(action)
+        except ValueError as error:
+            raise ServiceError(f"invalid review disposition action: {action!r}") from error
+        ledger = self.store.get(workflow_id)
+        pending = ledger.pending_revision_request
+        if selected is ReviewDispositionAction.REQUEST_REVISION and pending is not None:
+            if (
+                pending.source_review_digest != expected_review_digest
+                or pending.preview_digest != expected_preview_digest
+                or pending.normalized_feedback != normalize_review_feedback(rationale)
+            ):
+                raise ServiceError("review decision inputs changed after preview")
+            updated = self._resume_revision_request(workflow_id, pending.preview_digest)
+            plan_card = updated.card_for(WorkflowStage.PLAN)
+            return {
+                "preview": None,
+                "replayed": True,
+                "workflow": {
+                    "workflow_id": updated.workflow_id,
+                    "plan_revision": updated.plan_revision,
+                    "plan_card_id": plan_card.task_id if plan_card else None,
+                },
+                "review": build_review_packet(updated),
+            }
+        preview = build_review_decision_preview(
+            ledger,
+            action=selected,
+            actor=actor,
+            rationale=rationale,
+        )
+        if preview.review_digest != expected_review_digest:
+            raise ServiceError("review digest changed after preview")
+        if preview.digest != expected_preview_digest:
+            raise ServiceError("review decision inputs changed after preview")
+        if selected is ReviewDispositionAction.ACCEPT_DELIVERY:
+            updated = self.decide_review(
+                workflow_id,
+                review_digest=preview.review_digest,
+                action=selected.value,
+                actor=preview.actor,
+                rationale=preview.rationale,
+            )
+        elif selected is ReviewDispositionAction.REJECT_WORKFLOW:
+            self.decide_review(
+                workflow_id,
+                review_digest=preview.review_digest,
+                action=selected.value,
+                actor=preview.actor,
+                rationale=preview.rationale,
+            )
+            updated = self.cancel(workflow_id, preview.rationale)
+        else:
+            updated = self._start_revision_request(workflow_id, preview)
+        plan_card = updated.card_for(WorkflowStage.PLAN)
+        return {
+            "preview": preview.to_dict(),
+            "replayed": False,
+            "workflow": {
+                "workflow_id": updated.workflow_id,
+                "plan_revision": updated.plan_revision,
+                "plan_card_id": plan_card.task_id if plan_card else None,
+            },
+            "review": build_review_packet(updated),
+        }
+
+    def _start_revision_request(
+        self,
+        workflow_id: str,
+        preview: ReviewDecisionPreview,
+    ) -> WorkflowLedger:
+        if (
+            preview.action is not ReviewDispositionAction.REQUEST_REVISION
+            or preview.revision_request_digest is None
+            or preview.successor_packet_digest is None
+        ):
+            raise ServiceError("revision request preview is incomplete")
+        self.decide_review(
+            workflow_id,
+            review_digest=preview.review_digest,
+            action=preview.action.value,
+            actor=preview.actor,
+            rationale=preview.rationale,
+            _project_to_kanban=False,
+        )
+        observed = self.store.get_with_token(workflow_id)
+        ledger = observed.ledger
+        disposition = ledger.review_disposition
+        review = ledger.review
+        review_card = ledger.card_for(WorkflowStage.REVIEW)
+        if disposition is None or review is None or review_card is None:
+            raise ServiceError("revision request lost its current review tuple")
+        target_revision = ledger.plan_revision + 1
+        request_relative = self._workspace.stage_artifact_relative_path(
+            stage=WorkflowStage.PLAN,
+            policy_revision=ledger.policy_revision,
+            plan_revision=target_revision,
+            filename="revision-request.json",
+        )
+        packet_relative = self._workspace.stage_artifact_relative_path(
+            stage=WorkflowStage.PLAN,
+            policy_revision=ledger.policy_revision,
+            plan_revision=target_revision,
+            filename="successor-plan-packet.json",
+        )
+        request_artifact = self._workspace.write_artifact(
+            workflow_id,
+            request_relative,
+            preview.revision_request_bytes().decode("utf-8"),
+        )
+        packet_artifact = self._workspace.write_artifact(
+            workflow_id,
+            packet_relative,
+            preview.successor_packet_bytes().decode("utf-8"),
+        )
+        if (
+            request_artifact.digest != preview.revision_request_digest
+            or packet_artifact.digest != preview.successor_packet_digest
+        ):
+            raise ServiceError("generated revision artifact digest does not match preview")
+        request = PlanRevisionRequestReference(
+            workflow_id=workflow_id,
+            source_review_digest=review.digest,
+            source_disposition_digest=disposition.digest,
+            source_plan_digest=review.plan_digest,
+            source_plan_revision=review.plan_revision,
+            source_policy_revision=review.policy_revision,
+            source_constraints_revision=review.constraints_revision,
+            source_constraints_digest=review.constraints_digest,
+            implementation_digest=review.implementation_digest,
+            verification_digests=review.verification_digests,
+            target_plan_revision=target_revision,
+            preview_digest=preview.digest,
+            request_path=request_artifact.path,
+            request_digest=request_artifact.digest,
+            successor_packet_path=packet_artifact.path,
+            successor_packet_digest=packet_artifact.digest,
+            source_review_card_id=review_card.task_id,
+            source_card_ids=tuple(row["task_id"] for row in preview.cards_to_archive),
+            actor=preview.actor,
+            normalized_feedback=preview.rationale,
+            requested_at=self._clock(),
+        )
+        updated = record_plan_revision_request(ledger, request=request)
+        self.store.update(updated, expected_updated_at=observed.updated_at)
+        return self._resume_revision_request(workflow_id, preview.digest)
+
+    def _resume_revision_request(
+        self,
+        workflow_id: str,
+        preview_digest: str,
+    ) -> WorkflowLedger:
+        observed = self.store.get_with_token(workflow_id)
+        ledger = observed.ledger
+        request = ledger.pending_revision_request
+        if request is None or request.preview_digest != preview_digest:
+            raise ServiceError("pending revision request does not match the preview")
+        if request.cards_archived_at is None:
+            self._require_kanban().archive(
+                ledger,
+                None,
+                task_ids=set(request.source_card_ids),
+            )
+            archived_at = self._clock()
+            updated_request = replace(request, cards_archived_at=archived_at)
+            updated = replace(
+                ledger,
+                revision_requests=(*ledger.revision_requests[:-1], updated_request),
+                updated_at=archived_at,
+            )
+            ledger = self.store.update(updated, expected_updated_at=observed.updated_at)
+            observed = self.store.get_with_token(workflow_id)
+            request = ledger.pending_revision_request
+            assert request is not None
+        if request.worktree_released_at is None:
+            if ledger.worktree_owned and ledger.worktree_path:
+                self._workspace.remove_worktree(
+                    ledger.target_repository,
+                    ledger.worktree_path,
+                )
+            released_at = self._clock()
+            updated = release_worktree(ledger, released_at=released_at)
+            updated_request = replace(request, worktree_released_at=released_at)
+            updated = replace(
+                updated,
+                revision_requests=(*updated.revision_requests[:-1], updated_request),
+                updated_at=released_at,
+            )
+            ledger = self.store.update(updated, expected_updated_at=observed.updated_at)
+            observed = self.store.get_with_token(workflow_id)
+            request = ledger.pending_revision_request
+            assert request is not None
+        if ledger.plan_revision == request.source_plan_revision:
+            updated = begin_plan_revision(
+                ledger,
+                preview_digest=preview_digest,
+                advanced_at=self._clock(),
+            )
+            ledger = self.store.update(updated, expected_updated_at=observed.updated_at)
+        plan_card = ledger.card_for(WorkflowStage.PLAN)
+        if plan_card is None:
+            ledger = self._ensure_card(
+                ledger,
+                load_pack(ledger.pack_name),
+                WorkflowStage.PLAN,
+                parents=(request.source_review_card_id,),
+            )
+        return ledger
 
     def list_artifacts(
         self,
@@ -979,7 +1238,7 @@ class WorkflowService:
         )
         revision = (
             0
-            if stage in {WorkflowStage.DEFINE, WorkflowStage.PLAN}
+            if stage is WorkflowStage.DEFINE
             else ledger.plan_revision
         )
         constraint_key = ledger.current_constraints_digest or "none"

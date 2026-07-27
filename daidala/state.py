@@ -981,6 +981,15 @@ class ReviewDisposition:
             "decided_at": self.decided_at.isoformat(),
         }
 
+    def canonical_bytes(self) -> bytes:
+        return json.dumps(
+            self.to_dict(), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+
+    @property
+    def digest(self) -> str:
+        return hashlib.sha256(self.canonical_bytes()).hexdigest()
+
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> ReviewDisposition:
         _require_exact_fields(
@@ -1005,6 +1014,201 @@ class ReviewDisposition:
             actor=raw["actor"],
             rationale=raw["rationale"],
             decided_at=datetime.fromisoformat(raw["decided_at"]),
+        )
+
+
+@dataclass(frozen=True)
+class PlanRevisionRequestReference:
+    """Durable intent for one review-driven successor Plan revision."""
+
+    workflow_id: str
+    source_review_digest: str
+    source_disposition_digest: str
+    source_plan_digest: str
+    source_plan_revision: int
+    source_policy_revision: int
+    source_constraints_revision: int | None
+    source_constraints_digest: str | None
+    implementation_digest: str
+    verification_digests: tuple[str, ...]
+    target_plan_revision: int
+    preview_digest: str
+    request_path: str
+    request_digest: str
+    successor_packet_path: str
+    successor_packet_digest: str
+    source_review_card_id: str
+    source_card_ids: tuple[str, ...]
+    actor: str
+    normalized_feedback: str
+    requested_at: datetime
+    cards_archived_at: datetime | None = None
+    worktree_released_at: datetime | None = None
+    resolved_at: datetime | None = None
+
+    def __post_init__(self) -> None:
+        _require_text(self.workflow_id, "revision request workflow ID")
+        for digest, label in (
+            (self.source_review_digest, "revision request review digest"),
+            (self.source_disposition_digest, "revision request disposition digest"),
+            (self.source_plan_digest, "revision request plan digest"),
+            (self.implementation_digest, "revision request implementation digest"),
+            (self.preview_digest, "revision request preview digest"),
+            (self.request_digest, "revision request artifact digest"),
+            (self.successor_packet_digest, "successor packet digest"),
+        ):
+            _require_digest(digest, label)
+        _require_revision(self.source_plan_revision)
+        _require_revision(self.source_policy_revision)
+        if self.target_plan_revision != self.source_plan_revision + 1:
+            raise PolicyViolationError("revision request target must follow its source plan")
+        if (self.source_constraints_revision is None) != (
+            self.source_constraints_digest is None
+        ):
+            raise PolicyViolationError(
+                "revision request constraint revision and digest must both be present or absent"
+            )
+        if self.source_constraints_revision is not None:
+            _require_positive_revision(
+                self.source_constraints_revision, "revision request constraint revision"
+            )
+        if self.source_constraints_digest is not None:
+            _require_digest(
+                self.source_constraints_digest, "revision request constraint digest"
+            )
+        if not isinstance(self.verification_digests, tuple) or not self.verification_digests:
+            raise PolicyViolationError("revision request requires verification digests")
+        for digest in self.verification_digests:
+            _require_digest(digest, "revision request verification digest")
+        if tuple(sorted(set(self.verification_digests))) != self.verification_digests:
+            raise PolicyViolationError(
+                "revision request verification digests must be sorted and unique"
+            )
+        _require_absolute_local_path(self.request_path, "revision request artifact path")
+        _require_absolute_local_path(self.successor_packet_path, "successor packet path")
+        if self.request_path == self.successor_packet_path:
+            raise PolicyViolationError("revision request artifacts must use distinct paths")
+        _require_bounded_text(self.source_review_card_id, "source review card ID", 500)
+        if not isinstance(self.source_card_ids, tuple) or not self.source_card_ids:
+            raise PolicyViolationError("revision request requires source card IDs")
+        if len(self.source_card_ids) != len(set(self.source_card_ids)):
+            raise PolicyViolationError("revision request source card IDs must be unique")
+        for task_id in self.source_card_ids:
+            _require_bounded_text(task_id, "revision request source card ID", 500)
+        if self.source_review_card_id not in self.source_card_ids:
+            raise PolicyViolationError("revision request source cards must include the review card")
+        _require_bounded_text(self.actor, "revision request actor", 200)
+        _require_bounded_text(self.normalized_feedback, "revision request feedback", 4096)
+        _require_aware(self.requested_at, "revision request requested_at")
+        for value, label in (
+            (self.cards_archived_at, "revision request cards_archived_at"),
+            (self.worktree_released_at, "revision request worktree_released_at"),
+            (self.resolved_at, "revision request resolved_at"),
+        ):
+            if value is not None:
+                _require_aware(value, label)
+                if value < self.requested_at:
+                    raise PolicyViolationError(f"{label} cannot precede the request")
+        if self.worktree_released_at is not None and self.cards_archived_at is None:
+            raise PolicyViolationError("worktree release requires archived source cards")
+        if (
+            self.worktree_released_at is not None
+            and self.cards_archived_at is not None
+            and self.worktree_released_at < self.cards_archived_at
+        ):
+            raise PolicyViolationError("worktree release cannot precede card archival")
+        if self.resolved_at is not None and self.worktree_released_at is None:
+            raise PolicyViolationError("resolved revision request requires worktree release")
+        if (
+            self.resolved_at is not None
+            and self.worktree_released_at is not None
+            and self.resolved_at < self.worktree_released_at
+        ):
+            raise PolicyViolationError("revision resolution cannot precede worktree release")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "workflow_id": self.workflow_id,
+            "source_review_digest": self.source_review_digest,
+            "source_disposition_digest": self.source_disposition_digest,
+            "source_plan_digest": self.source_plan_digest,
+            "source_plan_revision": self.source_plan_revision,
+            "source_policy_revision": self.source_policy_revision,
+            "source_constraints_revision": self.source_constraints_revision,
+            "source_constraints_digest": self.source_constraints_digest,
+            "implementation_digest": self.implementation_digest,
+            "verification_digests": list(self.verification_digests),
+            "target_plan_revision": self.target_plan_revision,
+            "preview_digest": self.preview_digest,
+            "request_path": self.request_path,
+            "request_digest": self.request_digest,
+            "successor_packet_path": self.successor_packet_path,
+            "successor_packet_digest": self.successor_packet_digest,
+            "source_review_card_id": self.source_review_card_id,
+            "source_card_ids": list(self.source_card_ids),
+            "actor": self.actor,
+            "normalized_feedback": self.normalized_feedback,
+            "requested_at": self.requested_at.isoformat(),
+            "cards_archived_at": (
+                self.cards_archived_at.isoformat() if self.cards_archived_at else None
+            ),
+            "worktree_released_at": (
+                self.worktree_released_at.isoformat() if self.worktree_released_at else None
+            ),
+            "resolved_at": self.resolved_at.isoformat() if self.resolved_at else None,
+        }
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> PlanRevisionRequestReference:
+        _require_exact_fields(
+            raw,
+            {
+                "workflow_id", "source_review_digest", "source_disposition_digest",
+                "source_plan_digest", "source_plan_revision", "source_policy_revision",
+                "source_constraints_revision", "source_constraints_digest",
+                "implementation_digest", "verification_digests", "target_plan_revision",
+                "preview_digest", "request_path", "request_digest", "successor_packet_path",
+                "successor_packet_digest", "source_review_card_id", "requested_at", "resolved_at",
+                "source_card_ids", "actor", "normalized_feedback", "cards_archived_at",
+                "worktree_released_at",
+            },
+            "plan revision request reference",
+        )
+        return cls(
+            workflow_id=raw["workflow_id"],
+            source_review_digest=raw["source_review_digest"],
+            source_disposition_digest=raw["source_disposition_digest"],
+            source_plan_digest=raw["source_plan_digest"],
+            source_plan_revision=raw["source_plan_revision"],
+            source_policy_revision=raw["source_policy_revision"],
+            source_constraints_revision=raw["source_constraints_revision"],
+            source_constraints_digest=raw["source_constraints_digest"],
+            implementation_digest=raw["implementation_digest"],
+            verification_digests=tuple(raw["verification_digests"]),
+            target_plan_revision=raw["target_plan_revision"],
+            preview_digest=raw["preview_digest"],
+            request_path=raw["request_path"],
+            request_digest=raw["request_digest"],
+            successor_packet_path=raw["successor_packet_path"],
+            successor_packet_digest=raw["successor_packet_digest"],
+            source_review_card_id=raw["source_review_card_id"],
+            source_card_ids=tuple(raw["source_card_ids"]),
+            actor=raw["actor"],
+            normalized_feedback=raw["normalized_feedback"],
+            requested_at=datetime.fromisoformat(raw["requested_at"]),
+            cards_archived_at=(
+                datetime.fromisoformat(raw["cards_archived_at"])
+                if raw["cards_archived_at"]
+                else None
+            ),
+            worktree_released_at=(
+                datetime.fromisoformat(raw["worktree_released_at"])
+                if raw["worktree_released_at"]
+                else None
+            ),
+            resolved_at=(
+                datetime.fromisoformat(raw["resolved_at"]) if raw["resolved_at"] else None
+            ),
         )
 
 
@@ -1084,6 +1288,10 @@ class WorkflowLedger:
     verification_evidence: tuple[VerificationEvidence, ...] = ()
     review: ReviewRecord | None = None
     review_disposition: ReviewDisposition | None = None
+    verification_history: tuple[VerificationEvidence, ...] = ()
+    review_history: tuple[ReviewRecord, ...] = ()
+    review_disposition_history: tuple[ReviewDisposition, ...] = ()
+    revision_requests: tuple[PlanRevisionRequestReference, ...] = ()
     activation_manifests: tuple[ActivationManifestReference, ...] = ()
     committed: bool = False
     pushed: bool = False
@@ -1235,14 +1443,50 @@ class WorkflowLedger:
             ):
                 raise PolicyViolationError("review disposition must match the current review tuple")
 
+        historical_reviews = [row.digest for row in self.review_history]
+        if len(historical_reviews) != len(set(historical_reviews)):
+            raise PolicyViolationError("workflow cannot contain duplicate historical reviews")
+        historical_dispositions = [row.digest for row in self.review_disposition_history]
+        if len(historical_dispositions) != len(set(historical_dispositions)):
+            raise PolicyViolationError("workflow cannot contain duplicate historical dispositions")
+        if self.review is not None and self.review.digest in set(historical_reviews):
+            raise PolicyViolationError("current review cannot also be historical")
+        if (
+            self.review_disposition is not None
+            and self.review_disposition.digest in set(historical_dispositions)
+        ):
+            raise PolicyViolationError("current disposition cannot also be historical")
+        known_reviews = {row.digest for row in self.review_history}
+        if self.review is not None:
+            known_reviews.add(self.review.digest)
+        if any(
+            row.review_digest not in known_reviews for row in self.review_disposition_history
+        ):
+            raise PolicyViolationError("historical disposition has no ledger review")
+        verification_keys = [
+            (row.plan_revision, row.output_digest, row.recorded_at)
+            for row in (*self.verification_history, *self.verification_evidence)
+        ]
+        if len(verification_keys) != len(set(verification_keys)):
+            raise PolicyViolationError("workflow cannot contain duplicate verification history")
+        request_targets = [row.target_plan_revision for row in self.revision_requests]
+        if len(request_targets) != len(set(request_targets)):
+            raise PolicyViolationError("workflow cannot contain duplicate plan revision requests")
+        if any(row.workflow_id != self.workflow_id for row in self.revision_requests):
+            raise PolicyViolationError("plan revision request workflow ID does not match")
+        if any(row.target_plan_revision > self.plan_revision + 1 for row in self.revision_requests):
+            raise PolicyViolationError("plan revision request targets an unreachable revision")
+        pending = [row for row in self.revision_requests if row.resolved_at is None]
+        if len(pending) > 1:
+            raise PolicyViolationError("workflow cannot contain multiple pending revision requests")
+
         activation_groups: dict[
             tuple[WorkflowStage, int, int, str | None],
             list[ActivationManifestReference],
         ] = {}
         for reference in self.activation_manifests:
             if reference.plan_revision > self.plan_revision or (
-                reference.stage in {WorkflowStage.DEFINE, WorkflowStage.PLAN}
-                and reference.plan_revision != 0
+                reference.stage is WorkflowStage.DEFINE and reference.plan_revision != 0
             ):
                 raise PolicyViolationError("activation reference has an invalid stage revision")
             activation_groups.setdefault(
@@ -1299,7 +1543,7 @@ class WorkflowLedger:
         )
 
     def card_for(self, stage: WorkflowStage) -> CardReference | None:
-        revision = 0 if stage in {WorkflowStage.DEFINE, WorkflowStage.PLAN} else self.plan_revision
+        revision = 0 if stage is WorkflowStage.DEFINE else self.plan_revision
         return next(
             (
                 card
@@ -1321,7 +1565,14 @@ class WorkflowLedger:
     def activation_revision_for(self, stage: WorkflowStage) -> int:
         if stage is WorkflowStage.APPROVAL:
             raise PolicyViolationError("approval has no skill activation revision")
-        return 0 if stage in {WorkflowStage.DEFINE, WorkflowStage.PLAN} else self.plan_revision
+        return 0 if stage is WorkflowStage.DEFINE else self.plan_revision
+
+    @property
+    def pending_revision_request(self) -> PlanRevisionRequestReference | None:
+        return next(
+            (row for row in reversed(self.revision_requests) if row.resolved_at is None),
+            None,
+        )
 
     def activation_for(self, stage: WorkflowStage) -> ActivationManifestReference | None:
         revision = self.activation_revision_for(stage)
@@ -1367,6 +1618,12 @@ class WorkflowLedger:
             "review_disposition": (
                 self.review_disposition.to_dict() if self.review_disposition else None
             ),
+            "verification_history": [row.to_dict() for row in self.verification_history],
+            "review_history": [row.to_dict() for row in self.review_history],
+            "review_disposition_history": [
+                row.to_dict() for row in self.review_disposition_history
+            ],
+            "revision_requests": [row.to_dict() for row in self.revision_requests],
             "activation_manifests": [
                 row.to_dict() for row in self.activation_manifests
             ],
@@ -1400,6 +1657,10 @@ class WorkflowLedger:
                 "verification_evidence",
                 "review",
                 "review_disposition",
+                "verification_history",
+                "review_history",
+                "review_disposition_history",
+                "revision_requests",
                 "activation_manifests",
                 "committed",
                 "pushed",
@@ -1453,6 +1714,21 @@ class WorkflowLedger:
                     ReviewDisposition.from_dict(raw["review_disposition"])
                     if raw.get("review_disposition")
                     else None
+                ),
+                verification_history=tuple(
+                    VerificationEvidence.from_dict(row)
+                    for row in raw.get("verification_history", [])
+                ),
+                review_history=tuple(
+                    ReviewRecord.from_dict(row) for row in raw.get("review_history", [])
+                ),
+                review_disposition_history=tuple(
+                    ReviewDisposition.from_dict(row)
+                    for row in raw.get("review_disposition_history", [])
+                ),
+                revision_requests=tuple(
+                    PlanRevisionRequestReference.from_dict(row)
+                    for row in raw.get("revision_requests", [])
                 ),
                 activation_manifests=tuple(
                     ActivationManifestReference.from_dict(row)

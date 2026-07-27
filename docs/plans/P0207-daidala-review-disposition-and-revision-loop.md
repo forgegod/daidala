@@ -18,7 +18,7 @@
 
 **Produces:** structured automated review evidence, an attended exact-evidence disposition gate before delivery, a revision-request loop that creates a new plan card and fresh approval without rewriting rejected history, and synchronized lifecycle/operator documentation
 
-**Status:** in progress — Phase 0 done; Phase 1 awaits the pushed Phase 0 checkpoint
+**Status:** in progress — Phases 0 and 1 complete; Phase 2 pending
 
 This plan makes automated review advisory evidence rather than delivery authority: an attended user must accept the exact reviewed tuple, request a new plan revision, or reject the workflow before delivery can exist.
 
@@ -28,8 +28,10 @@ This plan makes automated review advisory evidence rather than delivery authorit
 - `ReviewDisposition` is separate attended authority over the exact review tuple. Kanban workers cannot invoke it, and stale review digests fail without mutation.
 - Plan approval creates `implement → verify → review`; the delivery card is created idempotently only after `accept_delivery`, and delivery plus self-improvement completion fail closed without that exact accepted disposition.
 - Legacy terminal ledgers remain readable. Active ledgers without structured review and disposition authority cannot deliver; no acceptance is inferred from historical free-form review prose.
-- The revision-request loop and review CLI remain Phase 1 work. `WorkflowService.replace_plan()` is not yet exposed as the preserved review-driven successor flow.
-- `daidala --help` currently exposes plan approval and cancellation but no review/disposition/revision family. The current shell's `hermes -p daidala-self-improvement daidala --help` does not discover the native plugin command, so native parity must be proven in an isolated supported host before documentation claims it.
+- `review show` and preview-by-default `review decide` share one native/standalone parser and service path. Apply binds literal confirmation plus exact fresh review and preview digests; rationale input is direct bounded UTF-8 and its path is never persisted.
+- `request_revision` persists canonical request and successor packets before host mutation, archives the recorded current post-gate card IDs, releases the owned worktree, moves verification/review/disposition into strict history, and creates one revision-addressed Plan card without new implementation authority.
+- The revisioned Plan worker uses the normal activation/artifact boundary. Recording its plan resolves the request, and fresh exact plan approval alone creates the new worktree and revision-addressed `implement → verify → review` graph.
+- Isolated current-host probes discovered native `hermes daidala review`, matched standalone help and error JSON/exit codes without state mutation, and validated both packs. The repository probe's default historical upstream pin `3ef6bbd2` now differs from Hermes' reported current upstream `0a2c245c`; the same probe passed when supplied the complete observed `0.19.0` / `2026.7.20` / `0a2c245c` tuple.
 
 ## Risk call-out
 
@@ -40,7 +42,7 @@ A stale or ambiguous review must never authorize delivery, and a revision reques
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
 | 0 | Enforce structured review and attended disposition | done (`python -m pytest -q tests/test_review_disposition.py tests/test_workflow.py tests/test_execution.py tests/test_tools.py`; full `python -m pytest -q`; `ruff check .`; `lefthook validate`; both pack validations; Markdown links; build, Twine, and release-content checks all exited 0) | `pytest -q tests/test_review_disposition.py tests/test_workflow.py tests/test_execution.py tests/test_tools.py` exits 0 and proves delivery cannot exist before an exact attended acceptance |
-| 1 | Add review-driven plan revision loop and CLI | pending | `pytest -q tests/test_review_disposition.py tests/test_execution.py tests/test_kanban.py tests/test_cli.py tests/test_plugin.py` exits 0; an isolated supported-profile probe proves native/standalone help, JSON, exit-code parity, and fresh approval after revision |
+| 1 | Add review-driven plan revision loop and CLI | done (`pytest`; `ruff check .`; `lefthook validate`; both pack validations; isolated native/standalone review parity; Markdown links/tables; build, Twine, and release-content checks all exited 0) | `pytest -q tests/test_review_disposition.py tests/test_execution.py tests/test_kanban.py tests/test_cli.py tests/test_plugin.py` exits 0; an isolated supported-profile probe proves native/standalone help, JSON, exit-code parity, and fresh approval after revision |
 | 2 | Reconcile lifecycle, operator, and worker documentation | pending | `pytest -q tests/test_worker_contract.py tests/test_cli.py tests/test_plugin.py && python scripts/check_md_links.py .` exits 0 and every current-behavior document distinguishes automated review, attended disposition, revision, and dashboard availability |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
@@ -87,6 +89,10 @@ Steps:
 11. Add revision-card idempotency, stale preview, archive failure, worktree cleanup failure, replay, concurrent mutation, fresh approval, historical evidence, parser/help/JSON/exit-code parity, and no-direct-rewind tests.
 
 Verification gate: The Phase 1 command exits 0; one confirmed request preserves rejected evidence, removes stale execution authority, creates exactly one revisioned plan card, and cannot create a new worktree or implementation card until the new plan digest is attendedly approved. In a fresh supported profile, native and standalone review commands expose equivalent help, JSON, mutations, and exit codes; failed native discovery blocks the phase.
+
+Implementation evidence (2026-07-27): `PlanRevisionRequestReference` and strict historical review/disposition/verification collections preserve the source tuple and retry markers. `daidala/revision.py` owns bounded canonical review, decision-preview, revision-request, and successor packets; the successor packet carries opaque source review, disposition-preview, implementation, and verification IDs and digests without profile-local paths. `WorkflowService` persists intent before archive/worktree operations, resumes each durable checkpoint, advances to one revision-addressed Plan card, and withholds the worktree and post-gate graph until the successor plan is recorded and freshly approved. Shared CLI coverage proves action mapping, direct bounded rationale input, preview/apply identity gates, native/standalone dispatch parity, path exclusion, and absence of a direct rewind command. Cross-pack execution coverage injects artifact-write, recorded-ID archive, owned-worktree cleanup, and successor Plan-card failures; exact retries converge without duplicate host comments or cards, preserve immutable old evidence, record the successor plan through activation, and resume revision 1 only after approval.
+
+Verification evidence (2026-07-27): full `python -m pytest -q`, `ruff check .`, `lefthook validate`, `daidala packs validate addyosmani`, `daidala packs validate aidlc`, `python scripts/check_md_links.py .`, Markdown table structure validation, `python -m build`, `python -m twine check dist/*`, and `python scripts/check_release_contents.py . --wheel dist/*.whl` exited 0. The release check observed 218 tracked files and 55 wheel members, including `daidala/revision.py`. A fresh isolated profile returned native and standalone review help plus byte-equivalent missing-workflow JSON/exit behavior with no state mutation; the plugin compatibility probe passed for the complete currently reported Hermes tuple `0.19.0` / `2026.7.20` / `0a2c245c`.
 
 ## Phase 2 — Reconcile lifecycle, operator, and worker documentation
 

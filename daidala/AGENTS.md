@@ -11,11 +11,12 @@ workflow-pack adapters, and bundled orchestration skills.
 |---|---|
 | `__init__.py` | Hermes tool, skill, and operator CLI registration. |
 | `errors.py` | Policy-ledger, persistence, and host-boundary error hierarchy. |
-- `state.py` | Immutable policy ledger, artifact/review/disposition evidence, Kanban identifiers, skill activation manifests, and strict serialization. |
-- `workflow.py` | Deterministic policy checks and ledger updates, including exact review-evidence and attended-disposition binding; no operational status transitions. |
+| `state.py` | Immutable policy ledger, current and historical review/disposition/verification evidence, revision-request progress, Kanban identifiers, skill activation manifests, and strict serialization. |
+| `workflow.py` | Deterministic policy checks and ledger updates, including exact review/disposition binding and review-driven plan-revision transitions; no operational status transitions. |
+| `revision.py` | Bounded review packets, normalized attended feedback, and canonical mutation-free review-decision/revision previews. |
 | `locations.py` | Profile-aware data-root resolution; never hard-codes `~/.hermes`. |
 | `store.py` | SQLite-backed policy-ledger persistence with optimistic concurrency and explicit read-only opening for mutation-free previews. |
-- `service.py` | Repository preflight, approval-gated graph, artifact, structured-review, attended-disposition, worktree, and ledger coordination. |
+| `service.py` | Repository preflight, approval-gated graph, artifact, structured-review, attended-disposition, retryable plan-revision, worktree, and ledger coordination. |
 | `skills.py` | Exact installed-skill inventory, content-digest verification, and mutation-free install planning. |
 | `pack_service.py` | Typed pack validation, readiness, bounded declared-skill content, preview-digest, and confirmed external-skill installation service shared by CLI and dashboard adapters. |
 | `constraints.py` | Strict workflow-constraint YAML parsing, canonicalization, bounds, and digest identity. |
@@ -37,11 +38,11 @@ workflow-pack adapters, and bundled orchestration skills.
 | `execution.py` | Immutable revision-addressed profile-local artifacts, detached worktrees, and diff capture. |
 | `artifact_access.py` | Opaque ledger-bound artifact identity, active metadata catalog, bounded digest-verified text reads, private exports, and exact current-plan evidence. |
 | `archive_io.py` | Policy-neutral deterministic tar/gzip creation, manifest verification, inventory, and safe restore for caller-authorized roots. |
-| `kanban.py` | Public host-boundary adapter for the idempotent, approval-gated Hermes card graph. |
+| `kanban.py` | Public host-boundary adapter for the idempotent, approval-gated and revision-addressed Hermes card graph. |
 | `schemas.py` | Tool schemas exposed to the model. |
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
 | `packs.py` | Pack loading and deterministic validation. |
-| `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle dispatch, pack operations, dry-run-first project-cycle admission/completion/cancellation/reconciliation and evaluator operations, exact preview-digest apply gates, bounded inspection output, and subprocess mutation boundary. |
+| `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle and attended-review dispatch, pack operations, dry-run-first project-cycle operations, exact preview-digest apply gates, bounded inspection output, and subprocess mutation boundary. |
 | `dashboard_backend.py` | Profile-safe dashboard read model, live Kanban snapshots, constraint previews, and typed compare-and-swap replacement adapter. |
 | `recommendations.py` | Pure finite pending-decision and next-action derivation from ledger facts and live Kanban snapshots. |
 | `setup_wizard.py` | Typed setup preview, confirmation gate, and documented Hermes board/profile inventory commands. |
@@ -72,6 +73,17 @@ workflow-pack adapters, and bundled orchestration skills.
 - Native and standalone operator commands share one parser and dispatch layer;
   setup, external installation, evaluator probes, and project-cycle admission
   remain dry-run by default.
+- `review show` exposes the bounded current evidence/disposition packet. `review
+  decide` is preview-only by default and applies only a freshly recomputed exact
+  review/preview digest pair with literal confirmation and bounded direct UTF-8
+  rationale input; the rationale path is never persisted.
+- `request_revision` writes canonical revision-request and successor packets
+  before host mutation, archives only the recorded current post-gate card IDs,
+  releases only the owned worktree, preserves prior evidence in immutable
+  history, and creates exactly one revision-addressed Plan card. Plan recording
+  resolves the request; fresh exact approval is required before any new
+  worktree or post-gate graph. Retries reuse the recorded preview and artifacts
+  across artifact-write, card-archive, worktree-release, and Plan-card failures.
 - Pack installation recomputes the complete preview identity before mutation,
   requires literal confirmation plus the matching digest, and exposes only
   declared pack/skill identities and bounded `SKILL.md` content.

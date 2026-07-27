@@ -16,9 +16,10 @@ completeness without touching a real Hermes profile.
 - Reconciliation tests use fake inventories and command boundaries to prove
   stable issue ordering, no-candidate convergence, bounded claim recovery,
   immutable tick replay, and fail-closed inventory or notification errors.
-- Shared CLI tests prove standalone/native reconciliation argument parity,
-  dry-run default behavior, exact preview-digest apply gates, bounded output,
-  and nonzero stale or missing-identity exits without live profile mutation.
+- Shared CLI tests prove standalone/native reconciliation and attended-review
+  argument parity, dry-run default behavior, exact preview-digest apply gates,
+  bounded direct rationale input and output, and nonzero stale or missing-identity
+  exits without live profile mutation.
 - Project-cycle admission tests prove standalone/native mode and candidate
   parity, comparison-mode candidate requirements, improve-mode rejection, and
   exact dry-run/apply forwarding before adapter mutation.
@@ -45,6 +46,10 @@ completeness without touching a real Hermes profile.
 - Review-disposition tests prove structured review bounds, exact evidence-tuple
   binding, worker-context rejection for attended decisions, and absence of a
   delivery card before exact attended acceptance.
+- Review-revision tests prove mutation-free canonical previews, stale identity
+  rejection, durable intent before host mutation, retry after archive/worktree
+  failures, revision-addressed Plan cards, preserved historical evidence, and
+  fresh plan approval before a new worktree or post-gate graph.
 - Constraint-card tests prove policy-aware idempotency, global and phase-specific
   projection, explicit board and constraint-revision identity, explicit null
   identity, the exact 8,192-character rendered-body boundary, and fail-closed
@@ -143,6 +148,11 @@ completeness without touching a real Hermes profile.
 - Constraint replacement coverage must prove exact approval binding, durable
   invalidation before host mutation, owned-worktree cleanup, obsolete-card
   archival, fresh define/plan creation, idempotent retry, and cross-pack behavior.
+- Review revision coverage must prove the revision/successor artifact digests,
+  exact source tuple, no arbitrary-path forwarding, durable retry markers,
+  recovery after artifact-write, recorded-ID archive, owned-worktree, and
+  successor-card failures without duplicate retry effects, historical evidence,
+  successor Plan activation, and no direct phase-rewind surface.
 - Tool and CLI constraint-source coverage must prove inline/file parity, exact
   skill-directory digest verification, strict single-fence extraction, and
   identical standalone/native service dispatch.
