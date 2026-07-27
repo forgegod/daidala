@@ -98,7 +98,90 @@ hermes daidala approve <workflow-id> <64-character-plan-digest>
 Do not copy a digest from an older plan revision. A mismatch fails without
 authorizing work. Generic `hermes kanban unblock` is not approval. Successful
 approval completes the blocked gate and creates
-`implement → verify → review → deliver` in one persistent worktree.
+`implement → verify → review` in one persistent worktree. Automated review does
+not create `deliver`.
+
+## Review disposition
+
+Inspect the bounded current packet before taking attended action:
+
+```bash
+hermes daidala review show <workflow-id>
+```
+
+The response supplies the board, review card ID, exact evidence tuple, current
+disposition, allowed actions, and any pending successor packet. The current
+dashboard does not render these authority controls; P0210 adds presentation over
+the already implemented service and CLI operations.
+
+Every rationale file must be direct, regular, non-symlinked, non-empty UTF-8 and
+at most 4096 bytes. The file path is input only and is never persisted.
+
+For an accepted review with no blocking findings, preview and then apply exact
+delivery acceptance:
+
+```bash
+printf '%s\n' 'Accepted after inspecting the exact review evidence.' > review-rationale.txt
+hermes daidala review decide <workflow-id> accept-delivery \
+  --rationale-file ./review-rationale.txt
+hermes daidala review decide <workflow-id> accept-delivery \
+  --rationale-file ./review-rationale.txt --apply \
+  --expected-review-digest <review-digest> \
+  --expected-preview-digest <preview-digest>
+```
+
+Preview is non-mutating. Apply re-reads the current tuple; stale review or
+preview digests fail before mutation. Successful acceptance creates exactly one
+`deliver` card. Blocking findings cannot be overridden.
+
+If reviewer judgment is disputed but captured code need not change, use the
+board and review-card ID from `review show`:
+
+```bash
+hermes kanban --board <board> comment <review-card-id> "Challenge: <reason>"
+hermes kanban --board <board> unblock <review-card-id> --reason "Re-review requested"
+```
+
+If code, verification scope, or implementation approach must change, preview
+and apply revision instead:
+
+```bash
+printf '%s\n' 'Address the findings and rerun the named verification.' > revision-feedback.txt
+hermes daidala review decide <workflow-id> request-revision \
+  --rationale-file ./revision-feedback.txt
+hermes daidala review decide <workflow-id> request-revision \
+  --rationale-file ./revision-feedback.txt --apply \
+  --expected-review-digest <review-digest> \
+  --expected-preview-digest <preview-digest>
+```
+
+Apply preserves the rejected plan, implementation, verification, review,
+disposition, and card history; archives only recorded current post-gate cards;
+releases only the owned worktree; and returns the new plan revision and Plan card
+ID. Inspect the card, wait for `plan-N/plan.md`, inspect that plan, and apply its
+new digest through the normal approval gate:
+
+```bash
+hermes kanban --board <board> show <plan-card-id> --json
+hermes daidala status <workflow-id>
+hermes daidala approve <workflow-id> <new-plan-digest>
+```
+
+No new worktree or implementation card exists before fresh approval. There is no
+direct phase-rewind command.
+
+To reject the workflow at the review gate, use the same preview/apply sequence
+with `reject-workflow`:
+
+```bash
+printf '%s\n' 'Rejecting this workflow after inspecting its exact evidence.' > rejection-rationale.txt
+hermes daidala review decide <workflow-id> reject-workflow \
+  --rationale-file ./rejection-rationale.txt
+hermes daidala review decide <workflow-id> reject-workflow \
+  --rationale-file ./rejection-rationale.txt --apply \
+  --expected-review-digest <review-digest> \
+  --expected-preview-digest <preview-digest>
+```
 
 ## Cancel
 
@@ -130,6 +213,17 @@ Hermes Kanban owns retry and recovery:
 5. The dispatcher respawns the card with its full thread and preserved absolute
    worktree. Never fabricate replacement evidence.
 
+Artifact-write, archive, worktree-release, and successor Plan-card failures in a
+confirmed revision request are retryable with the same exact review and preview
+digests. The persisted request and progress markers prevent duplicate authority;
+do not cancel or manually rewind merely because one host mutation failed.
+
+Legacy ledgers without structured review fields remain readable, but `review
+show`, disposition, and delivery fail closed. Never infer acceptance from a
+historical `review.md`. Resume the current review worker so it records supported
+structured evidence when that graph remains active; otherwise cancel and start a
+new workflow under the current contract.
+
 ## Upgrade
 
 ```bash
@@ -150,7 +244,13 @@ exit code:
 ```bash
 hermes daidala status <workflow-id>
 daidala status <workflow-id>
+hermes daidala review show <workflow-id>
+daidala review show <workflow-id>
 ```
+
+Replacing the `hermes daidala` prefix with `daidala` in either `review decide`
+preview/apply example above is also equivalent; both forms share one parser and
+dispatch path.
 
 Use the native form operationally. The standalone executable exists for package
 smoke tests and diagnostics, not as a separate orchestration runtime.

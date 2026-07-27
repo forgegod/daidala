@@ -18,7 +18,8 @@ A strong Daidala pack candidate should:
 - provide reusable instructions or skills rather than require a competing agent
   runtime;
 - map honestly onto `define → plan → implement → verify → review → deliver`;
-- preserve Daidala's human gate after planning;
+- preserve Daidala's exact plan-approval gate and separate attended review
+  disposition;
 - let Hermes remain the Kanban, worker, delegation, and retry authority;
 - produce repository artifacts and verification evidence that Daidala can
   capture;

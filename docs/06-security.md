@@ -47,9 +47,13 @@ verification in the Daidala-owned detached worktree.
 - `daidala_pack_info` catches `PackError` and returns a JSON string rather than
   raising across the plugin boundary.
 - External skill bodies are not vendored into this package.
-- Policy facts, artifacts, approval, worktrees, captured diffs, verification
+- Policy facts, artifacts, plan approval, structured review, attended
+  disposition, revision requests, worktrees, captured diffs, verification
   evidence, and delivery manifests are durable under the resolved profile data
   root; operational card state remains in Hermes Kanban.
+- A plan artifact's source-bound `approval_summary` and summary digest are
+  required for new approval authority; older summary-less artifacts remain
+  readable but unapprovable.
 - Workflow constraints are strict policy data, not executable configuration.
   Exact policy-skill sources require a caller-supplied complete-directory digest
   and one fenced YAML document; Daidala snapshots canonical content so later
@@ -77,6 +81,33 @@ plan digest, plan modification invalidates approval, and no post-gate card or
 worktree may be created until the matching approval record exists. Generic
 Kanban unblock is not authorization. The target must still be clean and at the
 recorded baseline when implementation starts.
+
+A second attended gate follows structured automated review. Review evidence
+binds the exact implementation, passing verification, activation, plan, policy,
+constraint, and review-card tuple. It cannot authorize delivery. Only an
+attended actor may apply a freshly previewed `accept_delivery`,
+`request_revision`, or `reject_workflow` action against the exact review and
+preview digests. Kanban workers are rejected, stale tuples fail before mutation,
+and blocking findings cannot be overridden. Comment/unblock requests re-review;
+they grant neither disposition nor plan approval.
+
+### Attended review disposition
+
+The exact actions are `accept_delivery`, `request_revision`, and
+`reject_workflow`. Preview and apply both reject blocking-finding acceptance, and
+the plugin tool rejects callers carrying `HERMES_KANBAN_TASK`; workers cannot
+manufacture attended authority.
+
+Revision intent and the bounded successor packet are persisted before Kanban
+archive or worktree cleanup. The packet excludes raw logs, arbitrary paths,
+environment values, and comment threads. Prior evidence remains immutable; the
+revision-addressed successor plan requires fresh exact approval before new
+implementation authority exists.
+
+Historical ledgers that predate structured review remain readable but gain no
+inferred review acceptance or delivery authority. Active legacy work must produce
+a current structured review through the supported worker boundary or be
+cancelled; prose artifacts are never migrated into authority.
 
 ## External skills and supply chain
 
@@ -133,11 +164,14 @@ scanning or review of model-produced workflow artifacts.
 
 ## Worktree rollback and cleanup
 
-Daidala removes its detached implementation worktree after successful
-delivery and when an operator cancels an active workflow. Removal validates
-that the path is an immediate child of Daidala's profile-local worktree root;
-it refuses arbitrary paths. Delivery artifacts and the immutable captured diff
-remain durable, while the target checkout and its baseline commit are untouched.
+Daidala removes its detached implementation worktree after successful delivery,
+an attended revision request, or cancellation. Removal validates that the path
+is an immediate child of Daidala's profile-local worktree root; it refuses
+arbitrary paths. Revision cleanup first verifies and preserves the immutable
+implementation, verification, review, disposition, and successor artifacts.
+The ledger retains those identities in append-only `verification_history`,
+`review_history`, `review_disposition_history`, and `revision_requests`
+collections. The target checkout and baseline commit remain untouched.
 
 ## Cost and token telemetry
 

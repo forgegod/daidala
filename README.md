@@ -116,13 +116,19 @@ hermes daidala approve first-workflow <64-character-plan-digest>
 
 A generic `hermes kanban unblock` is not approval; there is no approval card to
 promote or dispatch. Successful Daidala approval records the ledger gate and
-creates `implement → verify → review → deliver`, parented from `plan`, in one
-persistent worktree. Use `hermes daidala status first-workflow` for combined
-policy facts and live card status; use normal Kanban comments, reassignment, and
-unblock for worker recovery.
+creates `implement → verify → review`, parented from `plan`, in one persistent
+worktree. Automated review is evidence, not delivery authority. Inspect it with
+`hermes daidala review show first-workflow`, then use preview-first `hermes
+daidala review decide` to accept delivery, request a plan revision, or reject the
+workflow. Only exact attended acceptance creates `deliver`; revision preserves
+the rejected evidence and requires a new plan plus fresh approval. Use `hermes
+daidala status first-workflow` for combined policy facts and live card status;
+use normal Kanban comments, reassignment, and unblock for worker recovery.
 
 See [Getting started](docs/00-getting-started.md) for the complete walkthrough,
 including pack setup, optional stage-specific profiles, recovery, and delivery.
+The current dashboard reports workflow state but does not yet render review
+disposition or revision controls.
 
 ## Trigger and routing model
 

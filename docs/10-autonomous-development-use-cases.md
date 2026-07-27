@@ -144,13 +144,15 @@ implementation.
 
 The verification worker records exact commands, exit codes, and output
 references. The review worker evaluates the captured diff against the goal,
-plan, and verification evidence. Delivery then reports the reviewed paths and
-evidence while explicitly leaving commit and push to a separately authorized
-operation.
+plan, and verification evidence. Automated review remains advisory: an attended
+actor inspects the exact tuple and accepts delivery, requests a revision, or
+rejects the workflow. Only exact acceptance creates delivery, which reports the
+reviewed paths and evidence while explicitly leaving commit and push to a
+separately authorized operation.
 
 The useful output is therefore more than “the agent says it is done.” It is a
 chain from requested goal to approved plan to immutable diff to observed checks
-to review decision.
+to structured review to attended disposition.
 
 ## How the handoff survives worker boundaries
 
@@ -224,14 +226,12 @@ finds a convenient green result.
 
 Verification and review cannot repair the already captured diff. If the failure
 requires code changes, the approved plan and implementation scope must be
-revised rather than patched invisibly. The runtime contains plan-replacement
-logic, but the current public CLI and plugin tools do not expose it. Today the
-safe operator path is to cancel and start a new workflow with the corrected
-goal or plan expectations.
-
-This is an important limitation, not a documentation detail: recovery works for
-missing access, transient host failures, rerunning valid checks, and supplying
-review decisions; it is incomplete for an in-place code-rework cycle.
+revised rather than patched invisibly. The attended operator previews and applies
+`request-revision` against the exact review tuple. Daidala preserves the old
+evidence, archives only recorded post-gate cards, releases only the owned
+worktree, and creates one revision-addressed Plan card. A newly recorded plan and
+fresh approval are mandatory before implementation resumes. Direct phase rewind
+is intentionally unsupported.
 
 ## Use case: separate specialist judgment
 
@@ -316,18 +316,18 @@ the selected profiles, repository tooling, and downstream review policy.
 
 ## Suggested tutorial series
 
-These are documentation ideas, not an implementation plan. The first five can
+These are documentation ideas, not an implementation plan. The first six can
 be written against current behavior; the rest should wait for the named product
 capability.
 
 | Tutorial | Reader outcome | Current status |
 |---|---|---|
-| 1. From scoped goal to reviewed delivery | Run a small bug fix through definition, digest approval, worktree isolation, verification, and delivery. | Supported |
+| 1. From scoped goal to reviewed delivery | Run a small bug fix through definition, digest approval, worktree isolation, verification, structured review, attended acceptance, and delivery. | Supported |
 | 2. Choose between Addyosmani and AI-DLC | Compare the artifacts and judgment produced by two packs for the same bounded task. | Supported |
 | 3. Use specialist profiles | Assign architecture, implementation, verification, and review profiles and inspect their structured handoffs. | Supported |
 | 4. Recover a blocked verification card | Read evidence, comment, reassign, unblock, and confirm the same worktree and thread are reused. | Supported for retry/remediation without code rework |
 | 5. Author a methodology pack | Pin external skills or a bundled adapter and validate a reusable stage mapping. | Supported |
-| 6. Revise a rejected implementation safely | Replace the plan, invalidate approval, archive obsolete cards, and create a new graph revision. | Future: public plan-revision surface required |
+| 6. Revise a rejected implementation safely | Preview exact attended feedback, preserve rejected evidence, create a revision-addressed Plan card, and require fresh approval. | Supported through native and standalone review commands |
 | 7. Turn a delivery into a pull request | Review evidence, authorize commit/push separately, and preserve provenance in a PR. | Future: authorized integration surface required |
 | 8. Trigger bounded work from issues or schedules | Apply trust filters, budgets, and approval policy before unattended start. | Future: trigger policy and unattended-run controls required |
 | 9. Coordinate a cross-repository migration | Define ordered repository baselines, integration tests, and rollback. | Future: multi-repository workflow required |
@@ -340,7 +340,6 @@ hidden behind optimistic prose.
 
 | Improvement | User need | Why it matters |
 |---|---|---|
-| Public plan revision and rework | Correct implementation after verification or review feedback without abandoning audit history. | This is the most immediate lifecycle gap; internal replacement logic exists but has no operator surface. |
 | Authorized commit/PR handoff | Convert an accepted delivery into normal team review without giving workers uncontrolled push authority. | Current delivery stops before the collaboration surface most teams use. |
 | Trigger admission policy | Start from trusted issue events or schedules with allowlists and explicit approval rules. | Unattended triggers increase prompt-injection and privilege risk. |
 | Per-stage tool and network policy | Give each profile only the capabilities needed for its phase. | Pack skills constrain guidance, not host permissions. |

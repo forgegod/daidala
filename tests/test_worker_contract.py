@@ -92,6 +92,11 @@ def test_worker_contract_requires_kanban_handoff_and_recovery_protocol() -> None
         "evidence-derived `approval_summary`",
         "Invalid structured output blocks the plan handoff",
         "there is no\nsummary fallback",
+        "Automated review is evidence, not delivery authority",
+        "Blocking findings cannot be overridden",
+        "`request-revision` flow",
+        "newly recorded plan plus fresh exact approval",
+        "rewind directly to another\nstage",
     )
     for statement in required:
         assert statement in instructions
@@ -127,5 +132,7 @@ def test_worker_contract_forbids_post_capture_mutation_and_target_delivery() -> 
 
     assert "Implementation scope is immutable" in instructions
     assert "must not modify it" in instructions
-    assert "new approved graph revision" in instructions
+    assert "revision-addressed Plan card" in instructions
     assert "`committed: false` and `pushed: false`" in instructions
+    assert "Review workers must never\ncall attended disposition tools" in instructions
+    assert "no direct phase rewind occurred" in instructions

@@ -17,9 +17,9 @@ architecture references.
 | [Policy ledger](02-workflow-state.md) | Status-free ledger and combined live Kanban diagnostics implemented | State, store, service, Kanban, and persistence tests |
 | [Pack reference](03-pack-reference.md) | Schema-v1 providers and required/conditional activation implemented | Pack loader, bundled YAML, and pack tests |
 | [Authoring packs](04-authoring-packs.md) | Pack-neutral mapping and activation authoring implemented | Pack loader and cross-pack tests |
-| [Lifecycle stages](05-lifecycle-stages.md) | Approval graph, host-bound activation authorization, pending/finalized recovery, fail-closed evidence gates, and handoffs implemented | Graph, activation, worker-contract, and recovery tests |
+| [Lifecycle stages](05-lifecycle-stages.md) | Approval graph, structured review, attended disposition, revision recovery, host-bound activation, and fail-closed evidence gates implemented | Graph, review-disposition, revision-retry, activation, and worker-contract tests |
 | [Security](06-security.md) | Approval, activation, worktree, artifact, secrets, and supply-chain boundaries implemented | Runtime and release-content tests |
-| [Runbook](07-runbook.md) | Native lifecycle and normal Kanban recovery commands verified | Shared CLI tests and isolated Hermes lifecycle probe |
+| [Runbook](07-runbook.md) | Native lifecycle, attended review decisions, plan revision, and normal Kanban recovery commands verified | Shared CLI tests and isolated Hermes lifecycle/review probes |
 | [Hermes integration](08-hermes-integration.md) | Exact Hermes v0.18.2 and v0.19.0 hosts supported within `>=0.18.2,<0.20.0` | Isolated repeated exact-wheel probes, compatible comparison, and release-only compatibility regression |
 | [Pack adapters](09-pack-adapters.md) | Addyosmani and AI-DLC mappings and activation modes implemented | Pack YAML, bundled adapter, and cross-pack execution tests |
 | [Autonomous development use cases](10-autonomous-development-use-cases.md) | Current use cases, activation handoffs, user controls, tutorial ideas, and unsupported opportunities documented | Runtime contracts plus external agent-development research |
@@ -45,7 +45,12 @@ flowchart LR
     G -->|"Daidala exact-digest approval"| I["implement"]
     I --> V["verify"]
     V --> R["review"]
-    R --> DL["deliver"]
+    R --> HD["attended review disposition"]
+    HD -->|"accept exact review"| DL["deliver"]
+    HD -->|"request revision"| PN["revisioned plan"]
+    PN --> GN["fresh exact-digest approval"]
+    GN --> I
+    HD -->|"reject workflow"| X["cancelled"]
 
     H["Hermes Kanban<br>lifecycle + retry authority"] --> D
     H --> P
@@ -54,12 +59,19 @@ flowchart LR
     H --> R
     H --> DL
     W["Daidala<br>policy + evidence"] -.-> G
+    W -.-> HD
 ```
 
 Daidala creates the graph explicitly. The existing gateway's Kanban dispatcher
 runs ready cards; Daidala adds no scheduler, daemon, dashboard server, or
 polling loop. `/daidala` is an optional extension of the existing Hermes
 dashboard. Generic Kanban unblock is interaction, not plan authorization.
+Automated review is evidence, not delivery authority. A delivery card exists
+only after an attended actor accepts the exact current review tuple. A revision
+request preserves the rejected evidence, creates a revision-addressed Plan card,
+and requires a newly recorded plan plus fresh exact approval before implementation.
+The current dashboard does not render these review actions; use the verified
+native or standalone CLI.
 
 Every executable card loads the complete exact pack-stage candidate set. After
 `kanban_show`, its worker must persist a finalized, unblocked activation manifest
@@ -99,6 +111,8 @@ carry that manifest's digest and active skill names.
 | Is Daidala a separate service or scheduler? | [Architecture](01-architecture.md#process-boundary) |
 | Who owns status and retries? | [Policy ledger](02-workflow-state.md) |
 | Why is Kanban unblock not approval? | [Security](06-security.md#human-approval-boundary) |
+| How do I inspect review evidence, accept delivery, request a revision, or reject a workflow? | [Operator runbook: Review disposition](07-runbook.md#review-disposition) |
+| How do I challenge reviewer judgment without changing captured code? | [Getting started: Review and attended disposition](00-getting-started.md#6-review-and-attended-disposition) |
 | What must each worker record? | [Lifecycle stages](05-lifecycle-stages.md) |
 | Why is a loaded skill not necessarily active? | [Skill usage and user control](11-skill-usage-and-user-control.md#what-using-a-skill-means) |
 | How do I recover a blocked card? | [Operator runbook](07-runbook.md#recovery) |

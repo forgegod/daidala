@@ -1,7 +1,7 @@
 ---
 name: orchestrate
 description: Use when running a skill-backed workflow through Daidala. Enforces pack validation, explicit artifacts, a pre-implementation human gate, and evidence-backed completion.
-version: 0.2.0
+version: 0.3.0
 author: Daidala
 license: MIT
 metadata:
@@ -43,7 +43,8 @@ not depend on the launcher session retaining these instructions.
    criteria, and returned digest to the human. Do not approve until the human
    explicitly accepts that exact digest.
 5. Call `daidala_approve` with the accepted digest. This records approval,
-   creates the persistent worktree, and creates the linked post-gate cards with
+   creates the persistent worktree, and creates the linked `implement`, `verify`,
+   and `review` cards with
    the plan card as their graph parent. Daidala creates no approval Kanban card.
    Kanban workers must never call `daidala_approve`; approval belongs to the
    attended non-worker launcher or explicit CLI. Do not call `daidala_prepare_implementation`
@@ -112,6 +113,13 @@ returned activation digest for the handoff or blocking comment.
 | `review` | Review the captured diff and verification evidence without changing files, then call `daidala_submit_review` with outcome, summary, and bounded findings whose evidence digests name the implementation diff or passing verification outputs. | An accepted review is complete evidence; another outcome must comment and block with `review-required:`. Never call attended disposition tools. |
 | `deliver` | Call `daidala_deliver` and inspect its durable delivery artifact. This card exists only after an attended `daidala_review_disposition(action: "accept_delivery")` for the exact review digest. | Complete with changed paths and evidence references, explicitly reporting `committed: false` and `pushed: false`. |
 
+Automated review is evidence, not delivery authority. Review workers must never
+call attended disposition tools. An attended launcher or operator inspects the
+bounded review packet and chooses exact acceptance, workflow rejection, or a
+revision request. Blocking findings cannot be overridden; reviewer disagreement
+without changed code is handled by commenting on and unblocking the same review
+card for re-review.
+
 The plan `approval_summary` has exactly `headline`, `changes`, `affected_areas`,
 `risks`, and `verification`. Ground every item in the submitted plan and its
 parent evidence. Do not add fields, submit placeholders, or ask Daidala to
@@ -120,9 +128,13 @@ summary fallback.
 
 Implementation scope is immutable after `daidala_capture_implementation`.
 Verification and review workers must not modify it. If review or deterministic
-verification reveals required code changes, comment and block; the operator must
-replace the plan and create a new approved graph revision rather than patching a
-captured diff in place.
+verification reveals required code, verification-scope, or approach changes,
+comment and block. The attended operator uses the preview/apply
+`request-revision` flow; Daidala preserves the old evidence, emits one
+revision-addressed Plan card with the canonical successor packet, and requires a
+newly recorded plan plus fresh exact approval. Workers never archive cards,
+release the worktree, copy artifacts forward, or rewind directly to another
+stage.
 
 ## Structured Handoff
 
@@ -161,6 +173,13 @@ reuse the preserved workspace and idempotent Daidala evidence. Never infer
 approval from a generic unblock. A changed plan requires a new digest-bound
 approval and graph revision.
 
+For a non-accepted review, the review worker's responsibility ends after durable
+structured evidence, a `review-required:` comment, and `kanban_block`. It does
+not choose disposition or mutate revision state. On a revisioned Plan card, the
+plan worker treats the successor packet's read-only identities and normalized
+operator feedback as its input, records `plan-N/plan.md` through the normal
+activation boundary, and still cannot approve that plan.
+
 ## Common Pitfalls
 
 - Treating a listed skill name as proof that the exact skill is installed.
@@ -179,6 +198,10 @@ approval and graph revision.
   implementation snapshot.
 - Modifying the worktree during verification or review after the implementation
   snapshot was captured.
+- Treating automated review completion or a generic unblock as delivery
+  acceptance.
+- Rewinding directly to `implement`, `verify`, or `define` instead of using a
+  new plan revision or a new workflow as appropriate.
 - Reporting model prose as verification evidence.
 - Committing or pushing target changes as part of delivery.
 - Spawning a new MCP, HTTP service, or nested `hermes chat` process.
@@ -197,6 +220,9 @@ approval and graph revision.
 - [ ] Captured implementation diff is non-empty.
 - [ ] Verification command, exit code, and output reference are durable.
 - [ ] Structured review evidence binds the implementation diff and passing verification outputs.
+- [ ] Review workers did not choose or invoke attended disposition.
+- [ ] A revision request preserved source evidence and produced one successor
+      Plan card; no direct phase rewind occurred.
 - [ ] Delivery card exists only after exact attended review acceptance.
 - [ ] Delivery reports changed paths without a target commit or push.
 - [ ] Every worker run ended through `kanban_complete` or `kanban_block` with a

@@ -28,8 +28,12 @@ flowchart LR
         S --> W2["Daidala plugin<br>operator CLI"]
         W --> K["Hermes Kanban<br>define → plan"]
         W2 --> K
-        K --> G["blocked human approval"]
-        G -->|"exact plan digest approved"| E["implement → verify → review → deliver"]
+        K --> G["attended plan approval"]
+        G -->|"exact plan digest approved"| E["implement → verify → review"]
+        E --> R["attended review disposition"]
+        R -->|"exact acceptance"| D["deliver"]
+        R -->|"revision requested"| PN["revision-addressed plan"]
+        PN --> G
     end
 ```
 
@@ -387,9 +391,9 @@ plan approval. Daidala delivery remains uncommitted and unpushed.
   configuration.
 - The approval gate is intentionally not bypassable. Fully unattended
   implementation is outside the current trust boundary.
-- The current public plan-revision surface cannot repair rejected code in place;
-  cancel and restart with corrected expectations when implementation scope must
-  change.
+- Automated triggers cannot apply attended review disposition. An operator may
+  use the exact preview/apply `request-revision` flow to repair rejected code
+  while preserving evidence and requiring a fresh plan approval.
 
 For a watchdog that must run even when Hermes is unhealthy, use an OS-level
 cron job or systemd timer to poll the source and alert independently. It may call

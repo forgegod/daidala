@@ -1,8 +1,9 @@
 # Getting started with Daidala
 
 This walkthrough starts one Daidala workflow from the native Hermes CLI and
-follows it through the digest-bound approval gate. Daidala creates the graph;
-the Hermes gateway's Kanban dispatcher executes ready cards.
+follows it through exact plan approval, automated review, attended disposition,
+an optional plan revision with fresh approval, and delivery. Daidala creates the
+graph; the Hermes gateway's Kanban dispatcher executes ready cards.
 
 For guided onboarding, load `daidala:setup`. It checks the same prerequisites,
 previews the exact `daidala_start` request, and requires explicit confirmation
@@ -207,10 +208,13 @@ Successful attended approval records the exact tuple in the ledger, creates one
 detached worktree, and creates these cards with `plan` as their graph parent:
 
 ```text
-implement → verify → review → deliver
+implement → verify → review
 ```
 
-## 6. Follow execution and delivery
+The delivery card does not exist yet. Automated review produces bounded evidence;
+it never authorizes delivery.
+
+## 6. Review and attended disposition
 
 All post-gate cards share the Daidala-owned worktree. Hermes Kanban owns their
 status, assignment, dependencies, retry history, comments, and runs. Daidala
@@ -218,17 +222,79 @@ owns the captured implementation scope and evidence:
 
 - `implement`: immutable diff and changed-path manifest;
 - `verify`: exact commands, exit codes, and content-addressed outputs;
-- `review`: decision against the captured diff and evidence;
-- `deliver`: reviewed references with `committed: false` and `pushed: false`.
+- `review`: structured outcome, summary, bounded findings, and exact evidence
+  digests against the captured diff and passing verification.
 
 Inspect a card or combined workflow status with:
 
 ```bash
 hermes kanban --board project-board show <card-id> --json
 hermes daidala status first-workflow
+hermes daidala review show first-workflow
 ```
 
-Delivery does not commit or push the target repository.
+`review show` returns the current board, review card ID, exact evidence tuple,
+allowed attended actions, and any pending successor packet. Blocking findings
+cannot be overridden. If the review judgment is wrong and the captured code does
+not need to change, comment on and unblock the same review card:
+
+```bash
+hermes kanban --board project-board comment <review-card-id> "Challenge: <reason>"
+hermes kanban --board project-board unblock <review-card-id> --reason "Re-review requested"
+```
+
+After an accepted review with no blocking findings, write a non-empty UTF-8
+rationale of at most 4096 bytes to a direct regular, non-symlink file and preview
+exact acceptance:
+
+```bash
+printf '%s\n' 'Reviewed the exact evidence tuple; delivery is accepted.' > review-rationale.txt
+hermes daidala review decide first-workflow accept-delivery \
+  --rationale-file ./review-rationale.txt
+```
+
+Copy `preview.review_digest` and `preview.preview_digest` from that non-mutating JSON,
+then apply the unchanged decision:
+
+```bash
+hermes daidala review decide first-workflow accept-delivery \
+  --rationale-file ./review-rationale.txt --apply \
+  --expected-review-digest <review-digest> \
+  --expected-preview-digest <preview-digest>
+```
+
+Only this attended acceptance creates `deliver`. Delivery records reviewed
+references with `committed: false` and `pushed: false`; it does not commit or
+push the target repository.
+
+If captured code, verification scope, or the implementation approach must
+change, preview and apply `request-revision` with the same exact-digest pattern:
+
+```bash
+printf '%s\n' 'Address the blocking findings and rerun the named verification.' > revision-feedback.txt
+hermes daidala review decide first-workflow request-revision \
+  --rationale-file ./revision-feedback.txt
+hermes daidala review decide first-workflow request-revision \
+  --rationale-file ./revision-feedback.txt --apply \
+  --expected-review-digest <review-digest> \
+  --expected-preview-digest <preview-digest>
+```
+
+Apply preserves the old implementation, verification, review, disposition, and
+card history before archiving the recorded post-gate cards and releasing only
+the owned worktree. It returns the new plan revision and revision-addressed Plan
+card ID. Inspect that card with `hermes kanban --board project-board show
+<plan-card-id> --json`. After its worker records `plan-N/plan.md`, inspect the new
+plan and approve its new digest with `hermes daidala approve first-workflow
+<new-plan-digest>`. No new worktree or implementation card exists before that
+fresh approval. There is no direct phase-rewind command.
+
+To reject the entire workflow instead, preview and apply `reject-workflow` using
+the same rationale and exact digest arguments. The generic `hermes daidala
+cancel` remains the explicit cancellation path outside a current review gate.
+
+These service and CLI operations are current. The optional dashboard can report
+pending decisions but does not yet render review disposition or revision controls.
 
 ## 7. Recover or cancel
 
@@ -242,7 +308,9 @@ hermes kanban --board project-board unblock <card-id> --reason "Retry approved"
 
 The dispatcher respawns the card with its thread and persistent workspace.
 Verification and review must not mutate an already captured implementation; code
-changes require a new plan digest and approval revision.
+changes use the attended `request-revision` flow above. A comment/unblock is only
+for re-review without changing captured code; it grants neither review
+disposition nor plan approval.
 
 Cancel Daidala-owned resources explicitly:
 

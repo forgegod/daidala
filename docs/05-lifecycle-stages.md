@@ -11,13 +11,14 @@ standalone operator-command paths are implemented.
 ## Stage contract
 
 Every executable stage requires a current, finalized, unblocked skill activation
-manifest before Daidala records its durable handoff. Approval is the only
-non-executable card and has no activation manifest. Replacing a plan increments
-the revision, clears approval, and requires a new matching approval before
-post-gate work can proceed.
+manifest before Daidala records its durable handoff. Plan approval and attended
+review disposition are ledger gates, not executable cards, and have no activation
+manifest. Replacing a plan increments the revision, clears approval, and requires
+a new matching approval before post-gate work can proceed.
 Every executable card also binds the current policy revision and nullable
 constraint identity. Constraint replacement archives stale cards, preserves
-historical artifacts, and restarts at `define` before renewed tuple approval.
+historical artifacts plus verification/review/disposition history, and restarts
+at `define` before renewed tuple approval.
 
 | Card | Input | Durable handoff | Hermes result |
 |---|---|---|---|
@@ -26,8 +27,9 @@ historical artifacts, and restarts at `define` before renewed tuple approval.
 | Approval | Current plan and nullable constraint revision/digest tuple | Approval actor, time, and exact tuple | Ledger-only human gate; no Kanban card |
 | Implement | Approved revision and absolute owned worktree | Captured diff and changed-path manifest | Complete or block |
 | Verify | Immutable implementation scope and exact commands | Commands, exit codes, and output references | Complete or block |
-| Review | Captured diff and passing evidence | Review artifact and decision | Complete or block |
-| Deliver | Approved review and immutable evidence | `delivery.json` with `committed: false`, `pushed: false` | Complete or block |
+| Review | Captured diff and passing evidence | Structured outcome, summary, bounded findings, exact review digest | Accepted evidence completes; other outcomes comment and block |
+| Disposition | Exact current review, implementation, verification, plan, policy, and constraint tuple | Attended action, actor, rationale, and exact digest binding | Ledger-only human gate; no Kanban card |
+| Deliver | Exact attended acceptance of an accepted, non-blocking review | `delivery.json` with `committed: false`, `pushed: false` | Complete or block |
 
 ## Graph creation and assignment
 
@@ -37,16 +39,21 @@ historical artifacts, and restarts at `define` before renewed tuple approval.
    validates every profile before creating cards.
 3. `daidala_start` creates `define` and dependent `plan` with the bundled
    `daidala:orchestrate` worker contract, exact pack skills, and deterministic
-   idempotency keys.
+   idempotency keys of the form
+   `daidala:<workflow-id>:<plan-revision>:<policy-revision>:<constraint-digest-or-none>:<stage>`.
 4. After the plan handoff, Daidala records its digest and exposes the exact
    pending approval tuple from the ledger without creating a Kanban card.
 5. `hermes daidala approve <workflow-id> <digest>` records exact attended
    approval. Kanban workers are rejected, and generic `hermes kanban unblock`
    does not satisfy Daidala policy.
-6. Daidala creates `implement → verify → review → deliver` only after approval.
+6. Daidala creates `implement → verify → review` only after plan approval.
    `implement` is parented directly from `plan`; every post-gate card uses its
    resolved profile, bundled worker contract, exact stage skills, real parent
    links, and the same absolute Daidala-owned worktree.
+7. Automated review records evidence but creates no delivery card. An attended
+   exact-digest `accept-delivery` decision creates `deliver`; `request-revision`
+   preserves the source tuple and creates one revision-addressed Plan card;
+   `reject-workflow` cancels the workflow.
 
 `daidala_status` is read-only and combines ledger facts with live Kanban card
 data. Cancellation cleans Daidala-owned resources and uses documented Kanban
@@ -86,6 +93,13 @@ entire current plan artifact, not a task subset. Changing the plan invalidates
 approval, increments the graph revision, and prevents evidence submission from
 the previous graph.
 
+Automated review is not delivery authority. Attended disposition binds the exact
+current review and all evidence identities. `accept_delivery` requires an
+accepted review with no blocking findings. A stale tuple or Kanban-worker caller
+fails without mutation. Reviewer disagreement without changed code stays on the
+review card through comment/unblock; it does not override a blocking finding or
+grant disposition authority.
+
 ## Implementation isolation
 
 Implementation runs in a detached Daidala-owned Git worktree created at the
@@ -118,16 +132,26 @@ card to an implementation-capable profile, and unblocks it. Hermes respawns the
 card with its full thread and the same preserved worktree. Daidala does not
 rewind or mirror a private status.
 
-The implementation diff is immutable after capture. Verification and review may
-retry or request input in the preserved worktree, but they must not change its
-captured implementation scope. Required code changes replace the plan and use a
-new digest-bound approval and graph revision.
+`daidala_capture_implementation` captures the implementation diff before
+verification; that pre-verification snapshot is immutable. Verification and
+review may retry or request input in the preserved worktree, but they must not
+change its captured scope. Required code, verification-scope, or approach changes
+use attended `request-revision`: Daidala writes the canonical request and
+successor packet before archive or worktree cleanup, preserves prior evidence,
+creates Plan revision N+1, and requires a newly recorded plan plus fresh approval.
+There is no direct phase rewind.
 
 ## Delivery boundary
 
-Delivery reports the baseline, captured changed paths, and verification
-evidence. It records `committed: false` and `pushed: false`. Committing or
-pushing the target requires a separate future authorization surface.
+The delivery card is created lazily and idempotently only after exact attended
+acceptance; `daidala_deliver` fails closed without that disposition. Delivery
+reports the baseline, pre-verification captured paths, review, disposition, and
+verification evidence, records `committed: false` and `pushed: false`, and then
+releases the owned worktree. Committing or pushing the target requires a separate
+future authorization surface.
+
+The current dashboard does not render review-disposition or plan-revision
+controls. Until P0210, operators use the native CLI for those attended actions.
 
 ## Source of truth
 

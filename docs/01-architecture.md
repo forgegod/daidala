@@ -76,7 +76,10 @@ state machine.
 | Pack selection, stage skills, provenance, and compatibility | Daidala |
 | Workflow constraint identity, immutable policy artifact, projection, and replacement | Daidala |
 | Repository baseline, owned worktree, and immutable implementation scope | Daidala |
-| Plan-and-constraint tuple approval, artifact digests, and verification evidence | Daidala policy ledger |
+| Plan-and-constraint tuple approval, source-bound approval summary, artifact digests, and verification evidence | Daidala policy ledger |
+| Structured review outcome, bounded findings, evidence digests, and review identity | Daidala policy ledger |
+| Attended `accept_delivery`, `request_revision`, or `reject_workflow` disposition | Daidala policy ledger |
+| Immutable revision intent, successor packet, and retry checkpoints | Daidala policy ledger and artifact store |
 | Target commit or push | Unavailable without separate authorization |
 
 No operational transition requires bidirectional status synchronization.
@@ -122,7 +125,11 @@ flowchart LR
     PLAN -->|"attended exact-digest ledger approval"| IMPLEMENT["implement card"]
     IMPLEMENT --> VERIFY["verify card"]
     VERIFY --> REVIEW["review card"]
-    REVIEW --> DELIVER["deliver card"]
+    REVIEW --> DISPOSITION["attended exact-review disposition"]
+    DISPOSITION -->|"accept delivery"| DELIVER["deliver card"]
+    DISPOSITION -->|"request revision"| NEXT_PLAN["revision-addressed plan card"]
+    NEXT_PLAN -->|"record plan + fresh exact approval"| IMPLEMENT
+    DISPOSITION -->|"reject workflow"| CANCELLED["cancelled"]
 
     KB["Hermes Kanban owns every card status and retry"] --> DEFINE
     LEDGER["Daidala policy ledger"] -."approval + digests + evidence refs".-> PLAN
@@ -133,6 +140,16 @@ flowchart LR
 
     CLI["Native or standalone operator command"] -->|"documented hermes kanban subprocesses"| KB
 ```
+
+Automated review remains model-produced evidence. Daidala alone validates and
+binds the structured review; an attended actor alone chooses its exact
+disposition. Revision intent and successor packets are immutable before Kanban
+archive or owned-worktree cleanup. The successor Plan card is revision-addressed,
+and its recorded plan requires a fresh exact approval before a new worktree or
+post-gate graph can exist. The dashboard backend does not yet expose these
+decision operations; P0210 is the presentation consumer of the implemented
+service and CLI boundary. Exact accepted disposition creates the delivery card;
+successful delivery records evidence and then releases the owned worktree.
 
 Native `hermes daidala` is the canonical operator surface. The standalone
 `daidala` executable shares its parser and handlers for diagnostics and smoke
@@ -148,7 +165,8 @@ repository, and artifact mechanisms and replaces private lifecycle state with:
 - `validate_pack()` validates schema shape, lifecycle order, skill references,
   and pre-implementation gate placement;
 - immutable dataclasses and SQLite enforce policy-ledger invariants, optimistic
-  updates, exact plan approval, and artifact integrity;
+  updates, exact plan approval, exact review disposition, revision history, and
+  artifact integrity;
 - exact installed-skill names gate workflow graph creation and validation;
 - profile-local artifact paths and detached Git worktrees isolate execution;
 - captured diffs, changed paths, command results, and delivery flags remain
@@ -156,7 +174,8 @@ repository, and artifact mechanisms and replaces private lifecycle state with:
 - every plugin handler serializes success or failure as JSON.
 
 Daidala calls no model. Hermes profile workers and the selected pack skills
-produce definition, plan, implementation, verification, and review judgment.
+produce definition, plan, implementation, verification, and automated review
+judgment. Attended review disposition remains separate human authority.
 Workers terminate through `kanban_complete` or `kanban_block`; Daidala records
 artifact digests, approval, verification evidence, and delivery scope without
 declaring a second operational status.

@@ -19,16 +19,16 @@ Own current architecture documentation, the numbered reading set, and executable
   boundaries.
 - `07-runbook.md` owns the executable operator lifecycle for installation,
   initialization, prerequisite diagnosis, pack readiness, workflow start/status,
-  exact approval, recovery, cancellation, upgrade, and native/standalone CLI
-  parity.
+  exact plan approval, exact attended review disposition, plan-revision recovery,
+  cancellation, upgrade, and native/standalone CLI parity.
 - `08-hermes-integration.md` owns verified Hermes versions, discovery paths, and installation limitations.
 - `09-pack-adapters.md` owns implemented pack mappings, activation policy, and
   divergences.
 - `10-autonomous-development-use-cases.md` owns user-oriented task selection,
   skill handoffs, steering controls, tutorial ideas, and future use cases.
 - `11-skill-usage-and-user-control.md` owns the design contract for card-scoped
-  candidate loading, persisted activation, cross-stage handoff, and user
-  selection boundaries.
+  candidate loading, persisted activation, cross-stage handoff, attended
+  disposition, revision feedback, and user selection boundaries.
 - `12-market-overview.md` owns source-backed evaluation of candidate workflow
   packs, interoperability standards, optional integrations, and adjacent
   products.
