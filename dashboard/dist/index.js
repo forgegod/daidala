@@ -8,8 +8,8 @@
  *   - the sessions:top slot (Slot) renders a compact pending-decision count.
  *
  * Live state is polled on a fixed >= 5 second cadence while the page is visible;
- * the timer is paused when the tab is hidden. Pack installation, workflow setup,
- * and constraint replacement use closed preview-confirm routes only.
+ * the timer is paused when the tab is hidden. Mutations are limited to the named
+ * pack, board, setup, constraint, and exact-plan preview-confirm routes.
  *
  * The Hermes dashboard host invokes this bundle once per session after
  * authenticating and discovering the manifest. The SDK exposes React and
@@ -177,6 +177,14 @@
       });
   }
 
+  function buildApprovalReview(workflowId) {
+    return fetchJson(
+      API_BASE + "/workflows/" + encodeURIComponent(workflowId) + "/approval-review"
+    ).catch(function () {
+      return { available: false };
+    });
+  }
+
   function buildDecisions(workflowId) {
     return fetchJson(
       API_BASE + "/workflows/" + encodeURIComponent(workflowId) + "/decisions"
@@ -225,6 +233,9 @@
   function renderCardRow(card) {
     var cardClass = "daidala-card daidala-card-" + card.stage + " is-" + card.status;
     var blockReason = card.block_reason ? card.block_reason : "";
+    var comments = Array.isArray(card.comments) ? card.comments.slice(-3) : [];
+    var runs = Array.isArray(card.runs) ? card.runs.slice(-3) : [];
+    var events = Array.isArray(card.events) ? card.events.slice(-5) : [];
     return createElement(
       "li",
       { key: card.task_id, className: cardClass, "data-testid": "daidala-card" },
@@ -233,6 +244,41 @@
       createElement("span", { className: "daidala-card-assignee" }, card.assignee || "—"),
       blockReason
         ? createElement("span", { className: "daidala-card-reason" }, blockReason)
+        : null,
+      runs.length
+        ? createElement(
+            "ul",
+            { className: "daidala-card-history", "aria-label": "Run history" },
+            runs.map(function (run) {
+              return createElement(
+                "li",
+                { key: "run-" + run.id },
+                (run.outcome || run.status || "active") + " · " + (run.profile || "unassigned"),
+                run.summary ? createElement("span", null, " — " + run.summary) : null,
+                run.error ? createElement("span", { className: "daidala-card-reason" }, " — " + run.error) : null
+              );
+            })
+          )
+        : null,
+      comments.length
+        ? createElement(
+            "ul",
+            { className: "daidala-card-history", "aria-label": "Recent comments" },
+            comments.map(function (comment, index) {
+              return createElement(
+                "li",
+                { key: "comment-" + index },
+                (comment.author || "unknown") + ": " + (comment.body || "")
+              );
+            })
+          )
+        : null,
+      events.length
+        ? createElement(
+            "p",
+            { className: "daidala-card-events" },
+            "Timeline: " + events.map(function (event) { return event.kind || "event"; }).join(" → ")
+          )
         : null
     );
   }
@@ -257,7 +303,187 @@
     );
   }
 
-  function renderWorkflowCard(workflow, detail, decisions) {
+  function renderRecommendationItem(action) {
+    return createElement(
+      "li",
+      { key: action.action_kind + (action.card_id || ""), className: "daidala-recommendation" },
+      createElement("strong", null, actionBadge(action)),
+      createElement("span", null, summarizeAction(action))
+    );
+  }
+
+  function WorkflowApproval(props) {
+    var packet = props.packet;
+    var plan = packet && packet.plan;
+    var confirmedState = useState(false);
+    var confirmed = confirmedState[0];
+    var setConfirmed = confirmedState[1];
+    var submittingState = useState(false);
+    var submitting = submittingState[0];
+    var setSubmitting = submittingState[1];
+    var messageState = useState("");
+    var message = messageState[0];
+    var setMessage = messageState[1];
+
+    if (!packet || packet.available === false || !plan) {
+      return createElement(
+        "p",
+        { className: "daidala-workflow-unavailable", "data-testid": "daidala-plan-unavailable" },
+        "Plan unavailable"
+      );
+    }
+
+    function approveExactPlan() {
+      setSubmitting(true);
+      setMessage("");
+      postJson(
+        API_BASE + "/workflows/" + encodeURIComponent(packet.workflow_id) + "/approve",
+        {
+          artifact_id: plan.artifact_id,
+          plan_digest: plan.plan_digest,
+          summary_digest: plan.summary_digest,
+          confirm: true
+        }
+      ).then(function () {
+        setConfirmed(false);
+        setMessage("Exact plan approved.");
+        props.onApproved();
+      }).catch(function (error) {
+        setMessage(error.message);
+      }).finally(function () {
+        setSubmitting(false);
+      });
+    }
+
+    return createElement(
+      "section",
+      { className: "daidala-approval", "data-testid": "daidala-approval-packet" },
+      createElement("h4", { className: "daidala-workflow-section-title" }, "Exact plan approval"),
+      createElement("p", { className: "daidala-approval-headline" }, plan.summary.headline),
+      createElement(
+        "dl",
+        { className: "daidala-workflow-identity" },
+        createElement("div", null, createElement("dt", null, "workflow"), createElement("dd", null, packet.tuple.workflow_id)),
+        createElement("div", null, createElement("dt", null, "policy revision"), createElement("dd", null, String(packet.tuple.policy_revision))),
+        createElement("div", null, createElement("dt", null, "plan revision"), createElement("dd", null, String(packet.tuple.plan_revision))),
+        createElement("div", null, createElement("dt", null, "plan digest"), createElement("dd", null, plan.plan_digest)),
+        createElement("div", null, createElement("dt", null, "artifact ID"), createElement("dd", null, plan.artifact_id)),
+        createElement("div", null, createElement("dt", null, "summary digest"), createElement("dd", null, plan.summary_digest)),
+        createElement("div", null, createElement("dt", null, "constraint revision"), createElement("dd", null, String(packet.tuple.constraints_revision === null ? "none" : packet.tuple.constraints_revision))),
+        createElement("div", null, createElement("dt", null, "constraint digest"), createElement("dd", null, packet.tuple.constraints_digest || "none")),
+        createElement("div", null, createElement("dt", null, "pack revision"), createElement("dd", null, packet.pack_identity.source_revision)),
+        createElement("div", null, createElement("dt", null, "verification"), createElement("dd", null, plan.verification_state))
+      ),
+      createElement("h5", null, "Changes"),
+      createElement("ul", null, plan.summary.changes.map(function (item) { return createElement("li", { key: item }, item); })),
+      createElement("h5", null, "Risks"),
+      plan.summary.risks.length
+        ? createElement("ul", null, plan.summary.risks.map(function (item) { return createElement("li", { key: item }, item); }))
+        : createElement("p", null, "No risks recorded."),
+      createElement("h5", null, "Verification"),
+      createElement("ul", null, plan.summary.verification.map(function (item) { return createElement("li", { key: item }, item); })),
+      createElement("details", null,
+        createElement("summary", null, "Read exact plan text"),
+        createElement("pre", { className: "daidala-plan-text" }, plan.content)
+      ),
+      createElement("p", { className: "daidala-approval-consequences" },
+        "Consequences: " + packet.consequences.worktree + " · next cards " +
+        packet.consequences.next_cards.join(" → ") + " · commit false · push false"
+      ),
+      createElement(
+        "section",
+        { className: "daidala-next-packet", "data-testid": "daidala-next-packet" },
+        createElement("h5", null, "What the next card receives"),
+        createElement("p", null,
+          packet.successor_packet.stage + " · policy " + packet.successor_packet.policy_revision +
+          " · plan " + packet.successor_packet.plan_revision + " · " +
+          packet.successor_packet.plan_digest
+        ),
+        createElement("ul", null,
+          packet.successor_packet.activations.map(function (activation) {
+            return createElement("li", { key: "activation-" + activation.stage }, "activation " + activation.stage + " · " + activation.digest);
+          }),
+          packet.successor_packet.artifacts.map(function (artifact) {
+            return createElement("li", { key: "artifact-" + artifact.stage }, "artifact " + artifact.stage + " · " + artifact.digest);
+          })
+        ),
+        packet.successor_packet.baseline_commit
+          ? createElement("p", { className: "daidala-post-approval" },
+              "Baseline " + packet.successor_packet.baseline_commit + " · worktree " +
+              (packet.successor_packet.worktree.present ? "present" : "not created")
+            )
+          : null
+      ),
+      packet.approval
+        ? createElement("p", { className: "daidala-banner" }, "This exact plan is approved.")
+        : createElement(React.Fragment, null,
+            createElement("label", { className: "daidala-confirm" },
+              createElement("input", {
+                type: "checkbox",
+                checked: confirmed,
+                onChange: function (event) { setConfirmed(event.target.checked); }
+              }),
+              "I reviewed this exact plan"
+            ),
+            createElement("button", {
+              type: "button",
+              className: "daidala-refresh",
+              disabled: !confirmed || submitting,
+              onClick: approveExactPlan
+            }, submitting ? "Approving…" : "Approve exact plan")
+          ),
+      message ? createElement("p", { role: "status", className: "daidala-banner" }, message) : null
+    );
+  }
+
+  function renderTimeline(detail) {
+    var timeline = detail && Array.isArray(detail.timeline) ? detail.timeline : [];
+    return createElement(
+      "ol",
+      { className: "daidala-timeline", "data-testid": "daidala-timeline" },
+      timeline.map(function (row) {
+        var label = row.kind === "approval_gate"
+          ? "Human approval — Daidala policy gate"
+          : row.label;
+        var props = {
+          key: row.kind + "-" + row.stage,
+          className: "daidala-timeline-row is-" + row.status
+        };
+        if (row.kind === "approval_gate") {
+          props.className += " daidala-approval-gate";
+          props["data-testid"] = "daidala-approval-gate";
+        }
+        return createElement(
+          "li",
+          props,
+          row.kind === "approval_gate" && !row.approval
+            ? createElement("a", { href: "#daidala-decision-panel" }, label)
+            : createElement("strong", null, label),
+          createElement("span", null, row.status),
+          row.kind === "approval_gate" && row.approval
+            ? createElement("span", null, row.approval.plan_digest + " · " + row.approval.decided_at)
+            : null
+        );
+      })
+    );
+  }
+
+  function renderCardAudit(cards) {
+    return createElement(
+      "details",
+      { className: "daidala-card-audit" },
+      createElement("summary", null, "Live Kanban and audit detail"),
+      cards.length === 0
+        ? createElement("p", { className: "daidala-workflow-empty" }, "No cards yet")
+        : createElement(
+            "ul",
+            { className: "daidala-workflow-cards", "data-testid": "daidala-cards" },
+            cards.map(renderCardRow)
+          )
+    );
+  }
+
+  function renderWorkflowCard(workflow, detail, decisions, approvalReview, onApproved) {
     var summary = detail && detail.workflow ? detail.workflow : workflow;
     var policyRevision = summary.policy_revision;
     var planRevision = summary.plan_revision;
@@ -268,6 +494,10 @@
     var decisionsList = decisions && decisions.decisions
       ? decisions.decisions
       : [];
+    var recommendations = detail && Array.isArray(detail.recommendations)
+      ? detail.recommendations
+      : [];
+
 
     return createElement(
       "article",
@@ -330,39 +560,6 @@
             )
           : null
       ),
-      createElement(
-        "h4",
-        { className: "daidala-workflow-section-title" },
-        "Live Kanban"
-      ),
-      detail === undefined
-        ? createElement(
-            "p",
-            { className: "daidala-workflow-loading" },
-            "Loading card status"
-          )
-        : detail === null || (detail.kanban && detail.kanban.available === false)
-          ? createElement(
-              "p",
-              { className: "daidala-workflow-unavailable" },
-              "Live Kanban state unavailable"
-            )
-          : cards.length === 0
-            ? createElement(
-                "p",
-                { className: "daidala-workflow-empty" },
-                "No cards yet"
-              )
-            : createElement(
-                "ul",
-                { className: "daidala-workflow-cards", "data-testid": "daidala-cards" },
-                cards.map(renderCardRow)
-              ),
-      createElement(
-        "h4",
-        { className: "daidala-workflow-section-title" },
-        "Pending decisions"
-      ),
       decisions === undefined
         ? createElement(
             "p",
@@ -376,16 +573,55 @@
               "Live Kanban state unavailable"
             )
           : decisionsList.length === 0
-            ? createElement(
-                "p",
-                { className: "daidala-workflow-empty" },
-                "No pending human decision"
-              )
+            ? createElement("p", { className: "daidala-workflow-empty" }, "No pending human decision")
             : createElement(
-                "ul",
-                { className: "daidala-workflow-decisions", "data-testid": "daidala-decisions" },
-                decisionsList.map(renderDecisionItem)
+                "section",
+                {
+                  id: "daidala-decision-panel",
+                  className: "daidala-decision-panel",
+                  "data-testid": "daidala-decision-panel"
+                },
+                createElement("h4", { className: "daidala-workflow-section-title" }, "Needs your decision"),
+                createElement(
+                  "ul",
+                  { className: "daidala-workflow-decisions", "data-testid": "daidala-decisions" },
+                  decisionsList.map(renderDecisionItem)
+                ),
+                approvalReview === undefined
+                  ? createElement("p", { className: "daidala-workflow-loading" }, "Loading approval evidence")
+                  : createElement(WorkflowApproval, { packet: approvalReview, onApproved: onApproved })
               ),
+      createElement(
+        "h4",
+        { className: "daidala-workflow-section-title" },
+        "Recommended next actions"
+      ),
+      recommendations.length
+        ? createElement(
+            "ul",
+            { className: "daidala-recommendations", "data-testid": "daidala-recommendations" },
+            recommendations.map(renderRecommendationItem)
+          )
+        : createElement("p", { className: "daidala-workflow-empty" }, "No recommendation available"),
+      createElement(
+        "h4",
+        { className: "daidala-workflow-section-title" },
+        "Stage timeline"
+      ),
+      renderTimeline(detail),
+      detail === undefined
+        ? createElement(
+            "p",
+            { className: "daidala-workflow-loading" },
+            "Loading card status"
+          )
+        : detail === null || (detail.kanban && detail.kanban.available === false)
+          ? createElement(
+              "p",
+              { className: "daidala-workflow-unavailable" },
+              "Live Kanban state unavailable"
+            )
+          : renderCardAudit(cards),
       detail && detail.workflow
         ? createElement(ConstraintEditor, {
             workflow: detail.workflow,
@@ -1271,11 +1507,20 @@
     var decisionsState = useVisiblePolling(POLL_MS, function () {
       return buildDecisions(workflow.workflow_id);
     });
+    var approvalState = useVisiblePolling(POLL_MS, function () {
+      return buildApprovalReview(workflow.workflow_id);
+    });
 
     return renderWorkflowCard(
       workflow,
       detailState.snapshot,
-      decisionsState.snapshot
+      decisionsState.snapshot,
+      approvalState.snapshot,
+      function () {
+        detailState.refresh();
+        decisionsState.refresh();
+        approvalState.refresh();
+      }
     );
   }
 

@@ -3,23 +3,24 @@
 This module is the dashboard backend proven by Phase 0. It exports the
 ``router`` symbol the Hermes dashboard process mounts under
 ``/api/plugins/daidala/``. The implementation is profile-safe, exposes only
-closed pack/setup/constraint mutations, never imports Hermes internals, and
-never writes the Kanban database. Live card data is read on demand through the same public
-``KanbanGraphAdapter`` boundary the existing ``daidala_status`` tool
-already uses.
+closed pack/setup/constraint/approval mutations, never imports Hermes internals,
+and never writes the Kanban database. Live card detail is read on demand through
+bounded public ``hermes kanban`` commands.
 
 The pure deterministic recommendation logic lives in
 :mod:`daidala.recommendations`. The factory below only wires those pure
 projections to FastAPI.
 
-Phase 2 endpoints (all read-only):
+Supervision endpoints include:
 
 - ``GET  /api/plugins/daidala/health``
 - ``GET  /api/plugins/daidala/prerequisites``
 - ``GET  /api/plugins/daidala/workflows``
 - ``GET  /api/plugins/daidala/workflows/{workflow_id}``
+- ``GET  /api/plugins/daidala/workflows/{workflow_id}/approval-review``
 - ``GET  /api/plugins/daidala/workflows/{workflow_id}/decisions``
 - ``GET  /api/plugins/daidala/workflows/{workflow_id}/recommendations``
+- ``POST /api/plugins/daidala/workflows/{workflow_id}/approve``
 - ``POST /api/plugins/daidala/constraints/preview``
 """
 
@@ -27,6 +28,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import subprocess
 from collections.abc import Callable
 from functools import lru_cache
@@ -35,6 +37,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
+from daidala.artifact_access import ArtifactAccessError
 from daidala.dashboard_backend import (
     DashboardBackend,
     DashboardBackendError,
@@ -96,6 +99,7 @@ def _reset_default_service() -> None:
 
 
 service_factory: ServiceFactory = _default_service
+card_detail_provider: Callable[[str, str], dict[str, Any]]
 
 
 @lru_cache(maxsize=1)
@@ -135,7 +139,12 @@ def health() -> dict[str, Any]:
         "success": True,
         "plugin": "daidala",
         "read_model": True,
-        "bounded_mutations": ["pack_install", "workflow_setup", "constraints_replace"],
+        "bounded_mutations": [
+            "pack_install",
+            "workflow_setup",
+            "constraints_replace",
+            "workflow_approve",
+        ],
     }
 
 
@@ -231,7 +240,10 @@ def workflows() -> dict[str, Any]:
 def workflow_detail(workflow_id: str) -> dict[str, Any]:
     """Return policy facts and a live, read-only Kanban snapshot."""
 
-    backend = DashboardBackend(service_factory=service_factory)
+    backend = DashboardBackend(
+        service_factory=service_factory,
+        card_detail_provider=card_detail_provider,
+    )
     try:
         return backend.workflow_view(workflow_id)
     except UnknownWorkflowError as error:
@@ -242,6 +254,62 @@ def workflow_detail(workflow_id: str) -> dict[str, Any]:
             "workflow": None,
             "kanban": {"available": False, "cards": [], "error": str(error)},
         }
+
+
+@router.get("/workflows/{workflow_id}/approval-review")
+def approval_review(workflow_id: str) -> dict[str, Any]:
+    """Return server-resolved, verified evidence for the current plan only."""
+
+    backend = DashboardBackend(service_factory=service_factory)
+    try:
+        return backend.approval_review(workflow_id)
+    except UnknownWorkflowError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ArtifactAccessError as error:
+        raise HTTPException(
+            status_code=409,
+            detail={"message": "Plan unavailable", "reason": error.reason.value},
+        ) from error
+
+
+@router.post("/workflows/{workflow_id}/approve")
+def workflow_approve(workflow_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Approve only the exact current plan evidence reviewed by the operator."""
+
+    expected_fields = {"artifact_id", "plan_digest", "summary_digest", "confirm"}
+    if set(payload) != expected_fields:
+        raise HTTPException(status_code=400, detail="exact approval fields are required")
+    if payload.get("confirm") is not True:
+        raise HTTPException(status_code=400, detail="explicit confirmation is required")
+    for field in ("artifact_id", "plan_digest", "summary_digest"):
+        if not _is_sha256(payload.get(field)):
+            raise HTTPException(status_code=400, detail=f"{field} must be a SHA-256 identity")
+
+    service = service_factory()
+    try:
+        evidence = service.current_plan_evidence(workflow_id).to_dict()
+        current_identity = {
+            "artifact_id": evidence["artifact_id"],
+            "plan_digest": evidence["plan_digest"],
+            "summary_digest": evidence["approval_summary_digest"],
+            "confirm": True,
+        }
+        if payload != current_identity:
+            raise HTTPException(
+                status_code=409,
+                detail="plan identity changed after review; refresh approval evidence",
+            )
+        service.approve(workflow_id, plan_digest=evidence["plan_digest"])
+        return DashboardBackend(service_factory=lambda: service).approval_review(workflow_id)
+    except HTTPException:
+        raise
+    except ArtifactAccessError as error:
+        raise HTTPException(
+            status_code=409,
+            detail={"message": "Plan unavailable", "reason": error.reason.value},
+        ) from error
+    except (ServiceError, StoreError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
 
 
 @router.get("/workflows/{workflow_id}/decisions")
@@ -564,9 +632,131 @@ def _digest(value: Any) -> str:
     ).hexdigest()
 
 
+def _is_sha256(value: Any) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
 def _run_command(command: tuple[str, ...]) -> tuple[int, str]:
     completed = subprocess.run(command, check=False, capture_output=True, text=True)
     return completed.returncode, completed.stdout or completed.stderr
+
+
+def _bounded_kanban_json(command: tuple[str, ...], label: str) -> Any:
+    try:
+        completed = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except subprocess.TimeoutExpired as error:
+        raise DashboardBackendError(f"Kanban {label} timed out") from error
+    stdout = completed.stdout or ""
+    stderr = completed.stderr or ""
+    if len(stdout.encode("utf-8")) + len(stderr.encode("utf-8")) > 64 * 1024:
+        raise DashboardBackendError(f"Kanban {label} exceeded the 64 KiB output limit")
+    if completed.returncode != 0:
+        raise DashboardBackendError(f"Kanban {label} is unavailable")
+    try:
+        return json.loads(stdout)
+    except (TypeError, ValueError) as error:
+        raise DashboardBackendError(f"Kanban {label} returned invalid JSON") from error
+
+
+def kanban_show(board_slug: str, task_id: str) -> dict[str, Any]:
+    payload = _bounded_kanban_json(
+        ("hermes", "kanban", "--board", board_slug, "show", task_id, "--json"),
+        "card detail",
+    )
+    if not isinstance(payload, dict):
+        raise DashboardBackendError("Kanban card detail has an invalid shape")
+    return payload
+
+
+def kanban_runs(board_slug: str, task_id: str) -> list[Any]:
+    payload = _bounded_kanban_json(
+        ("hermes", "kanban", "--board", board_slug, "runs", task_id, "--json"),
+        "run history",
+    )
+    if not isinstance(payload, list):
+        raise DashboardBackendError("Kanban run history has an invalid shape")
+    return payload
+
+
+def _bounded_text(value: Any, *, limit: int = 4000) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise DashboardBackendError("Kanban detail contains invalid text")
+    return value[:limit]
+
+
+def _bounded_timestamp(value: Any) -> int | float | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    return value if math.isfinite(value) else None
+
+
+def _kanban_card_detail(board_slug: str, task_id: str) -> dict[str, Any]:
+    """Read one ledger-bound card through bounded public Hermes CLI adapters."""
+
+    show = kanban_show(board_slug, task_id)
+    runs = kanban_runs(board_slug, task_id)
+    task = show.get("task")
+    if not isinstance(task, dict) or task.get("id") != task_id:
+        raise DashboardBackendError("Kanban card identity does not match the ledger")
+    comments = show.get("comments", [])
+    events = show.get("events", [])
+    if not isinstance(comments, list) or not isinstance(events, list):
+        raise DashboardBackendError("Kanban card history has an invalid shape")
+    return {
+        "detail_available": True,
+        "title": _bounded_text(task.get("title"), limit=300),
+        "priority": task.get("priority") if isinstance(task.get("priority"), int) else None,
+        "created_at": _bounded_timestamp(task.get("created_at")),
+        "started_at": _bounded_timestamp(task.get("started_at")),
+        "completed_at": _bounded_timestamp(task.get("completed_at")),
+        "comments": [
+            {
+                "author": _bounded_text(row.get("author"), limit=100),
+                "body": _bounded_text(row.get("body")),
+                "created_at": _bounded_timestamp(row.get("created_at")),
+            }
+            for row in comments[-20:]
+            if isinstance(row, dict)
+        ],
+        "events": [
+            {
+                "kind": _bounded_text(row.get("kind"), limit=100),
+                "created_at": _bounded_timestamp(row.get("created_at")),
+                "run_id": row.get("run_id") if isinstance(row.get("run_id"), int) else None,
+            }
+            for row in events[-50:]
+            if isinstance(row, dict)
+        ],
+        "runs": [
+            {
+                "id": row.get("id") if isinstance(row.get("id"), int) else None,
+                "profile": _bounded_text(row.get("profile"), limit=100),
+                "status": _bounded_text(row.get("status"), limit=100),
+                "outcome": _bounded_text(row.get("outcome"), limit=100),
+                "started_at": _bounded_timestamp(row.get("started_at")),
+                "ended_at": _bounded_timestamp(row.get("ended_at")),
+                "summary": _bounded_text(row.get("summary")),
+                "error": _bounded_text(row.get("error")),
+            }
+            for row in runs[-20:]
+            if isinstance(row, dict)
+        ],
+    }
+
+
+card_detail_provider = _kanban_card_detail
 
 
 def _optional_str(value: Any) -> str | None:

@@ -1,6 +1,6 @@
 """Dashboard UI asset and registration tests.
 
-Phase 3 — read-only dashboard UI. These tests pin the asset surface that
+Bounded dashboard operator UI. These tests pin the asset surface that
 the Hermes dashboard host discovers and serves through the Phase 0 plugin
 extension boundary. They prove:
 
@@ -87,6 +87,12 @@ def test_dashboard_mutations_use_only_closed_post_routes() -> None:
     assert '"/install/preview"' in source
     assert '"/install"' in source
     assert "preview_digest: previewDigest, confirm: true" in source
+    assert '"/approval-review"' in source
+    assert '"/approve"' in source
+    assert "artifact_id: plan.artifact_id" in source
+    assert "plan_digest: plan.plan_digest" in source
+    assert "summary_digest: plan.summary_digest" in source
+    assert '"I reviewed this exact plan"' in source
     assert "method: \"PUT\"" not in source
     assert "method: \"DELETE\"" not in source
     assert "method: \"PATCH\"" not in source
@@ -221,8 +227,11 @@ def test_bundle_renders_every_phase_three_state() -> None:
         "Refresh",
         "Loading card status",
         "Loading decisions",
-        "Live Kanban",
-        "Pending decisions",
+        "Live Kanban and audit detail",
+        "Needs your decision",
+        "Human approval — Daidala policy gate",
+        "What the next card receives",
+        "Plan unavailable",
         "recorded",  # pending-approval identity badge
     )
     for text in required_strings:
@@ -236,6 +245,14 @@ def test_bundle_renders_every_phase_three_state() -> None:
     # invent or hardcode alternate labels.
     assert "approve_current_tuple" not in source
     assert "resolve_blocked_card" not in source
+
+
+def test_exact_plan_body_is_rendered_as_literal_text() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    assert 'createElement("pre", { className: "daidala-plan-text" }, plan.content)' in source
+    assert "innerHTML" not in source
+    assert "dangerouslySetInnerHTML" not in source
 
 
 def test_bundle_targets_phase_two_read_endpoints() -> None:

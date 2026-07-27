@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import subprocess
 import sys
 import threading
@@ -69,6 +70,8 @@ def test_router_exports_all_phase_two_routes() -> None:
         "pack_install",
         "workflows",
         "workflow_detail",
+        "approval_review",
+        "workflow_approve",
         "decisions",
         "recommendations",
         "constraint_preview",
@@ -140,6 +143,8 @@ def test_router_source_exposes_only_closed_mutation_routes() -> None:
     assert "DashboardBackend" in source
     assert '@router.post("/packs/{pack_name}/install")' in source
     assert '@router.post("/constraints/replace")' in source
+    assert '@router.get("/workflows/{workflow_id}/approval-review")' in source
+    assert '@router.post("/workflows/{workflow_id}/approve")' in source
     assert 'payload.get("confirm") is not True' in source
 
 
@@ -151,6 +156,222 @@ def test_health_distinguishes_the_read_model_from_bounded_mutations() -> None:
 
     assert payload["read_model"] is True
     assert "read_only" not in payload
+
+
+def _approval_identity(**overrides: object) -> dict[str, object]:
+    identity: dict[str, object] = {
+        "artifact_id": "a" * 64,
+        "plan_digest": "b" * 64,
+        "summary_digest": "c" * 64,
+        "confirm": True,
+    }
+    identity.update(overrides)
+    return identity
+
+
+def test_exact_plan_approval_rejects_malformed_identity_before_service() -> None:
+    api = load_api()
+    calls = 0
+
+    def service_factory() -> object:
+        nonlocal calls
+        calls += 1
+        return object()
+
+    api.__dict__["service_factory"] = service_factory
+
+    with pytest.raises(FakeHTTPException) as raised:
+        api.workflow_approve("workflow-1", {"confirm": True})
+
+    assert raised.value.status_code == 400
+    assert calls == 0
+
+
+def test_approval_review_uses_server_resolved_backend_packet() -> None:
+    api = load_api()
+
+    class Backend:
+        def __init__(self, **_kwargs: object) -> None:
+            pass
+
+        def approval_review(self, workflow_id: str) -> dict[str, object]:
+            return {
+                "workflow_id": workflow_id,
+                "available": True,
+                "plan": {"artifact_id": "a" * 64},
+            }
+
+    api.__dict__["DashboardBackend"] = Backend
+
+    assert api.approval_review("workflow-1") == {
+        "workflow_id": "workflow-1",
+        "available": True,
+        "plan": {"artifact_id": "a" * 64},
+    }
+
+
+def test_exact_plan_approval_rejects_stale_identity_without_mutation() -> None:
+    api = load_api()
+    approvals: list[str] = []
+
+    class Evidence:
+        def to_dict(self) -> dict[str, object]:
+            return {
+                "artifact_id": "a" * 64,
+                "plan_digest": "b" * 64,
+                "approval_summary_digest": "c" * 64,
+                "approval_summary": {"headline": "Exact plan"},
+                "content": "# Exact plan\n",
+            }
+
+    class Service:
+        def current_plan_evidence(self, _workflow_id: str) -> Evidence:
+            return Evidence()
+
+        def approve(self, _workflow_id: str, *, plan_digest: str) -> None:
+            approvals.append(plan_digest)
+
+    api.__dict__["service_factory"] = Service
+
+    with pytest.raises(FakeHTTPException) as raised:
+        api.workflow_approve("workflow-1", _approval_identity(plan_digest="e" * 64))
+
+    assert raised.value.status_code == 409
+    assert "changed after review" in raised.value.detail
+    assert approvals == []
+
+
+def test_exact_plan_approval_mutates_only_after_full_identity_match() -> None:
+    api = load_api()
+    approvals: list[tuple[str, str]] = []
+
+    class Evidence:
+        def to_dict(self) -> dict[str, object]:
+            return {
+                "artifact_id": "a" * 64,
+                "plan_digest": "b" * 64,
+                "approval_summary_digest": "c" * 64,
+                "approval_summary": {"headline": "Exact plan"},
+                "content": "# Exact plan\n",
+            }
+
+    class Service:
+        def current_plan_evidence(self, _workflow_id: str) -> Evidence:
+            return Evidence()
+
+        def approve(self, workflow_id: str, *, plan_digest: str) -> None:
+            approvals.append((workflow_id, plan_digest))
+
+    class Backend:
+        def __init__(self, **_kwargs: object) -> None:
+            pass
+
+        def approval_review(self, workflow_id: str) -> dict[str, object]:
+            return {"workflow_id": workflow_id, "approval": {"plan_digest": "b" * 64}}
+
+    api.__dict__["service_factory"] = Service
+    api.__dict__["DashboardBackend"] = Backend
+
+    result = api.workflow_approve("workflow-1", _approval_identity())
+
+    assert approvals == [("workflow-1", "b" * 64)]
+    assert result == {
+        "workflow_id": "workflow-1",
+        "approval": {"plan_digest": "b" * 64},
+    }
+
+
+def test_card_detail_uses_bounded_show_and_runs_adapters(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    api = load_api()
+    commands: list[tuple[str, ...]] = []
+    show = {
+        "task": {
+            "id": "t_plan",
+            "title": "Plan card",
+            "priority": 4,
+            "created_at": 10.5,
+            "workspace_path": "/must/not/escape",
+        },
+        "comments": [
+            {"author": "operator", "body": "<b>literal</b>", "created_at": index}
+            for index in range(25)
+        ],
+        "events": [
+            {"kind": "heartbeat", "payload": {"path": "/hidden"}, "created_at": index}
+            for index in range(55)
+        ],
+    }
+    runs = [
+        {
+            "id": index,
+            "profile": "planner",
+            "status": "closed",
+            "outcome": "completed",
+            "started_at": index,
+            "ended_at": index + 1,
+            "summary": "handoff",
+            "error": None,
+            "metadata": {"path": "/hidden"},
+        }
+        for index in range(25)
+    ]
+
+    def run_command(command: tuple[str, ...], **kwargs: object) -> object:
+        commands.append(command)
+        assert kwargs["timeout"] == 10
+        return types.SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps(show if "show" in command else runs),
+            stderr="",
+        )
+
+    monkeypatch.setattr(api.subprocess, "run", run_command)
+
+    detail = api._kanban_card_detail("board", "t_plan")
+
+    assert commands == [
+        ("hermes", "kanban", "--board", "board", "show", "t_plan", "--json"),
+        ("hermes", "kanban", "--board", "board", "runs", "t_plan", "--json"),
+    ]
+    assert len(detail["comments"]) == len(detail["runs"]) == 20
+    assert len(detail["events"]) == 50
+    assert detail["created_at"] == 10.5
+    assert detail["comments"][0]["body"] == "<b>literal</b>"
+    serialized = json.dumps(detail)
+    assert "workspace_path" not in serialized
+    assert "metadata" not in serialized
+    assert "/hidden" not in serialized
+
+
+def test_kanban_detail_rejects_mismatched_card_identity() -> None:
+    api = load_api()
+    api.__dict__["kanban_show"] = lambda _board, _task: {"task": {"id": "other"}}
+    api.__dict__["kanban_runs"] = lambda _board, _task: []
+
+    with pytest.raises(api.DashboardBackendError, match="does not match"):
+        api._kanban_card_detail("board", "t_plan")
+
+
+def test_kanban_read_enforces_output_and_timeout_bounds(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    api = load_api()
+
+    def oversized(*_args: object, **_kwargs: object) -> object:
+        return types.SimpleNamespace(returncode=0, stdout="x" * (64 * 1024 + 1), stderr="")
+
+    monkeypatch.setattr(api.subprocess, "run", oversized)
+    with pytest.raises(api.DashboardBackendError, match="64 KiB"):
+        api.kanban_show("board", "t_plan")
+
+    def timed_out(command: tuple[str, ...], **_kwargs: object) -> object:
+        raise api.subprocess.TimeoutExpired(command, 10)
+
+    monkeypatch.setattr(api.subprocess, "run", timed_out)
+    with pytest.raises(api.DashboardBackendError, match="timed out"):
+        api.kanban_runs("board", "t_plan")
 
 
 def test_pack_routes_use_one_typed_service_projection() -> None:

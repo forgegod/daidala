@@ -18,7 +18,7 @@
 
 **Produces:** an inventory-backed first-workflow wizard with mounted-profile scope, registered-repository capability readiness, non-authoritative defaults and Hermes Cron handoff, plus the decision-first workflow-detail foundation, bounded read-only card projection, and exact-plan approval surface consumed by P0212 and P0214
 
-**Status:** Phases 0 and 1 complete; Phase 2 is in progress — this unit owns the detail foundation and exact-plan approval. P0212 and P0214 own the extracted review and recovery/cancellation supervision slices.
+**Status:** Complete — Phases 0 through 2 provide setup, first-workflow start, decision-first detail, and exact-plan approval. P0212 and P0214 own the extracted review and recovery/cancellation supervision slices.
 
 ## Goal
 
@@ -30,7 +30,7 @@ Add the browser path that resolves one mounted-profile registration into the exi
 - P0205 owns exact ledger-bound plan text resolution; approval must consume it rather than a profile-local path.
 - P0207 owns structured automated review, attended review disposition, delivery release, revision-request cleanup, revisioned planning, CLI fallback, and synchronized current-behavior documentation; this plan only presents those services in Hermes Dashboard.
 - `SetupRequest.from_payload`, `confirmed_start`, workflow read models, approval, Kanban recovery, and cancellation already define the authority boundaries.
-- The current pending-decision UI shows only generic rationale and does not render the plan body or complete tuple; approving from that surface would not be informed consent.
+- The workflow detail renders the primary pending decision, verified literal plan body, complete approval tuple, immediate consequences, successor packet, lifecycle timeline, and bounded collapsed Kanban audit detail.
 - The shared contract pins the exact request envelope, blank workflow-ID behavior, disposable fixture rules, closed route inventory, and cancellation recovery path; resume means reopen and continue watching an existing workflow, not create a duplicate.
 
 ## Phase table
@@ -39,7 +39,7 @@ Add the browser path that resolves one mounted-profile registration into the exi
 |---|---|---|---|
 | 0 | Establish the registered setup boundary | done (`python -m pytest -q`; Ruff; Lefthook; pack/link/build/release checks; isolated live Hermes compatibility probe) | The service and closed dashboard routes resolve only a selected mounted-profile registration into the exact `SetupRequest` path, share mutation-free start readiness with confirmed start, bind preview/apply to a fresh exact digest, and reject browser paths, unknown fields, stale previews, and explicit existing workflow IDs |
 | 1 | Render the inventory-backed first-workflow wizard | done (focused and full repository gates; unchanged long-name fixture; stateful disposable-browser readiness, stale-preview invalidation, confirmed Start, detail reload, and cleanup) | The browser consumes the Phase 0 boundary to select ready packs, registrations, profiles, boards, and constraints; preserves an in-memory non-secret draft/default; creates boards only through preview-confirm; and reaches a newly created workflow or a safe existing-workflow reference |
-| 2 | Add the decision-first detail foundation and exact-plan approval | in-progress | Existing workflows reopen by exact ID; focused API and asset tests prove bounded read-only card projection, escaped verified plan evidence, a complete approval tuple and next-stage packet, and literal-confirmation approval bound to fresh artifact and summary identities |
+| 2 | Add the decision-first detail foundation and exact-plan approval | done (39 focused and 517 full tests; Ruff; Lefthook; JavaScript syntax; pack, link, build, Twine, release-content, and supported-host compatibility checks; stateful disposable-browser exact-plan approval and cleanup) | Existing workflows reopen by exact ID; focused API and asset tests prove bounded read-only card projection, escaped verified plan evidence, a complete approval tuple and next-stage packet, and literal-confirmation approval bound to fresh artifact and summary identities |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
 
@@ -160,12 +160,27 @@ full destination surface is verified under P0230.
 Steps:
 
 1. Read the linked Phase 3 contract sections and the P0205 current-plan resolver evidence. Keep hidden-tab polling paused, poll no faster than five seconds while visible, and keep manual refresh read-only.
-2. Add the primary `Needs your decision` panel, lower-noise timeline, exact-ID reopen, and bounded `kanban show`/`kanban runs` detail projection. Parse only allowlisted fields under the contract's timeout and output bounds; every card must belong to the current workflow ledger. Represent `Human approval — Daidala policy gate` between `plan` and `implement` without a Kanban task ID or fabricated approval card.
-3. Add the authenticated approval-review route and `Approve exact plan` route as thin adapters over P0205 and `WorkflowService.approve`. Render the bound AI-assisted summary, escaped verified plan body, complete tuple, fixed consequences, and a separately titled read-only `What the next card receives` packet. Require the displayed artifact ID, plan digest, summary digest, and literal `I reviewed this exact plan` confirmation; stale, malformed, unbound, binary, oversized, or mismatched evidence fails closed.
+2. Add the primary `Needs your decision` panel, lower-noise timeline, exact-ID reopen, and bounded `kanban show`/`kanban runs` detail projection. Parse only allowlisted fields under the contract's timeout and output bounds, preserving finite numeric lifecycle timestamps while rejecting booleans and non-finite values; every card must belong to the current workflow ledger. Represent `Human approval — Daidala policy gate` between `plan` and `implement` without a Kanban task ID or fabricated approval card.
+3. Add the authenticated approval-review route and `Approve exact plan` route as thin adapters over P0205 and `WorkflowService.approve`. Render the bound AI-assisted summary, escaped verified plan body, complete tuple, fixed immediate consequences (`implement → verify → review`, with delivery absent until attended acceptance), and a separately titled read-only `What the next card receives` packet. Require the displayed artifact ID, plan digest, summary digest, and literal `I reviewed this exact plan` confirmation; stale, malformed, unbound, binary, oversized, or mismatched evidence fails closed.
 4. Update the closed route inventory, dashboard mutation allowlist, and asset contract in the same implementation commit. P0212 owns review disposition/revision; P0214 owns blocked-card remediation and cancellation.
 5. Add focused API and asset coverage before or with the routes. Run the isolated browser gate for the exact approval surface only.
 
-Verification gate: `pytest tests/test_dashboard_api.py tests/test_dashboard_assets.py -q` exits 0 and proves bounded read-only watch/refresh, workflow-owned card projection, verified current-plan rendering, complete displayed tuple/consequences, stale or unchecked approval rejection, literal escaped evidence, no summary-only approval, no approval Kanban card, and no route that commits or pushes. The isolated browser probe proves the approval control remains absent until the exact plan body verifies and the primary decision is understandable without expanding audit detail.
+Verification gate: `pytest tests/test_dashboard_api.py tests/test_dashboard_assets.py -q` exits 0 and proves bounded read-only watch/refresh, workflow-owned card projection, verified current-plan rendering, complete displayed tuple/immediate consequences without a delivery card, stale or unchecked approval rejection, literal escaped evidence, no summary-only approval, no approval Kanban card, and no route that commits or pushes. The isolated browser probe proves the approval control remains absent until the exact plan body verifies and the primary decision is understandable without expanding audit detail.
+
+### Current Phase 2 state
+
+- The workflow detail places attended decisions before recommendations, the
+  lifecycle timeline, and collapsed bounded Kanban audit detail. The approval
+  gate is a ledger-owned timeline row between plan and implementation and never
+  fabricates a Kanban card.
+- Exact approval re-resolves the verified plan and summary server-side, requires
+  the displayed artifact, plan, and summary identities plus literal
+  confirmation, and creates only the immediate implement, verify, and review
+  cards. Delivery remains pending until attended review acceptance.
+- A fresh disposable profile and real Hermes v0.19.0 dashboard proved literal
+  escaped plan rendering, confirmation gating, exact approval, owned detached
+  worktree creation, post-approval timeline state, and absence of a delivery
+  card. The owned process, profile, board, repository, and port were removed.
 
 ## Out of scope
 

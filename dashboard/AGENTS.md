@@ -7,8 +7,8 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
 ## Ownership
 
 - `manifest.json` declares the `/daidala` tab, `sessions:top` slot, assets, and backend router.
-- `plugin_api.py` mounts the profile-safe read model, bounded pack operations, and narrowly scoped setup routes.
-- `dist/index.js` renders workflow progress, the inventory-backed Start workflow wizard, Config → Packs readiness/content, and pending decisions.
+- `plugin_api.py` mounts the profile-safe read model, bounded pack operations, narrowly scoped setup routes, bounded Kanban detail reads, and exact-plan approval.
+- `dist/index.js` renders workflow progress, the inventory-backed Start workflow wizard, Config → Packs readiness/content, decision-first supervision, and exact-plan approval.
 - `dist/style.css` adapts the extension to host themes and narrow layouts.
 
 ## Local Contracts
@@ -22,7 +22,16 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   first requests; route threads must not race SQLite schema initialization.
 - Workflow polling is read-only. Mutations are limited to confirmed external
   pack-skill installation, board creation, confirmed setup, and compare-and-swap
-  constraint replacement.
+  constraint replacement, plus exact current-plan approval through
+  `POST /workflows/{workflow_id}/approve`.
+- Exact-plan approval accepts only `{artifact_id, plan_digest, summary_digest,
+  confirm: true}`, re-resolves the current verified plan and bound summary, and
+  fails closed on stale or unavailable evidence. The browser renders the plan as
+  literal text and never substitutes a summary or Kanban unblock for approval.
+- Workflow card detail uses only bounded `hermes kanban --board <derived-board>
+  show <card_id> --json` and `runs <card_id> --json` reads. Each card is derived
+  from the workflow ledger; output is capped at 64 KiB, execution at ten seconds,
+  and only allowlisted fields enter the detail snapshot.
 - Pack routes accept only bundled pack names and declared skill names. Content is
   literal, path-free, and bounded to 1 MiB; install apply requires a fresh
   matching preview digest and literal confirmation.

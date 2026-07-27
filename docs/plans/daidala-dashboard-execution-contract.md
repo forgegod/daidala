@@ -1050,8 +1050,9 @@ card state, remediate a blocked card, or preview and confirm cancellation.
    with the exact bound AI-assisted approval summary and its digest, then show
    the goal, plan and policy revisions, full 64-character plan digest, nullable
    constraint revision/digest, pack revision, verification state, and the
-   consequences: one detached worktree plus `implement → verify → review →
-   deliver`, with commit and push still false. Never return or accept an
+   immediate consequences: one detached worktree plus `implement → verify →
+   review`, with commit and push still false. Delivery remains absent until an
+   attended accepted review disposition creates it. Never return or accept an
    absolute profile-local path in the browser API. Missing, binary, oversized,
    stale, or digest-mismatched bytes or a missing, invalid, stale, or unbound
    summary produce a blocking `Plan unavailable` decision with no approval

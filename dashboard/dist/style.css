@@ -1,10 +1,10 @@
 /*
- * Daidala dashboard UI styles — Phase 3 read-only surface.
+ * Daidala dashboard UI styles — bounded operator surface.
  *
  * The stylesheet is dependency-free and uses the host dashboard's
  * --text-primary, --surface-raised, and related theme tokens so the UI
  * inherits the built-in light/dark themes. Layouts collapse to a single
- * column below 40rem so the panel remains usable on narrow viewports.
+ * column below 64rem so the panel remains usable on narrow viewports.
  */
 
 :root {
@@ -250,6 +250,133 @@
   color: var(--daidala-muted);
   font-family: var(--font-mono, ui-monospace, "SFMono-Regular", monospace);
   font-size: 0.75rem;
+}
+
+.daidala-decision-panel,
+.daidala-approval,
+.daidala-next-packet {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-base, rgba(0, 0, 0, 0.08));
+}
+
+.daidala-approval h5,
+.daidala-approval p,
+.daidala-approval ul,
+.daidala-next-packet p,
+.daidala-next-packet ul {
+  margin: 0;
+}
+
+.daidala-approval-headline {
+  font-weight: 600;
+}
+
+.daidala-confirm {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.daidala-approval button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.daidala-plan-text {
+  max-height: 24rem;
+  overflow: auto;
+  padding: 0.75rem;
+  border: var(--daidala-border);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", monospace);
+  font-size: 0.8rem;
+}
+
+.daidala-recommendations {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.daidala-recommendation {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border-left: 3px solid var(--daidala-accent);
+  background: var(--surface-base, rgba(0, 0, 0, 0.08));
+}
+
+.daidala-card-history,
+.daidala-card-events {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--daidala-muted);
+  font-size: 0.78rem;
+}
+
+.daidala-card-history {
+  display: grid;
+  gap: 0.2rem;
+  padding-left: 1rem;
+}
+
+.daidala-card-events {
+  overflow-wrap: anywhere;
+}
+
+.daidala-post-approval {
+  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", monospace);
+  overflow-wrap: anywhere;
+}
+
+.daidala-decision-panel {
+  border-color: var(--daidala-accent);
+}
+
+.daidala-next-packet {
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+}
+
+.daidala-timeline {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.daidala-timeline-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  border-left: 3px solid var(--border-subtle, rgba(148, 163, 160, 0.28));
+  background: var(--surface-base, rgba(0, 0, 0, 0.08));
+}
+
+.daidala-approval-gate {
+  border-left-color: var(--daidala-accent);
+  font-weight: 600;
+}
+
+.daidala-approval-gate span:last-child {
+  grid-column: 1 / -1;
+  color: var(--daidala-muted);
+  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", monospace);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.daidala-card-audit summary {
+  color: var(--daidala-accent);
+  cursor: pointer;
 }
 
 .daidala-workflow-loading,
@@ -658,7 +785,10 @@
 
 @media (max-width: 64rem) {
   .daidala-wizard-layout,
-  .daidala-wizard-pair {
+  .daidala-wizard-pair,
+  .daidala-decision-panel,
+  .daidala-approval,
+  .daidala-next-packet {
     grid-template-columns: 1fr;
   }
 }

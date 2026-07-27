@@ -41,8 +41,10 @@ from .skills import (
     pack_skill_digests,
 )
 from .state import (
+    ActivationReferenceState,
     WorkflowConstraintsArtifact,
     WorkflowLedger,
+    WorkflowStage,
 )
 from .store import StoreError, WorkflowStore
 
@@ -60,13 +62,20 @@ class UnknownWorkflowError(DashboardBackendError):
 
 
 ServiceFactory = Callable[[], WorkflowService]
+CardDetailProvider = Callable[[str, str], dict[str, Any]]
 
 
 class DashboardBackend:
     """Compose a ``WorkflowService`` with read-only dashboard projections."""
 
-    def __init__(self, *, service_factory: ServiceFactory) -> None:
+    def __init__(
+        self,
+        *,
+        service_factory: ServiceFactory,
+        card_detail_provider: CardDetailProvider | None = None,
+    ) -> None:
         self._service_factory = service_factory
+        self._card_detail_provider = card_detail_provider
 
     @property
     def service(self) -> WorkflowService:
@@ -195,6 +204,22 @@ class DashboardBackend:
             )
             for row in kanban_cards
         )
+        recommendations = derive_recommendations(ledger, snapshots)
+        card_details: dict[str, dict[str, Any]] = {}
+        if self._card_detail_provider is not None:
+            for row in kanban_cards:
+                try:
+                    card_details[row.task_id] = self._card_detail_provider(
+                        ledger.board_slug, row.task_id
+                    )
+                except DashboardBackendError as error:
+                    card_details[row.task_id] = {
+                        "detail_available": False,
+                        "detail_error": str(error),
+                        "comments": [],
+                        "events": [],
+                        "runs": [],
+                    }
         return {
             "workflow_id": workflow_id,
             "workflow": _workflow_summary(ledger),
@@ -205,8 +230,16 @@ class DashboardBackend:
             ),
             "kanban": {
                 "available": True,
-                "cards": [snapshot.to_dict() for snapshot in snapshots],
+                "cards": [
+                    {
+                        **snapshot.to_dict(),
+                        **card_details.get(snapshot.task_id, {}),
+                    }
+                    for snapshot in snapshots
+                ],
             },
+            "recommendations": [row.to_dict() for row in recommendations],
+            "timeline": _workflow_timeline(ledger, snapshots),
         }
 
     def decisions(self, workflow_id: str) -> dict[str, Any]:
@@ -240,6 +273,17 @@ class DashboardBackend:
         if error is not None:
             result["error"] = error
         return result
+
+    def approval_review(self, workflow_id: str) -> dict[str, Any]:
+        """Return the verified exact-plan decision packet without profile paths."""
+
+        service = self.service
+        try:
+            ledger = service.status(workflow_id)
+        except StoreError as error:
+            raise UnknownWorkflowError(str(error)) from error
+        current_plan = service.current_plan_evidence(workflow_id).to_dict()
+        return _approval_review_packet(ledger, current_plan)
 
     def decisions_with_constraints(self, workflow_id: str) -> dict[str, Any]:
         """Decisions plus the current constraint view and revision history."""
@@ -481,6 +525,163 @@ def _workflow_summary(ledger: WorkflowLedger) -> dict[str, Any]:
     }
 
 
+def _workflow_timeline(
+    ledger: WorkflowLedger, snapshots: tuple[KanbanSnapshot, ...]
+) -> list[dict[str, Any]]:
+    cards = {snapshot.stage: snapshot for snapshot in snapshots}
+    rows: list[dict[str, Any]] = []
+    for stage in WorkflowStage:
+        if stage is WorkflowStage.APPROVAL:
+            approval = ledger.approval
+            rows.append(
+                {
+                    "kind": "approval_gate",
+                    "stage": stage.value,
+                    "label": "Human approval — Daidala policy gate",
+                    "status": "recorded" if approval is not None else "pending",
+                    "card_id": None,
+                    "assignee": None,
+                    "occurred_at": (
+                        approval.decided_at.isoformat() if approval is not None else None
+                    ),
+                    "approval": approval.to_dict() if approval is not None else None,
+                }
+            )
+            continue
+        snapshot = cards.get(stage)
+        artifact = ledger.artifact_for(stage)
+        rows.append(
+            {
+                "kind": "stage",
+                "stage": stage.value,
+                "label": stage.value,
+                "status": (
+                    snapshot.status
+                    if snapshot is not None
+                    else "recorded"
+                    if artifact is not None
+                    else "pending"
+                ),
+                "card_id": snapshot.task_id if snapshot is not None else None,
+                "assignee": snapshot.assignee if snapshot is not None else None,
+                "occurred_at": (
+                    artifact.recorded_at.isoformat() if artifact is not None else None
+                ),
+            }
+        )
+    return rows
+
+
+def _approval_review_packet(
+    ledger: WorkflowLedger, current_plan: dict[str, Any]
+) -> dict[str, Any]:
+    approval = ledger.approval
+    approved = approval is not None
+    activations = _current_activation_identities(ledger)
+    artifacts = _current_artifact_identities(ledger)
+    return {
+        "workflow_id": ledger.workflow_id,
+        "available": True,
+        "plan": {
+            "artifact_id": current_plan["artifact_id"],
+            "policy_revision": current_plan["policy_revision"],
+            "plan_revision": current_plan["plan_revision"],
+            "plan_digest": current_plan["plan_digest"],
+            "summary": current_plan["approval_summary"],
+            "summary_digest": current_plan["approval_summary_digest"],
+            "content": current_plan["content"],
+            "verification_state": "verified",
+        },
+        "tuple": {
+            "workflow_id": ledger.workflow_id,
+            "policy_revision": ledger.policy_revision,
+            "plan_revision": ledger.plan_revision,
+            "plan_digest": current_plan["plan_digest"],
+            "constraints_revision": ledger.current_constraints_revision,
+            "constraints_digest": ledger.current_constraints_digest,
+        },
+        "goal": ledger.requested_goal,
+        "pack_identity": {
+            "name": ledger.pack_name,
+            "source_revision": ledger.pack_source_revision,
+            "activations": activations,
+        },
+        "consequences": {
+            "worktree": "one detached worktree after approval",
+            "next_cards": ["implement", "verify", "review"],
+            "committed": False,
+            "pushed": False,
+        },
+        "approval": approval.to_dict() if approval is not None else None,
+        "successor_packet": {
+            "workflow_id": ledger.workflow_id,
+            "stage": WorkflowStage.IMPLEMENT.value,
+            "policy_revision": ledger.policy_revision,
+            "plan_revision": ledger.plan_revision,
+            "plan_digest": current_plan["plan_digest"],
+            "constraints_revision": ledger.current_constraints_revision,
+            "constraints_digest": ledger.current_constraints_digest,
+            "pack_name": ledger.pack_name,
+            "pack_source_revision": ledger.pack_source_revision,
+            "activations": activations,
+            "artifacts": artifacts,
+            "baseline_commit": ledger.baseline_commit if approved else None,
+            "worktree": (
+                {"present": ledger.worktree_path is not None, "owned": ledger.worktree_owned}
+                if approved
+                else None
+            ),
+        },
+    }
+
+
+def _current_artifact_identities(ledger: WorkflowLedger) -> list[dict[str, Any]]:
+    result: list[dict[str, Any]] = []
+    for stage in WorkflowStage:
+        if stage is WorkflowStage.APPROVAL:
+            continue
+        reference = ledger.artifact_for(stage)
+        if reference is None:
+            continue
+        result.append(
+            {
+                "stage": stage.value,
+                "policy_revision": reference.policy_revision,
+                "plan_revision": reference.plan_revision,
+                "digest": reference.digest,
+                "recorded_at": reference.recorded_at.isoformat(),
+                "approval_summary_digest": reference.approval_summary_digest,
+            }
+        )
+    return result
+
+
+def _current_activation_identities(ledger: WorkflowLedger) -> list[dict[str, Any]]:
+    result: list[dict[str, Any]] = []
+    for stage in WorkflowStage:
+        if stage is WorkflowStage.APPROVAL:
+            continue
+        reference = ledger.activation_for(stage)
+        if (
+            reference is None
+            or reference.state is not ActivationReferenceState.FINALIZED
+        ):
+            continue
+        result.append(
+            {
+                "stage": stage.value,
+                "policy_revision": reference.policy_revision,
+                "plan_revision": reference.plan_revision,
+                "constraints_digest": reference.constraints_digest,
+                "sequence": reference.sequence,
+                "digest": reference.digest,
+                "blocked": reference.blocked,
+                "supersedes_digest": reference.supersedes_digest,
+            }
+        )
+    return result
+
+
 def _constraint_view_to_dict(view: ConstraintView) -> dict[str, Any]:
     return {
         "revision": view.revision,
@@ -509,6 +710,7 @@ def _preview_error(ledger: WorkflowLedger, message: str) -> dict[str, Any]:
 
 
 __all__ = [
+    "CardDetailProvider",
     "DashboardBackend",
     "DashboardBackendError",
     "HostUnavailableError",
