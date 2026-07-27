@@ -16,7 +16,7 @@
 
 **Produces:** a single UX concept and design contract (information architecture, decision-card pattern, preview-confirm envelope, status semantics) that P0200–P0240 and P0320 cite for all dashboard presentation work
 
-**Status:** revision proposed — Start workflow selectors, readiness, defaults, and host handoffs require fresh human approval before implementation
+**Status:** partially approved — Config → Packs inventory, readiness, declared-skill content, and preview-confirm installation are approved for P0200 Phase 1; Start workflow selectors, defaults, and host handoffs still require fresh human approval before implementation
 
 ## Goal
 

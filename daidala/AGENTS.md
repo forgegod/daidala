@@ -17,6 +17,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `store.py` | SQLite-backed policy-ledger persistence with optimistic concurrency and explicit read-only opening for mutation-free previews. |
 | `service.py` | Repository preflight, approval-gated graph, artifact, worktree, and ledger coordination. |
 | `skills.py` | Exact installed-skill inventory, content-digest verification, and mutation-free install planning. |
+| `pack_service.py` | Typed pack validation, readiness, bounded declared-skill content, preview-digest, and confirmed external-skill installation service shared by CLI and dashboard adapters. |
 | `constraints.py` | Strict workflow-constraint YAML parsing, canonicalization, bounds, and digest identity. |
 | `projects.py` | Strict committed project-manifest parsing, canonical identity, verification declarations, and mutation policy. |
 | `registrations.py` | Trusted profile-local project registration v2, exact attended-delivery destination, limits, manifest binding, and storage path. |
@@ -70,6 +71,9 @@ workflow-pack adapters, and bundled orchestration skills.
 - Native and standalone operator commands share one parser and dispatch layer;
   setup, external installation, evaluator probes, and project-cycle admission
   remain dry-run by default.
+- Pack installation recomputes the complete preview identity before mutation,
+  requires literal confirmation plus the matching digest, and exposes only
+  declared pack/skill identities and bounded `SKILL.md` content.
 - `project-cycle admit --apply` requires the exact cycle ID and canonical intake
   digest returned by a fresh dry-run. The apply path reruns live prerequisites
   and rejects changed issue, manifest, pack, constraints, baseline, registration,

@@ -1,5 +1,5 @@
 /*
- * Daidala dashboard UI — Phase 3 read-only surface.
+ * Daidala dashboard UI — bounded operator surface.
  *
  * The plugin renders two components through the Hermes dashboard plugin SDK:
  *
@@ -7,10 +7,9 @@
  *     to Daidala policy identity, and surfaces pending decisions;
  *   - the sessions:top slot (Slot) renders a compact pending-decision count.
  *
- * The UI is strictly read-only: only GET requests are issued, no write path is
- * ever invoked from the browser. Live state is polled on a fixed >= 5 second
- * cadence while the page is visible; the timer is paused when the tab is
- * hidden, and a manual Refresh button is always available.
+ * Live state is polled on a fixed >= 5 second cadence while the page is visible;
+ * the timer is paused when the tab is hidden. Pack installation, workflow setup,
+ * and constraint replacement use closed preview-confirm routes only.
  *
  * The Hermes dashboard host invokes this bundle once per session after
  * authenticating and discovering the manifest. The SDK exposes React and
@@ -59,8 +58,43 @@
 
   function buildHealth() {
     return fetchJson(API_BASE + "/health").catch(function () {
-      return { success: false, read_only: true };
+      return { success: false };
     });
+  }
+
+  function buildPacks() {
+    return fetchJson(API_BASE + "/packs").then(function (payload) {
+      return payload && Array.isArray(payload.packs) ? payload.packs : [];
+    });
+  }
+
+  function validatePack(packName) {
+    return postJson(API_BASE + "/packs/" + encodeURIComponent(packName) + "/validate", {});
+  }
+
+  function checkPack(packName) {
+    return postJson(API_BASE + "/packs/" + encodeURIComponent(packName) + "/check", {});
+  }
+
+  function previewPackInstall(packName) {
+    return postJson(
+      API_BASE + "/packs/" + encodeURIComponent(packName) + "/install/preview",
+      {}
+    );
+  }
+
+  function installPack(packName, previewDigest) {
+    return postJson(
+      API_BASE + "/packs/" + encodeURIComponent(packName) + "/install",
+      { preview_digest: previewDigest, confirm: true }
+    );
+  }
+
+  function buildPackSkillContent(packName, skillName) {
+    return fetchJson(
+      API_BASE + "/packs/" + encodeURIComponent(packName) +
+      "/skills/" + encodeURIComponent(skillName)
+    );
   }
 
   function buildWorkflows() {
@@ -464,6 +498,269 @@
     };
   }
 
+  function PackBrowser() {
+    var packsState = useState(undefined);
+    var packs = packsState[0];
+    var setPacks = packsState[1];
+    var errorState = useState("");
+    var error = errorState[0];
+    var setError = errorState[1];
+
+    function refreshPacks() {
+      setError("");
+      buildPacks()
+        .then(setPacks)
+        .catch(function (caught) {
+          setError(caught.message);
+          setPacks([]);
+        });
+    }
+
+    useEffect(function () {
+      refreshPacks();
+    }, []);
+
+    return createElement(
+      "section",
+      { className: "daidala-config", "data-testid": "daidala-pack-browser" },
+      createElement(
+        "header",
+        { className: "daidala-config-header" },
+        createElement("div", null,
+          createElement("p", { className: "daidala-eyebrow" }, "Configuration"),
+          createElement("h2", null, "Packs"),
+          createElement("p", { className: "daidala-workflow-meta" },
+            "Validate lifecycle declarations, inspect exact installed skill content, and repair readiness."
+          )
+        ),
+        createElement("button", { type: "button", onClick: refreshPacks }, "Refresh packs")
+      ),
+      packs === undefined
+        ? createElement("p", { className: "daidala-state daidala-state-loading" }, "Loading packs")
+        : error
+          ? createElement("p", { className: "daidala-banner daidala-banner-error" }, error)
+          : createElement(
+              "div",
+              { className: "daidala-pack-grid" },
+              packs.map(function (pack) {
+                return createElement(PackCard, { key: pack.name, pack: pack });
+              })
+            )
+    );
+  }
+
+  function PackCard(props) {
+    var pack = props.pack;
+    var checkState = useState(null);
+    var check = checkState[0];
+    var setCheck = checkState[1];
+    var previewState = useState(null);
+    var preview = previewState[0];
+    var setPreview = previewState[1];
+    var documentState = useState(null);
+    var documentView = documentState[0];
+    var setDocumentView = documentState[1];
+    var confirmedState = useState(false);
+    var confirmed = confirmedState[0];
+    var setConfirmed = confirmedState[1];
+    var busyState = useState(false);
+    var busy = busyState[0];
+    var setBusy = busyState[1];
+    var messageState = useState("");
+    var message = messageState[0];
+    var setMessage = messageState[1];
+    var projection = check || pack;
+    var stages = Array.isArray(projection.stages) ? projection.stages : [];
+    var hasExternal = pack.stages.some(function (stage) {
+      return stage.skills.some(function (skill) { return skill.external; });
+    });
+    var status = !check
+      ? "Not checked"
+      : check.ready
+        ? "Ready"
+        : check.installable && check.actions.length > 0
+          ? "Installation available"
+          : "Blocked";
+
+    function run(action, successMessage) {
+      setBusy(true);
+      setMessage("");
+      return Promise.resolve(action())
+        .then(function (value) {
+          setMessage(successMessage);
+          return value;
+        })
+        .catch(function (caught) {
+          setMessage(caught.message);
+          throw caught;
+        })
+        .finally(function () { setBusy(false); });
+    }
+
+    function runValidation() {
+      run(function () { return validatePack(pack.name); }, "Pack declaration is valid.")
+        .catch(function () {});
+    }
+
+    function runCheck() {
+      run(function () { return checkPack(pack.name); }, "Readiness check complete.")
+        .then(function (value) { setCheck(value); setPreview(null); setConfirmed(false); })
+        .catch(function () {});
+    }
+
+    function runPreview() {
+      run(function () { return previewPackInstall(pack.name); }, "Installation preview ready.")
+        .then(function (value) { setCheck(value); setPreview(value); setConfirmed(false); })
+        .catch(function () {});
+    }
+
+    function runInstall() {
+      run(
+        function () { return installPack(pack.name, preview.preview_digest); },
+        "External skills installed and verified."
+      )
+        .then(function (value) {
+          setCheck(value.pack);
+          setPreview(null);
+          setConfirmed(false);
+        })
+        .catch(function () {});
+    }
+
+    function loadContent(skillName) {
+      run(
+        function () { return buildPackSkillContent(pack.name, skillName); },
+        "Loaded exact declared skill content."
+      )
+        .then(setDocumentView)
+        .catch(function () {});
+    }
+
+    return createElement(
+      "article",
+      { className: "daidala-pack", "data-testid": "daidala-pack", "data-pack": pack.name },
+      createElement(
+        "header",
+        { className: "daidala-pack-header" },
+        createElement("div", null,
+          createElement("h3", null, pack.name),
+          createElement("p", { className: "daidala-workflow-meta" },
+            pack.source + " @ " + pack.source_revision
+          )
+        ),
+        createElement("span", {
+          className: "daidala-pack-status is-" + status.toLowerCase().replace(/ /g, "-")
+        }, status)
+      ),
+      createElement("p", { className: "daidala-pack-meta" },
+        "Lifecycle: " + pack.lifecycle.join(" → ") + " · human gate after " + pack.human_gate_after
+      ),
+      createElement(
+        "div",
+        { className: "daidala-pack-actions" },
+        createElement("button", { type: "button", disabled: busy, onClick: runValidation }, "Validate"),
+        createElement("button", { type: "button", disabled: busy, onClick: runCheck }, "Check readiness"),
+        hasExternal
+          ? createElement("button", { type: "button", disabled: busy, onClick: runPreview }, "Preview installation")
+          : createElement("span", { className: "daidala-workflow-meta" }, "Bundled adapter · check only")
+      ),
+      createElement(
+        "div",
+        { className: "daidala-pack-stages" },
+        stages.map(function (stage) {
+          return createElement(
+            "section",
+            { key: stage.id, className: "daidala-pack-stage" },
+            createElement("h4", null, stage.id),
+            createElement(
+              "ul",
+              null,
+              stage.skills.map(function (skill) {
+                var readiness = !check ? "not checked" : skill.ready ? "ready" : "not ready";
+                return createElement(
+                  "li",
+                  { key: skill.name },
+                  createElement("button", {
+                    type: "button",
+                    className: "daidala-skill",
+                    onClick: function () { loadContent(skill.name); }
+                  },
+                    createElement("span", { className: "daidala-skill-name" }, skill.name),
+                    createElement("span", { className: "daidala-skill-meta" },
+                      skill.activation + " · " + (skill.external ? "external" : "bundled") + " · " + readiness
+                    ),
+                    createElement("span", { className: "daidala-skill-digest" },
+                      "expected " + skill.expected_digest +
+                      (skill.observed_digest ? " · observed " + skill.observed_digest : " · observed unavailable")
+                    )
+                  )
+                );
+              })
+            )
+          );
+        })
+      ),
+      documentView
+        ? createElement(
+            "section",
+            { className: "daidala-skill-document", "data-testid": "daidala-skill-content" },
+            createElement("h4", null, documentView.skill + " · installed SKILL.md"),
+            createElement("p", { className: "daidala-workflow-meta" },
+              documentView.available
+                ? String(documentView.byte_size) + " UTF-8 bytes"
+                : documentView.unavailable_reason
+            ),
+            documentView.available
+              ? createElement("pre", null, documentView.content)
+              : createElement("p", null,
+                  "Pinned target: " + (documentView.install_target || "bundled") +
+                  " · expected digest " + documentView.expected_digest
+                )
+          )
+        : null,
+      preview
+        ? createElement(
+            "section",
+            { className: "daidala-pack-preview", "data-testid": "daidala-pack-preview" },
+            createElement("h4", null, "External skill installation preview"),
+            createElement("p", { className: "daidala-skill-digest" },
+              "Preview digest " + preview.preview_digest
+            ),
+            preview.actions.length
+              ? createElement("ul", null, preview.actions.map(function (action) {
+                  return createElement("li", { key: action.name },
+                    action.name + " ← " + action.install_target
+                  );
+                }))
+              : createElement("p", null, "No external installation actions are required."),
+            preview.blockers.length
+              ? createElement("p", { className: "daidala-banner daidala-banner-error" },
+                  preview.blockers.join("; ")
+                )
+              : null,
+            preview.actions.length && preview.installable
+              ? createElement("label", { className: "daidala-pack-confirm" },
+                  createElement("input", {
+                    type: "checkbox",
+                    checked: confirmed,
+                    onChange: function (event) { setConfirmed(event.target.checked); }
+                  }),
+                  "I confirm these exact external skill installations"
+                )
+              : null,
+            preview.actions.length && preview.installable
+              ? createElement("button", {
+                  type: "button",
+                  disabled: busy || !confirmed,
+                  onClick: runInstall
+                }, "Install external skills")
+              : null
+          )
+        : null,
+      message ? createElement("p", { role: "status" }, message) : null
+    );
+  }
+
   function SetupWizard() {
     var formState = useState({ board_slug: "default", target_repository: "", goal: "" });
     var form = formState[0];
@@ -574,7 +871,7 @@
         createElement(
           "p",
           { className: "daidala-root-subtitle" },
-          "Read-only view over the active Daidala profile."
+          "Operator view over the active Daidala profile."
         ),
         createElement(
           "button",
@@ -594,6 +891,7 @@
             )
           : null
       ),
+      createElement(PackBrowser),
       createElement(SetupWizard),
       firstLoad
         ? createElement(

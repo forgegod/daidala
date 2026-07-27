@@ -70,7 +70,7 @@ def test_bundle_uses_documented_sdk_registration() -> None:
     assert "buildDecisionCount" in source
 
 
-def test_read_model_stays_read_only_and_setup_writes_are_scoped() -> None:
+def test_dashboard_mutations_use_only_closed_post_routes() -> None:
     source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
 
     assert "SDK.fetchJSON" in source
@@ -80,6 +80,9 @@ def test_read_model_stays_read_only_and_setup_writes_are_scoped() -> None:
     assert 'method: "POST"' in source
     assert 'API_BASE + "/wizard/preview"' in source
     assert 'API_BASE + "/wizard/start"' in source
+    assert '"/install/preview"' in source
+    assert '"/install"' in source
+    assert "preview_digest: previewDigest, confirm: true" in source
     assert "method: \"PUT\"" not in source
     assert "method: \"DELETE\"" not in source
     assert "method: \"PATCH\"" not in source
@@ -110,6 +113,35 @@ def test_bundle_exposes_manual_refresh() -> None:
     assert '"Replace constraints"' in source
     assert '"No semantic change; replacement is unnecessary."' in source
     assert "expected_current_digest" in source
+
+
+def test_bundle_exposes_pack_inventory_readiness_content_and_confirmed_install() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    required_strings = (
+        'API_BASE + "/packs"',
+        '"/validate"',
+        '"/check"',
+        '"/skills/"',
+        "Configuration",
+        "Packs",
+        "Validate",
+        "Check readiness",
+        "Preview installation",
+        "installed SKILL.md",
+        "expected ",
+        "observed ",
+        "Bundled adapter · check only",
+        "I confirm these exact external skill installations",
+        "Install external skills",
+    )
+    for text in required_strings:
+        assert text in source, f"missing pack UI contract text: {text}"
+
+    assert 'data-testid": "daidala-pack"' in source
+    assert 'data-testid": "daidala-skill-content"' in source
+    assert 'data-testid": "daidala-pack-preview"' in source
+    assert "dispatch" not in source.lower()
 
 
 def test_bundle_renders_every_phase_three_state() -> None:

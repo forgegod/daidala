@@ -12,11 +12,11 @@
 
 **Entry checkpoint:** none — this is the first dashboard-family execution unit
 
-**Context sources:** [UX concept and design contract](P0250-daidala-dashboard-ux-concept.md), [shared goal and current state](daidala-dashboard-execution-contract.md#goal), [operator pinning](daidala-dashboard-execution-contract.md#operator-pinning), [operator runbook coverage](daidala-dashboard-execution-contract.md#operator-runbook-coverage), [operator-visible precondition](daidala-dashboard-execution-contract.md#operator-visible-precondition), [implementer discipline](daidala-dashboard-execution-contract.md#implementer-discipline), [risk call-out](daidala-dashboard-execution-contract.md#risk-call-out), [runbook install and enable](../07-runbook.md#install-and-enable), [runbook pack diagnosis](../07-runbook.md#diagnose-prerequisites), and detailed [contract Phase 0](daidala-dashboard-execution-contract.md#phase-0-create-daidala-dashboard-profile-install-daidala-verify-the-dashboard-mount) and [contract Phase 1](daidala-dashboard-execution-contract.md#phase-1-pack-browser-and-readiness-actions)
+**Context sources:** UX design contract identity and approved status (`P0250-daidala-dashboard-ux-concept.md:1-19`), operator-pinned navigation and pack-readiness decisions (`P0250-daidala-dashboard-ux-concept.md:29-103`), P0200 use cases and cross-cutting invariants (`P0250-daidala-dashboard-ux-concept.md:105-124,172-180`), Config → Packs information architecture and content patterns (`P0250-daidala-dashboard-ux-concept.md:249-269,274-329`), [shared goal and current state](daidala-dashboard-execution-contract.md#goal), [operator pinning](daidala-dashboard-execution-contract.md#operator-pinning), [operator runbook coverage](daidala-dashboard-execution-contract.md#operator-runbook-coverage), [operator-visible precondition](daidala-dashboard-execution-contract.md#operator-visible-precondition), [implementer discipline](daidala-dashboard-execution-contract.md#implementer-discipline), [risk call-out](daidala-dashboard-execution-contract.md#risk-call-out), [runbook install and enable](../07-runbook.md#install-and-enable), [runbook pack diagnosis](../07-runbook.md#diagnose-prerequisites), and detailed [contract Phase 1](daidala-dashboard-execution-contract.md#phase-1-pack-browser-and-readiness-actions)
 
 **Produces:** a verified registration-free `daidala-dashboard` host, a disposable stateful browser fixture recipe, and Config → Packs list/validate/readiness/read-only per-stage skill-content/external-skill-install UI backed by installed Daidala services
 
-**Status:** in progress — Phase 0 complete; Phase 1 pending
+**Status:** Phase 0 done; Phase 1 done at feat/dashboard-constraint-revisions (pytest 443 passed, ruff clean, lefthook/build/twine/release-content gates passed, live dashboard render verified)
 
 ## Goal
 
@@ -34,7 +34,7 @@ Establish an isolated, verified dashboard host and implement the runbook's Confi
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
 | 0 | Create the registration-free dashboard profile and disposable fixture, install Daidala, and verify both mounts | done (Hermes v0.19.0/`3ef6bbd2`; compatibility, host/fixture browser, authority, teardown, and repository-status gates passed) | An exact supported Hermes identity hosts both processes; SPA GET, manifest, and packaged asset checks pass; authenticated health identifies Daidala; the registration-free host has no workflow records, registrations, credentials, or notification authority; the fixture has independent non-secret state, passes the stateful browser gate, and is deleted after its owned process stops |
-| 1 | Add pack browser and readiness actions | pending | Both packs list and validate; every lifecycle stage exposes its declared skill metadata and exact installed content through a bounded read-only detail; readiness and check/install-plan actions use installed services; external installation requires preview and confirmation; focused dashboard tests pass |
+| 1 | Add pack browser and readiness actions | done (Hermes v0.19.0; both packs list/validate via CLI and dashboard; six-stage declared-skill content, readiness, and preview/confirm install surface behind `daidala/pack_service.py`; `tests/test_pack_service.py`, `tests/test_dashboard_api.py`, `tests/test_dashboard_assets.py` green; live isolated dashboard rendered both packs and all six stages with no console errors) | Both packs list and validate; every lifecycle stage exposes its declared skill metadata and exact installed content through a bounded read-only detail; readiness and check/install-plan actions use installed services; external installation requires preview and confirmation; focused dashboard tests pass |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
 
@@ -63,6 +63,11 @@ Steps:
    readiness details, all-six-stage read-only detail with declared-skill metadata
    and selected installed `SKILL.md` content, check action, install-plan preview,
    and literal-confirmation apply path without adding a general dispatch endpoint.
+   Put the shared typed validation, readiness, bounded-content, preview-digest,
+   and confirmed-install boundary in `daidala/pack_service.py`; keep
+   `daidala/cli.py` and `dashboard/plugin_api.py` as adapters over it. Cover the
+   service in `tests/test_pack_service.py` and the closed browser boundary in
+   `tests/test_dashboard_api.py` and `tests/test_dashboard_assets.py`.
    A content request accepts only a selected bundled pack and one of its declared
    skill names, renders literal escaped text within the contract's document bound,
    and returns an unavailable external skill's pinned target/digest instead of a

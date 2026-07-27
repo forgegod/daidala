@@ -1,10 +1,10 @@
-"""Read-only Daidala routes mounted by the Hermes dashboard host.
+"""Bounded Daidala routes mounted by the Hermes dashboard host.
 
 This module is the dashboard backend proven by Phase 0. It exports the
 ``router`` symbol the Hermes dashboard process mounts under
-``/api/plugins/daidala/``. The implementation is profile-safe, read-only,
-and never imports Hermes internals or writes the Kanban database. Live
-card data is read on demand through the same public
+``/api/plugins/daidala/``. The implementation is profile-safe, exposes only
+closed pack/setup/constraint mutations, never imports Hermes internals, and
+never writes the Kanban database. Live card data is read on demand through the same public
 ``KanbanGraphAdapter`` boundary the existing ``daidala_status`` tool
 already uses.
 
@@ -39,6 +39,15 @@ from daidala.dashboard_backend import (
     HostUnavailableError,
     UnknownWorkflowError,
 )
+from daidala.pack_service import (
+    PackConfirmationError,
+    PackInstallError,
+    PackService,
+    PackServiceError,
+    StalePackPreviewError,
+    UnknownPackSkillError,
+)
+from daidala.packs import PackError
 from daidala.setup_wizard import (
     SetupRequest,
     SetupWizardError,
@@ -52,6 +61,7 @@ router = APIRouter()
 
 
 ServiceFactory = Callable[[], Any]
+PackServiceFactory = Callable[[], PackService]
 _default_service_lock = Lock()
 
 
@@ -74,12 +84,29 @@ def _reset_default_service() -> None:
 service_factory: ServiceFactory = _default_service
 
 
-def configure_backend(backend: Any) -> None:
+@lru_cache(maxsize=1)
+def _cached_default_pack_service() -> PackService:
+    return PackService.from_default_profile()
+
+
+def _default_pack_service() -> PackService:
+    return _cached_default_pack_service()
+
+
+pack_service_factory: PackServiceFactory = _default_pack_service
+
+
+def configure_backend(backend: Any, *, pack_service: PackService | None = None) -> None:
     """Inject a pre-built backend (used by tests and setup wiring)."""
 
-    global service_factory
+    global pack_service_factory, service_factory
 
     service_factory = backend.service_factory()
+    if pack_service is not None:
+        def configured_pack_service() -> PackService:
+            return pack_service
+
+        pack_service_factory = configured_pack_service
 
 
 @router.get("/health")
@@ -93,7 +120,8 @@ def health() -> dict[str, Any]:
     return {
         "success": True,
         "plugin": "daidala",
-        "read_only": True,
+        "read_only": False,
+        "bounded_mutations": ["pack_install", "workflow_setup", "constraints_replace"],
     }
 
 
@@ -103,6 +131,78 @@ def prerequisites() -> dict[str, Any]:
 
     backend = DashboardBackend(service_factory=service_factory)
     return backend.prerequisites()
+
+
+@router.get("/packs")
+def packs() -> dict[str, Any]:
+    """List bundled packs with their validated six-stage declarations."""
+
+    service = pack_service_factory()
+    return {
+        "packs": [service.validate(name).to_dict() for name in service.bundled_names()]
+    }
+
+
+@router.post("/packs/{pack_name}/validate")
+def pack_validate(pack_name: str) -> dict[str, Any]:
+    """Explicitly validate one bundled pack through the shared service."""
+
+    try:
+        return {"valid": True, "pack": pack_service_factory().validate(pack_name).to_dict()}
+    except PackError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@router.post("/packs/{pack_name}/check")
+def pack_check(pack_name: str) -> dict[str, Any]:
+    """Resolve current host, source, and exact installed-skill readiness."""
+
+    try:
+        return pack_service_factory().check(pack_name).to_dict()
+    except (PackError, PackServiceError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@router.get("/packs/{pack_name}/skills/{skill_name}")
+def pack_skill_content(pack_name: str, skill_name: str) -> dict[str, Any]:
+    """Return one declared, path-free, bounded installed SKILL.md document."""
+
+    try:
+        return pack_service_factory().skill_content(pack_name, skill_name).to_dict()
+    except UnknownPackSkillError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except PackError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@router.post("/packs/{pack_name}/install/preview")
+def pack_install_preview(pack_name: str) -> dict[str, Any]:
+    """Return the complete canonical installation preview without mutation."""
+
+    return pack_check(pack_name)
+
+
+@router.post("/packs/{pack_name}/install")
+def pack_install(pack_name: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Apply only the exact reviewed preview after literal confirmation."""
+
+    if payload.get("confirm") is not True:
+        raise HTTPException(status_code=400, detail="explicit confirmation is required")
+    preview_digest = payload.get("preview_digest")
+    if not isinstance(preview_digest, str) or not preview_digest.strip():
+        raise HTTPException(status_code=400, detail="preview_digest is required")
+    try:
+        return pack_service_factory().install(
+            pack_name,
+            expected_preview_digest=preview_digest,
+            confirm=True,
+        ).to_dict()
+    except PackConfirmationError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except StalePackPreviewError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    except (PackInstallError, PackError, PackServiceError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
 
 
 @router.get("/workflows")
@@ -264,4 +364,9 @@ def _optional_str(value: Any) -> str | None:
     raise HTTPException(status_code=400, detail="string fields must be strings")
 
 
-__all__ = ["router", "configure_backend", "ServiceFactory"]
+__all__ = [
+    "router",
+    "configure_backend",
+    "ServiceFactory",
+    "PackServiceFactory",
+]

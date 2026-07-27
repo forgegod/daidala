@@ -60,6 +60,12 @@ def test_router_exports_all_phase_two_routes() -> None:
     for name in (
         "health",
         "prerequisites",
+        "packs",
+        "pack_validate",
+        "pack_check",
+        "pack_skill_content",
+        "pack_install_preview",
+        "pack_install",
         "workflows",
         "workflow_detail",
         "decisions",
@@ -120,7 +126,7 @@ assert api_module.router is not None
     assert result.returncode == 0, result.stderr
 
 
-def test_router_source_has_only_read_routes_and_nonmutating_preview() -> None:
+def test_router_source_exposes_only_closed_mutation_routes() -> None:
     source = MODULE.read_text(encoding="utf-8")
 
     assert "@router.put" not in source
@@ -129,8 +135,90 @@ def test_router_source_has_only_read_routes_and_nonmutating_preview() -> None:
     assert "sqlite3" not in source
     assert "kanban.db" not in source
     assert "DashboardBackend" in source
+    assert '@router.post("/packs/{pack_name}/install")' in source
     assert '@router.post("/constraints/replace")' in source
     assert 'payload.get("confirm") is not True' in source
+
+
+def test_pack_routes_use_one_typed_service_projection() -> None:
+    api = load_api()
+    calls: list[object] = []
+
+    class Result:
+        def __init__(self, payload: dict[str, object]) -> None:
+            self.payload = payload
+
+        def to_dict(self) -> dict[str, object]:
+            return self.payload
+
+    class PackService:
+        def bundled_names(self) -> tuple[str, ...]:
+            return ("addyosmani", "aidlc")
+
+        def validate(self, name: str) -> Result:
+            calls.append(("validate", name))
+            return Result({"name": name, "stages": [{"id": "define"}]})
+
+        def check(self, name: str) -> Result:
+            calls.append(("check", name))
+            return Result({"name": name, "preview_digest": "a" * 64})
+
+        def skill_content(self, pack: str, skill: str) -> Result:
+            calls.append(("content", pack, skill))
+            return Result({"pack": pack, "skill": skill, "content": "# exact\n"})
+
+        def install(self, name: str, *, expected_preview_digest: str, confirm: bool) -> Result:
+            calls.append(("install", name, expected_preview_digest, confirm))
+            return Result({"success": True})
+
+    api.__dict__["pack_service_factory"] = PackService
+
+    assert [row["name"] for row in api.packs()["packs"]] == ["addyosmani", "aidlc"]
+    assert api.pack_validate("aidlc")["valid"] is True
+    assert api.pack_check("addyosmani")["preview_digest"] == "a" * 64
+    assert api.pack_skill_content("aidlc", "aidlc-adapter")["content"] == "# exact\n"
+    assert api.pack_install_preview("aidlc")["name"] == "aidlc"
+    assert api.pack_install(
+        "addyosmani", {"preview_digest": "a" * 64, "confirm": True}
+    ) == {"success": True}
+    assert ("install", "addyosmani", "a" * 64, True) in calls
+
+
+def test_unconfirmed_pack_install_does_not_construct_service() -> None:
+    api = load_api()
+    calls = 0
+
+    def pack_service_factory() -> object:
+        nonlocal calls
+        calls += 1
+        return object()
+
+    api.__dict__["pack_service_factory"] = pack_service_factory
+
+    with pytest.raises(FakeHTTPException) as raised:
+        api.pack_install("addyosmani", {"preview_digest": "a" * 64})
+
+    assert raised.value.status_code == 400
+    assert "explicit confirmation is required" in raised.value.detail
+    assert calls == 0
+
+
+def test_stale_pack_preview_maps_to_conflict_without_retry() -> None:
+    api = load_api()
+
+    class PackService:
+        def install(self, *_args, **_kwargs):
+            raise api.StalePackPreviewError("pack installation inputs changed after preview")
+
+    api.__dict__["pack_service_factory"] = PackService
+
+    with pytest.raises(FakeHTTPException) as raised:
+        api.pack_install(
+            "addyosmani", {"preview_digest": "a" * 64, "confirm": True}
+        )
+
+    assert raised.value.status_code == 409
+    assert "changed after preview" in raised.value.detail
 
 
 def test_unconfirmed_wizard_start_does_not_construct_service() -> None:

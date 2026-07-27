@@ -37,6 +37,9 @@ completeness without touching a real Hermes profile.
 - Temporary-repository tests for policy services and JSON tool handlers.
 - Fake-inventory tests for exact external-skill prerequisites and host errors.
 - Fake command/registry tests for dry-run installation, pinned revisions, content digests, post-apply verification, and refused recursive installation.
+- Pack-service and dashboard-route tests prove declared-skill-only bounded
+  content, validation/check parity, canonical preview identity, stale-preview
+  rejection, literal confirmation, and post-install verification.
 - Fake host-dispatch tests for ledger-owned approval, worker rejection,
   restart-safe plan-parented post-gate graphs, and idempotent Kanban mapping.
 - Constraint-card tests prove policy-aware idempotency, global and phase-specific

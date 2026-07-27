@@ -8,7 +8,6 @@ import re
 import shlex
 import subprocess
 from collections.abc import Callable, Mapping
-from importlib import resources
 from pathlib import Path
 from typing import NoReturn, cast
 
@@ -16,7 +15,7 @@ from .cycles import CycleMode
 from .evaluation import EvaluatorIsolationEvidence
 from .kanban import KanbanGraphAdapter
 from .locations import resolve_data_root
-from .packs import PackError, load_pack
+from .pack_service import PackCheck, PackService
 from .prerequisites import DoctorRunner, run_prerequisite_diagnosis
 from .project_cycles import ProjectCycleOperator
 from .reconciliation import ReconciliationPreview, ReconciliationResult
@@ -29,13 +28,7 @@ from .restricted_container import (
     run_restricted_container_request,
 )
 from .service import WorkflowService
-from .skills import (
-    PackInstallPlan,
-    ProfileSkillContentRegistry,
-    SkillContentRegistry,
-    SkillInventory,
-    plan_pack_install,
-)
+from .skills import ProfileSkillContentRegistry, SkillContentRegistry, SkillInventory
 from .state import WorkflowStage
 from .store import WorkflowStore
 
@@ -767,100 +760,64 @@ def _run_pack_operation(
     command_runner: CommandRunner | None,
     operation: str | None = None,
 ) -> int:
+    selected_registry = registry or ProfileSkillContentRegistry(resolve_data_root() / "skills")
+    selected_inventory = inventory or cast(SkillInventory, selected_registry)
+    resolver = revision_resolver or _resolve_revision
+    runner = command_runner or _run_command
+    service = PackService(
+        inventory=selected_inventory,
+        registry=selected_registry,
+        revision_resolver=lambda pack: resolver(pack.source),
+        hermes_version_resolver=lambda: hermes_version or _resolve_hermes_version(),
+        command_runner=runner,
+    )
     if args.packs_command == "list":
-        names = _bundled_pack_names()
-        _print({"success": True, "operation": "list", "packs": names})
-        return 0
-
-    try:
-        pack = load_pack(args.name)
-    except PackError as exc:
-        _print({"success": False, "error": str(exc)})
-        return 1
-
-    if args.packs_command == "validate":
         _print(
             {
                 "success": True,
-                "pack": pack.name,
-                "source": pack.source,
-                "source_revision": pack.source_revision,
-                "lifecycle": list(pack.lifecycle),
-                "human_gate_after": pack.human_gate_after,
+                "operation": "list",
+                "packs": list(service.bundled_names()),
             }
         )
         return 0
 
-    selected_registry = registry or ProfileSkillContentRegistry(resolve_data_root() / "skills")
-    selected_inventory = inventory or cast(SkillInventory, selected_registry)
-    resolver = revision_resolver or _resolve_revision
-    version = hermes_version or _resolve_hermes_version()
-    plan = plan_pack_install(
-        pack,
-        selected_inventory,
-        selected_registry,
-        resolved_revision=resolver(pack.source),
-        hermes_version=version,
-        recursive=getattr(args, "recursive", False),
-    )
+    if args.packs_command == "validate":
+        validation = service.validate(args.name).to_dict()
+        _print({"success": True, "operation": "validate", **validation})
+        return 0
 
     selected_operation = operation or args.packs_command
+    check = service.check(args.name, recursive=getattr(args, "recursive", False))
     if args.packs_command == "install":
         if not args.apply:
-            _print(
-                _plan_payload(
-                    plan,
-                    operation=selected_operation,
-                    dry_run=True,
-                    success=plan.ready_to_apply,
-                )
+            payload = _check_payload(
+                check,
+                operation=selected_operation,
+                dry_run=True,
+                success=check.installable,
             )
-            return 0 if plan.ready_to_apply else 1
-        if not plan.ready_to_apply:
-            _print(
-                _plan_payload(
-                    plan, operation=selected_operation, dry_run=False, success=False
-                )
-            )
-            return 1
-        runner = command_runner or _run_command
-        executed: list[dict[str, object]] = []
-        for action in plan.actions:
-            code, output = runner(action.command)
-            executed.append(
-                {
-                    "name": action.name,
-                    "command": list(action.command),
-                    "exit_code": code,
-                    "output": output,
-                }
-            )
-            if code != 0:
-                payload = _plan_payload(
-                    plan, operation=selected_operation, dry_run=False, success=False
-                )
-                payload["executed"] = executed
-                _print(payload)
-                return 1
-        verified = plan_pack_install(
-            pack,
-            selected_inventory,
-            selected_registry,
-            resolved_revision=resolver(pack.source),
-            hermes_version=version,
+            _print(payload)
+            return 0 if check.installable else 1
+        result = service.install(
+            args.name,
+            expected_preview_digest=check.preview_digest,
+            confirm=True,
         )
-        success = verified.ready_to_apply and not verified.actions
-        payload = _plan_payload(
-            verified, operation=selected_operation, dry_run=False, success=success
+        payload = _check_payload(
+            result.pack,
+            operation=selected_operation,
+            dry_run=False,
+            success=True,
         )
-        payload["executed"] = executed
+        payload["applied_preview_digest"] = result.applied_preview_digest
+        payload["executed"] = [row.to_dict() for row in result.executed]
         _print(payload)
-        return 0 if success else 1
+        return 0
 
-    success = plan.ready_to_apply and not plan.actions
+    success = check.ready
     _print(
-        _plan_payload(
-            plan,
+        _check_payload(
+            check,
             operation=selected_operation,
             dry_run=True,
             success=True if args.packs_command == "update-plan" else success,
@@ -869,15 +826,6 @@ def _run_pack_operation(
     if args.packs_command == "update-plan":
         return 0
     return 0 if success else 1
-
-
-def _bundled_pack_names() -> list[str]:
-    root = resources.files(__package__).joinpath("packs")
-    return sorted(
-        item.name.removesuffix(".yaml")
-        for item in root.iterdir()
-        if item.name.endswith(".yaml")
-    )
 
 
 def _default_service(*, command_runner: CommandRunner | None = None) -> WorkflowService:
@@ -992,14 +940,19 @@ def _parse_cli_json(output: str) -> dict[str, object]:
     return cast(dict[str, object], payload)
 
 
-def _plan_payload(
-    plan: PackInstallPlan, *, operation: str, dry_run: bool, success: bool
+def _check_payload(
+    check: PackCheck, *, operation: str, dry_run: bool, success: bool
 ) -> dict[str, object]:
+    payload = check.to_dict()
     return {
         "success": success,
         "operation": operation,
         "dry_run": dry_run,
-        **plan.to_dict(),
+        "pack": check.validation.name,
+        "source": check.validation.source,
+        "pinned_revision": check.validation.source_revision,
+        **payload,
+        "ready_to_apply": check.installable,
     }
 
 

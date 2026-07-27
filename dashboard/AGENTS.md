@@ -7,8 +7,8 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
 ## Ownership
 
 - `manifest.json` declares the `/daidala` tab, `sessions:top` slot, assets, and backend router.
-- `plugin_api.py` mounts the profile-safe read model and narrowly scoped setup routes.
-- `dist/index.js` renders workflow progress, pending decisions, and confirmation-gated setup.
+- `plugin_api.py` mounts the profile-safe read model, bounded pack operations, and narrowly scoped setup routes.
+- `dist/index.js` renders workflow progress, Config → Packs readiness/content, pending decisions, and confirmation-gated setup.
 - `dist/style.css` adapts the extension to host themes and narrow layouts.
 
 ## Local Contracts
@@ -20,8 +20,12 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   the repository-root directory entry point.
 - Initialize the process-local dashboard service exactly once under concurrent
   first requests; route threads must not race SQLite schema initialization.
-- Workflow polling is read-only. Mutations are limited to board creation,
-  confirmed setup, and compare-and-swap constraint replacement.
+- Workflow polling is read-only. Mutations are limited to confirmed external
+  pack-skill installation, board creation, confirmed setup, and compare-and-swap
+  constraint replacement.
+- Pack routes accept only bundled pack names and declared skill names. Content is
+  literal, path-free, and bounded to 1 MiB; install apply requires a fresh
+  matching preview digest and literal confirmation.
 - Preview and declined setup must not mutate; start requires a literal checked confirmation.
 - Constraint preview is non-mutating; replacement requires the displayed current
   digest and explicit invalidation confirmation.

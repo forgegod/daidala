@@ -269,6 +269,190 @@
   color: var(--daidala-accent);
 }
 
+.daidala-config,
+.daidala-pack,
+.daidala-pack-stage,
+.daidala-skill-document,
+.daidala-pack-preview {
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+}
+
+.daidala-config {
+  display: grid;
+  gap: var(--daidala-gap);
+  padding: var(--daidala-padding);
+}
+
+.daidala-config-header,
+.daidala-pack-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--daidala-gap);
+}
+
+.daidala-config-header h2,
+.daidala-pack-header h3,
+.daidala-pack-stage h4,
+.daidala-skill-document h4,
+.daidala-pack-preview h4 {
+  margin: 0;
+}
+
+.daidala-eyebrow {
+  margin: 0 0 0.15rem;
+  color: var(--daidala-accent);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.daidala-pack-grid {
+  display: grid;
+  gap: var(--daidala-gap);
+}
+
+.daidala-pack {
+  display: grid;
+  gap: var(--daidala-gap);
+  padding: var(--daidala-padding);
+}
+
+.daidala-pack-meta {
+  margin: 0;
+  color: var(--daidala-muted);
+  font-size: 0.8rem;
+}
+
+.daidala-pack-status {
+  flex: 0 0 auto;
+  padding: 0.2rem 0.5rem;
+  border: var(--daidala-border);
+  border-radius: 999px;
+  font-size: 0.75rem;
+}
+
+.daidala-pack-status.is-ready {
+  border-color: var(--daidala-ok);
+  color: var(--daidala-ok);
+}
+
+.daidala-pack-status.is-installation-available {
+  border-color: var(--daidala-warning);
+  color: var(--daidala-warning);
+}
+
+.daidala-pack-status.is-blocked {
+  border-color: var(--daidala-error);
+  color: var(--daidala-error);
+}
+
+.daidala-pack-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.daidala-config button,
+.daidala-pack button {
+  padding: 0.45rem 0.65rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-base, transparent);
+  color: var(--text-primary, inherit);
+  cursor: pointer;
+  font: inherit;
+}
+
+.daidala-config button:hover,
+.daidala-config button:focus-visible,
+.daidala-pack button:hover,
+.daidala-pack button:focus-visible {
+  outline: 2px solid var(--daidala-accent);
+  outline-offset: 2px;
+}
+
+.daidala-config button:disabled,
+.daidala-pack button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.daidala-pack-stages {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.daidala-pack-stage {
+  padding: 0.6rem;
+}
+
+.daidala-pack-stage ul,
+.daidala-pack-preview ul {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.daidala-skill {
+  display: grid;
+  width: 100%;
+  gap: 0.15rem;
+  text-align: left;
+}
+
+.daidala-skill-name {
+  font-weight: 650;
+}
+
+.daidala-skill-meta {
+  color: var(--daidala-muted);
+  font-size: 0.75rem;
+}
+
+.daidala-skill-digest {
+  margin: 0;
+  color: var(--daidala-muted);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.68rem;
+  overflow-wrap: anywhere;
+}
+
+.daidala-skill-document,
+.daidala-pack-preview {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+.daidala-skill-document pre {
+  box-sizing: border-box;
+  width: 100%;
+  max-height: 28rem;
+  margin: 0;
+  overflow: auto;
+  padding: 0.75rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-base, transparent);
+  color: var(--text-primary, inherit);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  white-space: pre-wrap;
+}
+
+.daidala-pack-confirm {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .daidala-setup {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -335,7 +519,8 @@
     padding: 0.75rem;
   }
   .daidala-workflows,
-  .daidala-setup {
+  .daidala-setup,
+  .daidala-pack-stages {
     grid-template-columns: 1fr;
   }
   .daidala-workflow-identity {
