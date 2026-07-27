@@ -89,6 +89,9 @@ def test_worker_contract_requires_kanban_handoff_and_recovery_protocol() -> None
         "`constraints_revision`, `constraints_digest`",
         "Daidala creates no approval Kanban card",
         "Kanban workers must never call `daidala_approve`",
+        "evidence-derived `approval_summary`",
+        "Invalid structured output blocks the plan handoff",
+        "there is no\nsummary fallback",
     )
     for statement in required:
         assert statement in instructions

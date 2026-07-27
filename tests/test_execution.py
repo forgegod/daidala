@@ -39,6 +39,13 @@ STAGE_PROFILES = {
     "review": "reviewer",
     "deliver": "engineer",
 }
+PLAN_SUMMARY = {
+    "headline": "Plan the fixture implementation.",
+    "changes": ["Update calculator behavior."],
+    "affected_areas": ["calculator.py"],
+    "risks": [],
+    "verification": ["Run pytest."],
+}
 
 
 class TickClock:
@@ -232,6 +239,7 @@ def prepare_planned_workflow(
         state.workflow_id,
         stage=WorkflowStage.PLAN,
         content="# Plan\n\nChange `calculator.py`, run pytest, review the diff.\n",
+        approval_summary=PLAN_SUMMARY,
     )
     plan = state.artifact_for(WorkflowStage.PLAN)
     assert plan is not None
@@ -616,6 +624,7 @@ def test_constraint_replacement_invalidates_and_recreates_graph_recoverably(
         workflow_id,
         stage=WorkflowStage.PLAN,
         content="# Revised plan\n",
+        approval_summary=PLAN_SUMMARY,
     )
     plan = planned.artifact_for(WorkflowStage.PLAN)
     definition = planned.artifact_for(WorkflowStage.DEFINE)

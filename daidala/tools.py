@@ -196,12 +196,13 @@ def submit_artifact(args: dict[str, Any], **kwargs: Any) -> str:
     del kwargs
     return _service_handler(
         args,
-        allowed={"workflow_id", "stage", "content"},
+        allowed={"workflow_id", "stage", "content", "approval_summary"},
         required={"workflow_id", "stage", "content"},
         operation=lambda service, values: service.submit_artifact(
             str(values["workflow_id"]),
             stage=WorkflowStage(str(values["stage"])),
             content=str(values["content"]),
+            approval_summary=values.get("approval_summary"),
             **_worker_context(),
         ),
     )

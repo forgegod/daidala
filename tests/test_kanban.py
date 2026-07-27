@@ -13,6 +13,7 @@ from daidala.packs import load_pack
 from daidala.state import (
     ActivationManifestReference,
     ActivationReferenceState,
+    ApprovalSummary,
     CardReference,
     SkillDigest,
     StageProfile,
@@ -29,6 +30,13 @@ from daidala.workflow import (
 )
 
 NOW = datetime(2026, 7, 10, 14, 0, tzinfo=UTC)
+PLAN_SUMMARY = ApprovalSummary(
+    headline="Plan the fixture implementation.",
+    changes=("Update the fixture behavior.",),
+    affected_areas=("fixture",),
+    risks=(),
+    verification=("Run pytest.",),
+)
 
 
 class FakeHost:
@@ -185,6 +193,7 @@ def make_approved_worktree():
         path="artifacts/plan.md",
         digest="plan-v1",
         recorded_at=NOW + timedelta(minutes=2),
+        approval_summary=PLAN_SUMMARY,
     )
     ledger = approve_plan(
         ledger,

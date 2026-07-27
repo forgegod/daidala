@@ -35,6 +35,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `project_cycles.py` | Dry-run-first production project-cycle admission/completion/cancellation/reconciliation, prerequisite enforcement, stable one-item selection, exact identity confirmation, and profile-local runtime wiring. |
 | `reconciliation.py` | Two-authority claim recovery evidence, strict reconciliation previews/results, mode-`0600` content-addressed tick records, and local pending-to-published finding synchronization. |
 | `execution.py` | Immutable revision-addressed profile-local artifacts, detached worktrees, and diff capture. |
+| `artifact_access.py` | Opaque ledger-bound artifact identity, active metadata catalog, bounded digest-verified text reads, private exports, and exact current-plan evidence. |
 | `archive_io.py` | Policy-neutral deterministic tar/gzip creation, manifest verification, inventory, and safe restore for caller-authorized roots. |
 | `kanban.py` | Public host-boundary adapter for the idempotent, approval-gated Hermes card graph. |
 | `schemas.py` | Tool schemas exposed to the model. |
@@ -255,6 +256,13 @@ fails locally rather than in production.
   while changed bytes, unsafe relative paths, and symlink aliases fail closed.
   The ledger stores the exact path and digest; no mutable current/latest alias or
   historical-artifact inference is permitted.
+- Artifact access accepts only a workflow ID plus an opaque deterministic
+  ledger-derived artifact ID. Listing, bounded text reads, current-plan
+  resolution, and verified export never walk for unreferenced files, expose a
+  source path, mutate the ledger, or accept `current`/`latest` aliases.
+- New plan artifacts require a strict evidence-derived approval summary whose
+  canonical identity is bound to the server-computed plan digest. Historical
+  summary-less plans remain readable but cannot produce an approval packet.
 - The policy store uses one fresh schema and does not inspect or migrate the
   unreleased workflow-state database.
 - The engine never substitutes guessed data when a model, skill, or verifier fails.

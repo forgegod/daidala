@@ -136,6 +136,32 @@ SUBMIT_ARTIFACT = {
             "workflow_id": {"type": "string"},
             "stage": {"type": "string", "enum": ["define", "plan", "review"]},
             "content": {"type": "string"},
+            "approval_summary": {
+                "type": "object",
+                "properties": {
+                    "headline": {"type": "string", "minLength": 1, "maxLength": 200},
+                    "changes": {
+                        "type": "array", "minItems": 1, "maxItems": 12,
+                        "items": {"type": "string", "minLength": 1, "maxLength": 500},
+                    },
+                    "affected_areas": {
+                        "type": "array", "minItems": 0, "maxItems": 12,
+                        "items": {"type": "string", "minLength": 1, "maxLength": 500},
+                    },
+                    "risks": {
+                        "type": "array", "minItems": 0, "maxItems": 12,
+                        "items": {"type": "string", "minLength": 1, "maxLength": 500},
+                    },
+                    "verification": {
+                        "type": "array", "minItems": 1, "maxItems": 12,
+                        "items": {"type": "string", "minLength": 1, "maxLength": 500},
+                    },
+                },
+                "required": [
+                    "headline", "changes", "affected_areas", "risks", "verification",
+                ],
+                "additionalProperties": False,
+            },
         },
         "required": ["workflow_id", "stage", "content"],
         "additionalProperties": False,

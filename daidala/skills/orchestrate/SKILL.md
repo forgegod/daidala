@@ -106,11 +106,17 @@ returned activation digest for the handoff or blocking comment.
 | Stage | Required Daidala operation | Successful Kanban result |
 |---|---|---|
 | `define` | Submit the complete definition with `daidala_submit_artifact(stage: "define")`. | Complete with the definition artifact reference and digest. |
-| `plan` | Submit the complete plan with `daidala_submit_artifact(stage: "plan")`. | Complete with the plan reference and digest; implementation still waits for exact human approval. |
+| `plan` | Submit the complete plan with `daidala_submit_artifact(stage: "plan")` and an evidence-derived `approval_summary`. | Complete with the plan reference, plan digest, and bound summary digest; implementation still waits for exact human approval. |
 | `implement` | Apply only the approved plan in the persistent worktree, then call `daidala_capture_implementation`. | Complete with the immutable diff and changed-path references. |
 | `verify` | Run every approved command in the persistent worktree and immediately call `daidala_record_verification` with the exact command, exit code, and output. | Complete only when the final evidence passes; otherwise comment and block. |
 | `review` | Review the captured diff and verification evidence without changing files, then submit the decision with `daidala_submit_artifact(stage: "review")`. | Complete only for an accepted review; otherwise comment and block. |
 | `deliver` | Call `daidala_deliver` and inspect its durable delivery artifact. | Complete with changed paths and evidence references, explicitly reporting `committed: false` and `pushed: false`. |
+
+The plan `approval_summary` has exactly `headline`, `changes`, `affected_areas`,
+`risks`, and `verification`. Ground every item in the submitted plan and its
+parent evidence. Do not add fields, submit placeholders, or ask Daidala to
+generate prose. Invalid structured output blocks the plan handoff; there is no
+summary fallback.
 
 Implementation scope is immutable after `daidala_capture_implementation`.
 Verification and review workers must not modify it. If review or deterministic

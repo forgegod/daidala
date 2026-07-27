@@ -11,6 +11,14 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
+from .artifact_access import (
+    ArtifactAccessService,
+    ArtifactCatalogEntry,
+    ArtifactExport,
+    ArtifactId,
+    ArtifactText,
+    CurrentPlanEvidence,
+)
 from .constraints import (
     WorkflowConstraints,
     extract_policy_skill_constraints,
@@ -35,6 +43,7 @@ from .state import (
     ActivationManifest,
     ActivationManifestReference,
     ActivationReferenceState,
+    ApprovalSummary,
     ConstraintSourceProvenance,
     SkillDigest,
     StageProfile,
@@ -85,6 +94,7 @@ class WorkflowService:
             store.data_root.parent / "skills"
         )
         self._workspace = ExecutionWorkspace(store.data_root)
+        self._artifact_access = ArtifactAccessService(store)
         self._kanban = kanban
 
     def start(
@@ -227,6 +237,7 @@ class WorkflowService:
         *,
         path: str,
         digest: str,
+        approval_summary: dict,
     ) -> WorkflowLedger:
         """Record a new plan revision and invalidate approval."""
         observed = self.store.get_with_token(workflow_id)
@@ -274,6 +285,7 @@ class WorkflowService:
             previous,
             path=path,
             digest=digest,
+            approval_summary=ApprovalSummary.from_dict(approval_summary),
             replaced_at=self._clock(),
         )
         updated = self.store.update(updated, expected_updated_at=observed.updated_at)
@@ -402,6 +414,7 @@ class WorkflowService:
         *,
         stage: WorkflowStage,
         content: str,
+        approval_summary: dict | None = None,
         board_slug: str,
         task_id: str,
     ) -> WorkflowLedger:
@@ -410,6 +423,14 @@ class WorkflowService:
             raise ServiceError("artifact content must be a non-empty string")
         if stage not in {WorkflowStage.DEFINE, WorkflowStage.PLAN, WorkflowStage.REVIEW}:
             raise ServiceError(f"stage {stage.value!r} cannot be submitted as text")
+        if stage is WorkflowStage.PLAN:
+            if not isinstance(approval_summary, dict):
+                raise ServiceError("plan artifact requires an approval_summary object")
+            summary = ApprovalSummary.from_dict(approval_summary)
+        else:
+            if approval_summary is not None:
+                raise ServiceError("approval_summary is accepted only for plan artifacts")
+            summary = None
         observed = self.store.get_with_token(workflow_id)
         self._require_current_card_context(
             observed.ledger, stage, board_slug=board_slug, task_id=task_id
@@ -433,9 +454,43 @@ class WorkflowService:
             path=artifact.path,
             digest=artifact.digest,
             recorded_at=self._clock(),
+            approval_summary=summary,
         )
         stored = self.store.update(updated, expected_updated_at=observed.updated_at)
         return stored
+
+    def list_artifacts(
+        self,
+        workflow_id: str,
+        *,
+        kinds: tuple[str, ...] | None = None,
+        revisions: tuple[int, ...] | None = None,
+    ) -> tuple[ArtifactCatalogEntry, ...]:
+        """List metadata for exact active ledger-owned artifacts."""
+        return self._artifact_access.list(workflow_id, kinds=kinds, revisions=revisions)
+
+    def read_artifact_text(
+        self, workflow_id: str, artifact_id: str | ArtifactId
+    ) -> ArtifactText:
+        """Read one verified bounded text artifact by opaque ledger identity."""
+        return self._artifact_access.read_text(workflow_id, artifact_id)
+
+    def export_artifact(
+        self,
+        workflow_id: str,
+        artifact_id: str | ArtifactId,
+        output: str | Path,
+        *,
+        overwrite: bool = False,
+    ) -> ArtifactExport:
+        """Export one verified artifact without accepting a source path."""
+        return self._artifact_access.export(
+            workflow_id, artifact_id, output, overwrite=overwrite
+        )
+
+    def current_plan_evidence(self, workflow_id: str) -> CurrentPlanEvidence:
+        """Resolve the exact current plan and its source-bound approval summary."""
+        return self._artifact_access.current_plan(workflow_id)
 
     def prepare_implementation(self, workflow_id: str) -> WorkflowLedger:
         """Create and record a worktree only after exact plan approval."""

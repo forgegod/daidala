@@ -12,6 +12,7 @@ import pytest
 from daidala.state import (
     ActivationManifestReference,
     ActivationReferenceState,
+    ApprovalSummary,
     SkillDigest,
     StageProfile,
     WorkflowLedger,
@@ -27,6 +28,13 @@ PROFILES = tuple(
     if stage is not WorkflowStage.APPROVAL
 )
 TARGET = "/tmp/daidala-store-target"
+PLAN_SUMMARY = ApprovalSummary(
+    headline="Plan the fixture change.",
+    changes=("Update the fixture behavior.",),
+    affected_areas=("fixture",),
+    risks=(),
+    verification=("Run the fixture tests.",),
+)
 
 
 def make_ledger(workflow_id: str = "workflow-1") -> WorkflowLedger:
@@ -78,6 +86,7 @@ def make_planned() -> WorkflowLedger:
         path="artifacts/plan.md",
         digest="plan-v1",
         recorded_at=NOW + timedelta(minutes=2),
+        approval_summary=PLAN_SUMMARY,
     )
 
 

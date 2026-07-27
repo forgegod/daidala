@@ -14,6 +14,7 @@ from daidala.state import (
     ActivationManifest,
     ActivationManifestReference,
     ActivationReferenceState,
+    ApprovalSummary,
     SkillDigest,
     StageProfile,
     WorkflowConstraintsArtifact,
@@ -43,6 +44,13 @@ PROFILES = tuple(
 TARGET = "/tmp/daidala-target"
 WORKTREE = "/tmp/daidala-worktrees/workflow-1"
 ACTIVATION_DIGEST = "b" * 64
+PLAN_SUMMARY = ApprovalSummary(
+    headline="Plan the fixture change.",
+    changes=("Update the fixture behavior.",),
+    affected_areas=("fixture",),
+    risks=(),
+    verification=("Run the fixture tests.",),
+)
 
 
 def activation_pack():
@@ -176,6 +184,7 @@ def make_planned() -> WorkflowLedger:
         path="artifacts/policy-0000/plan-0000/plan.md",
         digest="plan-v1",
         recorded_at=NOW + timedelta(minutes=2),
+        approval_summary=PLAN_SUMMARY,
     )
 
 
@@ -286,6 +295,7 @@ def test_approval_is_exact_and_plan_replacement_invalidates_it() -> None:
         approved,
         path="artifacts/policy-0000/plan-0001/plan.md",
         digest="plan-v2",
+        approval_summary=PLAN_SUMMARY,
         replaced_at=NOW + timedelta(minutes=4),
     )
 

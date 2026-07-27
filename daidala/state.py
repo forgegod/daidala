@@ -336,6 +336,86 @@ class StageProfile:
 
 
 @dataclass(frozen=True)
+class ApprovalSummary:
+    headline: str
+    changes: tuple[str, ...]
+    affected_areas: tuple[str, ...]
+    risks: tuple[str, ...]
+    verification: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        _require_plain_text(self.headline, "approval summary headline", 200)
+        _require_plain_text_items(
+            self.changes, "approval summary changes", minimum=1, maximum=12
+        )
+        _require_plain_text_items(
+            self.affected_areas,
+            "approval summary affected_areas",
+            minimum=0,
+            maximum=12,
+        )
+        _require_plain_text_items(
+            self.risks, "approval summary risks", minimum=0, maximum=12
+        )
+        _require_plain_text_items(
+            self.verification,
+            "approval summary verification",
+            minimum=1,
+            maximum=12,
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "headline": self.headline,
+            "changes": list(self.changes),
+            "affected_areas": list(self.affected_areas),
+            "risks": list(self.risks),
+            "verification": list(self.verification),
+        }
+
+    def canonical_bytes(self) -> bytes:
+        return json.dumps(
+            self.to_dict(),
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> ApprovalSummary:
+        _require_exact_fields(
+            raw,
+            {"headline", "changes", "affected_areas", "risks", "verification"},
+            "approval summary",
+        )
+        try:
+            for field in ("changes", "affected_areas", "risks", "verification"):
+                if not isinstance(raw[field], list):
+                    raise PolicyViolationError(
+                        f"approval summary {field} must be an array"
+                    )
+            return cls(
+                headline=raw["headline"],
+                changes=tuple(raw["changes"]),
+                affected_areas=tuple(raw["affected_areas"]),
+                risks=tuple(raw["risks"]),
+                verification=tuple(raw["verification"]),
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            if isinstance(error, PolicyViolationError):
+                raise
+            raise PolicyViolationError(f"invalid approval summary: {error}") from error
+
+    def digest_for(self, source_digest: str) -> str:
+        _require_text(source_digest, "approval summary source digest")
+        payload = {"source_digest": source_digest, "summary": self.to_dict()}
+        canonical = json.dumps(
+            payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+        return hashlib.sha256(canonical).hexdigest()
+
+
+@dataclass(frozen=True)
 class ArtifactReference:
     stage: WorkflowStage
     plan_revision: int
@@ -343,6 +423,8 @@ class ArtifactReference:
     digest: str
     recorded_at: datetime
     policy_revision: int = 0
+    approval_summary: ApprovalSummary | None = None
+    approval_summary_digest: str | None = None
 
     def __post_init__(self) -> None:
         _require_revision(self.plan_revision)
@@ -350,9 +432,21 @@ class ArtifactReference:
         _require_text(self.path, "artifact path")
         _require_text(self.digest, "artifact digest")
         _require_aware(self.recorded_at, "artifact recorded_at")
+        if (self.approval_summary is None) != (self.approval_summary_digest is None):
+            raise PolicyViolationError(
+                "artifact approval summary and digest must both be present or absent"
+            )
+        if self.approval_summary is not None:
+            if self.stage is not WorkflowStage.PLAN:
+                raise PolicyViolationError("only plan artifacts may carry an approval summary")
+            expected = self.approval_summary.digest_for(self.digest)
+            if self.approval_summary_digest != expected:
+                raise PolicyViolationError(
+                    "artifact approval summary digest does not match the plan digest"
+                )
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload = {
             "stage": self.stage.value,
             "plan_revision": self.plan_revision,
             "path": self.path,
@@ -360,9 +454,21 @@ class ArtifactReference:
             "recorded_at": self.recorded_at.isoformat(),
             "policy_revision": self.policy_revision,
         }
+        if self.approval_summary is not None:
+            payload["approval_summary"] = self.approval_summary.to_dict()
+            payload["approval_summary_digest"] = self.approval_summary_digest
+        return payload
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> ArtifactReference:
+        required = {
+            "stage", "plan_revision", "path", "digest", "recorded_at",
+        }
+        allowed = required | {
+            "policy_revision", "approval_summary", "approval_summary_digest",
+        }
+        if not isinstance(raw, dict) or required - set(raw) or set(raw) - allowed:
+            raise PolicyViolationError("artifact reference fields are invalid")
         return cls(
             stage=WorkflowStage(raw["stage"]),
             plan_revision=raw["plan_revision"],
@@ -370,6 +476,12 @@ class ArtifactReference:
             digest=raw["digest"],
             recorded_at=datetime.fromisoformat(raw["recorded_at"]),
             policy_revision=raw.get("policy_revision", 0),
+            approval_summary=(
+                ApprovalSummary.from_dict(raw["approval_summary"])
+                if raw.get("approval_summary") is not None
+                else None
+            ),
+            approval_summary_digest=raw.get("approval_summary_digest"),
         )
 
 
@@ -1043,6 +1155,28 @@ def _require_bounded_strings(values: tuple[str, ...], label: str) -> None:
         raise PolicyViolationError(f"{label} must contain 1-8 strings")
     for value in values:
         _require_bounded_text(value, label, 500)
+
+
+def _require_plain_text(value: str, label: str, maximum_bytes: int) -> None:
+    if not isinstance(value, str) or not value or value != value.strip():
+        raise PolicyViolationError(f"{label} must be trimmed non-empty plain text")
+    if any(ord(character) < 32 or 127 <= ord(character) < 160 for character in value):
+        raise PolicyViolationError(f"{label} must be trimmed non-empty plain text")
+    if len(value.encode("utf-8")) > maximum_bytes:
+        raise PolicyViolationError(f"{label} must be at most {maximum_bytes} UTF-8 bytes")
+
+
+def _require_plain_text_items(
+    values: tuple[str, ...],
+    label: str,
+    *,
+    minimum: int,
+    maximum: int,
+) -> None:
+    if not isinstance(values, tuple) or not minimum <= len(values) <= maximum:
+        raise PolicyViolationError(f"{label} must contain {minimum}-{maximum} items")
+    for value in values:
+        _require_plain_text(value, label, 500)
 
 
 def _require_digest(value: str, label: str) -> None:

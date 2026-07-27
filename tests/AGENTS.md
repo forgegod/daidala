@@ -81,6 +81,10 @@ completeness without touching a real Hermes profile.
 - Revision-addressed artifact tests cover policy and plan supersession, exact
   ledger references, historical-byte retention, create-or-verify replay,
   conflicting content, unsafe relative paths, and symlink rejection.
+- Artifact-access tests cover deterministic opaque IDs, ledger-only catalogs,
+  all active reference kinds, strict source-bound plan summaries, bounded
+  digest-verified text, path/symlink/binary rejection, private collision-safe
+  export, legacy readability, and mutation-free reads.
 - Archive I/O tests cover deterministic verified tar/gzip round trips, strict
   member paths and bounds, source-file safety, tampering, interrupted writes,
   retry conflicts, and safe idempotent restore.

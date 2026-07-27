@@ -14,6 +14,7 @@ from .state import (
     ActivationManifestReference,
     ActivationReferenceState,
     ApprovalRecord,
+    ApprovalSummary,
     ArtifactReference,
     CardReference,
     SkillDigest,
@@ -172,6 +173,7 @@ def record_artifact(
     path: str,
     digest: str,
     recorded_at: datetime,
+    approval_summary: ApprovalSummary | None = None,
 ) -> WorkflowLedger:
     """Record an immutable stage artifact after its Daidala policy checks."""
     if stage in {WorkflowStage.APPROVAL, WorkflowStage.VERIFY}:
@@ -179,6 +181,8 @@ def record_artifact(
             f"stage {stage.value!r} uses approval or verification evidence, not an artifact"
         )
     _require_stage_activation(ledger, stage)
+    if stage is WorkflowStage.PLAN and approval_summary is None:
+        raise PolicyViolationError("plan artifacts require an approval summary")
     revision = 0 if stage is WorkflowStage.DEFINE else ledger.plan_revision
     candidate = ArtifactReference(
         stage=stage,
@@ -187,6 +191,10 @@ def record_artifact(
         digest=digest,
         recorded_at=recorded_at,
         policy_revision=ledger.policy_revision,
+        approval_summary=approval_summary,
+        approval_summary_digest=(
+            approval_summary.digest_for(digest) if approval_summary else None
+        ),
     )
     existing = ledger.artifact_for(stage)
     if existing == candidate:
@@ -238,6 +246,8 @@ def approve_plan(
     plan = ledger.artifact_for(WorkflowStage.PLAN)
     if plan is None or plan.digest != plan_digest:
         raise PolicyViolationError("approval must match the current plan digest")
+    if plan.approval_summary is None or plan.approval_summary_digest is None:
+        raise PolicyViolationError("approval requires a bound plan summary")
     if ledger.approval is not None:
         raise PolicyViolationError("current plan revision already has a different approval")
     _require_not_before(ledger, decided_at)
@@ -266,6 +276,7 @@ def replace_plan(
     *,
     path: str,
     digest: str,
+    approval_summary: ApprovalSummary,
     replaced_at: datetime,
 ) -> WorkflowLedger:
     """Create a fresh plan revision and invalidate approval and post-gate facts."""
@@ -274,7 +285,12 @@ def replace_plan(
         raise PolicyViolationError("plan replacement requires a plan artifact")
     if ledger.worktree_owned:
         raise PolicyViolationError("release the owned worktree before replacing the plan")
-    if current.path == path and current.digest == digest and ledger.approval is None:
+    if (
+        current.path == path
+        and current.digest == digest
+        and current.approval_summary == approval_summary
+        and ledger.approval is None
+    ):
         return ledger
     _require_not_before(ledger, replaced_at)
     revision = ledger.plan_revision + 1
@@ -285,6 +301,8 @@ def replace_plan(
         digest=digest,
         recorded_at=replaced_at,
         policy_revision=ledger.policy_revision,
+        approval_summary=approval_summary,
+        approval_summary_digest=approval_summary.digest_for(digest),
     )
     return replace(
         ledger,
