@@ -8,6 +8,7 @@ import time
 import types
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -24,7 +25,7 @@ class FakeRouter:
 
 
 class FakeHTTPException(Exception):
-    def __init__(self, status_code: int, detail: str) -> None:
+    def __init__(self, status_code: int, detail: Any) -> None:
         self.status_code = status_code
         self.detail = detail
 
@@ -252,6 +253,41 @@ def test_unconfirmed_wizard_start_does_not_construct_service() -> None:
     assert calls == 0
 
 
+def test_existing_explicit_workflow_returns_safe_open_reference_without_start() -> None:
+    api = load_api()
+    starts = 0
+
+    class Service:
+        store = types.SimpleNamespace(get=lambda workflow_id: object())
+
+        def validate_start_preflight(self, **_kwargs):
+            return object()
+
+        def start(self, **_kwargs):
+            nonlocal starts
+            starts += 1
+
+    request = types.SimpleNamespace(
+        workflow_id="existing-workflow",
+        start_kwargs=lambda: {},
+    )
+    api.__dict__["_resolved_setup_request"] = lambda payload, apply: (request, Service())
+    api.__dict__["_preflight_kwargs"] = lambda resolved: {}
+    api.__dict__["_setup_preview"] = lambda resolved, preflight: {
+        "preview_digest": "a" * 64
+    }
+
+    with pytest.raises(FakeHTTPException) as raised:
+        api.wizard_start({"preview_digest": "a" * 64})
+
+    assert raised.value.status_code == 409
+    assert raised.value.detail == {
+        "code": "workflow_exists",
+        "workflow_id": "existing-workflow",
+    }
+    assert starts == 0
+
+
 def test_wizard_preview_rejects_browser_paths_and_unknown_fields_before_service() -> None:
     api = load_api()
     calls = 0
@@ -274,6 +310,81 @@ def test_wizard_preview_rejects_browser_paths_and_unknown_fields_before_service(
     assert raised.value.status_code == 400
     assert "unknown setup request fields" in raised.value.detail
     assert calls == 0
+
+
+def test_wizard_inventory_exposes_profile_policy_sources_and_only_mounted_registrations(
+    tmp_path: Path,
+) -> None:
+    api = load_api()
+    matching = types.SimpleNamespace(
+        project_id="matching",
+        verified_remote="git@github.com:forgegod/daidala.git",
+        controller_profile="controller",
+    )
+    foreign = types.SimpleNamespace(
+        project_id="foreign",
+        verified_remote="git@github.com:forgegod/other.git",
+        controller_profile="other",
+    )
+
+    def run_command(command: tuple[str, ...]) -> tuple[int, str]:
+        if command == ("hermes", "kanban", "boards", "list", "--json"):
+            return 0, '[{"slug": "existing"}]'
+        return 0, " ◆controller      model      stopped\n  worker           model      stopped"
+
+    api.__dict__["_run_command"] = run_command
+    skills = tmp_path / "skills"
+    (skills / "policy-source").mkdir(parents=True)
+    (skills / "policy-source" / "SKILL.md").write_text(
+        "---\nname: policy-source\n---\n",
+        encoding="utf-8",
+    )
+    api.__dict__["resolve_data_root"] = lambda: tmp_path
+    api.__dict__["_registered_projects"] = lambda controller_profile=None: {
+        item.project_id: item
+        for item in (matching, foreign)
+        if controller_profile is None or item.controller_profile == controller_profile
+    }
+
+    payload = api.wizard_inventory()
+
+    assert payload["controller_profile"] == "controller"
+    assert payload["projects"] == [
+        {"project_id": "matching", "repository": "git@github.com:forgegod/daidala.git"}
+    ]
+    assert payload["policy_sources"] == [
+        {"name": "policy-source", "digest": payload["policy_sources"][0]["digest"]}
+    ]
+    assert len(payload["policy_sources"][0]["digest"]) == 64
+
+
+def test_board_creation_requires_explicit_slug_and_display_name() -> None:
+    api = load_api()
+    commands: list[tuple[str, ...]] = []
+    api.__dict__["_run_command"] = lambda command: (
+        commands.append(command) or 0,
+        "[]",
+    )
+
+    with pytest.raises(FakeHTTPException) as raised:
+        api.wizard_board_preview({"slug": "new-board", "name": ""})
+
+    assert raised.value.status_code == 400
+    assert "display name is required" in raised.value.detail
+
+    preview = api.wizard_board_preview(
+        {"slug": "new-board", "name": "New Board"}
+    )
+
+    assert preview["preview"]["command"] == [
+        "hermes",
+        "kanban",
+        "boards",
+        "create",
+        "new-board",
+        "--name",
+        "New Board",
+    ]
 
 
 def test_default_service_is_process_cached_to_avoid_concurrent_store_initialization() -> None:

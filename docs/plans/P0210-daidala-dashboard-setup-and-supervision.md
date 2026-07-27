@@ -18,7 +18,7 @@
 
 **Produces:** an inventory-backed first-workflow wizard with mounted-profile scope, registered-repository capability readiness, non-authoritative defaults and Hermes Cron handoff, plus decision-first plan approval, review disposition, revision request, recovery, and cancellation controls over existing Daidala and Hermes authority surfaces
 
-**Status:** Phase 0 complete — P0200, P0205, P0207, and the registered setup boundary are complete; Phase 1 remains pending human execution approval
+**Status:** Phases 0 and 1 complete — the registered setup boundary and inventory-backed first-workflow wizard pass their automated and disposable-browser gates; Phase 2 is pending
 
 ## Goal
 
@@ -38,7 +38,7 @@ Add the browser path that resolves one mounted-profile registration into the exi
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
 | 0 | Establish the registered setup boundary | done (`python -m pytest -q`; Ruff; Lefthook; pack/link/build/release checks; isolated live Hermes compatibility probe) | The service and closed dashboard routes resolve only a selected mounted-profile registration into the exact `SetupRequest` path, share mutation-free start readiness with confirmed start, bind preview/apply to a fresh exact digest, and reject browser paths, unknown fields, stale previews, and explicit existing workflow IDs |
-| 1 | Render the inventory-backed first-workflow wizard | pending | The browser consumes the Phase 0 boundary to select ready packs, registrations, profiles, boards, and constraints; preserves an in-memory non-secret draft/default; creates boards only through preview-confirm; and reaches a newly created workflow or a safe existing-workflow reference |
+| 1 | Render the inventory-backed first-workflow wizard | done (focused and full repository gates; unchanged long-name fixture; stateful disposable-browser readiness, stale-preview invalidation, confirmed Start, detail reload, and cleanup) | The browser consumes the Phase 0 boundary to select ready packs, registrations, profiles, boards, and constraints; preserves an in-memory non-secret draft/default; creates boards only through preview-confirm; and reaches a newly created workflow or a safe existing-workflow reference |
 | 2 | Add decision-first workflow supervision | pending | Existing workflows reopen by exact ID; isolated-browser evidence proves verified plan approval, exact review disposition before delivery, review-driven revision to a new plan approval, bounded blocked-card recovery, and previewed cancellation |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
@@ -88,22 +88,29 @@ Steps:
 
 1. Read Phase 0 completion evidence and contract Phase 2's selector, default,
    constraints, and handoff rules.
-2. Implement the read-only mounted controller identity; ready-pack,
+2. Extend the existing closed inventory/readiness projection only as needed to
+   identify the mounted controller profile and bind a selected registration to
+   that profile before the browser can render it. Keep controller identity
+   read-only, derive it through the documented profile inventory, and reject a
+   registration belonging to another profile; do not accept a browser profile,
+   checkout, credential, or path. This closes the missing Phase 0 browser input
+   discovered during Phase 1 execution.
+3. Implement the read-only mounted controller identity; ready-pack,
    registered-repository, worker-default/six-stage-profile, and existing-board
    selectors; requested outcome / prompt (mapped to `SetupRequest.goal`);
    constraint source controls; browser-local non-secret defaults; readiness;
    preview; and literal confirmation. Never label the browser control `Goal`.
-3. Add the preview-confirm board action, source-change invalidation, and the
+4. Add the preview-confirm board action, source-change invalidation, and the
    `Manage sources` navigation affordance to Config → Constraints. P0230 owns
    that destination's reusable-source browser and return implementation; this
    phase keeps the draft only in browser memory.
-4. Persist only `{project_id, pack, board_slug, stage_profiles}` in the
+5. Persist only `{project_id, pack, board_slug, stage_profiles}` in the
    mounted-profile-scoped browser preset. Inventory/readiness changes invalidate
    preview; stale/missing identities remain unselected and never authorize start.
-5. On successful creation open the returned workflow; on an explicit existing
+6. On successful creation open the returned workflow; on an explicit existing
    workflow conflict offer only the safe exact-ID reopen path. Include Hermes
    Cron as a host-owned admission handoff, not a Daidala scheduler.
-6. Recreate the disposable stateful fixture for browser evidence and remove it
+7. Recreate the disposable stateful fixture for browser evidence and remove it
    after stopping its owned process. Update asset tests, CSS, route inventory,
    and owning DOX contracts.
 
@@ -113,6 +120,38 @@ persisted nor included in defaults, a returned source selection invalidates the
 prior preview, and the old preview cannot authorize Start after a source change.
 The `Manage sources` link is present and routes to Config → Constraints; its
 full destination surface is verified under P0230.
+
+### Current Phase 1 state
+
+- The wizard implementation now includes installed policy-source inventory and
+  exact digests, board display names, browser-memory source return navigation,
+  the strict preset shape, safe existing-workflow reopen, and the host-owned
+  Cron handoff. Compatibility probes verify the executable's local Git revision
+  or build metadata rather than the banner's mutable `origin/main` label.
+- A fresh isolated fixture process proves the mounted identity and renders the
+  profile, board, worker, constraint-tab, and installed policy-source
+  inventories. The fixture exposed a valid long-name profile row with only one
+  separator space; the shared parser now handles display-column overflow and
+  validates the runtime-root candidate against the complete profile inventory.
+  Source navigation reaches the `return=start-workflow` context, and browser Back
+  preserves the in-memory prompt and constraint mode without writing a default.
+- The unchanged long-name fixture remains stopped and unmodified. A separate
+  approved disposable profile supplied one clean registered repository, one
+  isolated board, the exact bundled AI-DLC adapter, and a deterministic pinned
+  source-resolution boundary for the declared pack revision. Browser evidence
+  proves readiness, non-mutating preview, source-change invalidation of Start
+  authority, fresh preview confirmation, confirmed Start, live define/plan card
+  state, and one complete workflow card after reload. The fixture profile,
+  temporary repository, source shim, board, dashboard process, and runtime state
+  were removed; port 9121 is closed.
+- Live Start exposed an incomplete duplicate selected-workflow card: the opened
+  component passed only an ID while its renderer continued reading summary fields
+  from that placeholder. The renderer now hydrates identity from the fresh detail
+  response and filters the selected ID from the ordinary list; focused asset tests
+  and the browser reload prove one complete card with no `undefined` identity.
+- Full pytest, Ruff, Lefthook validation, both pack validations, fixture unittest,
+  Markdown links, build, Twine, release contents, and the isolated Hermes
+  dashboard compatibility probe pass.
 
 ## Phase 2 — Add decision-first workflow supervision
 

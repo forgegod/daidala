@@ -5,6 +5,7 @@ import pytest
 from daidala.setup_wizard import (
     SetupRequest,
     SetupWizardError,
+    active_profile,
     confirmed_start,
     create_board,
     list_boards,
@@ -96,9 +97,11 @@ def test_inventory_uses_only_documented_hermes_commands() -> None:
 
     assert list_boards(run) == [{"slug": "default"}]
     assert list_profiles(run) == ["default", "reviewer"]
+    assert active_profile(run) == "default"
     create_board(run, slug="project-alpha", name="Project Alpha")
     assert calls == [
         ("hermes", "kanban", "boards", "list", "--json"),
+        ("hermes", "profile", "list"),
         ("hermes", "profile", "list"),
         (
             "hermes",
@@ -110,6 +113,31 @@ def test_inventory_uses_only_documented_hermes_commands() -> None:
             "Project Alpha",
         ),
     ]
+
+
+def test_active_profile_uses_only_an_inventory_validated_runtime_root_fallback() -> None:
+    def run(_args):
+        return (
+            0,
+            " ◆default         model        stopped\n"
+            "  daidala-dashboard-fixture-20260727t141923z —        stopped",
+        )
+
+    assert (
+        active_profile(
+            run,
+            fallback_name="daidala-dashboard-fixture-20260727t141923z",
+        )
+        == "daidala-dashboard-fixture-20260727t141923z"
+    )
+
+    assert active_profile(run, fallback_name="unknown") == "default"
+
+    def no_active(_args):
+        return 0, "  default         model        stopped\n  fixture         model        stopped"
+
+    with pytest.raises(SetupWizardError, match="candidate 'unknown'.*not present"):
+        active_profile(no_active, fallback_name="unknown")
 
 
 def test_invalid_board_slug_is_rejected_without_command() -> None:

@@ -531,3 +531,134 @@
     grid-template-columns: 1fr;
   }
 }
+
+.daidala-wizard {
+  display: grid;
+  gap: var(--daidala-gap);
+  padding: var(--daidala-padding);
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+}
+
+.daidala-wizard-header,
+.daidala-wizard-section-heading,
+.daidala-board-control,
+.daidala-wizard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--daidala-gap);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.daidala-wizard-header h2,
+.daidala-wizard-header p,
+.daidala-wizard-section h3,
+.daidala-readiness h3,
+.daidala-wizard-preview h3 {
+  margin: 0;
+}
+
+.daidala-wizard-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.35fr);
+  gap: var(--daidala-gap);
+}
+
+.daidala-wizard-form,
+.daidala-readiness,
+.daidala-wizard-section,
+.daidala-wizard-preview,
+.daidala-confirm-box {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+}
+
+.daidala-wizard-field {
+  display: grid;
+  gap: 0.3rem;
+  color: var(--daidala-muted);
+}
+
+.daidala-wizard-field select,
+.daidala-wizard-field input,
+.daidala-wizard-field textarea,
+.daidala-wizard-pair input,
+.daidala-wizard button,
+.daidala-wizard-actions button {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 0.5rem 0.65rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-base, transparent);
+  color: var(--text-primary, inherit);
+  font: inherit;
+}
+
+.daidala-wizard textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.daidala-wizard-advanced {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.daidala-wizard-advanced summary,
+.daidala-back,
+.daidala-cron-link,
+.daidala-wizard-section a {
+  color: var(--daidala-accent);
+  cursor: pointer;
+}
+
+.daidala-wizard-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--daidala-gap);
+}
+
+.daidala-constraint-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.daidala-constraint-tabs button.is-selected {
+  border-color: var(--daidala-accent);
+  color: var(--daidala-accent);
+}
+
+.daidala-readiness {
+  align-content: start;
+}
+
+.daidala-readiness ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.daidala-readiness .is-ready {
+  color: var(--daidala-ok);
+}
+
+.daidala-readiness .is-blocked {
+  color: var(--daidala-error);
+}
+
+.daidala-wizard-preview {
+  border-color: var(--daidala-ok);
+}
+
+@media (max-width: 64rem) {
+  .daidala-wizard-layout,
+  .daidala-wizard-pair {
+    grid-template-columns: 1fr;
+  }
+}

@@ -144,17 +144,62 @@ def create_board(run: CommandRunner, *, slug: str, name: str | None = None) -> N
 
 
 def list_profiles(run: CommandRunner) -> list[str]:
-    code, output = run(("hermes", "profile", "list"))
-    if code != 0:
-        raise SetupWizardError("could not list Hermes profiles")
+    output = _profile_list_output(run)
     rows: list[str] = []
     for line in output.splitlines():
-        match = re.match(r"^\s*[◆ ]?([a-zA-Z0-9][a-zA-Z0-9_-]*)\s{2,}", line)
-        if match and match.group(1) != "Profile":
-            rows.append(match.group(1))
+        parsed = _parse_profile_row(line)
+        if parsed is not None:
+            rows.append(parsed[0])
     if not rows:
         raise SetupWizardError("Hermes returned no parseable profiles")
     return rows
+
+
+def active_profile(
+    run: CommandRunner,
+    *,
+    fallback_name: str | None = None,
+) -> str:
+    """Return the active or runtime-root profile from documented inventory."""
+
+    output = _profile_list_output(run)
+    profiles: list[str] = []
+    active: str | None = None
+    for line in output.splitlines():
+        parsed = _parse_profile_row(line)
+        if parsed is None:
+            continue
+        name, is_active = parsed
+        profiles.append(name)
+        if is_active:
+            active = name
+    if fallback_name is not None and fallback_name in profiles:
+        return fallback_name
+    if active is not None:
+        return active
+    if fallback_name is not None:
+        raise SetupWizardError(
+            f"Hermes returned no active profile and runtime-root candidate "
+            f"{fallback_name!r} is not present in profile inventory"
+        )
+    raise SetupWizardError("Hermes returned no active profile")
+
+
+def _profile_list_output(run: CommandRunner) -> str:
+    code, output = run(("hermes", "profile", "list"))
+    if code != 0:
+        raise SetupWizardError("could not list Hermes profiles")
+    return output
+
+
+def _parse_profile_row(line: str) -> tuple[str, bool] | None:
+    match = re.match(
+        r"^\s*(?P<active>◆)?\s*(?P<name>[a-zA-Z0-9][a-zA-Z0-9._-]*)(?:\s+|$)",
+        line,
+    )
+    if match is None or match.group("name") == "Profile":
+        return None
+    return match.group("name"), match.group("active") is not None
 
 
 def _optional_text(value: object) -> str | None:

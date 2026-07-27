@@ -78,8 +78,11 @@ def test_dashboard_mutations_use_only_closed_post_routes() -> None:
     assert 'Accept: "application/json"' in source
     assert "__HERMES_SESSION_TOKEN__" not in source
     assert 'method: "POST"' in source
-    assert 'API_BASE + "/wizard/preview"' not in source
-    assert 'API_BASE + "/wizard/start"' not in source
+    assert 'API_BASE + "/wizard/readiness"' in source
+    assert 'API_BASE + "/wizard/preview"' in source
+    assert 'API_BASE + "/wizard/start"' in source
+    assert 'API_BASE + "/wizard/boards/preview"' in source
+    assert 'API_BASE + "/wizard/boards"' in source
     assert '"Repository path"' not in source
     assert '"/install/preview"' in source
     assert '"/install"' in source
@@ -109,7 +112,7 @@ def test_bundle_exposes_manual_refresh() -> None:
     assert "Refresh" in source
     assert "refreshAll" in source
     assert '"Preview mutations"' not in source
-    assert '"Start workflow"' not in source
+    assert '"Start workflow"' in source
     assert '"Preview constraint change"' in source
     assert '"Replace constraints"' in source
     assert '"No semantic change; replacement is unnecessary."' in source
@@ -142,7 +145,68 @@ def test_bundle_exposes_pack_inventory_readiness_content_and_confirmed_install()
     assert 'data-testid": "daidala-pack"' in source
     assert 'data-testid": "daidala-skill-content"' in source
     assert 'data-testid": "daidala-pack-preview"' in source
-    assert "dispatch" not in source.lower()
+    assert '"/dispatch"' not in source.lower()
+    assert "dispatch_tool" not in source.lower()
+
+
+def test_bundle_exposes_the_closed_inventory_backed_start_workflow_wizard() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    required_strings = (
+        'API_BASE + "/wizard/inventory"',
+        'API_BASE + "/wizard/readiness"',
+        'API_BASE + "/wizard/preview"',
+        'API_BASE + "/wizard/start"',
+        'API_BASE + "/wizard/boards/preview"',
+        'API_BASE + "/wizard/boards"',
+        "Mounted controller profile",
+        "Registered repository",
+        "Requested outcome / Prompt",
+        "Worker profile default",
+        "Advanced workflow settings",
+        "Workflow constraints",
+        "Write YAML",
+        "Reference skill",
+        "No constraints",
+        "Installed policy source",
+        "Manage sources",
+        "Manage packs",
+        "Workflow identity (optional)",
+        "Save as default",
+        "Create board",
+        "New board display name",
+        "Start readiness",
+        "I confirm applying this exact preview",
+        "Start now",
+        "Open Hermes Cron",
+        "daidala:start-default:v1:",
+    )
+    for text in required_strings:
+        assert text in source, f"missing Start workflow contract text: {text}"
+
+    assert 'data-testid": "daidala-start-workflow"' in source
+    assert 'data-testid": "daidala-start-readiness"' in source
+    assert "localStorage" in source
+    assert '"target_repository"' not in source
+    assert "inventory.policy_sources" in source
+    assert 'profiles.indexOf("default")' in source
+    assert 'href: "/cron"' in source
+    assert 'href: "#cron"' not in source
+    assert 'href: "#config-constraints"' not in source
+    assert "/daidala?section=constraints&return=start-workflow" in source
+    assert "window.history.pushState" in source
+    assert 'addEventListener("popstate"' in source
+    assert "Hermes Cron schedules future admissions only" in source
+    assert "existingWorkflowId" in source
+    assert "Opened it without creating a second workflow" in source
+
+
+def test_bundle_reopens_a_started_workflow_without_an_incomplete_duplicate() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    assert "var summary = detail && detail.workflow ? detail.workflow : workflow;" in source
+    assert "row.workflow_id !== openWorkflowId" in source
+    assert "listedWorkflows.map" in source
 
 
 def test_bundle_renders_every_phase_three_state() -> None:

@@ -59,11 +59,16 @@ from daidala.service import ServiceError
 from daidala.setup_wizard import (
     SetupRequest,
     SetupWizardError,
+    active_profile,
     create_board,
     list_boards,
     list_profiles,
 )
-from daidala.skills import MissingSkillsError
+from daidala.skills import (
+    MissingSkillsError,
+    ProfileSkillContentRegistry,
+    SkillRevisionError,
+)
 from daidala.store import StoreError
 
 router = APIRouter()
@@ -314,16 +319,22 @@ def constraint_replace(payload: dict[str, Any]) -> dict[str, Any]:
 def wizard_inventory() -> dict[str, Any]:
     """List the profile-safe identities eligible for setup selection."""
     try:
+        controller_profile = active_profile(
+            _run_command,
+            fallback_name=resolve_data_root().name,
+        )
         return {
+            "controller_profile": controller_profile,
             "boards": list_boards(_run_command),
             "profiles": list_profiles(_run_command),
             "packs": ["addyosmani", "aidlc"],
+            "policy_sources": _profile_policy_sources(),
             "projects": [
                 {
                     "project_id": registration.project_id,
                     "repository": registration.verified_remote,
                 }
-                for registration in _registered_projects().values()
+                for registration in _registered_projects(controller_profile).values()
             ],
         }
     except SetupWizardError as error:
@@ -408,7 +419,10 @@ def wizard_start(payload: dict[str, Any]) -> dict[str, Any]:
         else:
             raise HTTPException(
                 status_code=409,
-                detail=f"workflow already exists: {request.workflow_id}",
+                detail={
+                    "code": "workflow_exists",
+                    "workflow_id": request.workflow_id,
+                },
             )
     try:
         ledger = service.start(**request.start_kwargs())
@@ -431,12 +445,20 @@ _SETUP_REQUEST_FIELDS = frozenset(
 )
 
 
-def _registered_projects() -> dict[str, ControllerRegistration]:
-    """Read only profile-local registrations; never accept a browser path."""
+def _registered_projects(
+    controller_profile: str | None = None,
+) -> dict[str, ControllerRegistration]:
+    """Read only registrations bound to the mounted controller profile."""
     try:
         registrations = list_controller_registrations(resolve_data_root().resolve())
     except ValueError as error:
         raise SetupWizardError("registered project is invalid") from error
+    if controller_profile is not None:
+        registrations = tuple(
+            registration
+            for registration in registrations
+            if registration.controller_profile == controller_profile
+        )
     return {registration.project_id: registration for registration in registrations}
 
 
@@ -461,7 +483,7 @@ def _resolved_setup_request(payload: dict[str, Any], *, apply: bool) -> tuple[Se
     if not isinstance(request, dict) or set(request) - _SETUP_REQUEST_FIELDS:
         raise HTTPException(status_code=400, detail="unknown setup request fields")
     try:
-        registration = _registered_projects().get(project_id)
+        registration = _registered_projects(active_profile(_run_command)).get(project_id)
     except SetupWizardError as error:
         raise HTTPException(status_code=502, detail=str(error)) from error
     if registration is None:
@@ -506,7 +528,20 @@ def _preflight_kwargs(request: SetupRequest) -> dict[str, Any]:
     return values
 
 
-def _board_request(payload: dict[str, Any]) -> tuple[str, str | None]:
+def _profile_policy_sources() -> list[dict[str, str]]:
+    registry = ProfileSkillContentRegistry(resolve_data_root() / "skills")
+    try:
+        sources = []
+        for name in sorted(registry.installed_names()):
+            digest = registry.content_digest(name)
+            if digest is not None:
+                sources.append({"name": name, "digest": digest})
+        return sources
+    except SkillRevisionError as error:
+        raise SetupWizardError("installed policy source inventory is invalid") from error
+
+
+def _board_request(payload: dict[str, Any]) -> tuple[str, str]:
     allowed = {"slug", "name", "preview_digest", "confirm"}
     if set(payload) - allowed:
         raise HTTPException(status_code=400, detail="unknown board request fields")
@@ -517,7 +552,10 @@ def _board_request(payload: dict[str, Any]) -> tuple[str, str | None]:
         create_board(lambda _command: (0, ""), slug=slug, name=None)
     except SetupWizardError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
-    return slug, _optional_str(payload.get("name"))
+    name = payload.get("name")
+    if not isinstance(name, str) or not name.strip():
+        raise HTTPException(status_code=400, detail="board display name is required")
+    return slug, name.strip()
 
 
 def _digest(value: Any) -> str:

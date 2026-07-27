@@ -8,7 +8,7 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
 
 - `manifest.json` declares the `/daidala` tab, `sessions:top` slot, assets, and backend router.
 - `plugin_api.py` mounts the profile-safe read model, bounded pack operations, and narrowly scoped setup routes.
-- `dist/index.js` renders workflow progress, Config → Packs readiness/content, pending decisions, and confirmation-gated setup.
+- `dist/index.js` renders workflow progress, the inventory-backed Start workflow wizard, Config → Packs readiness/content, and pending decisions.
 - `dist/style.css` adapts the extension to host themes and narrow layouts.
 
 ## Local Contracts
@@ -27,10 +27,19 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   literal, path-free, and bounded to 1 MiB; install apply requires a fresh
   matching preview digest and literal confirmation.
 - Preview and declined setup must not mutate; start requires a literal checked confirmation.
+- Wizard inventory derives the mounted controller profile from Hermes' documented
+  profile inventory and exposes only registrations bound to that profile. The
+  runtime-root identity takes precedence only after exact inventory validation;
+  the dashboard's management-profile query never selects the backend controller.
+  The browser selects only a project ID and never sends a controller profile,
+  checkout, credential, or filesystem path.
 - Constraint preview is non-mutating; replacement requires the displayed current
   digest and explicit invalidation confirmation.
 - Poll no faster than every five seconds while visible, stop while hidden, and retain manual refresh.
 - Treat API responses as snapshots; never authorize workflow operations from client state.
+- After setup or exact-ID reopen, render the selected workflow from its fresh
+  detail summary and exclude that ID from the ordinary workflow list so the UI
+  never presents an incomplete or duplicate card.
 
 ## Work Guidance
 

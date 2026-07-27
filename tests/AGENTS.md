@@ -65,9 +65,11 @@ completeness without touching a real Hermes profile.
   initialization.
 - Dashboard asset tests pin the supported tab and slot, authenticated read-only
   polling, confirmation-gated setup writes, required empty/error/progress states,
-  and narrow host-theme styling.
+  selected-workflow detail hydration without duplicate cards, and narrow
+  host-theme styling.
 - Setup wizard tests prove preview/decline non-mutation, exact start delegation,
-  request validation, and narrowly scoped Hermes inventory commands.
+  request validation, narrowly scoped Hermes inventory commands, and profile
+  parsing when valid names overflow Hermes' display columns.
 - Shared-parser and fake-command tests proving native Hermes and standalone CLI
   service calls, public Kanban command translation, JSON, and exit codes remain
   equivalent.

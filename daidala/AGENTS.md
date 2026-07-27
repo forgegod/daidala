@@ -45,7 +45,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle and attended-review dispatch, pack operations, dry-run-first project-cycle operations, exact preview-digest apply gates, bounded inspection output, and subprocess mutation boundary. |
 | `dashboard_backend.py` | Profile-safe dashboard read model, live Kanban snapshots, constraint previews, and typed compare-and-swap replacement adapter. |
 | `recommendations.py` | Pure finite pending-decision and next-action derivation from ledger facts and live Kanban snapshots. |
-| `setup_wizard.py` | Typed setup preview, confirmation gate, and documented Hermes board/profile inventory commands. |
+| `setup_wizard.py` | Typed setup preview, confirmation gate, and documented Hermes board/profile inventory commands with bounded long-name table parsing. |
 | `packs/` | Skill-set-specific lifecycle mappings. |
 | `skills/` | Namespaced read-only orchestration and guided-setup skills bundled with the plugin. |
 
@@ -192,6 +192,10 @@ workflow-pack adapters, and bundled orchestration skills.
   Kanban database.
 - Native `start` uses `--default-profile`; `--profile` is reserved and consumed
   by the Hermes host before plugin subcommand parsing.
+- Setup inventory may use the resolved runtime-root basename as the mounted
+  controller identity only after that exact name appears in Hermes' documented
+  profile inventory. Profile-table parsing must not depend on fixed column
+  padding because long profile names legitimately overflow the display width.
 - Start validates one explicit named board and a complete executable-stage profile map before creating cards.
 
 ### Public start surface (single source of truth)
