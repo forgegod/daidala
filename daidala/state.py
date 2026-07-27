@@ -736,6 +736,278 @@ class VerificationEvidence:
         )
 
 
+class ReviewOutcome(StrEnum):
+    ACCEPTED = "accepted"
+    CHANGES_REQUESTED = "changes_requested"
+    REJECTED = "rejected"
+
+
+class ReviewDispositionAction(StrEnum):
+    ACCEPT_DELIVERY = "accept_delivery"
+    REQUEST_REVISION = "request_revision"
+    REJECT_WORKFLOW = "reject_workflow"
+
+
+@dataclass(frozen=True)
+class ReviewFinding:
+    finding_id: str
+    severity: str
+    blocking: bool
+    title: str
+    rationale: str
+    evidence_digests: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.finding_id, str) or not re.fullmatch(
+            r"[a-z][a-z0-9-]{0,63}", self.finding_id
+        ):
+            raise PolicyViolationError("review finding ID must be a canonical slug")
+        if self.severity not in {"low", "medium", "high", "critical"}:
+            raise PolicyViolationError("review finding severity is invalid")
+        if not isinstance(self.blocking, bool):
+            raise PolicyViolationError("review finding blocking must be a boolean")
+        _require_bounded_text(self.title, "review finding title", 200)
+        _require_bounded_text(self.rationale, "review finding rationale", 2000)
+        if not isinstance(self.evidence_digests, tuple) or not 1 <= len(self.evidence_digests) <= 8:
+            raise PolicyViolationError("review finding evidence must contain 1-8 digests")
+        for digest in self.evidence_digests:
+            _require_digest(digest, "review finding evidence digest")
+        if tuple(sorted(set(self.evidence_digests))) != self.evidence_digests:
+            raise PolicyViolationError(
+                "review finding evidence digests must be sorted and unique"
+            )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.finding_id,
+            "severity": self.severity,
+            "blocking": self.blocking,
+            "title": self.title,
+            "rationale": self.rationale,
+            "evidence_digests": list(self.evidence_digests),
+        }
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> ReviewFinding:
+        _require_exact_fields(
+            raw,
+            {"id", "severity", "blocking", "title", "rationale", "evidence_digests"},
+            "review finding",
+        )
+        return cls(
+            finding_id=raw["id"],
+            severity=raw["severity"],
+            blocking=raw["blocking"],
+            title=raw["title"],
+            rationale=raw["rationale"],
+            evidence_digests=tuple(raw["evidence_digests"]),
+        )
+
+
+@dataclass(frozen=True)
+class ReviewRecord:
+    workflow_id: str
+    plan_digest: str
+    plan_revision: int
+    policy_revision: int
+    constraints_revision: int | None
+    constraints_digest: str | None
+    implementation_digest: str
+    verification_digests: tuple[str, ...]
+    activation_digest: str
+    outcome: ReviewOutcome
+    summary: ApprovalSummary
+    summary_digest: str
+    findings: tuple[ReviewFinding, ...]
+    recorded_at: datetime
+
+    def __post_init__(self) -> None:
+        _require_text(self.workflow_id, "review workflow ID")
+        _require_digest(self.plan_digest, "review plan digest")
+        _require_revision(self.plan_revision)
+        _require_revision(self.policy_revision)
+        if (self.constraints_revision is None) != (self.constraints_digest is None):
+            raise PolicyViolationError(
+                "review constraint revision and digest must both be present or absent"
+            )
+        if self.constraints_revision is not None:
+            _require_positive_revision(self.constraints_revision, "review constraint revision")
+        if self.constraints_digest is not None:
+            _require_digest(self.constraints_digest, "review constraint digest")
+        _require_digest(self.implementation_digest, "review implementation digest")
+        if not isinstance(self.verification_digests, tuple) or not self.verification_digests:
+            raise PolicyViolationError("review requires passing verification digests")
+        for digest in self.verification_digests:
+            _require_digest(digest, "review verification digest")
+        if tuple(sorted(set(self.verification_digests))) != self.verification_digests:
+            raise PolicyViolationError("review verification digests must be sorted and unique")
+        _require_digest(self.activation_digest, "review activation digest")
+        if not isinstance(self.outcome, ReviewOutcome):
+            raise PolicyViolationError("review outcome is invalid")
+        if not isinstance(self.summary, ApprovalSummary):
+            raise PolicyViolationError("review summary is invalid")
+        _require_digest(self.summary_digest, "review summary digest")
+        if self.summary_digest != self.summary.digest_for(self.implementation_digest):
+            raise PolicyViolationError(
+                "review summary digest does not match the implementation digest"
+            )
+        if not isinstance(self.findings, tuple) or len(self.findings) > 32:
+            raise PolicyViolationError("review findings must contain at most 32 records")
+        if any(not isinstance(finding, ReviewFinding) for finding in self.findings):
+            raise PolicyViolationError("review findings must contain review finding records")
+        finding_ids = [finding.finding_id for finding in self.findings]
+        if finding_ids != sorted(set(finding_ids)):
+            raise PolicyViolationError("review findings must have sorted unique IDs")
+        if self.outcome is ReviewOutcome.ACCEPTED and any(
+            finding.blocking for finding in self.findings
+        ):
+            raise PolicyViolationError("accepted review cannot contain blocking findings")
+        _require_aware(self.recorded_at, "review recorded_at")
+
+    @property
+    def digest(self) -> str:
+        return hashlib.sha256(self.canonical_bytes()).hexdigest()
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "workflow_id": self.workflow_id,
+            "plan_digest": self.plan_digest,
+            "plan_revision": self.plan_revision,
+            "policy_revision": self.policy_revision,
+            "constraints_revision": self.constraints_revision,
+            "constraints_digest": self.constraints_digest,
+            "implementation_digest": self.implementation_digest,
+            "verification_digests": list(self.verification_digests),
+            "activation_digest": self.activation_digest,
+            "outcome": self.outcome.value,
+            "summary": self.summary.to_dict(),
+            "summary_digest": self.summary_digest,
+            "findings": [finding.to_dict() for finding in self.findings],
+            "recorded_at": self.recorded_at.isoformat(),
+        }
+
+    def canonical_bytes(self) -> bytes:
+        return json.dumps(
+            self.to_dict(), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> ReviewRecord:
+        _require_exact_fields(
+            raw,
+            {
+                "workflow_id", "plan_digest", "plan_revision", "policy_revision",
+                "constraints_revision", "constraints_digest", "implementation_digest",
+                "verification_digests", "activation_digest", "outcome", "summary",
+                "summary_digest", "findings", "recorded_at",
+            },
+            "review record",
+        )
+        return cls(
+            workflow_id=raw["workflow_id"],
+            plan_digest=raw["plan_digest"],
+            plan_revision=raw["plan_revision"],
+            policy_revision=raw["policy_revision"],
+            constraints_revision=raw["constraints_revision"],
+            constraints_digest=raw["constraints_digest"],
+            implementation_digest=raw["implementation_digest"],
+            verification_digests=tuple(raw["verification_digests"]),
+            activation_digest=raw["activation_digest"],
+            outcome=ReviewOutcome(raw["outcome"]),
+            summary=ApprovalSummary.from_dict(raw["summary"]),
+            summary_digest=raw["summary_digest"],
+            findings=tuple(ReviewFinding.from_dict(row) for row in raw["findings"]),
+            recorded_at=datetime.fromisoformat(raw["recorded_at"]),
+        )
+
+
+@dataclass(frozen=True)
+class ReviewDisposition:
+    review_digest: str
+    implementation_digest: str
+    verification_digests: tuple[str, ...]
+    plan_digest: str
+    plan_revision: int
+    policy_revision: int
+    constraints_revision: int | None
+    constraints_digest: str | None
+    action: ReviewDispositionAction
+    actor: str
+    rationale: str
+    decided_at: datetime
+
+    def __post_init__(self) -> None:
+        for digest, label in (
+            (self.review_digest, "disposition review digest"),
+            (self.implementation_digest, "disposition implementation digest"),
+            (self.plan_digest, "disposition plan digest"),
+        ):
+            _require_digest(digest, label)
+        if not isinstance(self.verification_digests, tuple) or not self.verification_digests:
+            raise PolicyViolationError("disposition requires verification digests")
+        for digest in self.verification_digests:
+            _require_digest(digest, "disposition verification digest")
+        if tuple(sorted(set(self.verification_digests))) != self.verification_digests:
+            raise PolicyViolationError("disposition verification digests must be sorted and unique")
+        _require_revision(self.plan_revision)
+        _require_revision(self.policy_revision)
+        if (self.constraints_revision is None) != (self.constraints_digest is None):
+            raise PolicyViolationError(
+                "disposition constraint revision and digest must both be present or absent"
+            )
+        if self.constraints_revision is not None:
+            _require_positive_revision(self.constraints_revision, "disposition constraint revision")
+        if self.constraints_digest is not None:
+            _require_digest(self.constraints_digest, "disposition constraint digest")
+        if not isinstance(self.action, ReviewDispositionAction):
+            raise PolicyViolationError("review disposition action is invalid")
+        _require_bounded_text(self.actor, "review disposition actor", 200)
+        _require_bounded_text(self.rationale, "review disposition rationale", 2000)
+        _require_aware(self.decided_at, "review disposition decided_at")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "review_digest": self.review_digest,
+            "implementation_digest": self.implementation_digest,
+            "verification_digests": list(self.verification_digests),
+            "plan_digest": self.plan_digest,
+            "plan_revision": self.plan_revision,
+            "policy_revision": self.policy_revision,
+            "constraints_revision": self.constraints_revision,
+            "constraints_digest": self.constraints_digest,
+            "action": self.action.value,
+            "actor": self.actor,
+            "rationale": self.rationale,
+            "decided_at": self.decided_at.isoformat(),
+        }
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> ReviewDisposition:
+        _require_exact_fields(
+            raw,
+            {
+                "review_digest", "implementation_digest", "verification_digests", "plan_digest",
+                "plan_revision", "policy_revision", "constraints_revision", "constraints_digest",
+                "action", "actor", "rationale", "decided_at",
+            },
+            "review disposition",
+        )
+        return cls(
+            review_digest=raw["review_digest"],
+            implementation_digest=raw["implementation_digest"],
+            verification_digests=tuple(raw["verification_digests"]),
+            plan_digest=raw["plan_digest"],
+            plan_revision=raw["plan_revision"],
+            policy_revision=raw["policy_revision"],
+            constraints_revision=raw["constraints_revision"],
+            constraints_digest=raw["constraints_digest"],
+            action=ReviewDispositionAction(raw["action"]),
+            actor=raw["actor"],
+            rationale=raw["rationale"],
+            decided_at=datetime.fromisoformat(raw["decided_at"]),
+        )
+
+
 @dataclass(frozen=True)
 class CardReference:
     stage: WorkflowStage
@@ -810,6 +1082,8 @@ class WorkflowLedger:
     artifacts: tuple[ArtifactReference, ...] = ()
     approval: ApprovalRecord | None = None
     verification_evidence: tuple[VerificationEvidence, ...] = ()
+    review: ReviewRecord | None = None
+    review_disposition: ReviewDisposition | None = None
     activation_manifests: tuple[ActivationManifestReference, ...] = ()
     committed: bool = False
     pushed: bool = False
@@ -916,6 +1190,50 @@ class WorkflowLedger:
                 raise PolicyViolationError(
                     "verification evidence must match the current plan revision"
                 )
+
+        if self.review is not None:
+            implementation = self.artifact_for(WorkflowStage.IMPLEMENT)
+            plan = self.artifact_for(WorkflowStage.PLAN)
+            activation = self.activation_for(WorkflowStage.REVIEW)
+            passing = tuple(
+                sorted(
+                    {row.output_digest for row in self.verification_evidence if row.exit_code == 0}
+                )
+            )
+            review = self.review
+            if (
+                implementation is None or plan is None or activation is None
+                or review.workflow_id != self.workflow_id
+                or review.plan_digest != plan.digest
+                or review.plan_revision != self.plan_revision
+                or review.policy_revision != self.policy_revision
+                or review.constraints_revision != self.current_constraints_revision
+                or review.constraints_digest != self.current_constraints_digest
+                or review.implementation_digest != implementation.digest
+                or review.verification_digests != passing
+                or review.activation_digest != activation.digest
+            ):
+                raise PolicyViolationError("review must match the current evidence tuple")
+            allowed_evidence = {review.implementation_digest, *review.verification_digests}
+            if any(
+                not set(finding.evidence_digests) <= allowed_evidence
+                for finding in review.findings
+            ):
+                raise PolicyViolationError("review finding evidence is not ledger-bound")
+        if self.review_disposition is not None:
+            review = self.review
+            disposition = self.review_disposition
+            if review is None or (
+                disposition.review_digest != review.digest
+                or disposition.implementation_digest != review.implementation_digest
+                or disposition.verification_digests != review.verification_digests
+                or disposition.plan_digest != review.plan_digest
+                or disposition.plan_revision != review.plan_revision
+                or disposition.policy_revision != review.policy_revision
+                or disposition.constraints_revision != review.constraints_revision
+                or disposition.constraints_digest != review.constraints_digest
+            ):
+                raise PolicyViolationError("review disposition must match the current review tuple")
 
         activation_groups: dict[
             tuple[WorkflowStage, int, int, str | None],
@@ -1045,6 +1363,10 @@ class WorkflowLedger:
             "verification_evidence": [
                 row.to_dict() for row in self.verification_evidence
             ],
+            "review": self.review.to_dict() if self.review else None,
+            "review_disposition": (
+                self.review_disposition.to_dict() if self.review_disposition else None
+            ),
             "activation_manifests": [
                 row.to_dict() for row in self.activation_manifests
             ],
@@ -1076,6 +1398,8 @@ class WorkflowLedger:
                 "artifacts",
                 "approval",
                 "verification_evidence",
+                "review",
+                "review_disposition",
                 "activation_manifests",
                 "committed",
                 "pushed",
@@ -1123,6 +1447,12 @@ class WorkflowLedger:
                 verification_evidence=tuple(
                     VerificationEvidence.from_dict(row)
                     for row in raw["verification_evidence"]
+                ),
+                review=ReviewRecord.from_dict(raw["review"]) if raw.get("review") else None,
+                review_disposition=(
+                    ReviewDisposition.from_dict(raw["review_disposition"])
+                    if raw.get("review_disposition")
+                    else None
                 ),
                 activation_manifests=tuple(
                     ActivationManifestReference.from_dict(row)

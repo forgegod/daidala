@@ -8,7 +8,9 @@ provides_tools:
   - daidala_replace_constraints
   - daidala_approve
   - daidala_cancel
+  - daidala_review_disposition
   - daidala_submit_artifact
+  - daidala_submit_review
   - daidala_prepare_implementation
   - daidala_capture_implementation
   - daidala_record_skill_activation

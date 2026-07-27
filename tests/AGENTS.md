@@ -42,6 +42,9 @@ completeness without touching a real Hermes profile.
   rejection, literal confirmation, and post-install verification.
 - Fake host-dispatch tests for ledger-owned approval, worker rejection,
   restart-safe plan-parented post-gate graphs, and idempotent Kanban mapping.
+- Review-disposition tests prove structured review bounds, exact evidence-tuple
+  binding, worker-context rejection for attended decisions, and absence of a
+  delivery card before exact attended acceptance.
 - Constraint-card tests prove policy-aware idempotency, global and phase-specific
   projection, explicit board and constraint-revision identity, explicit null
   identity, the exact 8,192-character rendered-body boundary, and fail-closed

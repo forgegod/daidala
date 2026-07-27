@@ -29,6 +29,8 @@ from .state import (
     ActivationManifestReference,
     ApprovalRecord,
     CardReference,
+    ReviewDispositionAction,
+    ReviewOutcome,
     VerificationEvidence,
     WorkflowConstraintsArtifact,
     WorkflowConstraintsReference,
@@ -287,8 +289,8 @@ def derive_recommendations(
 
     if _deliver_ready(ledger, snapshots):
         deliver_card = ledger.card_for(WorkflowStage.DELIVER)
-        review_artifact = ledger.artifact_for(WorkflowStage.REVIEW)
-        assert deliver_card is not None and review_artifact is not None
+        review = ledger.review
+        assert deliver_card is not None and review is not None
         recommendations.append(
             Recommendation(
                 action_kind="deliver_reviewed_diff",
@@ -299,7 +301,7 @@ def derive_recommendations(
                     "false."
                 ),
                 card_id=deliver_card.task_id,
-                evidence_ref=review_artifact.path,
+                evidence_ref=review.digest,
             )
         )
 
@@ -433,7 +435,6 @@ def _prerequisites_complete(
         WorkflowStage.IMPLEMENT,
         WorkflowStage.VERIFY,
         WorkflowStage.REVIEW,
-        WorkflowStage.DELIVER,
     }
     if parent_artifact_required and ledger.artifact_for(parent_stage) is None:
         return False
@@ -449,6 +450,8 @@ def _prerequisites_complete(
         ledger.approval is None or not ledger.worktree_owned
     ):
         return False
+    if stage is WorkflowStage.DELIVER and not _accepted_delivery_disposition(ledger):
+        return False
     return True
 
 
@@ -461,13 +464,25 @@ def _deliver_ready(
         return False
     if deliver_snapshot.status == "done":
         return False
-    review_artifact = ledger.artifact_for(WorkflowStage.REVIEW)
     implement_artifact = ledger.artifact_for(WorkflowStage.IMPLEMENT)
-    if review_artifact is None or implement_artifact is None:
+    if implement_artifact is None or not _accepted_delivery_disposition(ledger):
         return False
     if not ledger.worktree_owned or not ledger.worktree_path:
         return False
     return deliver_snapshot.status == "ready"
+
+
+def _accepted_delivery_disposition(ledger: WorkflowLedger) -> bool:
+    review = ledger.review
+    disposition = ledger.review_disposition
+    return (
+        review is not None
+        and review.outcome is ReviewOutcome.ACCEPTED
+        and not any(finding.blocking for finding in review.findings)
+        and disposition is not None
+        and disposition.review_digest == review.digest
+        and disposition.action is ReviewDispositionAction.ACCEPT_DELIVERY
+    )
 
 
 __all__ = [

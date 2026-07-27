@@ -21,7 +21,7 @@ from .controller import CycleAdmission, validate_notification_receipt
 from .errors import PolicyViolationError
 from .projects import _require_digest, _require_text
 from .registrations import ControllerRegistration
-from .state import WorkflowLedger, WorkflowStage
+from .state import ReviewDispositionAction, ReviewOutcome, WorkflowLedger, WorkflowStage
 
 COMPLETION_PREVIEW_SCHEMA = "daidala.cycle-completion-preview/v1"
 COMPLETION_SCHEMA = "daidala.cycle-completion/v1"
@@ -338,10 +338,21 @@ def build_completion_preview(
         raise PolicyViolationError("completion requires released worktree ownership")
     if ledger.committed or ledger.pushed:
         raise PolicyViolationError("completion cannot represent committed or pushed work")
-    review = ledger.artifact_for(WorkflowStage.REVIEW)
+    review = ledger.review
+    disposition = ledger.review_disposition
     delivery = ledger.artifact_for(WorkflowStage.DELIVER)
-    if review is None or delivery is None:
-        raise PolicyViolationError("completion requires review and delivery artifacts")
+    if (
+        review is None
+        or review.outcome is not ReviewOutcome.ACCEPTED
+        or any(finding.blocking for finding in review.findings)
+        or disposition is None
+        or disposition.review_digest != review.digest
+        or disposition.action is not ReviewDispositionAction.ACCEPT_DELIVERY
+        or delivery is None
+    ):
+        raise PolicyViolationError(
+            "completion requires an accepted review disposition and delivery artifact"
+        )
     verification = tuple(
         sorted(
             {

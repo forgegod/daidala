@@ -17,6 +17,9 @@ from .state import (
     ApprovalSummary,
     ArtifactReference,
     CardReference,
+    ReviewDisposition,
+    ReviewDispositionAction,
+    ReviewRecord,
     SkillDigest,
     StageProfile,
     VerificationEvidence,
@@ -176,7 +179,7 @@ def record_artifact(
     approval_summary: ApprovalSummary | None = None,
 ) -> WorkflowLedger:
     """Record an immutable stage artifact after its Daidala policy checks."""
-    if stage in {WorkflowStage.APPROVAL, WorkflowStage.VERIFY}:
+    if stage in {WorkflowStage.APPROVAL, WorkflowStage.VERIFY, WorkflowStage.REVIEW}:
         raise PolicyViolationError(
             f"stage {stage.value!r} uses approval or verification evidence, not an artifact"
         )
@@ -209,16 +212,66 @@ def record_artifact(
     elif stage is WorkflowStage.IMPLEMENT:
         _require_approval(ledger)
         _require_worktree(ledger)
-    elif stage is WorkflowStage.REVIEW:
-        _require_successful_verification(ledger)
     elif stage is WorkflowStage.DELIVER:
         _require_successful_verification(ledger)
-        _require_artifact(ledger, WorkflowStage.REVIEW)
+        _require_review_disposition(ledger)
     return replace(
         ledger,
         artifacts=(*ledger.artifacts, candidate),
         updated_at=recorded_at,
     )
+
+
+def record_review(ledger: WorkflowLedger, *, review: ReviewRecord) -> WorkflowLedger:
+    """Persist one automated review bound to the current evidence tuple."""
+    _require_stage_activation(ledger, WorkflowStage.REVIEW)
+    _require_successful_verification(ledger)
+    implementation = _require_artifact(ledger, WorkflowStage.IMPLEMENT)
+    plan = _require_artifact(ledger, WorkflowStage.PLAN)
+    activation = ledger.activation_for(WorkflowStage.REVIEW)
+    assert activation is not None
+    passing = tuple(
+        sorted({row.output_digest for row in ledger.verification_evidence if row.exit_code == 0})
+    )
+    if (
+        review.workflow_id != ledger.workflow_id
+        or review.plan_digest != plan.digest
+        or review.plan_revision != ledger.plan_revision
+        or review.policy_revision != ledger.policy_revision
+        or review.constraints_revision != ledger.current_constraints_revision
+        or review.constraints_digest != ledger.current_constraints_digest
+        or review.implementation_digest != implementation.digest
+        or review.verification_digests != passing
+        or review.activation_digest != activation.digest
+    ):
+        raise PolicyViolationError("review does not match the current evidence tuple")
+    if ledger.review == review:
+        return ledger
+    if ledger.review is not None:
+        raise PolicyViolationError("current workflow revision already has a different review")
+    _require_not_before(ledger, review.recorded_at)
+    return replace(ledger, review=review, updated_at=review.recorded_at)
+
+
+def record_review_disposition(
+    ledger: WorkflowLedger, *, disposition: ReviewDisposition
+) -> WorkflowLedger:
+    """Persist one exact-tuple attended review disposition."""
+    review = ledger.review
+    if review is None:
+        raise PolicyViolationError("review disposition requires a structured review")
+    if disposition.action is ReviewDispositionAction.ACCEPT_DELIVERY and (
+        review.outcome.value != "accepted" or any(finding.blocking for finding in review.findings)
+    ):
+        raise PolicyViolationError(
+            "delivery acceptance requires an accepted review without blocking findings"
+        )
+    if ledger.review_disposition == disposition:
+        return ledger
+    if ledger.review_disposition is not None:
+        raise PolicyViolationError("current review already has a different disposition")
+    _require_not_before(ledger, disposition.decided_at)
+    return replace(ledger, review_disposition=disposition, updated_at=disposition.decided_at)
 
 
 def approve_plan(
@@ -534,15 +587,28 @@ def _require_worktree(ledger: WorkflowLedger) -> None:
         raise PolicyViolationError("operation requires a Daidala-owned worktree")
 
 
-def _require_artifact(ledger: WorkflowLedger, stage: WorkflowStage) -> None:
-    if ledger.artifact_for(stage) is None:
+def _require_artifact(ledger: WorkflowLedger, stage: WorkflowStage) -> ArtifactReference:
+    artifact = ledger.artifact_for(stage)
+    if artifact is None:
         raise PolicyViolationError(f"operation requires the {stage.value} artifact")
+    return artifact
 
 
 def _require_successful_verification(ledger: WorkflowLedger) -> None:
     evidence = ledger.verification_evidence
     if not evidence or evidence[-1].exit_code != 0:
         raise PolicyViolationError("operation requires successful verification evidence")
+
+
+def _require_review_disposition(ledger: WorkflowLedger) -> None:
+    if (
+        ledger.review is None
+        or ledger.review_disposition is None
+        or ledger.review_disposition.action is not ReviewDispositionAction.ACCEPT_DELIVERY
+    ):
+        raise PolicyViolationError(
+            "delivery requires exact attended acceptance of the current review"
+        )
 
 
 def _require_not_before(ledger: WorkflowLedger, recorded_at: datetime) -> None:

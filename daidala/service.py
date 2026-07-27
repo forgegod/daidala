@@ -45,6 +45,11 @@ from .state import (
     ActivationReferenceState,
     ApprovalSummary,
     ConstraintSourceProvenance,
+    ReviewDisposition,
+    ReviewDispositionAction,
+    ReviewFinding,
+    ReviewOutcome,
+    ReviewRecord,
     SkillDigest,
     StageProfile,
     WorkflowConstraintsArtifact,
@@ -61,6 +66,8 @@ from .workflow import (
     record_artifact,
     record_card,
     record_constraints,
+    record_review,
+    record_review_disposition,
     record_skill_activation,
     record_verification,
     record_worktree,
@@ -418,10 +425,10 @@ class WorkflowService:
         board_slug: str,
         task_id: str,
     ) -> WorkflowLedger:
-        """Store and record a model-produced definition, plan, or review."""
+        """Store and record a model-produced definition or plan."""
         if not isinstance(content, str) or not content.strip():
             raise ServiceError("artifact content must be a non-empty string")
-        if stage not in {WorkflowStage.DEFINE, WorkflowStage.PLAN, WorkflowStage.REVIEW}:
+        if stage not in {WorkflowStage.DEFINE, WorkflowStage.PLAN}:
             raise ServiceError(f"stage {stage.value!r} cannot be submitted as text")
         if stage is WorkflowStage.PLAN:
             if not isinstance(approval_summary, dict):
@@ -439,7 +446,6 @@ class WorkflowService:
         filename = {
             WorkflowStage.DEFINE: "define.md",
             WorkflowStage.PLAN: "plan.md",
-            WorkflowStage.REVIEW: "review.md",
         }[stage]
         relative_path = self._workspace.stage_artifact_relative_path(
             stage=stage,
@@ -458,6 +464,145 @@ class WorkflowService:
         )
         stored = self.store.update(updated, expected_updated_at=observed.updated_at)
         return stored
+
+    def submit_review(
+        self,
+        workflow_id: str,
+        *,
+        outcome: str,
+        summary: dict,
+        findings: list[dict],
+        board_slug: str,
+        task_id: str,
+    ) -> WorkflowLedger:
+        """Record structured automated review evidence for the current revision."""
+        observed = self.store.get_with_token(workflow_id)
+        ledger = observed.ledger
+        self._require_current_card_context(
+            ledger, WorkflowStage.REVIEW, board_slug=board_slug, task_id=task_id
+        )
+        implementation = ledger.artifact_for(WorkflowStage.IMPLEMENT)
+        activation = ledger.activation_for(WorkflowStage.REVIEW)
+        if implementation is None or activation is None:
+            raise ServiceError("review requires implementation and finalized review activation")
+        if not isinstance(findings, list):
+            raise ServiceError("review findings must be an array")
+        required_fields = {"id", "severity", "blocking", "title", "rationale", "evidence_digests"}
+        if any(not isinstance(row, dict) or set(row) != required_fields for row in findings):
+            raise ServiceError("review finding fields are invalid")
+        try:
+            review_summary = ApprovalSummary.from_dict(summary)
+            record = ReviewRecord(
+                workflow_id=ledger.workflow_id,
+                plan_digest=ledger.current_plan_digest or "",
+                plan_revision=ledger.plan_revision,
+                policy_revision=ledger.policy_revision,
+                constraints_revision=ledger.current_constraints_revision,
+                constraints_digest=ledger.current_constraints_digest,
+                implementation_digest=implementation.digest,
+                verification_digests=tuple(
+                    sorted(
+                        {
+                            row.output_digest
+                            for row in ledger.verification_evidence
+                            if row.exit_code == 0
+                        }
+                    )
+                ),
+                activation_digest=activation.digest,
+                outcome=ReviewOutcome(outcome),
+                summary=review_summary,
+                summary_digest=review_summary.digest_for(implementation.digest),
+                findings=tuple(
+                    sorted(
+                        (
+                            ReviewFinding(
+                                finding_id=row["id"],
+                                severity=row["severity"],
+                                blocking=row["blocking"],
+                                title=row["title"],
+                                rationale=row["rationale"],
+                                evidence_digests=tuple(row["evidence_digests"]),
+                            )
+                            for row in findings
+                        ),
+                        key=lambda finding: finding.finding_id,
+                    )
+                ),
+                recorded_at=(
+                    ledger.review.recorded_at if ledger.review is not None else self._clock()
+                ),
+            )
+        except (TypeError, ValueError) as error:
+            raise ServiceError(f"invalid review evidence: {error}") from error
+        updated = record_review(ledger, review=record)
+        stored = (
+            ledger
+            if updated is ledger
+            else self.store.update(updated, expected_updated_at=observed.updated_at)
+        )
+        if record.outcome is ReviewOutcome.ACCEPTED:
+            self._require_kanban().complete_review(stored, review_digest=record.digest)
+        else:
+            self._require_kanban().block_review(
+                stored,
+                reason=(
+                    f"review-required: outcome={record.outcome.value}; "
+                    f"review_digest={record.digest}"
+                ),
+            )
+        return stored
+
+    def decide_review(
+        self,
+        workflow_id: str,
+        *,
+        review_digest: str,
+        action: str,
+        actor: str,
+        rationale: str,
+    ) -> WorkflowLedger:
+        """Record one attended review disposition and open delivery only on acceptance."""
+        observed = self.store.get_with_token(workflow_id)
+        ledger = observed.ledger
+        review = ledger.review
+        if review is None or review.digest != review_digest:
+            raise ServiceError("review disposition must name the exact current review digest")
+        try:
+            disposition = ReviewDisposition(
+                review_digest=review_digest,
+                implementation_digest=review.implementation_digest,
+                verification_digests=review.verification_digests,
+                plan_digest=review.plan_digest,
+                plan_revision=review.plan_revision,
+                policy_revision=review.policy_revision,
+                constraints_revision=review.constraints_revision,
+                constraints_digest=review.constraints_digest,
+                action=ReviewDispositionAction(action),
+                actor=actor,
+                rationale=rationale,
+                decided_at=(
+                    ledger.review_disposition.decided_at
+                    if ledger.review_disposition is not None
+                    else self._clock()
+                ),
+            )
+        except (TypeError, ValueError) as error:
+            raise ServiceError(f"invalid review disposition: {error}") from error
+        updated = record_review_disposition(ledger, disposition=disposition)
+        if updated is not ledger:
+            updated = self.store.update(updated, expected_updated_at=observed.updated_at)
+        if disposition.action is ReviewDispositionAction.ACCEPT_DELIVERY:
+            review_card = updated.card_for(WorkflowStage.REVIEW)
+            if review_card is None:
+                raise ServiceError("delivery requires a current review card")
+            return self._ensure_card(
+                updated,
+                load_pack(updated.pack_name),
+                WorkflowStage.DELIVER,
+                parents=(review_card.task_id,),
+            )
+        return updated
 
     def list_artifacts(
         self,
@@ -797,7 +942,6 @@ class WorkflowService:
             WorkflowStage.IMPLEMENT,
             WorkflowStage.VERIFY,
             WorkflowStage.REVIEW,
-            WorkflowStage.DELIVER,
         ):
             ledger = self._ensure_card(
                 ledger,

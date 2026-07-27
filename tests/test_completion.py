@@ -18,6 +18,7 @@ from daidala.completion import (
 )
 from daidala.errors import PolicyViolationError
 from daidala.prerequisites import active_admission_paths
+from daidala.state import ReviewDispositionAction, ReviewOutcome
 
 NOW = datetime(2026, 7, 20, 10, 0, tzinfo=UTC)
 CYCLE = "cycle-" + "a" * 64
@@ -92,7 +93,15 @@ def test_completion_preview_deduplicates_passing_output_digests() -> None:
         intake=SimpleNamespace(item_id="42"),
         canonical_bytes=lambda: b"admission",
     )
-    review = SimpleNamespace(digest="3" * 64)
+    review = SimpleNamespace(
+        digest="3" * 64,
+        outcome=ReviewOutcome.ACCEPTED,
+        findings=(),
+    )
+    disposition = SimpleNamespace(
+        review_digest=review.digest,
+        action=ReviewDispositionAction.ACCEPT_DELIVERY,
+    )
     delivery = SimpleNamespace(digest="4" * 64)
     ledger = SimpleNamespace(
         workflow_id=CYCLE,
@@ -103,7 +112,9 @@ def test_completion_preview_deduplicates_passing_output_digests() -> None:
         committed=False,
         pushed=False,
         plan_revision=3,
-        artifact_for=lambda stage: {"review": review, "deliver": delivery}[stage.value],
+        review=review,
+        review_disposition=disposition,
+        artifact_for=lambda stage: {"deliver": delivery}[stage.value],
         verification_evidence=(
             SimpleNamespace(output_digest="6" * 64, plan_revision=3, exit_code=0),
             SimpleNamespace(output_digest="5" * 64, plan_revision=3, exit_code=0),

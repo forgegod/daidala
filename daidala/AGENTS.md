@@ -11,11 +11,11 @@ workflow-pack adapters, and bundled orchestration skills.
 |---|---|
 | `__init__.py` | Hermes tool, skill, and operator CLI registration. |
 | `errors.py` | Policy-ledger, persistence, and host-boundary error hierarchy. |
-| `state.py` | Immutable policy ledger, artifact evidence, Kanban identifiers, skill activation manifests, and strict serialization. |
-| `workflow.py` | Deterministic policy checks and ledger updates; no operational status transitions. |
+- `state.py` | Immutable policy ledger, artifact/review/disposition evidence, Kanban identifiers, skill activation manifests, and strict serialization. |
+- `workflow.py` | Deterministic policy checks and ledger updates, including exact review-evidence and attended-disposition binding; no operational status transitions. |
 | `locations.py` | Profile-aware data-root resolution; never hard-codes `~/.hermes`. |
 | `store.py` | SQLite-backed policy-ledger persistence with optimistic concurrency and explicit read-only opening for mutation-free previews. |
-| `service.py` | Repository preflight, approval-gated graph, artifact, worktree, and ledger coordination. |
+- `service.py` | Repository preflight, approval-gated graph, artifact, structured-review, attended-disposition, worktree, and ledger coordination. |
 | `skills.py` | Exact installed-skill inventory, content-digest verification, and mutation-free install planning. |
 | `pack_service.py` | Typed pack validation, readiness, bounded declared-skill content, preview-digest, and confirmed external-skill installation service shared by CLI and dashboard adapters. |
 | `constraints.py` | Strict workflow-constraint YAML parsing, canonicalization, bounds, and digest identity. |
@@ -85,8 +85,9 @@ workflow-pack adapters, and bundled orchestration skills.
   apply. Reconciliation remains `improve`-only.
 - `project-cycle complete` is read-only by default and opens the policy ledger
   without schema initialization. Apply requires the exact fresh preview digest,
-  done current post-gate cards, accepted review and delivery artifacts, canonical
-  unique sorted passing-verification output identities, released worktree
+  done current post-gate cards, a structured accepted review, its exact attended
+  acceptance, a delivery artifact, canonical unique sorted passing-verification
+  output identities, released worktree
   ownership, `committed: false`, `pushed: false`, and the exact stored claim
   owner. It closes the issue as completed, removes
   only the claim label, retains remote and attended receipts plus the terminal
@@ -239,6 +240,12 @@ fails locally rather than in production.
   card. The plugin approval handler rejects `HERMES_KANBAN_TASK`; attended
   approval creates one owned worktree and a post-gate graph parented from the
   current plan card. Historical approval-card references remain readable and inert.
+- Review is structured, immutable evidence bound to the exact current plan,
+  policy/constraint identity, implementation diff, passing verification outputs,
+  and review activation. Delivery cards do not exist until an attended,
+  worker-context-rejected `accept_delivery` disposition names that exact review
+  digest. Non-accepting dispositions are recorded but their revision/rejection
+  effects remain Phase 1 work.
 - Worker activation validates the current board, current policy-bound card, and
   live assignee before methodology or evidence. Every worker evidence operation
   repeats that current-card check. A constraint revision makes prior cards and

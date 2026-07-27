@@ -109,8 +109,8 @@ returned activation digest for the handoff or blocking comment.
 | `plan` | Submit the complete plan with `daidala_submit_artifact(stage: "plan")` and an evidence-derived `approval_summary`. | Complete with the plan reference, plan digest, and bound summary digest; implementation still waits for exact human approval. |
 | `implement` | Apply only the approved plan in the persistent worktree, then call `daidala_capture_implementation`. | Complete with the immutable diff and changed-path references. |
 | `verify` | Run every approved command in the persistent worktree and immediately call `daidala_record_verification` with the exact command, exit code, and output. | Complete only when the final evidence passes; otherwise comment and block. |
-| `review` | Review the captured diff and verification evidence without changing files, then submit the decision with `daidala_submit_artifact(stage: "review")`. | Complete only for an accepted review; otherwise comment and block. |
-| `deliver` | Call `daidala_deliver` and inspect its durable delivery artifact. | Complete with changed paths and evidence references, explicitly reporting `committed: false` and `pushed: false`. |
+| `review` | Review the captured diff and verification evidence without changing files, then call `daidala_submit_review` with outcome, summary, and bounded findings whose evidence digests name the implementation diff or passing verification outputs. | An accepted review is complete evidence; another outcome must comment and block with `review-required:`. Never call attended disposition tools. |
+| `deliver` | Call `daidala_deliver` and inspect its durable delivery artifact. This card exists only after an attended `daidala_review_disposition(action: "accept_delivery")` for the exact review digest. | Complete with changed paths and evidence references, explicitly reporting `committed: false` and `pushed: false`. |
 
 The plan `approval_summary` has exactly `headline`, `changes`, `affected_areas`,
 `risks`, and `verification`. Ground every item in the submitted plan and its
@@ -136,7 +136,7 @@ using schema `daidala.handoff/v1`. Metadata must contain:
   `deliver`;
 - diff and changed-path manifest references for `implement`;
 - exact commands, exit codes, and output references for `verify`;
-- the review decision for `review`;
+- the structured review outcome, review digest, and finding evidence digests for `review`;
 - the delivery artifact and its `committed: false`, `pushed: false` restrictions
   for `deliver`.
 
@@ -196,7 +196,8 @@ approval and graph revision.
 - [ ] Implementation ran only in the returned fresh worktree.
 - [ ] Captured implementation diff is non-empty.
 - [ ] Verification command, exit code, and output reference are durable.
-- [ ] Review artifact exists after passing verification.
+- [ ] Structured review evidence binds the implementation diff and passing verification outputs.
+- [ ] Delivery card exists only after exact attended review acceptance.
 - [ ] Delivery reports changed paths without a target commit or push.
 - [ ] Every worker run ended through `kanban_complete` or `kanban_block` with a
       durable `daidala.handoff/v1` handoff or blocking comment.

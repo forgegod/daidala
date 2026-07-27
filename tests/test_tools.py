@@ -337,22 +337,22 @@ def test_start_restart_and_approval_create_one_idempotent_graph(
 
     approved = service.approve(second.workflow_id, plan_digest=plan.digest)
 
-    assert len(fake_kanban_host.cards) == 6
+    assert len(fake_kanban_host.cards) == 5
     assert [card.stage for card in approved.card_references] == [
-        stage for stage in WorkflowStage if stage is not WorkflowStage.APPROVAL
+        stage
+        for stage in WorkflowStage
+        if stage not in {WorkflowStage.APPROVAL, WorkflowStage.DELIVER}
     ]
     for parent, child in zip(
         (
             WorkflowStage.PLAN,
             WorkflowStage.IMPLEMENT,
             WorkflowStage.VERIFY,
-            WorkflowStage.REVIEW,
         ),
         (
             WorkflowStage.IMPLEMENT,
             WorkflowStage.VERIFY,
             WorkflowStage.REVIEW,
-            WorkflowStage.DELIVER,
         ),
         strict=True,
     ):
@@ -364,7 +364,7 @@ def test_start_restart_and_approval_create_one_idempotent_graph(
 
     replayed = service.approve(second.workflow_id, plan_digest=plan.digest)
     assert replayed.card_references == approved.card_references
-    assert len(fake_kanban_host.cards) == 6
+    assert len(fake_kanban_host.cards) == 5
 
 
 @pytest.mark.parametrize("worker_task", ("", "t_plan"))
@@ -833,7 +833,9 @@ def test_public_schemas_have_no_removed_lifecycle_aliases() -> None:
         "daidala_replace_constraints",
         "daidala_approve",
         "daidala_cancel",
+        "daidala_review_disposition",
         "daidala_submit_artifact",
+        "daidala_submit_review",
         "daidala_prepare_implementation",
         "daidala_capture_implementation",
         "daidala_record_skill_activation",
@@ -850,6 +852,29 @@ def test_public_schemas_have_no_removed_lifecycle_aliases() -> None:
     assert summary["additionalProperties"] is False
     assert set(summary["required"]) == {
         "headline", "changes", "affected_areas", "risks", "verification",
+    }
+
+
+def test_review_disposition_tool_rejects_kanban_worker_context(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("HERMES_KANBAN_TASK", "t_review")
+
+    result = call(
+        tools.decide_review,
+        {
+            "workflow_id": "workflow",
+            "review_digest": "a" * 64,
+            "action": "accept_delivery",
+            "actor": "operator",
+            "rationale": "The reviewed evidence is accepted.",
+        },
+    )
+
+    assert result == {
+        "success": False,
+        "error": "ValueError",
+        "message": "review disposition is unavailable from Hermes Kanban worker context",
     }
 
 

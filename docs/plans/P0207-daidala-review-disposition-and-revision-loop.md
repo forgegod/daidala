@@ -18,17 +18,17 @@
 
 **Produces:** structured automated review evidence, an attended exact-evidence disposition gate before delivery, a revision-request loop that creates a new plan card and fresh approval without rewriting rejected history, and synchronized lifecycle/operator documentation
 
-**Status:** pending — operator selected manual review disposition plus revision loop; human approval is required before implementation
+**Status:** in progress — Phase 0 done; Phase 1 awaits the pushed Phase 0 checkpoint
 
 This plan makes automated review advisory evidence rather than delivery authority: an attended user must accept the exact reviewed tuple, request a new plan revision, or reject the workflow before delivery can exist.
 
 ## Current state
 
-- `review` is an executable Hermes card, not a human gate; the worker skill says accepted reviews complete and rejected reviews block (`daidala/skills/orchestrate/SKILL.md:104-119`).
-- `WorkflowService.submit_artifact()` stores any non-empty `review.md` and does not parse an accepted/rejected disposition (`daidala/service.py:399-438`).
-- `WorkflowService.deliver()` does not require a structured accepted review or human disposition (`daidala/service.py:656-722`).
-- Plan approval creates the entire `implement → verify → review → deliver` graph, so Hermes can promote delivery immediately after a completed review (`daidala/service.py:735-755`).
-- `WorkflowService.replace_plan()` can invalidate approval, archive post-gate cards, release the worktree, and record a supplied revision, but no public tool, CLI, or dashboard flow creates the replacement plan (`daidala/service.py:224-280`).
+- Review workers submit strict canonical `ReviewRecord` evidence bound to the current plan, policy, constraints, implementation, passing verification, activation, structured summary digest, and review card. Accepted reviews cannot contain blocking findings.
+- `ReviewDisposition` is separate attended authority over the exact review tuple. Kanban workers cannot invoke it, and stale review digests fail without mutation.
+- Plan approval creates `implement → verify → review`; the delivery card is created idempotently only after `accept_delivery`, and delivery plus self-improvement completion fail closed without that exact accepted disposition.
+- Legacy terminal ledgers remain readable. Active ledgers without structured review and disposition authority cannot deliver; no acceptance is inferred from historical free-form review prose.
+- The revision-request loop and review CLI remain Phase 1 work. `WorkflowService.replace_plan()` is not yet exposed as the preserved review-driven successor flow.
 - `daidala --help` currently exposes plan approval and cancellation but no review/disposition/revision family. The current shell's `hermes -p daidala-self-improvement daidala --help` does not discover the native plugin command, so native parity must be proven in an isolated supported host before documentation claims it.
 
 ## Risk call-out
@@ -39,7 +39,7 @@ A stale or ambiguous review must never authorize delivery, and a revision reques
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Enforce structured review and attended disposition | pending | `pytest -q tests/test_review_disposition.py tests/test_workflow.py tests/test_execution.py tests/test_tools.py` exits 0 and proves delivery cannot exist before an exact attended acceptance |
+| 0 | Enforce structured review and attended disposition | done (`python -m pytest -q tests/test_review_disposition.py tests/test_workflow.py tests/test_execution.py tests/test_tools.py`; full `python -m pytest -q`; `ruff check .`; `lefthook validate`; both pack validations; Markdown links; build, Twine, and release-content checks all exited 0) | `pytest -q tests/test_review_disposition.py tests/test_workflow.py tests/test_execution.py tests/test_tools.py` exits 0 and proves delivery cannot exist before an exact attended acceptance |
 | 1 | Add review-driven plan revision loop and CLI | pending | `pytest -q tests/test_review_disposition.py tests/test_execution.py tests/test_kanban.py tests/test_cli.py tests/test_plugin.py` exits 0; an isolated supported-profile probe proves native/standalone help, JSON, exit-code parity, and fresh approval after revision |
 | 2 | Reconcile lifecycle, operator, and worker documentation | pending | `pytest -q tests/test_worker_contract.py tests/test_cli.py tests/test_plugin.py && python scripts/check_md_links.py .` exits 0 and every current-behavior document distinguishes automated review, attended disposition, revision, and dashboard availability |
 
@@ -59,7 +59,7 @@ Steps:
 6. Permit `accept_delivery` only for a current automated `accepted` review with no blocking findings and all required passing verification. Reject Kanban-worker authority exactly as plan approval does; a user who disputes reviewer judgment comments and unblocks the same review card instead of overriding a blocking review.
 7. Stop creating `deliver` during plan approval. Create `implement → verify → review` only; after attended acceptance, record the disposition and create exactly one delivery card parented to the accepted review card. Make `deliver()` fail closed without that current disposition.
 8. Handle legacy ledgers explicitly: terminal historical workflows remain readable, while active workflows lacking structured review identity cannot deliver and report migration/revision/cancellation as the available actions. Never synthesize acceptance from `review.md` prose.
-9. Add positive, stale-tuple, worker-rejection, malformed-record, malformed or source-unbound summary, blocking-finding, legacy-ledger, idempotency, no-delivery-card-before-acceptance, and delivery-enforcement tests. Update state/store migrations and owning DOX in the same implementation change.
+9. Add positive, stale-tuple, worker-rejection, malformed-record, malformed or source-unbound summary, blocking-finding, legacy-ledger, idempotency, no-delivery-card-before-acceptance, and delivery-enforcement tests. Bind and persist the review summary digest to the implementation digest; make persisted review/disposition retries converge across Kanban failures; and migrate recommendation and self-improvement completion consumers from the removed free-form review artifact to the exact structured accepted-review/disposition tuple. Update state/store migrations and owning DOX in the same implementation change.
 
 Verification gate: The Phase 0 command exits 0; an accepted automated review still cannot create or execute delivery until an attended actor accepts the exact current evidence tuple, and every stale or blocking state fails without mutation.
 

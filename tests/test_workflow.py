@@ -234,6 +234,19 @@ def test_serialization_round_trip_preserves_complete_ledger() -> None:
     assert WorkflowLedger.from_dict(ledger.to_dict()) == ledger
 
 
+def test_legacy_ledger_without_structured_review_fields_remains_readable() -> None:
+    ledger = make_ledger()
+    payload = ledger.to_dict()
+    payload.pop("review")
+    payload.pop("review_disposition")
+
+    restored = WorkflowLedger.from_dict(payload)
+
+    assert restored == ledger
+    assert restored.review is None
+    assert restored.review_disposition is None
+
+
 def test_constraint_recording_is_idempotent_and_invalidates_approval() -> None:
     from daidala.constraints import parse_workflow_constraints
 
@@ -398,7 +411,7 @@ def test_verification_evidence_does_not_create_a_blocked_status() -> None:
         recorded_at=NOW + timedelta(minutes=7),
     )
     assert repeated is failed
-    with pytest.raises(PolicyViolationError, match="successful verification"):
+    with pytest.raises(PolicyViolationError, match="uses approval or verification evidence"):
         record_artifact(
             with_activation(failed, WorkflowStage.REVIEW),
             stage=WorkflowStage.REVIEW,
@@ -406,32 +419,6 @@ def test_verification_evidence_does_not_create_a_blocked_status() -> None:
             digest="review-v1",
             recorded_at=NOW + timedelta(minutes=7),
         )
-
-    passed = record_verification(
-        failed,
-        command="pytest",
-        exit_code=0,
-        output_reference="artifacts/pytest-2.txt",
-        output_digest="verify-passed",
-        recorded_at=NOW + timedelta(minutes=7),
-    )
-    reviewed = record_artifact(
-        with_activation(passed, WorkflowStage.REVIEW),
-        stage=WorkflowStage.REVIEW,
-        path="artifacts/review.md",
-        digest="review-v1",
-        recorded_at=NOW + timedelta(minutes=8),
-    )
-    delivered = record_artifact(
-        with_activation(reviewed, WorkflowStage.DELIVER),
-        stage=WorkflowStage.DELIVER,
-        path="artifacts/delivery.json",
-        digest="delivery-v1",
-        recorded_at=NOW + timedelta(minutes=9),
-    )
-
-    assert delivered.committed is delivered.pushed is False
-
 
 def test_worktree_release_clears_only_ownership_facts() -> None:
     ledger = make_implementing()

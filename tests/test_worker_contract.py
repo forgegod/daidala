@@ -51,7 +51,7 @@ def test_historical_approval_stage_has_no_worker_skills() -> None:
         ("plan", 'daidala_submit_artifact(stage: "plan")'),
         ("implement", "daidala_capture_implementation"),
         ("verify", "daidala_record_verification"),
-        ("review", 'daidala_submit_artifact(stage: "review")'),
+        ("review", "daidala_submit_review"),
         ("deliver", "daidala_deliver"),
     ),
 )

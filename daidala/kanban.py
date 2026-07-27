@@ -164,6 +164,40 @@ class KanbanGraphAdapter:
             if ledger.card_for(stage) is not None
         )
 
+    def complete_review(self, ledger: WorkflowLedger, *, review_digest: str) -> None:
+        """Complete the review card with its immutable structured evidence handle."""
+        card = ledger.card_for(WorkflowStage.REVIEW)
+        if card is None:
+            raise KanbanError("workflow has no review card")
+        self._tool_json(
+            "kanban_complete",
+            {
+                "task_id": card.task_id,
+                "summary": "Daidala structured review evidence recorded.",
+                "metadata": {"schema": "daidala.review/v1", "review_digest": review_digest},
+                "board": ledger.board_slug,
+            },
+        )
+
+    def block_review(self, ledger: WorkflowLedger, *, reason: str) -> None:
+        """Make a non-accepted review visibly require attended disposition."""
+        card = ledger.card_for(WorkflowStage.REVIEW)
+        if card is None:
+            raise KanbanError("workflow has no review card")
+        self._tool_json(
+            "kanban_comment",
+            {"task_id": card.task_id, "body": reason, "board": ledger.board_slug},
+        )
+        self._tool_json(
+            "kanban_block",
+            {
+                "task_id": card.task_id,
+                "kind": "needs_input",
+                "reason": reason,
+                "board": ledger.board_slug,
+            },
+        )
+
     def archive(
         self,
         ledger: WorkflowLedger,

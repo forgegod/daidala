@@ -13,6 +13,7 @@ from daidala.errors import PolicyViolationError
 from daidala.execution import ExecutionError, ExecutionWorkspace
 from daidala.kanban import KanbanError, KanbanGraphAdapter
 from daidala.packs import SkillActivationMode, load_pack
+from daidala.recommendations import KanbanSnapshot, derive_recommendations
 from daidala.service import ServiceError, WorkflowService
 from daidala.skills import (
     content_registry_from_digests,
@@ -69,6 +70,13 @@ class FixtureWorkflowService(WorkflowService):
     def submit_artifact(self, workflow_id: str, *, stage: WorkflowStage, **kwargs):
         return super().submit_artifact(
             workflow_id, stage=stage, **self._current_context(workflow_id, stage), **kwargs
+        )
+
+    def submit_review(self, workflow_id: str, **kwargs):
+        return super().submit_review(
+            workflow_id,
+            **self._current_context(workflow_id, WorkflowStage.REVIEW),
+            **kwargs,
         )
 
     def capture_implementation(self, workflow_id: str, **kwargs):
@@ -266,6 +274,7 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
     service: FixtureWorkflowService,
     target_repository: Path,
     fake_kanban_host,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     baseline = subprocess.run(
         ["git", "-C", str(target_repository), "rev-parse", "HEAD"],
@@ -372,17 +381,125 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
     )
 
     record_stage_activation(service, workflow_id, WorkflowStage.REVIEW)
-    reviewed = service.submit_artifact(
-        workflow_id,
-        stage=WorkflowStage.REVIEW,
-        content="# Review\n\nThe diff is scoped and pytest passes.\n",
+    review_request = {
+        "outcome": "accepted",
+        "summary": {
+            "headline": "The diff is scoped and pytest passes.",
+            "changes": ["Update calculator behavior."],
+            "affected_areas": ["calculator.py", "notes.txt"],
+            "risks": [],
+            "verification": ["pytest passes."],
+        },
+        "findings": [],
+    }
+    review_completion_failed = False
+
+    def fail_first_review_completion(name: str, args: dict[str, object]) -> str:
+        nonlocal review_completion_failed
+        if name == "kanban_complete" and not review_completion_failed:
+            review_completion_failed = True
+            raise KanbanError("transient review completion failure")
+        return fake_kanban_host.dispatch(name, args)
+
+    monkeypatch.setattr(
+        service,
+        "_kanban",
+        KanbanGraphAdapter(fail_first_review_completion),
     )
-    review = reviewed.artifact_for(WorkflowStage.REVIEW)
+    with pytest.raises(KanbanError, match="transient review completion failure"):
+        service.submit_review(workflow_id, **review_request)
+    persisted_after_review_failure = service.status(workflow_id)
+    assert persisted_after_review_failure.review is not None
+    assert persisted_after_review_failure.card_for(WorkflowStage.DELIVER) is None
+    monkeypatch.setattr(
+        service,
+        "_kanban",
+        KanbanGraphAdapter(fake_kanban_host.dispatch),
+    )
+    reviewed = service.submit_review(workflow_id, **review_request)
+    review = reviewed.review
     assert review is not None
-    assert artifact_relative_path(service, workflow_id, review.path) == (
-        "artifacts/policy-0000/plan-0000/review.md"
-    )
+    assert review.summary_digest == review.summary.digest_for(implementation.digest)
+    assert reviewed.card_for(WorkflowStage.DELIVER) is None
+    replayed_review = service.submit_review(workflow_id, **review_request)
+    assert replayed_review.review == review
     complete_stage(WorkflowStage.REVIEW, review.digest)
+    with pytest.raises(ServiceError, match="exact current review digest"):
+        service.decide_review(
+            workflow_id,
+            review_digest="f" * 64,
+            action="accept_delivery",
+            actor="fixture operator",
+            rationale="The exact review evidence is accepted for delivery.",
+        )
+    delivery_creation_failed = False
+
+    def fail_first_delivery_creation(name: str, args: dict[str, object]) -> str:
+        nonlocal delivery_creation_failed
+        if (
+            name == "kanban_create"
+            and str(args.get("title", "")).endswith(": deliver")
+            and not delivery_creation_failed
+        ):
+            delivery_creation_failed = True
+            raise KanbanError("transient delivery creation failure")
+        return fake_kanban_host.dispatch(name, args)
+
+    monkeypatch.setattr(
+        service,
+        "_kanban",
+        KanbanGraphAdapter(fail_first_delivery_creation),
+    )
+    with pytest.raises(KanbanError, match="transient delivery creation failure"):
+        service.decide_review(
+            workflow_id,
+            review_digest=review.digest,
+            action="accept_delivery",
+            actor="fixture operator",
+            rationale="The exact review evidence is accepted for delivery.",
+        )
+    persisted_after_delivery_failure = service.status(workflow_id)
+    assert persisted_after_delivery_failure.review_disposition is not None
+    assert persisted_after_delivery_failure.card_for(WorkflowStage.DELIVER) is None
+    monkeypatch.setattr(
+        service,
+        "_kanban",
+        KanbanGraphAdapter(fake_kanban_host.dispatch),
+    )
+    reviewed = service.decide_review(
+        workflow_id,
+        review_digest=review.digest,
+        action="accept_delivery",
+        actor="fixture operator",
+        rationale="The exact review evidence is accepted for delivery.",
+    )
+    assert reviewed.review_disposition is not None
+    deliver_card = reviewed.card_for(WorkflowStage.DELIVER)
+    assert deliver_card is not None
+    replayed_disposition = service.decide_review(
+        workflow_id,
+        review_digest=review.digest,
+        action="accept_delivery",
+        actor="fixture operator",
+        rationale="The exact review evidence is accepted for delivery.",
+    )
+    assert replayed_disposition.review_disposition == reviewed.review_disposition
+    assert replayed_disposition.card_for(WorkflowStage.DELIVER) == deliver_card
+    snapshots = tuple(
+        KanbanSnapshot(
+            card.stage,
+            card.task_id,
+            str(fake_kanban_host.cards[card.task_id]["status"]),
+            str(fake_kanban_host.cards[card.task_id]["assignee"]),
+        )
+        for card in replayed_disposition.card_references
+    )
+    delivery_recommendation = next(
+        row
+        for row in derive_recommendations(replayed_disposition, snapshots)
+        if row.action_kind == "deliver_reviewed_diff"
+    )
+    assert delivery_recommendation.evidence_ref == review.digest
     worktree_head = subprocess.run(
         ["git", "-C", str(worktree), "rev-parse", "HEAD"],
         check=True,
@@ -723,9 +840,7 @@ def test_failed_verification_blocks_delivery(
 
     assert blocked.verification_evidence[-1].exit_code != 0
     assert "status" not in blocked.to_dict()
-    record_stage_activation(service, workflow_id, WorkflowStage.DELIVER)
-    with pytest.raises(PolicyViolationError, match="successful verification"):
-        service.deliver(workflow_id)
+    assert blocked.card_for(WorkflowStage.DELIVER) is None
 
 
 def test_verification_worker_blocks_and_resumes_same_card_and_workspace(
@@ -790,7 +905,7 @@ def test_verification_worker_blocks_and_resumes_same_card_and_workspace(
     assert restarted_verify is not None
     assert restarted_verify.task_id == verify_card.task_id
     assert restarted.worktree_path == str(worktree)
-    assert len(fake_kanban_host.cards) == 6
+    assert len(fake_kanban_host.cards) == 5
 
     fake_kanban_host.dispatch("kanban_unblock", {"task_id": verify_card.task_id})
     retry_show = json.loads(
