@@ -183,10 +183,13 @@ explicitly selected for diagnosis. Every probe rejects a generated root inside
 an inherited active `HERMES_HOME`.
 
 All three probes accept `--expected-semver`, `--expected-build`, and
-`--expected-upstream` only as one complete identity override. Omitting all three
-retains the last-known-good v0.19.0 defaults. An entry point omitted from v0.18.2's
-public plugin inventory is retained as `reported: false`; native command loading
-must still pass. A reported plugin error or any native/standalone mismatch fails.
+`--expected-revision` only as one complete identity override. The revision is
+resolved from the executable's local Git `HEAD` or its `.hermes_build_sha` build
+metadata; the mutable `origin/main` value in the version banner is not identity
+evidence. Omitting all three retains the last-known-good v0.19.0 defaults. An
+entry point omitted from v0.18.2's public plugin inventory is retained as
+`reported: false`; native command loading must still pass. A reported plugin
+error or any native/standalone mismatch fails.
 
 `.github/workflows/release.yml` installs Hermes at full revisions
 `4281151ae859241351ba14d8c7682dc67ff4c126` and

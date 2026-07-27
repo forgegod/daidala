@@ -158,6 +158,13 @@ def run_probe(
     daidala.write_text(FAKE_DAIDALA, encoding="utf-8")
     hermes.chmod(0o755)
     daidala.chmod(0o755)
+    (tmp_path / ".hermes_build_sha").write_text(
+        environment.get(
+            "FAKE_BUILD_REVISION",
+            "3ef6bbd201263d354fd83ec55b3c306ded2eb72a",
+        ),
+        encoding="utf-8",
+    )
     env = os.environ.copy()
     env.update(environment)
     env["TMPDIR"] = str(tmp_path)
@@ -189,7 +196,8 @@ def test_probe_loads_plugin_and_compares_native_standalone_packs(tmp_path: Path)
     assert payload["hermes"] == {
         "semver": "0.19.0",
         "build": "2026.7.20",
-        "upstream": "3ef6bbd2",
+        "revision": "3ef6bbd201263d354fd83ec55b3c306ded2eb72a",
+        "revision_source": "build-metadata",
     }
     assert payload["plugin"] == {
         "name": "daidala",
@@ -229,10 +237,11 @@ def test_probe_accepts_explicit_baseline_identity(tmp_path: Path) -> None:
             "0.18.2",
             "--expected-build",
             "2026.7.7.2",
-            "--expected-upstream",
-            "4281151a",
+            "--expected-revision",
+            "4281151ae859241351ba14d8c7682dc67ff4c126",
         ],
         FAKE_VERSION_MODE="baseline",
+        FAKE_BUILD_REVISION="4281151ae859241351ba14d8c7682dc67ff4c126",
     )
 
     assert result.returncode == 0, result.stderr

@@ -24,8 +24,8 @@ from probe_hermes_compatibility import (
     ProbeError,
     add_expected_host_arguments,
     expected_host_from_args,
+    require_host_identity,
     require_isolated_root,
-    require_version,
     run,
 )
 
@@ -134,7 +134,7 @@ def _write_setup_fixture(home: Path, root: Path) -> None:
 schema: daidala.controller-registration/v2
 project_id: forgegod-daidala
 checkout: {target}
-controller_profile: daidala-self-improvement
+controller_profile: default
 board: daidala-compat
 repository_identity:
   canonical: forgegod/daidala
@@ -182,7 +182,12 @@ def exercise(
         entry for entry in (str(PROJECT_ROOT), inherited_pythonpath) if entry
     )
     env.pop("HERMES_PROFILE", None)
-    version = require_version(run([hermes, "--version"], env=env), expected_host)
+    version = require_host_identity(
+        run([hermes, "--version"], env=env),
+        hermes,
+        env=env,
+        expected=expected_host,
+    )
     process = subprocess.Popen(
         [
             hermes,
@@ -231,6 +236,14 @@ def exercise(
             if asset_body != expected_body:
                 raise ProbeError(f"dashboard did not serve packaged asset bytes: {asset}")
             asset_digests[asset] = hashlib.sha256(asset_body.encode("utf-8")).hexdigest()
+        wizard_asset = (dashboard / "dist" / "index.js").read_text(encoding="utf-8")
+        required_wizard_contract = (
+            "data-testid\": \"daidala-start-workflow",
+            "Mounted controller profile",
+            "I confirm applying this exact preview",
+        )
+        if any(marker not in wizard_asset for marker in required_wizard_contract):
+            raise ProbeError("packaged dashboard does not contain the Start workflow wizard")
         health_status, _ = _request(f"{base}/api/plugins/daidala/health")
         if health_status != 401:
             raise ProbeError(
@@ -286,7 +299,8 @@ def exercise(
             },
             "browser_assertions": {
                 "sdk_global": f"window.__HERMES_PLUGIN_SDK__.sdkVersion == {SDK_VERSION!r}",
-                "tab_test_id": "daidala-phase0",
+                "tab_test_id": "daidala-tab",
+                "start_workflow_test_id": "daidala-start-workflow",
                 "slot_test_id": "daidala-slot",
             },
         }

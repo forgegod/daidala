@@ -22,8 +22,8 @@ from probe_hermes_compatibility import (
     add_expected_host_arguments,
     expected_host_from_args,
     parse_json,
+    require_host_identity,
     require_isolated_root,
-    require_version,
     run,
 )
 
@@ -580,7 +580,12 @@ def exercise(
     resolved_hermes = shutil.which(hermes, path=env.get("PATH")) or hermes
     resolved_daidala = shutil.which(daidala, path=env.get("PATH")) or daidala
 
-    version = require_version(run([resolved_hermes, "--version"], env=env), expected_host)
+    version = require_host_identity(
+        run([resolved_hermes, "--version"], env=env),
+        resolved_hermes,
+        env=env,
+        expected=expected_host,
+    )
     plugin = _plugin_inventory(resolved_hermes, env)
     packs: dict[str, dict[str, Any]] = {}
     for pack in PACKS:

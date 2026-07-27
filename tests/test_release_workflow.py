@@ -37,8 +37,14 @@ def test_live_probe_runs_only_for_tags_and_manual_dispatch() -> None:
     ) in job
     assert job.count("npm ci --workspace web && npm run build -w web") == 2
     assert "python scripts/run_hermes_support_matrix.py" in job
-    assert "--host supported-v0182 0.18.2 2026.7.7.2 4281151a" in job
-    assert "--host supported-v0190 0.19.0 2026.7.20 3ef6bbd2" in job
+    assert (
+        "--host supported-v0182 0.18.2 2026.7.7.2 "
+        "4281151ae859241351ba14d8c7682dc67ff4c126"
+    ) in job
+    assert (
+        "--host supported-v0190 0.19.0 2026.7.20 "
+        "3ef6bbd201263d354fd83ec55b3c306ded2eb72a"
+    ) in job
     assert "/tmp/hermes-v0182/bin/pip install /tmp/hermes-v0182-source" in job
     assert "/tmp/hermes-v0190/bin/pip install /tmp/hermes-v0190-source" in job
     assert 'v0182_purelib="$(/tmp/hermes-v0182/bin/python -c' in job

@@ -42,10 +42,10 @@ class Host:
 
     @classmethod
     def from_values(cls, values: list[str]) -> Host:
-        label, semver, build, upstream, python_value, port_value = values
+        label, semver, build, revision, python_value, port_value = values
         if not _LABEL.fullmatch(label):
             raise MatrixError(f"invalid host label: {label!r}")
-        identity = HostIdentity(semver=semver, build=build, upstream=upstream)
+        identity = HostIdentity(semver=semver, build=build, revision=revision)
         python = Path(python_value).expanduser().absolute()
         if not python.is_file() or not os.access(python, os.X_OK):
             raise MatrixError(f"host Python is not executable: {python}")
@@ -62,7 +62,7 @@ class Host:
             "label": self.label,
             "semver": self.identity.semver,
             "build": self.identity.build,
-            "upstream": self.identity.upstream,
+            "revision": self.identity.revision,
             "python": str(self.python),
             "port": self.port,
         }
@@ -132,8 +132,8 @@ def _probe_command(host: Host, probe: str, repetition: int) -> list[str]:
         host.identity.semver,
         "--expected-build",
         host.identity.build,
-        "--expected-upstream",
-        host.identity.upstream,
+        "--expected-revision",
+        host.identity.revision,
     ]
     if probe == "probe_hermes_plugin_compatibility.py":
         command.extend(("--daidala", str(_host_executable(host, "daidala"))))
@@ -351,7 +351,7 @@ def run_matrix(
         require_isolated_root(root)
         legs = [run_host(host, resolved_wheel, root) for host in hosts]
         result = {
-            "schema": "daidala.hermes-support-matrix/v1",
+            "schema": "daidala.hermes-support-matrix/v2",
             "success": True,
             "preflight": checks,
             "hosts": legs,
@@ -374,7 +374,7 @@ def _parser() -> argparse.ArgumentParser:
         "--host",
         action="append",
         nargs=6,
-        metavar=("LABEL", "SEMVER", "BUILD", "UPSTREAM", "PYTHON", "PORT"),
+        metavar=("LABEL", "SEMVER", "BUILD", "REVISION", "PYTHON", "PORT"),
         help="Complete host tuple; repeat once per isolated Hermes environment",
     )
     parser.add_argument("--work-root", type=Path)
