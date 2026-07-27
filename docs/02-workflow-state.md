@@ -139,7 +139,7 @@ Dashboard responses are snapshots only. Daidala's ledger owns policy identity,
 Hermes Kanban owns live status, and the browser owns neither. Setup and constraint
 forms must submit an exact typed request; explicit confirmation and current
 digests are revalidated server-side before mutation. The current dashboard does
-not render review-disposition or plan-revision controls; P0210 owns that later UI.
+not render review-disposition or plan-revision controls; P0212 owns that later UI after P0210 establishes the exact-plan approval detail foundation.
 
 - Contract: this document
 - Ledger model: `daidala/state.py`

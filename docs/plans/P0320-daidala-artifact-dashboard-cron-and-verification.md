@@ -12,7 +12,7 @@
 
 **Plan family:** daidala-artifact-review
 
-**Entry checkpoint:** P0310 completed with verified recoverable curation and idempotent failure recovery; P0240 completed the dashboard family and retained P0210's verified plan-approval, review-disposition, and revision-request evidence surfaces
+**Entry checkpoint:** P0310 completed with verified recoverable curation and idempotent failure recovery; P0240 completed the dashboard family and retained P0210/P0212's verified plan-approval, review-disposition, and revision-request evidence surfaces
 
 **Context sources:** [UX concept and design contract](P0250-daidala-dashboard-ux-concept.md), [artifact current state](daidala-artifact-review-execution-contract.md#current-state), [risk call-out](daidala-artifact-review-execution-contract.md#risk-call-out), detailed [contract Phase 3](daidala-artifact-review-execution-contract.md#phase-3-add-authenticated-dashboard-review-and-curator-controls), [contract Phase 4](daidala-artifact-review-execution-contract.md#phase-4-add-opt-in-hermes-cron-scheduling), and [contract Phase 5](daidala-artifact-review-execution-contract.md#phase-5-reconcile-operator-docs-dox-package-contents-and-full-verification), plus the complete AGENTS chains for `daidala/`, `dashboard/`, `tests/`, and `docs/`
 
@@ -27,7 +27,7 @@ Expose verified artifact review and reversible curator controls through the auth
 ## Current state
 
 - P0205 provides exact-ID resolution, P0300 provides CLI review/export, and P0310 provides deterministic curation.
-- P0210 exposes focused current plan and review evidence only where required for attended decisions; the dashboard still lacks a general historical artifact browser and curator actions.
+- P0210 and P0212 expose focused current plan and review evidence only where required for attended decisions; the dashboard still lacks a general historical artifact browser and curator actions.
 - Hermes Cron is the supported scheduler; Daidala must not add a daemon, nested agent, or model judgment.
 - The shared contract pins authentication, bounded text/download behavior, confirmation, cron idempotency, documentation, package, and full verification requirements.
 

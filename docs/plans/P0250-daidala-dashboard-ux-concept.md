@@ -125,13 +125,13 @@ Actor is always an attended human operator. Legend: ✅ implemented · 🟡 plan
 ### Surface B — Start a workflow (P0210 Phase 1)
 6. **Guided setup wizard** 🟡 — read-only mounted controller profile, optional browser-local start preset, ready installed pack, registered repository, requested outcome / prompt, worker-profile default plus stage overrides, constraints, and existing/create board; `Manage sources` opens Config → Constraints with a return to the in-progress form. The UI maps requested outcome / prompt to the existing `request.goal` field, the server resolves the selected registration to the trusted target, and only the resolved setup request reaches `SetupRequest.from_payload`; readiness → preview → literal confirm → start now. Delayed/recurring admission hands off to Hermes Cron.
 
-### Surface C — Supervise & decide (P0210 Phase 2) ✅/🟡
+### Surface C — Supervise & decide (P0210 Phase 2, P0212 Phase 0, P0214 Phase 0) ✅/🟡
 7. **Watch workflows (read-only)** ✅ — poll ≥5s while visible; manual refresh.
 8. **Approve the exact plan** 🟡 — decision-first panel; source-bound AI-assisted summary then verified bounded plan body, plan/constraint tuple, checklist, consequences, and a read-only next-stage packet; bound to verified artifact identity + literal "I reviewed this exact plan"; disabled on stale/mismatched identity; literal escaped text.
-9. **Review disposition before delivery** 🟡 — source-bound AI-assisted summary + exact escaped diff + verification + findings + ledger-owned gate and a read-only successor packet; accept-and-deliver only for accepted non-blocking review.
-10. **Request revision** 🟡 — previewed immutable-evidence/cards/worktree consequences, a visible successor packet, required feedback, literal confirm, then navigate to new revisioned plan approval.
-11. **Recover a blocked card** 🟡 — requested decision + latest relevant evidence + targeted comment/unblock.
-12. **Cancel a workflow** 🟡 — preview cards/worktree/reason, digest + confirm, name affected worktree first.
+9. **Review disposition before delivery** 🟡 (P0212) — source-bound AI-assisted summary + exact escaped diff + verification + findings + ledger-owned gate and a read-only successor packet; accept-and-deliver only for accepted non-blocking review.
+10. **Request revision** 🟡 (P0212) — previewed immutable-evidence/cards/worktree consequences, a visible successor packet, required feedback, literal confirm, then navigate to new revisioned plan approval.
+11. **Recover a blocked card** 🟡 (P0214) — requested decision + latest relevant evidence + targeted comment/unblock.
+12. **Cancel a workflow** 🟡 (P0214) — preview cards/worktree/reason, digest + confirm, name affected worktree first.
 13. **Reopen/resume by exact ID** 🟡 — reopen and continue read-only watch, not a new workflow.
 14. **Inspect workflow artifacts** 🟡 — each actionable workflow detail expands its ledger-bound artifacts by default, reusing the Artifacts view's list/selected-detail pattern for the exact workflow; `View all` opens the Artifacts view filtered to that workflow ID without exposing a filesystem path.
 

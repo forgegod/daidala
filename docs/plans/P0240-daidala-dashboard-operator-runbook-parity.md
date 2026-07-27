@@ -27,7 +27,7 @@ Complete the dashboard family with dry-run-first profile initialization, strict 
 - `daidala/cli.py:673-695` implements `init` as dry-run by default and constructs `WorkflowStore` only for `--apply`.
 - `daidala/dashboard_backend.py:88-100` eagerly constructs `WorkflowStore`, while `dashboard/plugin_api.py:85-97` reaches that factory from `/health`; a fresh dashboard read can therefore bypass the runbook's explicit initialization boundary.
 - `daidala/prerequisites.py:1-180` owns the strict checker, bounded local/live evidence, stable check IDs, and exit semantics already shared by native and standalone `doctor`.
-- P0200 owns runbook pack list/validate/check/install; P0210 owns start, reopen/watch, exact approval, recovery, and cancellation; P0230 owns read-only configuration verification.
+- P0200 owns runbook pack list/validate/check/install; P0210 owns start, reopen/watch, and exact approval; P0212 owns review disposition/revision; P0214 owns recovery and cancellation; P0230 owns read-only configuration verification.
 - The shared contract keeps install, enable, upgrade, gateway lifecycle, and standalone execution host-owned because a loaded plugin cannot safely replace or restart itself.
 
 ## Risk call-out

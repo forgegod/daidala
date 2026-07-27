@@ -151,7 +151,7 @@ releases the owned worktree. Committing or pushing the target requires a separat
 future authorization surface.
 
 The current dashboard does not render review-disposition or plan-revision
-controls. Until P0210, operators use the native CLI for those attended actions.
+controls. Until P0212 follows P0210's detail foundation, operators use the native CLI for those attended actions.
 
 ## Source of truth
 

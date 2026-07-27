@@ -8,6 +8,8 @@
 [P0200 dashboard profile and packs](P0200-daidala-dashboard-profile-and-packs.md),
 [P0207 review disposition and revision loop](P0207-daidala-review-disposition-and-revision-loop.md),
 [P0210 setup and supervision](P0210-daidala-dashboard-setup-and-supervision.md),
+[P0212 review disposition](P0212-daidala-dashboard-review-disposition.md),
+[P0214 recovery and cancellation](P0214-daidala-dashboard-recovery-and-cancellation.md),
 [P0220 checkouts and Projects links](P0220-daidala-dashboard-checkouts-and-project-links.md),
 [P0230 constraints and configuration](P0230-daidala-dashboard-constraints-and-verification.md),
 and [P0240 operator runbook parity](P0240-daidala-dashboard-operator-runbook-parity.md).
@@ -413,8 +415,9 @@ scoped adapters. It does not expose an arbitrary CLI bridge.
 | [Diagnose prerequisites](../07-runbook.md#diagnose-prerequisites) | P0200 pack readiness; P0240 Phase 0 strict diagnosis | Reuse pack list/validate/check/install services and `run_prerequisite_diagnosis`. Derive trusted project paths from `project_id`; never accept arbitrary browser paths or return credential values. |
 | [Start and resume a workflow](../07-runbook.md#start-and-resume-a-workflow) | P0210 Phases 0–2 | Resolve one selected registered project to `SetupRequest` server-side; resume means reopen the existing exact workflow and continue read-only watch/recovery, not create a second scheduler or a new workflow. Delayed/recurring admission remains a link to Hermes Cron, and pausing admission never claims to freeze in-flight cards. |
 | [Approve the exact plan](../07-runbook.md#approve-the-exact-plan) | P0210 Phase 2 | Delegate to `WorkflowService.approve`; stale digests fail closed and Kanban unblock never substitutes for approval. |
-| [Cancel](../07-runbook.md#cancel) | P0210 Phase 2 | Preview current cards/worktree/reason, require digest + confirmation, then delegate to `WorkflowService.cancel`; retain the policy/artifact ledger. |
-| [Recovery](../07-runbook.md#recovery) | P0210 Phase 2 | Show bounded Kanban comments/runs and use public comment/unblock operations after workflow/card validation. Refresh remains read-only. |
+| [Review disposition](../07-runbook.md#review-disposition) | P0212 Phase 0 | Render P0207's exact review evidence and preview-confirm disposition/revision surfaces; delivery remains absent before attended acceptance. |
+| [Cancel](../07-runbook.md#cancel) | P0214 Phase 0 | Preview current cards/worktree/reason, require digest + confirmation, then delegate to `WorkflowService.cancel`; retain the policy/artifact ledger. |
+| [Recovery](../07-runbook.md#recovery) | P0214 Phase 0 | Show bounded Kanban comments/runs and use public comment/unblock operations after workflow/card validation. Refresh remains read-only. |
 | [Upgrade](../07-runbook.md#upgrade) | P0240 Phase 1 | Show current plugin/host identity, supported range, and exact host-owned update + post-update verification commands. Never self-update or restart the dashboard/gateway. |
 | [Standalone diagnostics](../07-runbook.md#standalone-diagnostics) | P0240 Phase 1 | Preserve native/standalone parser and exit-code parity in CLI tests; the dashboard consumes the same services but does not claim byte-identical HTTP output. |
 
@@ -535,7 +538,9 @@ miss them.
 |---|---|---|
 | Phases 0–1 | [P0200](P0200-daidala-dashboard-profile-and-packs.md) | Isolated host/fixture profiles, mounted plugin, pack browser and readiness actions |
 | Review disposition and revision loop | [P0207](P0207-daidala-review-disposition-and-revision-loop.md) | Structured review evidence, attended delivery gate, and revisioned replan authority |
-| Phases 2–3 | [P0210](P0210-daidala-dashboard-setup-and-supervision.md) | First-workflow wizard and decision-first workflow supervision |
+| Phase 2 and Phase 3 detail foundation | [P0210](P0210-daidala-dashboard-setup-and-supervision.md) | First-workflow wizard, bounded workflow detail, and exact-plan approval |
+| Phase 3 review disposition | [P0212](P0212-daidala-dashboard-review-disposition.md) | Escaped review evidence, attended disposition, and revision-request presentation |
+| Phase 3 recovery and cancellation | [P0214](P0214-daidala-dashboard-recovery-and-cancellation.md) | Blocked-card remediation and previewed cancellation |
 | Phases 4–6 | [P0220](P0220-daidala-dashboard-checkouts-and-project-links.md) | Checkout policy, GitHub Projects links, refresh and report-only cron hook |
 | Phases 7–8 | [P0230](P0230-daidala-dashboard-constraints-and-verification.md) | Constraint authoring and configuration verification |
 | Phases 9–11 | [P0240](P0240-daidala-dashboard-operator-runbook-parity.md) | Initialization, strict diagnosis, operator-runbook parity, DOX and full gates |
@@ -1010,6 +1015,8 @@ version of the remaining Getting started actions without making the dashboard a
 second workflow engine: inspect and approve the exact plan, inspect automated
 review evidence, accept delivery or request a revision, watch lower-priority live
 card state, remediate a blocked card, or preview and confirm cancellation.
+
+**Plan allocation:** P0210 Phase 2 owns the detail foundation, bounded Kanban read projection, and exact-plan approval; P0212 Phase 0 owns review disposition and revision request; P0214 Phase 0 owns blocked-card remediation and cancellation. The active plans own their individual gates and progress; this contract retains the shared invariants.
 
 **Steps:**
 

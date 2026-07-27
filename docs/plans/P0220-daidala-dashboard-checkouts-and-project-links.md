@@ -6,19 +6,19 @@
 
 **Created:** 2026-07-23
 
-**Depends on:** daidala-dashboard-setup-and-supervision, daidala-shared-archive-io
+**Depends on:** daidala-dashboard-review-disposition, daidala-dashboard-recovery-and-cancellation, daidala-shared-archive-io
 
 **Split from:** daidala-dashboard-user-config-packs-start-constraints-github-links
 
 **Plan family:** daidala-dashboard
 
-**Entry checkpoint:** P0210 completed with the dashboard request/action boundaries verified; P0100 completed with policy-neutral safe archive I/O
+**Entry checkpoint:** P0212 and P0214 completed the independently verified review-disposition and recovery/cancellation dashboard slices; P0100 completed with policy-neutral safe archive I/O
 
 **Context sources:** [UX concept and design contract](P0250-daidala-dashboard-ux-concept.md), [profile-local state and authority boundaries](daidala-dashboard-execution-contract.md#operator-pinning), [checkout location decision](daidala-dashboard-execution-contract.md#checkout-location-decision), [stale-checkout policy](daidala-dashboard-execution-contract.md#stale-checkout-policy), [filesystem risks](daidala-dashboard-execution-contract.md#risk-call-out), [implementer discipline](daidala-dashboard-execution-contract.md#implementer-discipline), and detailed [contract Phase 4](daidala-dashboard-execution-contract.md#phase-4-checkout-configuration-github-projects-v2-link-model), [contract Phase 5](daidala-dashboard-execution-contract.md#phase-5-github-projects-v2-link-ui), and [contract Phase 6](daidala-dashboard-execution-contract.md#phase-6-manual-checkout-refresh-ttl-policy-and-report-only-cron-hook)
 
 **Produces:** strict profile-local checkout/link stores, verified Projects v2 link UI, collision-safe manual checkout refresh and backup/prune actions, and a report-only cron-compatible status tool
 
-**Status:** pending — blocked until P0100 and P0210 complete and human implementation approval is recorded
+**Status:** pending — blocked until P0100, P0212, and P0214 complete and human implementation approval is recorded
 
 ## Goal
 
@@ -26,7 +26,7 @@ Implement the profile-local checkout and GitHub Projects configuration vertical 
 
 ## Current state
 
-- P0210 establishes the dashboard request/action patterns and closed route inventory.
+- P0210, P0212, and P0214 establish the dashboard request/action patterns and closed route inventory.
 - P0100 owns verified tar/gzip creation, extraction, and manifest I/O; this plan consumes it and must not create another archive implementation.
 - Registrations already own project identity, checkout path, verified remote, and intake credential alias.
 - The shared contract pins strict mode-`0600` stores, root-change blocking, owner markers, freshness receipts, preview/confirmation, persistent backup retention, and report-only cron behavior.

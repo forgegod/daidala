@@ -147,8 +147,8 @@ disposition. Revision intent and successor packets are immutable before Kanban
 archive or owned-worktree cleanup. The successor Plan card is revision-addressed,
 and its recorded plan requires a fresh exact approval before a new worktree or
 post-gate graph can exist. The dashboard backend does not yet expose these
-decision operations; P0210 is the presentation consumer of the implemented
-service and CLI boundary. Exact accepted disposition creates the delivery card;
+decision operations; P0210 establishes the exact-plan approval detail and P0212
+consumes the review-disposition service and CLI boundary. Exact accepted disposition creates the delivery card;
 successful delivery records evidence and then releases the owned worktree.
 
 Native `hermes daidala` is the canonical operator surface. The standalone
