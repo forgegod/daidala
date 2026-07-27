@@ -18,7 +18,7 @@
 
 **Produces:** structured automated review evidence, an attended exact-evidence disposition gate before delivery, a revision-request loop that creates a new plan card and fresh approval without rewriting rejected history, and synchronized lifecycle/operator documentation
 
-**Status:** in progress — Phases 0 and 1 complete; Phase 2 pending
+**Status:** complete — Phases 0–2 checkpointed on `feat/dashboard-constraint-revisions`
 
 This plan makes automated review advisory evidence rather than delivery authority: an attended user must accept the exact reviewed tuple, request a new plan revision, or reject the workflow before delivery can exist.
 
