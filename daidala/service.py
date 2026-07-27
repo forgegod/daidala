@@ -6,7 +6,7 @@ import hashlib
 import json
 import subprocess
 from collections.abc import Callable
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
@@ -27,7 +27,7 @@ from .constraints import (
 from .errors import WorkflowError
 from .execution import ExecutionError, ExecutionWorkspace
 from .kanban import KanbanCardStatus, KanbanGraphAdapter
-from .packs import load_pack
+from .packs import WorkflowPack, load_pack
 from .revision import (
     ReviewDecisionPreview,
     build_review_decision_preview,
@@ -89,6 +89,18 @@ class ServiceError(WorkflowError):
     """Raised when an operation cannot satisfy the policy boundary."""
 
 
+@dataclass(frozen=True)
+class StartPreflight:
+    """Mutation-free facts shared by dashboard preview and workflow start."""
+
+    pack: WorkflowPack
+    constraint_input: tuple[WorkflowConstraints, ConstraintSourceProvenance | None] | None
+    kanban: KanbanGraphAdapter
+    target: Path
+    baseline_commit: str
+    stage_profiles: tuple[StageProfile, ...]
+
+
 class WorkflowService:
     """Coordinate policy checks, artifacts, worktrees, and durable ledgers."""
 
@@ -128,19 +140,18 @@ class WorkflowService:
         expected_baseline_commit: str | None = None,
     ) -> WorkflowLedger:
         """Validate inputs and create or resume the initial Kanban graph."""
-        pack = load_pack(pack_name)
-        require_pack_skills(pack, self._skill_inventory)
-        require_pack_skill_revisions(pack, self._skill_content_registry)
-        constraint_input = self._resolve_constraint_input(
-            content=constraints_content,
-            skill_name=constraints_skill,
-            skill_digest=constraints_skill_digest,
+        preflight = self.validate_start_preflight(
+            board_slug=board_slug,
+            target_repository=target_repository,
+            stage_profiles=stage_profiles,
+            pack_name=pack_name,
+            workflow_id=workflow_id,
+            constraints_content=constraints_content,
+            constraints_skill=constraints_skill,
+            constraints_skill_digest=constraints_skill_digest,
+            expected_baseline_commit=expected_baseline_commit,
         )
-        kanban = self._require_kanban()
         selected_id = workflow_id or self._id_factory()
-        self._workspace.validate_workflow_id(selected_id)
-        profiles = _stage_profiles(stage_profiles)
-        kanban.validate_assignees(board_slug, [row.profile for row in profiles])
         try:
             existing = self.store.get(selected_id)
         except StoreError as error:
@@ -157,47 +168,83 @@ class WorkflowService:
                 board_slug=board_slug,
                 target_repository=target_repository,
                 goal=goal,
-                pack_name=pack.name,
-                stage_profiles=profiles,
+                pack_name=preflight.pack.name,
+                stage_profiles=preflight.stage_profiles,
             )
-            if constraint_input is not None:
-                constraints, source = constraint_input
+            if preflight.constraint_input is not None:
+                constraints, source = preflight.constraint_input
                 if existing.current_constraints_digest != constraints.digest:
                     raise ServiceError("restart constraint content does not match")
                 if existing.constraint_references[-1].source != source:
                     raise ServiceError("restart constraint source does not match")
-            return self._ensure_initial_graph(existing, pack)
+            return self._ensure_initial_graph(existing, preflight.pack)
+        skills = tuple(
+            SkillDigest(name=name, digest=digest)
+            for name, digest in pack_skill_digests(preflight.pack)
+        )
+        ledger = new_workflow(
+            workflow_id=selected_id,
+            board_slug=board_slug,
+            target_repository=str(preflight.target),
+            baseline_commit=preflight.baseline_commit,
+            requested_goal=goal,
+            pack_name=preflight.pack.name,
+            pack_source_revision=preflight.pack.source_revision,
+            skill_digests=skills,
+            stage_profiles=preflight.stage_profiles,
+            created_at=self._clock(),
+        )
+        created = self.store.create(ledger)
+        if preflight.constraint_input is None:
+            return self._ensure_initial_graph(created, preflight.pack)
+        constraints, source = preflight.constraint_input
+        return self.replace_constraints(
+            selected_id,
+            content=constraints.canonical_bytes().decode("utf-8"),
+            expected_current_digest=None,
+            source=source,
+        )
+
+    def validate_start_preflight(
+        self,
+        *,
+        board_slug: str,
+        target_repository: str,
+        stage_profiles: dict[str, str],
+        pack_name: str = "addyosmani",
+        workflow_id: str | None = None,
+        constraints_content: str | None = None,
+        constraints_skill: str | None = None,
+        constraints_skill_digest: str | None = None,
+        expected_baseline_commit: str | None = None,
+    ) -> StartPreflight:
+        """Validate every non-mutating start prerequisite exactly once."""
+        pack = load_pack(pack_name)
+        require_pack_skills(pack, self._skill_inventory)
+        require_pack_skill_revisions(pack, self._skill_content_registry)
+        constraint_input = self._resolve_constraint_input(
+            content=constraints_content,
+            skill_name=constraints_skill,
+            skill_digest=constraints_skill_digest,
+        )
+        if workflow_id is not None:
+            self._workspace.validate_workflow_id(workflow_id)
+        profiles = _stage_profiles(stage_profiles)
+        kanban = self._require_kanban()
+        kanban.validate_assignees(board_slug, [row.profile for row in profiles])
         target = _canonical_local_path(target_repository)
         baseline, is_clean = _inspect_repository(target)
         if not is_clean:
             raise ServiceError("target repository is dirty")
         if expected_baseline_commit is not None and baseline != expected_baseline_commit:
             raise ServiceError("repository baseline does not match expected baseline")
-        skills = tuple(
-            SkillDigest(name=name, digest=digest)
-            for name, digest in pack_skill_digests(pack)
-        )
-        ledger = new_workflow(
-            workflow_id=selected_id,
-            board_slug=board_slug,
-            target_repository=str(target),
+        return StartPreflight(
+            pack=pack,
+            constraint_input=constraint_input,
+            kanban=kanban,
+            target=target,
             baseline_commit=baseline,
-            requested_goal=goal,
-            pack_name=pack.name,
-            pack_source_revision=pack.source_revision,
-            skill_digests=skills,
             stage_profiles=profiles,
-            created_at=self._clock(),
-        )
-        created = self.store.create(ledger)
-        if constraint_input is None:
-            return self._ensure_initial_graph(created, pack)
-        constraints, source = constraint_input
-        return self.replace_constraints(
-            selected_id,
-            content=constraints.canonical_bytes().decode("utf-8"),
-            expected_current_digest=None,
-            source=source,
         )
 
     def status(self, workflow_id: str) -> WorkflowLedger:

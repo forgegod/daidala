@@ -761,72 +761,6 @@
     );
   }
 
-  function SetupWizard() {
-    var formState = useState({ board_slug: "default", target_repository: "", goal: "" });
-    var form = formState[0];
-    var setForm = formState[1];
-    var previewState = useState(null);
-    var preview = previewState[0];
-    var setPreview = previewState[1];
-    var confirmState = useState(false);
-    var confirmed = confirmState[0];
-    var setConfirmed = confirmState[1];
-    var messageState = useState("");
-    var message = messageState[0];
-    var setMessage = messageState[1];
-
-    function request() {
-      var profiles = {};
-      ["define", "plan", "implement", "verify", "review", "deliver"].forEach(function (stage) {
-        profiles[stage] = "default";
-      });
-      return Object.assign({}, form, { pack: "addyosmani", stage_profiles: profiles });
-    }
-
-    function field(label, name) {
-      return createElement("label", { className: "daidala-setup-field" }, label,
-        createElement("input", {
-          value: form[name],
-          onChange: function (event) {
-            var next = Object.assign({}, form);
-            next[name] = event.target.value;
-            setForm(next);
-            setPreview(null);
-            setConfirmed(false);
-          }
-        })
-      );
-    }
-
-    function previewSetup() {
-      postJson(API_BASE + "/wizard/preview", request()).then(function (value) {
-        setPreview(value);
-        setMessage("Preview ready. Confirm before starting.");
-      }).catch(function (error) { setMessage(error.message); });
-    }
-
-    function startSetup() {
-      postJson(API_BASE + "/wizard/start", Object.assign({}, request(), { confirm: true }))
-        .then(function () { setMessage("Workflow started."); })
-        .catch(function (error) { setMessage(error.message); });
-    }
-
-    return createElement("section", { className: "daidala-setup", "data-testid": "daidala-setup" },
-      createElement("h2", null, "Start a workflow"),
-      field("Board", "board_slug"),
-      field("Repository path", "target_repository"),
-      field("Goal", "goal"),
-      createElement("button", { type: "button", onClick: previewSetup }, "Preview mutations"),
-      preview ? createElement("pre", { className: "daidala-setup-preview" }, JSON.stringify(preview, null, 2)) : null,
-      preview ? createElement("label", { className: "daidala-setup-confirm" },
-        createElement("input", { type: "checkbox", checked: confirmed, onChange: function (event) { setConfirmed(event.target.checked); } }),
-        "I confirm these mutations"
-      ) : null,
-      preview ? createElement("button", { type: "button", disabled: !confirmed, onClick: startSetup }, "Start workflow") : null,
-      message ? createElement("p", { role: "status" }, message) : null
-    );
-  }
-
   function Page() {
     var health = useVisiblePolling(POLL_MS, buildHealth);
     var workflowsState = useVisiblePolling(POLL_MS, buildWorkflows);
@@ -892,7 +826,6 @@
           : null
       ),
       createElement(PackBrowser),
-      createElement(SetupWizard),
       firstLoad
         ? createElement(
             "p",

@@ -32,6 +32,7 @@ from probe_hermes_compatibility import (
 SDK_VERSION = "1.1.0"
 TAB_PATH = "/daidala"
 SLOT = "sessions:top"
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _request(
@@ -78,7 +79,8 @@ def _write_probe_plugin(home: Path) -> Path:
         "plugins:\n  enabled:\n    - daidala\n", encoding="utf-8"
     )
     (dashboard.parent / "plugin.yaml").write_text(
-        "name: daidala\nversion: 0.2.0\ndescription: Dashboard compatibility probe\n",
+        "name: daidala\nversion: 0.2.0\ndescription: Dashboard compatibility probe\n"
+        "api: dashboard/plugin_api.py\n",
         encoding="utf-8",
     )
     return dashboard
@@ -86,17 +88,79 @@ def _write_probe_plugin(home: Path) -> Path:
 
 def _setup_payload(root: Path) -> dict[str, Any]:
     return {
-        "board_slug": "daidala-compat",
-        "target_repository": str(root / "target"),
-        "goal": "Verify packaged setup preview without mutation.",
-        "stage_profiles": {
-            stage: f"probe-{stage}"
-            for stage in ("define", "plan", "implement", "verify", "review", "deliver")
+        "selection": {"project_id": "forgegod-daidala"},
+        "request": {
+            "board_slug": "daidala-compat",
+            "goal": "Verify packaged setup preview without mutation.",
+            "stage_profiles": {
+                stage: f"probe-{stage}"
+                for stage in ("define", "plan", "implement", "verify", "review", "deliver")
+            },
+            "pack": "addyosmani",
+            "workflow_id": "compat-preview",
+            "constraints_content": "global:\n  - Keep the preview read-only.\n",
         },
-        "pack": "addyosmani",
-        "workflow_id": "compat-preview",
-        "constraints_content": "global:\n  - Keep the preview read-only.\n",
     }
+
+
+def _write_setup_fixture(home: Path, root: Path) -> None:
+    """Create the smallest trusted, clean checkout required by setup selection."""
+    target = root / "target"
+    manifest = PROJECT_ROOT / ".daidala" / "project.yaml"
+    (target / ".daidala").mkdir(parents=True)
+    shutil.copy2(manifest, target / ".daidala" / "project.yaml")
+    commands = (
+        ("git", "init", "--initial-branch=main", str(target)),
+        ("git", "-C", str(target), "config", "user.name", "Daidala compatibility probe"),
+        ("git", "-C", str(target), "config", "user.email", "probe@example.invalid"),
+        ("git", "-C", str(target), "add", ".daidala/project.yaml"),
+        ("git", "-C", str(target), "commit", "-m", "fixture"),
+        (
+            "git",
+            "-C",
+            str(target),
+            "remote",
+            "add",
+            "origin",
+            "git@github.com:forgegod/daidala.git",
+        ),
+    )
+    for command in commands:
+        subprocess.run(command, check=True, capture_output=True, text=True)
+    registration = home / "projects" / "forgegod-daidala" / "registration.yaml"
+    registration.parent.mkdir(parents=True)
+    registration.write_text(
+        f"""\
+schema: daidala.controller-registration/v2
+project_id: forgegod-daidala
+checkout: {target}
+controller_profile: daidala-self-improvement
+board: daidala-compat
+repository_identity:
+  canonical: forgegod/daidala
+  verified_remote: git@github.com:forgegod/daidala.git
+credentials:
+  intake: github-daidala-read-issues
+  findings: github-daidala-write-issues
+approval:
+  maintainers: [local-operator]
+notifications:
+  adapter: hermes-gateway
+  target: attended-daidala
+  destination: telegram:-1001234567890:17585
+evaluator:
+  backend: restricted-container
+  network: denied-by-default
+limits:
+  active_cycles: 1
+  goal_turns: 12
+  delegated_workers: 3
+  research_query_batches: 3
+  extracted_sources: 3
+  wall_clock_seconds: 3600
+""",
+        encoding="utf-8",
+    )
 
 
 def exercise(
@@ -108,10 +172,15 @@ def exercise(
     require_isolated_root(root)
     home = root / "home"
     dashboard = _write_probe_plugin(home)
+    _write_setup_fixture(home, root)
     env = os.environ.copy()
     env["HERMES_HOME"] = str(home)
     session_token = "daidala-compat-session"
     env["HERMES_DASHBOARD_SESSION_TOKEN"] = session_token
+    inherited_pythonpath = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = os.pathsep.join(
+        entry for entry in (str(PROJECT_ROOT), inherited_pythonpath) if entry
+    )
     env.pop("HERMES_PROFILE", None)
     version = require_version(run([hermes, "--version"], env=env), expected_host)
     process = subprocess.Popen(
@@ -178,27 +247,15 @@ def exercise(
             token=session_token,
         )
         preview = json.loads(preview_body)
-        expected_request = {
-            **setup,
-            "pack_name": setup["pack"],
-            "constraints_content": setup["constraints_content"].strip(),
-            "constraints_skill": None,
-            "constraints_skill_digest": None,
-        }
         if (
-            preview_status != 200
-            or preview.get("confirmed") is not False
-            or preview.get("request") != expected_request
+            preview_status != 409
+            or not isinstance(preview.get("detail"), str)
+            or "missing required skills" not in preview["detail"]
         ):
             detail = json.dumps(
-                {
-                    "status": preview_status,
-                    "observed": preview,
-                    "expected_request": expected_request,
-                },
-                sort_keys=True,
+                {"status": preview_status, "observed": preview}, sort_keys=True
             )
-            raise ProbeError(f"packaged setup preview contract drifted: {detail}")
+            raise ProbeError(f"packaged setup readiness contract drifted: {detail}")
         start_status, start_body = _request(
             f"{base}/api/plugins/daidala/wizard/start",
             method="POST",
@@ -223,7 +280,7 @@ def exercise(
                 "api_mounted_and_auth_gated": True,
             },
             "setup": {
-                "preview_confirmed": False,
+                "preview_readiness_status": 409,
                 "unconfirmed_start_status": 400,
                 "state_unchanged": True,
             },

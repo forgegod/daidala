@@ -73,7 +73,9 @@ def test_router_exports_all_phase_two_routes() -> None:
         "constraint_preview",
         "constraint_replace",
         "wizard_inventory",
+        "wizard_board_preview",
         "wizard_create_board",
+        "wizard_readiness",
         "wizard_preview",
         "wizard_start",
     ):
@@ -138,6 +140,16 @@ def test_router_source_exposes_only_closed_mutation_routes() -> None:
     assert '@router.post("/packs/{pack_name}/install")' in source
     assert '@router.post("/constraints/replace")' in source
     assert 'payload.get("confirm") is not True' in source
+
+
+def test_health_distinguishes_the_read_model_from_bounded_mutations() -> None:
+    api = load_api()
+    api.__dict__["service_factory"] = lambda: object()
+
+    payload = api.health()
+
+    assert payload["read_model"] is True
+    assert "read_only" not in payload
 
 
 def test_pack_routes_use_one_typed_service_projection() -> None:
@@ -237,6 +249,30 @@ def test_unconfirmed_wizard_start_does_not_construct_service() -> None:
 
     assert raised.value.status_code == 400
     assert "explicit confirmation is required" in raised.value.detail
+    assert calls == 0
+
+
+def test_wizard_preview_rejects_browser_paths_and_unknown_fields_before_service() -> None:
+    api = load_api()
+    calls = 0
+
+    def service_factory() -> object:
+        nonlocal calls
+        calls += 1
+        return object()
+
+    api.__dict__["service_factory"] = service_factory
+
+    with pytest.raises(FakeHTTPException) as raised:
+        api.wizard_preview(
+            {
+                "selection": {"project_id": "project"},
+                "request": {"target_repository": "/browser/path"},
+            }
+        )
+
+    assert raised.value.status_code == 400
+    assert "unknown setup request fields" in raised.value.detail
     assert calls == 0
 
 

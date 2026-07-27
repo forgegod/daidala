@@ -25,6 +25,8 @@ Phase 2 endpoints (all read-only):
 
 from __future__ import annotations
 
+import hashlib
+import json
 import subprocess
 from collections.abc import Callable
 from functools import lru_cache
@@ -39,6 +41,7 @@ from daidala.dashboard_backend import (
     HostUnavailableError,
     UnknownWorkflowError,
 )
+from daidala.locations import resolve_data_root
 from daidala.pack_service import (
     PackConfirmationError,
     PackInstallError,
@@ -48,14 +51,20 @@ from daidala.pack_service import (
     UnknownPackSkillError,
 )
 from daidala.packs import PackError
+from daidala.registrations import (
+    ControllerRegistration,
+    list_controller_registrations,
+)
+from daidala.service import ServiceError
 from daidala.setup_wizard import (
     SetupRequest,
     SetupWizardError,
-    confirmed_start,
     create_board,
     list_boards,
     list_profiles,
 )
+from daidala.skills import MissingSkillsError
+from daidala.store import StoreError
 
 router = APIRouter()
 
@@ -120,7 +129,7 @@ def health() -> dict[str, Any]:
     return {
         "success": True,
         "plugin": "daidala",
-        "read_only": False,
+        "read_model": True,
         "bounded_mutations": ["pack_install", "workflow_setup", "constraints_replace"],
     }
 
@@ -303,52 +312,218 @@ def constraint_replace(payload: dict[str, Any]) -> dict[str, Any]:
 
 @router.get("/wizard/inventory")
 def wizard_inventory() -> dict[str, Any]:
-    """List existing boards, profiles, and supported workflow packs."""
+    """List the profile-safe identities eligible for setup selection."""
     try:
         return {
             "boards": list_boards(_run_command),
             "profiles": list_profiles(_run_command),
             "packs": ["addyosmani", "aidlc"],
+            "projects": [
+                {
+                    "project_id": registration.project_id,
+                    "repository": registration.verified_remote,
+                }
+                for registration in _registered_projects().values()
+            ],
         }
     except SetupWizardError as error:
         raise HTTPException(status_code=502, detail=str(error)) from error
 
 
+@router.post("/wizard/boards/preview")
+def wizard_board_preview(payload: dict[str, Any]) -> dict[str, Any]:
+    """Preview an explicit board creation against the current inventory."""
+    slug, name = _board_request(payload)
+    try:
+        boards = list_boards(_run_command)
+    except SetupWizardError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+    if any(row.get("slug") == slug for row in boards):
+        raise HTTPException(status_code=409, detail="board slug already exists")
+    command = ["hermes", "kanban", "boards", "create", slug]
+    if name:
+        command.extend(("--name", name))
+    preview = {"command": command, "boards": boards, "slug": slug, "name": name}
+    return {"preview": preview, "preview_digest": _digest(preview)}
+
+
 @router.post("/wizard/boards")
 def wizard_create_board(payload: dict[str, Any]) -> dict[str, Any]:
-    """Create one explicitly requested board through the public Hermes CLI."""
+    """Create one board only from the exact current preview and confirmation."""
+    if payload.get("confirm") is not True:
+        raise HTTPException(status_code=400, detail="explicit confirmation is required")
+    expected = payload.get("preview_digest")
+    if not isinstance(expected, str) or len(expected) != 64:
+        raise HTTPException(status_code=400, detail="preview_digest is required")
+    slug, name = _board_request(payload)
+    preview = wizard_board_preview({"slug": slug, "name": name})
+    if preview["preview_digest"] != expected:
+        raise HTTPException(status_code=409, detail="board inputs changed after preview")
     try:
-        create_board(
-            _run_command,
-            slug=str(payload.get("slug", "")),
-            name=_optional_str(payload.get("name")),
-        )
+        create_board(_run_command, slug=slug, name=name)
     except SetupWizardError as error:
-        raise HTTPException(status_code=400, detail=str(error)) from error
-    return {"created": True, "slug": payload["slug"]}
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return {"created": True, "slug": slug}
+
+
+@router.post("/wizard/readiness")
+def wizard_readiness(payload: dict[str, Any]) -> dict[str, Any]:
+    """Run the same mutation-free preflight used by confirmed start."""
+    request, service = _resolved_setup_request(payload, apply=False)
+    try:
+        preflight = service.validate_start_preflight(**_preflight_kwargs(request))
+    except (ServiceError, MissingSkillsError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return _setup_preview(request, preflight)
 
 
 @router.post("/wizard/preview")
 def wizard_preview(payload: dict[str, Any]) -> dict[str, Any]:
-    """Validate and display the exact start request without mutating."""
+    """Return the safe request projection and exact fresh start digest."""
+    request, service = _resolved_setup_request(payload, apply=False)
     try:
-        return SetupRequest.from_payload(payload).preview()
-    except SetupWizardError as error:
-        raise HTTPException(status_code=400, detail=str(error)) from error
+        preflight = service.validate_start_preflight(**_preflight_kwargs(request))
+    except (ServiceError, MissingSkillsError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return _setup_preview(request, preflight)
 
 
 @router.post("/wizard/start")
 def wizard_start(payload: dict[str, Any]) -> dict[str, Any]:
-    """Invoke the existing service path after explicit confirmation."""
-
-    def start(**kwargs: Any) -> Any:
-        return service_factory().start(**kwargs)
-
+    """Apply only the exact, revalidated selected-registration preview."""
+    request, service = _resolved_setup_request(payload, apply=True)
     try:
-        ledger = confirmed_start(payload, start)
+        preflight = service.validate_start_preflight(**_preflight_kwargs(request))
+    except (ServiceError, MissingSkillsError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    preview = _setup_preview(request, preflight)
+    if payload["preview_digest"] != preview["preview_digest"]:
+        raise HTTPException(status_code=409, detail="setup inputs changed after preview")
+    if request.workflow_id is not None:
+        try:
+            service.store.get(request.workflow_id)
+        except StoreError as error:
+            if not str(error).startswith("unknown workflow:"):
+                raise HTTPException(status_code=409, detail=str(error)) from error
+        else:
+            raise HTTPException(
+                status_code=409,
+                detail=f"workflow already exists: {request.workflow_id}",
+            )
+    try:
+        ledger = service.start(**request.start_kwargs())
+    except (ServiceError, MissingSkillsError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return {"workflow": ledger.to_dict()}
+
+
+_SETUP_REQUEST_FIELDS = frozenset(
+    {
+        "board_slug",
+        "goal",
+        "pack",
+        "workflow_id",
+        "stage_profiles",
+        "constraints_content",
+        "constraints_skill",
+        "constraints_skill_digest",
+    }
+)
+
+
+def _registered_projects() -> dict[str, ControllerRegistration]:
+    """Read only profile-local registrations; never accept a browser path."""
+    try:
+        registrations = list_controller_registrations(resolve_data_root().resolve())
+    except ValueError as error:
+        raise SetupWizardError("registered project is invalid") from error
+    return {registration.project_id: registration for registration in registrations}
+
+
+def _resolved_setup_request(payload: dict[str, Any], *, apply: bool) -> tuple[SetupRequest, Any]:
+    required_fields = {"selection", "request"}
+    if apply:
+        if payload.get("confirm") is not True:
+            raise HTTPException(status_code=400, detail="explicit confirmation is required")
+        digest = payload.get("preview_digest")
+        if not isinstance(digest, str) or len(digest) != 64:
+            raise HTTPException(status_code=400, detail="preview_digest is required")
+        required_fields.update({"preview_digest", "confirm"})
+    if set(payload) != required_fields:
+        raise HTTPException(status_code=400, detail="unknown wizard envelope fields")
+    selection = payload.get("selection")
+    request = payload.get("request")
+    if not isinstance(selection, dict) or set(selection) != {"project_id"}:
+        raise HTTPException(status_code=400, detail="selection must contain only project_id")
+    project_id = selection.get("project_id")
+    if not isinstance(project_id, str) or not project_id:
+        raise HTTPException(status_code=400, detail="project_id is required")
+    if not isinstance(request, dict) or set(request) - _SETUP_REQUEST_FIELDS:
+        raise HTTPException(status_code=400, detail="unknown setup request fields")
+    try:
+        registration = _registered_projects().get(project_id)
+    except SetupWizardError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+    if registration is None:
+        raise HTTPException(status_code=404, detail="unknown registered project")
+    try:
+        resolved = SetupRequest.from_payload(
+            {**request, "target_repository": registration.checkout}
+        )
     except SetupWizardError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
-    return {"workflow": ledger.to_dict()}
+    return resolved, service_factory()
+
+
+def _setup_preview(request: SetupRequest, preflight: Any) -> dict[str, Any]:
+    """Return path-free UI facts while binding the full trusted request."""
+    private_request = request.start_kwargs()
+    projection = {
+        key: value for key, value in private_request.items() if key != "target_repository"
+    }
+    readiness = {
+        "checks": [
+            {"id": "pack-ready", "passed": True},
+            {"id": "repository-clean", "passed": True},
+            {"id": "board-available", "passed": True},
+            {"id": "stage-profiles-available", "passed": True},
+        ],
+        "baseline_commit": preflight.baseline_commit,
+    }
+    digest_source = {"request": private_request, "readiness": readiness}
+    return {
+        "confirmed": False,
+        "request": projection,
+        "readiness": readiness,
+        "preview_digest": _digest(digest_source),
+    }
+
+
+def _preflight_kwargs(request: SetupRequest) -> dict[str, Any]:
+    """Project the complete setup request onto the shared readiness contract."""
+    values = request.start_kwargs()
+    values.pop("goal")
+    return values
+
+
+def _board_request(payload: dict[str, Any]) -> tuple[str, str | None]:
+    allowed = {"slug", "name", "preview_digest", "confirm"}
+    if set(payload) - allowed:
+        raise HTTPException(status_code=400, detail="unknown board request fields")
+    slug = payload.get("slug")
+    if not isinstance(slug, str):
+        raise HTTPException(status_code=400, detail="board slug is required")
+    try:
+        create_board(lambda _command: (0, ""), slug=slug, name=None)
+    except SetupWizardError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return slug, _optional_str(payload.get("name"))
+
+
+def _digest(value: Any) -> str:
+    return hashlib.sha256(
+        json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    ).hexdigest()
 
 
 def _run_command(command: tuple[str, ...]) -> tuple[int, str]:

@@ -106,7 +106,7 @@ ways to make it appear in a *specific* Hermes profile are:
 
 | Profile state | Dashboard tab `/daidala` | `/api/plugins/daidala/health` |
 |---|---|---|
-| Plugin installed and enabled in this profile | Visible after the dashboard host reads `dashboard/manifest.json` | `200 {"success": true, "plugin": "daidala", "read_only": true}` |
+| Plugin installed and enabled in this profile | Visible after the dashboard host reads `dashboard/manifest.json` | `200 {"success": true, "plugin": "daidala", "read_model": true}` |
 | Plugin installed in another profile only | Not visible (the host only mounts plugins for the active profile) | `404` or `401` on the unauthenticated request |
 | Plugin symlink present but `hermes plugins enable` not run | Not enabled | `404` |
 | `hermes plugins install` from a stale daemon-cached entry | Visible only after the dashboard host is restarted | Reports the cached entry until restart |

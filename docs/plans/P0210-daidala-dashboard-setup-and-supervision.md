@@ -18,7 +18,7 @@
 
 **Produces:** an inventory-backed first-workflow wizard with mounted-profile scope, registered-repository capability readiness, non-authoritative defaults and Hermes Cron handoff, plus decision-first plan approval, review disposition, revision request, recovery, and cancellation controls over existing Daidala and Hermes authority surfaces
 
-**Status:** pending — blocked until P0200, P0205, and P0207 complete and human implementation approval is recorded
+**Status:** Phase 0 complete — P0200, P0205, P0207, and the registered setup boundary are complete; Phase 1 remains pending human execution approval
 
 ## Goal
 
@@ -37,44 +37,84 @@ Add the browser path that resolves one mounted-profile registration into the exi
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Add first-workflow setup wizard UX | pending | The wizard resolves an inventory-selected registration into the exact `SetupRequest`/`daidala:setup` engine path, verifies transport-specific repository capabilities and all other prerequisites, creates or selects a board, returns to its browser-memory-only draft from Config → Constraints source management, applies only revalidated non-secret defaults, and preserves preview-then-confirm start semantics |
-| 1 | Add decision-first workflow supervision | pending | Existing workflows reopen by exact ID; isolated-browser evidence proves verified plan approval, exact review disposition before delivery, review-driven revision to a new plan approval, bounded blocked-card recovery, and previewed cancellation |
+| 0 | Establish the registered setup boundary | done (`python -m pytest -q`; Ruff; Lefthook; pack/link/build/release checks; isolated live Hermes compatibility probe) | The service and closed dashboard routes resolve only a selected mounted-profile registration into the exact `SetupRequest` path, share mutation-free start readiness with confirmed start, bind preview/apply to a fresh exact digest, and reject browser paths, unknown fields, stale previews, and explicit existing workflow IDs |
+| 1 | Render the inventory-backed first-workflow wizard | pending | The browser consumes the Phase 0 boundary to select ready packs, registrations, profiles, boards, and constraints; preserves an in-memory non-secret draft/default; creates boards only through preview-confirm; and reaches a newly created workflow or a safe existing-workflow reference |
+| 2 | Add decision-first workflow supervision | pending | Existing workflows reopen by exact ID; isolated-browser evidence proves verified plan approval, exact review disposition before delivery, review-driven revision to a new plan approval, bounded blocked-card recovery, and previewed cancellation |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
 
-## Phase 0 — Add the first-workflow setup wizard
+## Phase 0 — Establish the registered setup boundary
 
-**Goal:** Provide a guided browser form that is an alternative presentation over the existing validated setup request and confirmed-start path.
+**Goal:** Make the typed, registration-resolved, digest-bound setup contract a
+closed dashboard API before a browser view can consume it.
 
 Steps:
 
 1. Read contract Phase 2, the SetupRequest decision, and all linked AGENTS files.
-2. Implement the contract's read-only mounted controller identity; ready-pack,
-   registered-repository, worker-default/stage-profile, and existing-board
+2. Extract one typed, mutation-free start-readiness preflight from
+   `WorkflowService.start`; use it for both confirmed start and the dashboard
+   readiness/preview routes so the browser cannot replace repository, pack,
+   board, or stage-profile checks with a weaker copy.
+3. Replace direct browser setup payloads with the strict `{selection,
+   request}` preview envelope and `{selection, request, preview_digest,
+   confirm}` apply envelope. Resolve `selection.project_id` only through the
+   mounted profile's registration and trusted checkout; reject browser paths,
+   unknown outer/request fields, non-literal confirmation, stale digests, and an
+   explicit workflow ID that already names a ledger. Remove the legacy
+   three-field browser control in this phase rather than retaining a direct-path
+   compatibility call; Phase 1 reintroduces Start workflow only through this
+   boundary.
+4. Add profile-safe inventory, readiness, and board preview/confirmed-creation
+   routes. Keep readiness and previews mutation-free; board apply reruns current
+   inventory and conflicts if the reviewed slug now exists.
+5. Extend typed setup/API tests and the closed route inventory. Verify that the
+   service and dashboard preflight share their behavior and that declined or
+   stale dashboard operations create no ledger, artifact, worktree, card, or
+   board.
+
+Verification gate: The Phase 0 table predicate passes. Focused setup/API tests
+prove the registration-resolved envelope, strict field rejection, shared
+preflight, mutation-free readiness, exact preview/apply binding, and board
+creation conflict handling. Asset tests prove the legacy direct-path control is
+absent. Phase 1 owns the static bundle's new browser-memory draft and rendered
+inventory controls.
+
+## Phase 1 — Render the inventory-backed first-workflow wizard
+
+**Goal:** Present the Phase 0 API as the guided first-run browser flow without
+adding browser authority or persistent dashboard state.
+
+Steps:
+
+1. Read Phase 0 completion evidence and contract Phase 2's selector, default,
+   constraints, and handoff rules.
+2. Implement the read-only mounted controller identity; ready-pack,
+   registered-repository, worker-default/six-stage-profile, and existing-board
    selectors; requested outcome / prompt (mapped to `SetupRequest.goal`);
-   constraints; browser-local non-secret default; six-category readiness; Cron
-   handoff; preview; and confirmation controls. The reference-skill constraint
-   mode lists installed policy skills from the same inventory the CLI uses
-   today (`ProfileSkillContentRegistry.installed_names()` in
-   `daidala/skills.py`); `Manage sources` is a navigation affordance that opens
-   Config → Constraints and preserves the in-progress Start draft only in
-   browser memory. P0230 ships the dedicated reusable-source browser, literal
-   content route, and `← Back to Start workflow` return that the link points
-   to; until then the selector resolves names from the installed-skill
-   inventory and the link routes to the Constraints subtab. Any source or form
-   change invalidates the current preview and reruns readiness. Never label the
-   browser control `Goal`, because that implies Hermes' unrelated `/goal`
-   session feature.
-3. Resolve `selection.project_id` to the mounted profile's exact registration and
-   trusted checkout server-side, reject browser paths, then pass only the resolved
-   request payload to `SetupRequest.from_payload`; keep selection, confirmation,
-   and digest fields outside the model.
-4. Recreate the disposable stateful fixture for browser evidence and remove it after stopping its owned process.
-5. Update route inventory and owning AGENTS contracts with the source changes, then run the focused setup/API/asset/browser gates from the contract.
+   constraint source controls; browser-local non-secret defaults; readiness;
+   preview; and literal confirmation. Never label the browser control `Goal`.
+3. Add the preview-confirm board action, source-change invalidation, and the
+   `Manage sources` navigation affordance to Config → Constraints. P0230 owns
+   that destination's reusable-source browser and return implementation; this
+   phase keeps the draft only in browser memory.
+4. Persist only `{project_id, pack, board_slug, stage_profiles}` in the
+   mounted-profile-scoped browser preset. Inventory/readiness changes invalidate
+   preview; stale/missing identities remain unselected and never authorize start.
+5. On successful creation open the returned workflow; on an explicit existing
+   workflow conflict offer only the safe exact-ID reopen path. Include Hermes
+   Cron as a host-owned admission handoff, not a Daidala scheduler.
+6. Recreate the disposable stateful fixture for browser evidence and remove it
+   after stopping its owned process. Update asset tests, CSS, route inventory,
+   and owning DOX contracts.
 
-Verification gate: The Phase 0 table predicate and the exact detailed Phase 2 contract gates pass. Browser evidence proves a Start draft is neither persisted nor included in defaults, a returned source selection invalidates the prior preview, and the old preview cannot authorize Start after a source change. The `Manage sources` link is present and routes to Config → Constraints; its full destination surface is verified under P0230.
+Verification gate: The Phase 1 table predicate and exact detailed Phase 2
+browser/asset gates pass. Browser evidence proves a Start draft is neither
+persisted nor included in defaults, a returned source selection invalidates the
+prior preview, and the old preview cannot authorize Start after a source change.
+The `Manage sources` link is present and routes to Config → Constraints; its
+full destination surface is verified under P0230.
 
-## Phase 1 — Add decision-first workflow supervision
+## Phase 2 — Add decision-first workflow supervision
 
 **Goal:** Make a newly started workflow understandable and controllable through a decision-first dashboard that shows the exact evidence required for each human action while Hermes remains the dashboard host and Kanban lifecycle authority.
 
@@ -90,7 +130,7 @@ Steps:
 8. Extend the closed route inventory and same-commit DOX contracts. Update dashboard-specific documentation and cross-links without duplicating P0207's current runtime documentation.
 9. Run the focused API, asset, CLI, and disposable-browser gates named by the contract.
 
-Verification gate: The Phase 1 table predicate passes; browser evidence proves waiting decisions are oldest-actionable first, a user can compare each source-bound AI-assisted summary with the complete escaped evidence and separately visible read-only next-card packet, read and approve the exact plan, inspect and manually disposition the exact review, request changes into one new plan revision with visible feedback and successor packet, challenge a reviewer without overriding policy, resolve one blocked card without raw audit noise, and perform every bounded action without creating a general dispatch path. Browser tests also prove Markdown/HTML is displayed as literal escaped text, deterministic packet fields cannot be edited, and no summary-only approval is possible.
+Verification gate: The Phase 2 table predicate passes; browser evidence proves waiting decisions are oldest-actionable first, a user can compare each source-bound AI-assisted summary with the complete escaped evidence and separately visible read-only next-card packet, read and approve the exact plan, inspect and manually disposition the exact review, request changes into one new plan revision with visible feedback and successor packet, challenge a reviewer without overriding policy, resolve one blocked card without raw audit noise, and perform every bounded action without creating a general dispatch path. Browser tests also prove Markdown/HTML is displayed as literal escaped text, deterministic packet fields cannot be edited, and no summary-only approval is possible.
 
 ## Out of scope
 

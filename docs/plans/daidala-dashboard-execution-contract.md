@@ -103,13 +103,9 @@ phases.
   `/workflows/{id}/recommendations`, `/constraints/preview`,
   `/constraints/replace`, and `/wizard/{inventory,boards,preview,start}`
   (`dashboard/plugin_api.py:85-251`).
-- `/health` currently returns `read_only: true`
-  (`dashboard/plugin_api.py:96`), but the plugin already exposes scoped board,
-  setup, and constraint mutations. Phase 2 narrows that misleading capability
-  label to `read_model: true`; it does not make the plugin read-only. The
-  `buildHealth()` fallback in `dashboard/dist/index.js:62` also fabricates a
-  `read_only: true` on fetch failure and must be corrected in the same commit
-  so the offline stub does not resurrect the stale key.
+- `/health` returns `read_model: true`, distinguishing the dashboard's read
+  model from its bounded mutation allowlist. The offline fallback returns only
+  `success: false`, so it does not resurrect a stale capability key.
 - A `SetupWizard` UI component already exists with a minimal board, repo,
   goal form, `Preview mutations`, and `Start workflow` confirmation
   (`dashboard/dist/index.js:467-531`).
@@ -415,10 +411,10 @@ scoped adapters. It does not expose an arbitrary CLI bridge.
 | [Install and enable](../07-runbook.md#install-and-enable) | P0200 host setup; P0240 operator guidance | Verify the mounted plugin and current host/profile identity. Display the exact native install/enable commands; never install, enable, remove, or reload the currently running plugin from its own dashboard process. |
 | [Initialize](../07-runbook.md#initialize) | P0240 Phase 0 | Preview the resolved profile-local data root without creating it; apply only after a fresh digest and literal confirmation; repeated apply is an explicit no-op. |
 | [Diagnose prerequisites](../07-runbook.md#diagnose-prerequisites) | P0200 pack readiness; P0240 Phase 0 strict diagnosis | Reuse pack list/validate/check/install services and `run_prerequisite_diagnosis`. Derive trusted project paths from `project_id`; never accept arbitrary browser paths or return credential values. |
-| [Start and resume a workflow](../07-runbook.md#start-and-resume-a-workflow) | P0210 Phases 0–1 | Resolve one selected registered project to `SetupRequest` server-side; resume means reopen the existing exact workflow and continue read-only watch/recovery, not create a second scheduler or a new workflow. Delayed/recurring admission remains a link to Hermes Cron, and pausing admission never claims to freeze in-flight cards. |
-| [Approve the exact plan](../07-runbook.md#approve-the-exact-plan) | P0210 Phase 1 | Delegate to `WorkflowService.approve`; stale digests fail closed and Kanban unblock never substitutes for approval. |
-| [Cancel](../07-runbook.md#cancel) | P0210 Phase 1 | Preview current cards/worktree/reason, require digest + confirmation, then delegate to `WorkflowService.cancel`; retain the policy/artifact ledger. |
-| [Recovery](../07-runbook.md#recovery) | P0210 Phase 1 | Show bounded Kanban comments/runs and use public comment/unblock operations after workflow/card validation. Refresh remains read-only. |
+| [Start and resume a workflow](../07-runbook.md#start-and-resume-a-workflow) | P0210 Phases 0–2 | Resolve one selected registered project to `SetupRequest` server-side; resume means reopen the existing exact workflow and continue read-only watch/recovery, not create a second scheduler or a new workflow. Delayed/recurring admission remains a link to Hermes Cron, and pausing admission never claims to freeze in-flight cards. |
+| [Approve the exact plan](../07-runbook.md#approve-the-exact-plan) | P0210 Phase 2 | Delegate to `WorkflowService.approve`; stale digests fail closed and Kanban unblock never substitutes for approval. |
+| [Cancel](../07-runbook.md#cancel) | P0210 Phase 2 | Preview current cards/worktree/reason, require digest + confirmation, then delegate to `WorkflowService.cancel`; retain the policy/artifact ledger. |
+| [Recovery](../07-runbook.md#recovery) | P0210 Phase 2 | Show bounded Kanban comments/runs and use public comment/unblock operations after workflow/card validation. Refresh remains read-only. |
 | [Upgrade](../07-runbook.md#upgrade) | P0240 Phase 1 | Show current plugin/host identity, supported range, and exact host-owned update + post-update verification commands. Never self-update or restart the dashboard/gateway. |
 | [Standalone diagnostics](../07-runbook.md#standalone-diagnostics) | P0240 Phase 1 | Preserve native/standalone parser and exit-code parity in CLI tests; the dashboard consumes the same services but does not claim byte-identical HTTP output. |
 

@@ -248,6 +248,27 @@ def registration_path(data_root: Path, project_id: str) -> Path:
     return data_root / "projects" / project_id / "registration.yaml"
 
 
+def list_controller_registrations(data_root: Path) -> tuple[ControllerRegistration, ...]:
+    """Load every profile-local registration without accepting caller paths."""
+    registration_path(data_root, "valid-project")
+    projects_root = data_root / "projects"
+    if not projects_root.exists():
+        return ()
+    if not projects_root.is_dir():
+        raise PolicyViolationError("registration projects root must be a directory")
+    registrations: list[ControllerRegistration] = []
+    for candidate in sorted(projects_root.glob("*/registration.yaml")):
+        resolved = candidate.resolve()
+        if projects_root not in resolved.parents or not resolved.is_file():
+            raise PolicyViolationError("registration path escapes the projects root")
+        try:
+            content = resolved.read_text(encoding="utf-8")
+        except OSError as error:
+            raise PolicyViolationError("could not read controller registration") from error
+        registrations.append(parse_controller_registration(content))
+    return tuple(registrations)
+
+
 def _require_absolute_checkout(value: Any) -> None:
     _require_text(value, "registration checkout", 4096)
     if not isinstance(value, str):

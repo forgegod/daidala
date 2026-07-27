@@ -70,19 +70,10 @@ if args[:1] == ["dashboard"]:
         elif first == "/api/plugins/daidala/health":
             response = b"HTTP/1.1 401 Unauthorized\r\nContent-Length: 0\r\n\r\n"
         elif first == "/api/plugins/daidala/wizard/preview":
-            request = json.loads(request_body)
-            request.update({
-                "pack_name": request["pack"],
-                "constraints_content": request["constraints_content"].strip(),
-                "constraints_skill": None,
-                "constraints_skill_digest": None,
-            })
             preview = json.dumps({
-                "confirmed": False,
-                "request": request,
-                "mutations": [],
+                "detail": "missing required skills: probe-skill"
             }, sort_keys=True).encode()
-            response = (b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n"
+            response = (b"HTTP/1.1 409 Conflict\r\nContent-Type: application/json\r\n"
                         b"Content-Length: " + str(len(preview)).encode()
                         + b"\r\n\r\n" + preview)
         elif first == "/api/plugins/daidala/wizard/start":
@@ -161,7 +152,7 @@ def test_probe_discovers_dashboard_plugin_and_serves_assets(tmp_path: Path) -> N
         "dist/style.css",
     }
     assert payload["setup"] == {
-        "preview_confirmed": False,
+        "preview_readiness_status": 409,
         "unconfirmed_start_status": 400,
         "state_unchanged": True,
     }

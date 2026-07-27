@@ -928,13 +928,17 @@ def build_cli_service(
     *,
     command_runner: CommandRunner | None = None,
     data_root: Path | None = None,
+    defer_store_initialization: bool = False,
 ) -> WorkflowService:
     """Build a profile-safe service over documented ``hermes kanban`` commands."""
     selected_data_root = data_root or resolve_data_root()
     registry = ProfileSkillContentRegistry(selected_data_root / "skills")
     runner = command_runner or _run_command
     return WorkflowService(
-        WorkflowStore(selected_data_root / "daidala"),
+        WorkflowStore(
+            selected_data_root / "daidala",
+            defer_initialization=defer_store_initialization,
+        ),
         skill_inventory=registry,
         skill_content_registry=registry,
         kanban=KanbanGraphAdapter(

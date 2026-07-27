@@ -88,11 +88,11 @@ class DashboardBackend:
         if dispatch_tool is None and clock is None and skill_content_registry is None:
             from .cli import build_cli_service
 
-            service = build_cli_service()
+            service = build_cli_service(defer_store_initialization=True)
             return cls(service_factory=lambda: service)
 
         root = resolve_data_root() / "daidala"
-        store = WorkflowStore(root)
+        store = WorkflowStore(root, defer_initialization=True)
         content_registry: SkillContentRegistry = (
             skill_content_registry
             if skill_content_registry is not None

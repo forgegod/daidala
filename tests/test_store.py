@@ -129,6 +129,17 @@ def test_store_read_only_open_never_initializes_missing_ledger(data_root: Path) 
     assert reopened.db_path == initialized.db_path
 
 
+def test_deferred_store_initializes_only_when_a_ledger_is_created(data_root: Path) -> None:
+    store = WorkflowStore(data_root, defer_initialization=True)
+
+    assert store.list_all() == ()
+    assert not data_root.exists()
+
+    ledger = make_ledger()
+    assert store.create(ledger) == ledger
+    assert store.get(ledger.workflow_id) == ledger
+
+
 def test_create_get_update_and_list_round_trip(data_root: Path) -> None:
     store = WorkflowStore(data_root)
     ledger = make_ledger()

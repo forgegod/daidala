@@ -6,8 +6,8 @@ extension boundary. They prove:
 
 - the ``manifest.json`` registers exactly the tab, slot, and assets that
   Phase 0 proved against the supported host;
-- the IIFE bundle is read-only, never invokes POST/PUT/DELETE, and uses
-  the documented SDK registration helpers;
+- the IIFE bundle uses the documented SDK registration helpers and only its
+  bounded preview-confirm mutation allowlist;
 - the bundle polls at least every five seconds while visible, stops when
   hidden, exposes a manual refresh button, and renders every Phase 3
   visual state (loading, no-workflow, progress, pending approval, blocked
@@ -78,8 +78,9 @@ def test_dashboard_mutations_use_only_closed_post_routes() -> None:
     assert 'Accept: "application/json"' in source
     assert "__HERMES_SESSION_TOKEN__" not in source
     assert 'method: "POST"' in source
-    assert 'API_BASE + "/wizard/preview"' in source
-    assert 'API_BASE + "/wizard/start"' in source
+    assert 'API_BASE + "/wizard/preview"' not in source
+    assert 'API_BASE + "/wizard/start"' not in source
+    assert '"Repository path"' not in source
     assert '"/install/preview"' in source
     assert '"/install"' in source
     assert "preview_digest: previewDigest, confirm: true" in source
@@ -107,8 +108,8 @@ def test_bundle_exposes_manual_refresh() -> None:
     assert "onClick" in source
     assert "Refresh" in source
     assert "refreshAll" in source
-    assert '"Preview mutations"' in source
-    assert '"Start workflow"' in source
+    assert '"Preview mutations"' not in source
+    assert '"Start workflow"' not in source
     assert '"Preview constraint change"' in source
     assert '"Replace constraints"' in source
     assert '"No semantic change; replacement is unnecessary."' in source

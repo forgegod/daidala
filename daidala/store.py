@@ -29,12 +29,19 @@ class ObservedLedger:
 class WorkflowStore:
     """Thin SQLite store keyed by ``workflow_id`` with optimistic updates."""
 
-    def __init__(self, data_root: Path, *, initialize: bool = True) -> None:
+    def __init__(
+        self,
+        data_root: Path,
+        *,
+        initialize: bool = True,
+        defer_initialization: bool = False,
+    ) -> None:
         self._data_root = Path(data_root)
         self._db_path = self._data_root / _DB_FILE
         if initialize:
-            self._data_root.mkdir(parents=True, exist_ok=True)
-            self._init_schema()
+            if not defer_initialization or self._db_path.is_file():
+                self._data_root.mkdir(parents=True, exist_ok=True)
+                self._init_schema()
         elif not self._db_path.is_file():
             raise StoreError("policy ledger does not exist")
 
@@ -100,6 +107,9 @@ class WorkflowStore:
 
     def create(self, ledger: WorkflowLedger) -> WorkflowLedger:
         """Insert a fresh policy ledger."""
+        if not self._db_path.is_file():
+            self._data_root.mkdir(parents=True, exist_ok=True)
+            self._init_schema()
         payload = _serialize(ledger)
         with self._connect() as connection:
             connection.execute("BEGIN")
@@ -147,6 +157,8 @@ class WorkflowStore:
         expected_updated_at: str | None = None,
     ) -> WorkflowLedger:
         """Replace a ledger, optionally requiring an observed update token."""
+        if not self._db_path.is_file():
+            raise StoreError(f"unknown workflow: {ledger.workflow_id!r}")
         payload = _serialize(ledger)
         with self._connect() as connection:
             connection.execute("BEGIN")
@@ -216,6 +228,8 @@ class WorkflowStore:
 
     def list_all(self) -> tuple[WorkflowLedger, ...]:
         """Return every policy ledger ordered by creation time."""
+        if not self._db_path.is_file():
+            return ()
         with self._connect() as connection:
             rows = connection.execute(
                 "SELECT ledger_json FROM policy_ledgers ORDER BY created_at ASC"
@@ -223,6 +237,8 @@ class WorkflowStore:
         return tuple(_deserialize(row["ledger_json"]) for row in rows)
 
     def _load(self, workflow_id: str) -> ObservedLedger:
+        if not self._db_path.is_file():
+            raise StoreError(f"unknown workflow: {workflow_id!r}")
         with self._connect() as connection:
             row = connection.execute(
                 "SELECT ledger_json, updated_at FROM policy_ledgers WHERE workflow_id = ?",
