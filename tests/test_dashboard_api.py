@@ -77,6 +77,10 @@ def test_router_exports_all_phase_two_routes() -> None:
         "review_decision",
         "review_disposition_preview",
         "review_disposition",
+        "workflow_card_comment",
+        "workflow_card_unblock",
+        "workflow_cancel_preview",
+        "workflow_cancel",
         "decisions",
         "recommendations",
         "constraint_preview",
@@ -622,6 +626,105 @@ def test_card_detail_uses_bounded_show_and_runs_adapters(
     assert "workspace_path" not in serialized
     assert "metadata" not in serialized
     assert "/hidden" not in serialized
+
+
+def test_card_remediation_routes_require_confirmed_bounded_workflow_owned_input(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    api = load_api()
+    ledger = types.SimpleNamespace(
+        board_slug="board-1",
+        card_references=(types.SimpleNamespace(task_id="card-1", stage="verify"),),
+    )
+    api.__dict__["service_factory"] = lambda: types.SimpleNamespace(
+        status=lambda workflow_id: ledger if workflow_id == "workflow-1" else None
+    )
+    commands: list[tuple[str, ...]] = []
+
+    def run(command: tuple[str, ...], **kwargs: object) -> object:
+        commands.append(command)
+        assert kwargs["timeout"] == 10
+        return types.SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(api.subprocess, "run", run)
+
+    assert api.workflow_card_comment(
+        "workflow-1",
+        "card-1",
+        {"comment": "Provide the missing verification evidence.", "confirm": True},
+    ) == {"commented": True, "card_id": "card-1"}
+    assert api.workflow_card_unblock(
+        "workflow-1", "card-1", {"reason": "Evidence is now available.", "confirm": True}
+    ) == {"unblocked": True, "card_id": "card-1"}
+    assert commands == [
+        (
+            "hermes", "kanban", "--board", "board-1", "comment", "card-1",
+            "Provide the missing verification evidence.",
+        ),
+        (
+            "hermes", "kanban", "--board", "board-1", "unblock", "card-1",
+            "--reason", "Evidence is now available.",
+        ),
+    ]
+
+    with pytest.raises(FakeHTTPException) as invalid:
+        api.workflow_card_comment(
+            "workflow-1", "unknown", {"comment": "bad\x01text", "confirm": True}
+        )
+    assert invalid.value.status_code == 400
+    assert len(commands) == 2
+
+
+def test_cancellation_routes_bind_the_current_ledger_token_and_hide_worktree_path() -> None:
+    api = load_api()
+    ledger = types.SimpleNamespace(
+        workflow_id="workflow-1",
+        card_references=(
+            types.SimpleNamespace(task_id="card-1", stage="verify"),
+            types.SimpleNamespace(task_id="card-2", stage="review"),
+        ),
+        worktree_owned=True,
+        worktree_path="/profile/private/worktree",
+    )
+    observed = types.SimpleNamespace(ledger=ledger, updated_at="token-1")
+    cancelled: list[tuple[str, str]] = []
+
+    class Service:
+        store = types.SimpleNamespace(get_with_token=lambda _workflow_id: observed)
+
+        def cancel(self, workflow_id: str, reason: str) -> object:
+            cancelled.append((workflow_id, reason))
+            return ledger
+
+    api.__dict__["service_factory"] = Service
+    preview = api.workflow_cancel_preview("workflow-1", {"reason": "  Superseded.  "})
+
+    assert preview["cards"] == [
+        {"task_id": "card-1", "stage": "verify"},
+        {"task_id": "card-2", "stage": "review"},
+    ]
+    assert preview["owned_worktree_release"] is True
+    assert preview["reason"] == "Superseded."
+    assert "/profile/private/worktree" not in json.dumps(preview)
+
+    result = api.workflow_cancel(
+        "workflow-1",
+        {"reason": "  Superseded.  ", "preview_digest": preview["preview_digest"], "confirm": True},
+    )
+    assert result == {"cancelled": True, "workflow_id": "workflow-1"}
+    assert cancelled == [("workflow-1", "Superseded.")]
+
+    stale = types.SimpleNamespace(ledger=ledger, updated_at="token-2")
+    api.__dict__["service_factory"] = lambda: types.SimpleNamespace(
+        store=types.SimpleNamespace(get_with_token=lambda _workflow_id: stale),
+        cancel=lambda *_args: pytest.fail("stale preview reached cancellation"),
+    )
+    with pytest.raises(FakeHTTPException) as stale_error:
+        api.workflow_cancel(
+            "workflow-1",
+            {"reason": "Superseded.", "preview_digest": preview["preview_digest"], "confirm": True},
+        )
+    assert stale_error.value.status_code == 409
 
 
 def test_kanban_detail_rejects_mismatched_card_identity() -> None:

@@ -9,10 +9,12 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
 - `manifest.json` declares the `/daidala` tab, `sessions:top` slot, assets, and backend router.
 - `plugin_api.py` mounts the profile-safe read model, bounded pack operations,
   narrowly scoped setup routes, bounded Kanban detail reads, exact-plan approval,
-  and exact attended review preview/apply routes.
+  exact attended review preview/apply routes, workflow-owned card comment/unblock,
+  and cancellation preview/apply routes.
 - `dist/index.js` renders workflow progress, the inventory-backed Start workflow
   wizard, Config → Packs readiness/content, decision-first supervision, exact-plan
-  approval, and literal source-bound review evidence/disposition.
+  approval, literal source-bound review evidence/disposition, blocked-card
+  remediation, and previewed cancellation.
 - `dist/style.css` adapts the extension to host themes and narrow layouts.
 
 ## Local Contracts
@@ -27,8 +29,10 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
 - Workflow polling is read-only. Mutations are limited to confirmed external
   pack-skill installation, board creation, confirmed setup, and compare-and-swap
   constraint replacement, plus exact current-plan approval through
-  `POST /workflows/{workflow_id}/approve` and exact attended review disposition
-  through `POST /workflows/{workflow_id}/review-disposition`.
+  `POST /workflows/{workflow_id}/approve`, exact attended review disposition
+  through `POST /workflows/{workflow_id}/review-disposition`, confirmed
+  workflow-owned-card comment/unblock routes, and digest-bound cancellation
+  through `POST /workflows/{workflow_id}/cancel`.
 - Exact-plan approval accepts only `{artifact_id, plan_digest, summary_digest,
   confirm: true}`, re-resolves the current verified plan and bound summary, and
   fails closed on stale or unavailable evidence. The browser renders the plan as
@@ -38,6 +42,12 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   the attended actor and every workflow/artifact/card/worktree identity, recomputes
   the current preview, and fails closed on stale evidence. Browser responses expose
   only whether an owned worktree will be released, never its profile-local path.
+- Card comment accepts only `{comment, confirm: true}` and unblock accepts only
+  `{reason, confirm: true}` after the server validates the card against the current
+  workflow ledger and derives its board. Cancellation preview accepts only
+  `{reason}`; apply accepts only `{reason, preview_digest, confirm: true}` and
+  recomputes the current cards, ledger token, owned-worktree identity, and
+  normalized reason before delegating to `WorkflowService.cancel`.
 - Captured implementation diffs, paths, verification outcomes, findings, and
   successor packets render as literal source-bound facts. Delivery authority is
   shown only when the service allows `accept_delivery`; revision requires feedback

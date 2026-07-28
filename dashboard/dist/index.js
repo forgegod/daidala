@@ -731,7 +731,199 @@
     );
   }
 
-  function renderCardAudit(cards) {
+  function BlockedCardRemediation(props) {
+    var card = props.card;
+    var recommendation = props.recommendation;
+    var blockerKind = card.block_kind ||
+      (recommendation && recommendation.blocker_kind) || "needs_input";
+    var requestedRemediation = (recommendation && recommendation.rationale) ||
+      card.block_reason || "No structured remediation was supplied.";
+    var textState = useState("");
+    var text = textState[0];
+    var setText = textState[1];
+    var confirmedState = useState(false);
+    var confirmed = confirmedState[0];
+    var setConfirmed = confirmedState[1];
+    var busyState = useState(false);
+    var busy = busyState[0];
+    var setBusy = busyState[1];
+    var messageState = useState("");
+    var message = messageState[0];
+    var setMessage = messageState[1];
+    var comments = Array.isArray(card.comments) ? card.comments.slice(-3) : [];
+    var runs = Array.isArray(card.runs) ? card.runs.slice(-3) : [];
+
+    function submit(action) {
+      if (!text.trim() || !confirmed) return;
+      setBusy(true);
+      setMessage("");
+      var endpoint = API_BASE + "/workflows/" + encodeURIComponent(props.workflowId) +
+        "/cards/" + encodeURIComponent(card.task_id) +
+        (action === "comment" ? "/comment" : "/unblock");
+      var payload = { confirm: true };
+      payload[action === "comment" ? "comment" : "reason"] = text;
+      postJson(endpoint, payload).then(function () {
+        setText("");
+        setConfirmed(false);
+        setMessage(action === "comment" ? "Remediation comment recorded." : "Card unblocked for retry.");
+        props.onChanged();
+      }).catch(function (error) {
+        setMessage(error.message);
+      }).finally(function () {
+        setBusy(false);
+      });
+    }
+
+    return createElement(
+      "section",
+      { className: "daidala-remediation", "data-testid": "daidala-card-remediation" },
+      createElement("h5", null, "Blocked card"),
+      createElement("p", null, "Stage: " + card.stage),
+      createElement("h5", null, "Blocker kind"),
+      createElement("p", null, blockerKind),
+      createElement("h5", null, "Requested remediation"),
+      createElement("p", null, requestedRemediation),
+      createElement("h5", null, "Latest relevant evidence"),
+      comments.length || runs.length
+        ? createElement("ul", null,
+            comments.map(function (row, index) {
+              return createElement("li", { key: "comment-" + index },
+                (row.author || "operator") + ": " + (row.body || "")
+              );
+            }),
+            runs.map(function (row, index) {
+              return createElement("li", { key: "run-" + index },
+                (row.outcome || row.status || "run") +
+                (row.summary ? " — " + row.summary : row.error ? " — " + row.error : "")
+              );
+            })
+          )
+        : createElement("p", null, "No recent card evidence is available."),
+      createElement("label", { className: "daidala-wizard-field" },
+        createElement("span", null, "Remediation evidence"),
+        createElement("input", {
+          value: text,
+          maxLength: 500,
+          onChange: function (event) { setText(event.target.value); setConfirmed(false); }
+        })
+      ),
+      createElement("label", { className: "daidala-confirm" },
+        createElement("input", {
+          type: "checkbox",
+          checked: confirmed,
+          onChange: function (event) { setConfirmed(event.target.checked); }
+        }),
+        "I confirm this remediation action"
+      ),
+      createElement("div", { className: "daidala-remediation-actions" },
+        createElement("button", {
+          type: "button", disabled: busy || !text.trim() || !confirmed,
+          onClick: function () { submit("comment"); }
+        }, busy ? "Recording…" : "Comment remediation"),
+        createElement("button", {
+          type: "button", disabled: busy || !text.trim() || !confirmed,
+          onClick: function () { submit("unblock"); }
+        }, busy ? "Unblocking…" : "Unblock for retry")
+      ),
+      message ? createElement("p", { role: "status", className: "daidala-banner" }, message) : null
+    );
+  }
+
+  function WorkflowCancellation(props) {
+    var reasonState = useState("");
+    var reason = reasonState[0];
+    var setReason = reasonState[1];
+    var previewState = useState(null);
+    var preview = previewState[0];
+    var setPreview = previewState[1];
+    var confirmedState = useState(false);
+    var confirmed = confirmedState[0];
+    var setConfirmed = confirmedState[1];
+    var busyState = useState(false);
+    var busy = busyState[0];
+    var setBusy = busyState[1];
+    var messageState = useState("");
+    var message = messageState[0];
+    var setMessage = messageState[1];
+    var cards = preview && Array.isArray(preview.cards) ? preview.cards : [];
+
+    function previewCancellation() {
+      if (!reason.trim()) return;
+      setBusy(true);
+      setMessage("");
+      postJson(API_BASE + "/workflows/" + encodeURIComponent(props.workflowId) + "/cancel/preview", {
+        reason: reason
+      }).then(function (result) {
+        setPreview(result);
+        setConfirmed(false);
+      }).catch(function (error) {
+        setPreview(null);
+        setMessage(error.message);
+      }).finally(function () { setBusy(false); });
+    }
+
+    function cancelWorkflow() {
+      if (!preview || !confirmed) return;
+      setBusy(true);
+      setMessage("");
+      postJson(API_BASE + "/workflows/" + encodeURIComponent(props.workflowId) + "/cancel", {
+        reason: reason,
+        preview_digest: preview.preview_digest,
+        confirm: true
+      }).then(function () {
+        setPreview(null);
+        setConfirmed(false);
+        setMessage("Workflow cancelled.");
+        props.onCancelled();
+      }).catch(function (error) {
+        setMessage(error.message);
+      }).finally(function () { setBusy(false); });
+    }
+
+    return createElement(
+      "section",
+      { className: "daidala-cancellation", "data-testid": "daidala-workflow-cancellation" },
+      createElement("h4", { className: "daidala-workflow-section-title" }, "Cancel workflow"),
+      createElement("p", null, "Cancellation archives workflow cards and releases only a Daidala-owned worktree."),
+      createElement("label", { className: "daidala-wizard-field" },
+        createElement("span", null, "Cancellation reason"),
+        createElement("input", {
+          value: reason,
+          maxLength: 500,
+          onChange: function (event) { setReason(event.target.value); setPreview(null); setConfirmed(false); }
+        })
+      ),
+      createElement("button", {
+        type: "button", disabled: busy || !reason.trim(), onClick: previewCancellation
+      }, busy ? "Previewing…" : "Preview cancellation"),
+      preview ? createElement("div", { className: "daidala-cancellation-preview" },
+        createElement("h5", null, "Affected cards"),
+        cards.length
+          ? createElement("ul", null, cards.map(function (card) {
+              return createElement("li", { key: card.task_id }, card.stage + " · " + card.task_id);
+            }))
+          : createElement("p", null, "No workflow cards are recorded."),
+        createElement("p", null,
+          preview.owned_worktree_release
+            ? "Daidala-owned worktree will be released."
+            : "No Daidala-owned worktree will be released."
+        ),
+        createElement("label", { className: "daidala-confirm" },
+          createElement("input", {
+            type: "checkbox", checked: confirmed,
+            onChange: function (event) { setConfirmed(event.target.checked); }
+          }),
+          "I confirm cancelling this workflow"
+        ),
+        createElement("button", {
+          type: "button", disabled: busy || !confirmed, onClick: cancelWorkflow
+        }, busy ? "Cancelling…" : "Cancel workflow")
+      ) : null,
+      message ? createElement("p", { role: "status", className: "daidala-banner" }, message) : null
+    );
+  }
+
+  function renderCardAudit(cards, workflowId, onChanged, recommendations) {
     return createElement(
       "details",
       { className: "daidala-card-audit" },
@@ -742,9 +934,18 @@
             "ul",
             { className: "daidala-workflow-cards", "data-testid": "daidala-cards" },
             cards.map(renderCardRow)
-          )
-    );
-  }
+            ),
+            cards.filter(function (card) { return card.status === "blocked"; }).map(function (card) {
+            var recommendation = recommendations.filter(function (candidate) {
+              return candidate.card_id === card.task_id;
+            })[0] || null;
+            return createElement(BlockedCardRemediation, {
+            key: card.task_id, card: card, recommendation: recommendation,
+            workflowId: workflowId, onChanged: onChanged
+            });
+            })
+            );
+            }
 
   function renderWorkflowCard(
     workflow, detail, decisions, approvalReview, reviewDecision, onApproved, onReviewDecided
@@ -892,7 +1093,13 @@
               { className: "daidala-workflow-unavailable" },
               "Live Kanban state unavailable"
             )
-          : renderCardAudit(cards),
+          : renderCardAudit(cards, summary.workflow_id, onApproved, recommendations),
+      detail && detail.workflow
+        ? createElement(WorkflowCancellation, {
+            workflowId: summary.workflow_id,
+            onCancelled: onApproved
+          })
+        : null,
       detail && detail.workflow
         ? createElement(ConstraintEditor, {
             workflow: detail.workflow,

@@ -801,3 +801,54 @@
     grid-template-columns: 1fr;
   }
 }
+
+.daidala-remediation,
+.daidala-cancellation,
+.daidala-cancellation-preview {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-base, rgba(0, 0, 0, 0.08));
+}
+
+.daidala-remediation {
+  margin-top: 0.5rem;
+  border-color: var(--daidala-warning);
+}
+
+.daidala-remediation h5,
+.daidala-remediation p,
+.daidala-remediation ul,
+.daidala-cancellation p,
+.daidala-cancellation h5,
+.daidala-cancellation-preview p,
+.daidala-cancellation-preview ul {
+  margin: 0;
+}
+
+.daidala-remediation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.daidala-remediation input,
+.daidala-cancellation input,
+.daidala-remediation button,
+.daidala-cancellation button {
+  box-sizing: border-box;
+  padding: 0.5rem 0.65rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+  color: var(--text-primary, inherit);
+  font: inherit;
+}
+
+.daidala-remediation button:disabled,
+.daidala-cancellation button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}

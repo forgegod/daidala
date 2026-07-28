@@ -93,6 +93,9 @@ def test_dashboard_mutations_use_only_closed_post_routes() -> None:
     assert "plan_digest: plan.plan_digest" in source
     assert "summary_digest: plan.summary_digest" in source
     assert '"I reviewed this exact plan"' in source
+    assert '"/cards/" + encodeURIComponent(card.task_id) +' in source
+    assert '"/cancel/preview"' in source
+    assert '"/cancel"' in source
     assert "method: \"PUT\"" not in source
     assert "method: \"DELETE\"" not in source
     assert "method: \"PATCH\"" not in source
@@ -303,6 +306,32 @@ def test_review_evidence_and_disposition_use_only_named_literal_routes() -> None
     assert "worktree_to_release" not in source
     assert "innerHTML" not in source
     assert "dangerouslySetInnerHTML" not in source
+
+
+def test_blocked_card_remediation_and_cancellation_use_preview_confirm_routes() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    required_strings = (
+        "Blocked card",
+        "Stage: ",
+        "Blocker kind",
+        "Requested remediation",
+        "Latest relevant evidence",
+        "Comment remediation",
+        "Unblock for retry",
+        "Preview cancellation",
+        "Affected cards",
+        "Daidala-owned worktree",
+        "I confirm cancelling this workflow",
+        "Cancellation reason",
+    )
+    for text in required_strings:
+        assert text in source, f"missing recovery/cancellation UI text: {text}"
+
+    assert "worktree_path" not in source
+    assert '"/dispatch"' not in source.lower()
+    assert "card.block_kind" in source
+    assert "recommendation.rationale" in source
 
 
 def test_bundle_targets_phase_two_read_endpoints() -> None:

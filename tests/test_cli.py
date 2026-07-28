@@ -1276,6 +1276,26 @@ def test_cli_kanban_dispatch_translates_public_create_and_show_commands() -> Non
     )
 
 
+def test_cli_kanban_dispatch_translates_unblock_command() -> None:
+    commands: list[tuple[str, ...]] = []
+
+    result = json.loads(
+        cli._dispatch_kanban_cli(
+            lambda command: (commands.append(command) or 0, ""),
+            "kanban_unblock",
+            {"board": "daidala-test", "task_id": "t_verify", "reason": "evidence recorded"},
+        )
+    )
+
+    assert result == {"ok": True, "task_id": "t_verify", "error": None}
+    assert commands == [
+        (
+            "hermes", "kanban", "--board", "daidala-test", "unblock", "t_verify",
+            "--reason", "evidence recorded",
+        )
+    ]
+
+
 def test_cli_kanban_dispatch_refuses_non_kanban_terminal_command() -> None:
     result = json.loads(
         cli._dispatch_kanban_cli(

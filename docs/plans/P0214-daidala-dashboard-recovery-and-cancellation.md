@@ -18,7 +18,7 @@
 
 **Produces:** targeted blocked-card comment/unblock actions and a digest-bound cancellation preview/confirm surface over the existing public Hermes Kanban and `WorkflowService.cancel` boundaries.
 
-**Status:** pending — blocked until P0210 Phase 2 completes and human implementation approval is recorded.
+**Status:** in-progress — Phase 0 complete (commit pending); P0210 Phase 2 is complete and human implementation approval is recorded for Phase 0.
 
 ## Goal
 
@@ -38,7 +38,7 @@ Cancellation can archive cards and remove a Daidala-owned worktree. The router o
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Add blocked-card remediation and previewed cancellation | pending | Focused API and asset tests prove workflow-owned-card validation, bounded public-Kanban forwarding, required confirmation/text bounds, and stale-digest cancellation rejection with an affected cards/worktree projection. |
+| 0 | Add blocked-card remediation and previewed cancellation | done (pytest + ruff + pack-validate + build + twine + release-contents + browser probe; gate green) | Focused API and asset tests prove workflow-owned-card validation, bounded public-Kanban forwarding, required confirmation/text bounds, and stale-digest cancellation rejection with an affected cards/worktree projection. |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
 

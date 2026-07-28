@@ -1023,6 +1023,16 @@ def _dispatch_kanban_cli(
             {"ok": code == 0, "task_id": task_id, "error": output if code else None}
         )
 
+    if name == "kanban_unblock":
+        command = [*prefix, "unblock", task_id]
+        reason = args.get("reason")
+        if reason is not None:
+            command.extend(("--reason", str(reason)))
+        code, output = runner(tuple(command))
+        return json.dumps(
+            {"ok": code == 0, "task_id": task_id, "error": output if code else None}
+        )
+
     return json.dumps({"ok": False, "error": f"unsupported Kanban operation: {name}"})
 
 

@@ -3,9 +3,9 @@
 This module is the dashboard backend proven by Phase 0. It exports the
 ``router`` symbol the Hermes dashboard process mounts under
 ``/api/plugins/daidala/``. The implementation is profile-safe, exposes only
-closed pack/setup/constraint/approval/review mutations, never imports Hermes internals,
-and never writes the Kanban database. Live card detail is read on demand through
-bounded public ``hermes kanban`` commands.
+closed pack/setup/constraint/approval/review/card-remediation/cancellation mutations,
+never imports Hermes internals, and never writes the Kanban database. Live card
+detail is read on demand through bounded public ``hermes kanban`` commands.
 
 The pure deterministic recommendation logic lives in
 :mod:`daidala.recommendations`. The factory below only wires those pure
@@ -24,6 +24,10 @@ Supervision endpoints include:
 - ``POST /api/plugins/daidala/workflows/{workflow_id}/approve``
 - ``POST /api/plugins/daidala/workflows/{workflow_id}/review-disposition/preview``
 - ``POST /api/plugins/daidala/workflows/{workflow_id}/review-disposition``
+- ``POST /api/plugins/daidala/workflows/{workflow_id}/cards/{card_id}/comment``
+- ``POST /api/plugins/daidala/workflows/{workflow_id}/cards/{card_id}/unblock``
+- ``POST /api/plugins/daidala/workflows/{workflow_id}/cancel/preview``
+- ``POST /api/plugins/daidala/workflows/{workflow_id}/cancel``
 - ``POST /api/plugins/daidala/constraints/preview``
 """
 
@@ -406,6 +410,79 @@ def review_disposition(workflow_id: str, payload: dict[str, Any]) -> dict[str, A
     return result
 
 
+@router.post("/workflows/{workflow_id}/cards/{card_id}/comment")
+def workflow_card_comment(
+    workflow_id: str, card_id: str, payload: dict[str, Any]
+) -> dict[str, Any]:
+    """Add one confirmed bounded remediation comment to a ledger-owned card."""
+
+    comment = _confirmed_operator_text(payload, field="comment")
+    board_slug = _workflow_card_board(workflow_id, card_id)
+    try:
+        kanban_comment(board_slug, card_id, comment)
+    except DashboardBackendError as error:
+        raise HTTPException(status_code=409, detail="Card comment could not be recorded") from error
+    return {"commented": True, "card_id": card_id}
+
+
+@router.post("/workflows/{workflow_id}/cards/{card_id}/unblock")
+def workflow_card_unblock(
+    workflow_id: str, card_id: str, payload: dict[str, Any]
+) -> dict[str, Any]:
+    """Unblock one confirmed workflow-owned card through the public CLI."""
+
+    reason = _confirmed_operator_text(payload, field="reason")
+    board_slug = _workflow_card_board(workflow_id, card_id)
+    try:
+        kanban_unblock(board_slug, card_id, reason)
+    except DashboardBackendError as error:
+        raise HTTPException(status_code=409, detail="Card could not be unblocked") from error
+    return {"unblocked": True, "card_id": card_id}
+
+
+@router.post("/workflows/{workflow_id}/cancel/preview")
+def workflow_cancel_preview(workflow_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Project the current cancellation impact without exposing a worktree path."""
+
+    reason = _operator_text(payload, expected_fields={"reason"}, field="reason")
+    try:
+        return _cancellation_preview(service_factory(), workflow_id, reason)
+    except StoreError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+
+
+@router.post("/workflows/{workflow_id}/cancel")
+def workflow_cancel(workflow_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Cancel only when the current canonical cancellation preview still matches."""
+
+    reason = _operator_text(
+        payload,
+        expected_fields={"reason", "preview_digest", "confirm"},
+        field="reason",
+    )
+    if payload.get("confirm") is not True:
+        raise HTTPException(
+            status_code=400, detail="explicit cancellation confirmation is required"
+        )
+    expected_digest = payload.get("preview_digest")
+    if not _is_sha256(expected_digest):
+        raise HTTPException(status_code=400, detail="preview_digest must be a SHA-256 identity")
+    service = service_factory()
+    try:
+        preview = _cancellation_preview(service, workflow_id, reason)
+    except StoreError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    if preview["preview_digest"] != expected_digest:
+        raise HTTPException(status_code=409, detail="cancellation inputs changed after preview")
+    try:
+        service.cancel(workflow_id, reason)
+    except (ServiceError, StoreError, WorkflowError) as error:
+        raise HTTPException(
+            status_code=409, detail="Workflow cancellation could not be applied"
+        ) from error
+    return {"cancelled": True, "workflow_id": workflow_id}
+
+
 @router.get("/workflows/{workflow_id}/decisions")
 def decisions(workflow_id: str) -> dict[str, Any]:
     """Human-action items only: approval, blocked, stale, replacement impact."""
@@ -747,6 +824,67 @@ def _browser_review_preview(preview: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+def _operator_text(
+    payload: dict[str, Any], *, expected_fields: set[str], field: str
+) -> str:
+    if set(payload) != expected_fields:
+        raise HTTPException(status_code=400, detail=f"exact {field} fields are required")
+    value = payload.get(field)
+    if not isinstance(value, str):
+        raise HTTPException(status_code=400, detail=f"{field} is required")
+    normalized = value.strip()
+    if (
+        not normalized
+        or any(ord(character) < 32 or ord(character) == 127 for character in normalized)
+        or len(normalized.encode("utf-8")) > 4000
+    ):
+        raise HTTPException(status_code=400, detail=f"{field} exceeds its text bounds")
+    return normalized
+
+
+def _confirmed_operator_text(payload: dict[str, Any], *, field: str) -> str:
+    value = _operator_text(payload, expected_fields={field, "confirm"}, field=field)
+    if payload.get("confirm") is not True:
+        raise HTTPException(status_code=400, detail="explicit confirmation is required")
+    return value
+
+
+def _workflow_card_board(workflow_id: str, card_id: str) -> str:
+    try:
+        ledger = service_factory().status(workflow_id)
+    except StoreError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    if not any(card.task_id == card_id for card in ledger.card_references):
+        raise HTTPException(status_code=400, detail="card is not recorded for this workflow")
+    return ledger.board_slug
+
+
+def _cancellation_preview(service: Any, workflow_id: str, reason: str) -> dict[str, Any]:
+    observed = service.store.get_with_token(workflow_id)
+    ledger = observed.ledger
+    cards = [
+        {
+            "task_id": card.task_id,
+            "stage": getattr(card.stage, "value", card.stage),
+        }
+        for card in ledger.card_references
+    ]
+    projection = {
+        "workflow_id": workflow_id,
+        "ledger_token": observed.updated_at,
+        "cards": cards,
+        "owned_worktree_release": bool(ledger.worktree_owned and ledger.worktree_path),
+        "reason": reason,
+    }
+    return {
+        "workflow_id": workflow_id,
+        "cards": cards,
+        "owned_worktree_release": projection["owned_worktree_release"],
+        "reason": reason,
+        "preview_digest": _digest(projection),
+    }
+
+
 def _digest(value: Any) -> str:
     return hashlib.sha256(
         json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
@@ -787,6 +925,39 @@ def _bounded_kanban_json(command: tuple[str, ...], label: str) -> Any:
         return json.loads(stdout)
     except (TypeError, ValueError) as error:
         raise DashboardBackendError(f"Kanban {label} returned invalid JSON") from error
+
+
+def _bounded_kanban_mutation(command: tuple[str, ...], label: str) -> None:
+    try:
+        completed = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except subprocess.TimeoutExpired as error:
+        raise DashboardBackendError(f"Kanban {label} timed out") from error
+    stdout = completed.stdout or ""
+    stderr = completed.stderr or ""
+    if len(stdout.encode("utf-8")) + len(stderr.encode("utf-8")) > 64 * 1024:
+        raise DashboardBackendError(f"Kanban {label} exceeded the 64 KiB output limit")
+    if completed.returncode != 0:
+        raise DashboardBackendError(f"Kanban {label} is unavailable")
+
+
+def kanban_comment(board_slug: str, task_id: str, comment: str) -> None:
+    _bounded_kanban_mutation(
+        ("hermes", "kanban", "--board", board_slug, "comment", task_id, comment),
+        "card comment",
+    )
+
+
+def kanban_unblock(board_slug: str, task_id: str, reason: str) -> None:
+    _bounded_kanban_mutation(
+        ("hermes", "kanban", "--board", board_slug, "unblock", task_id, "--reason", reason),
+        "card unblock",
+    )
 
 
 def kanban_show(board_slug: str, task_id: str) -> dict[str, Any]:
