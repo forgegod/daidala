@@ -230,6 +230,7 @@ def test_bundle_renders_every_phase_three_state() -> None:
         "Live Kanban and audit detail",
         "Needs your decision",
         "Human approval — Daidala policy gate",
+        "Human review disposition — Daidala policy gate",
         "What the next card receives",
         "Plan unavailable",
         "recorded",  # pending-approval identity badge
@@ -251,6 +252,55 @@ def test_exact_plan_body_is_rendered_as_literal_text() -> None:
     source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
 
     assert 'createElement("pre", { className: "daidala-plan-text" }, plan.content)' in source
+    assert "innerHTML" not in source
+    assert "dangerouslySetInnerHTML" not in source
+
+
+def test_revision_navigation_reopens_only_matching_exact_plan_approval() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    assert "function dashboardRoute()" in source
+    assert 'decision: decision === "plan-approval" ? decision : null' in source
+    assert "planRevision: planRevision && /^\\d+$/.test(planRevision)" in source
+    assert 'window.dispatchEvent(new PopStateEvent("popstate"));' in source
+    assert 'setOpenWorkflowId(nextRoute.workflowId);' in source
+    assert 'key: openWorkflowId' in source
+    assert 'revision !== props.planRevision' in source
+    assert 'document.querySelector(\'[data-testid="daidala-approval-packet"]\')' in source
+    assert 'panel.scrollIntoView({ block: "start" });' in source
+
+
+def test_review_evidence_and_disposition_use_only_named_literal_routes() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    required_strings = (
+        '"/review-decision"',
+        '"/review-disposition/preview"',
+        '"/review-disposition"',
+        "Human review disposition",
+        "Read exact captured diff",
+        "Changed paths",
+        "Verification evidence",
+        "Reviewer outcome",
+        "Fixed consequences",
+        "Accept and continue to delivery",
+        "Required revision feedback",
+        "What the successor Plan card receives",
+        "I confirm applying this exact review disposition",
+        "Opening successor exact-plan approval",
+        "Challenge reviewer uses public Kanban comment and unblock controls",
+    )
+    for text in required_strings:
+        assert text in source, f"missing review disposition contract text: {text}"
+
+    literal_diff = (
+        'createElement("pre", { className: "daidala-review-diff" }, '
+        "implementation.content)"
+    )
+    assert literal_diff in source
+    assert "var actions = packet && Array.isArray(packet.allowed_actions)" in source
+    assert "actor:" not in source
+    assert "worktree_to_release" not in source
     assert "innerHTML" not in source
     assert "dangerouslySetInnerHTML" not in source
 

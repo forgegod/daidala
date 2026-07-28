@@ -41,6 +41,10 @@ completeness without touching a real Hermes profile.
 - Pack-service and dashboard-route tests prove declared-skill-only bounded
   content, validation/check parity, canonical preview identity, stale-preview
   rejection, literal confirmation, and post-install verification.
+- Dashboard review-route and asset tests prove path-free exact evidence,
+  server-derived attended identity, literal diff rendering, preview/apply parity,
+  stale or unchecked rejection, and successor-plan navigation without arbitrary
+  dispatch, commit, or push authority.
 - Fake host-dispatch tests for ledger-owned approval, worker rejection,
   restart-safe plan-parented post-gate graphs, and idempotent Kanban mapping.
 - Review-disposition tests prove structured review bounds, exact evidence-tuple

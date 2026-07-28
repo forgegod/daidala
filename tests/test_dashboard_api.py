@@ -72,6 +72,9 @@ def test_router_exports_all_phase_two_routes() -> None:
         "workflow_detail",
         "approval_review",
         "workflow_approve",
+        "review_decision",
+        "review_disposition_preview",
+        "review_disposition",
         "decisions",
         "recommendations",
         "constraint_preview",
@@ -145,6 +148,9 @@ def test_router_source_exposes_only_closed_mutation_routes() -> None:
     assert '@router.post("/constraints/replace")' in source
     assert '@router.get("/workflows/{workflow_id}/approval-review")' in source
     assert '@router.post("/workflows/{workflow_id}/approve")' in source
+    assert '@router.get("/workflows/{workflow_id}/review-decision")' in source
+    assert '@router.post("/workflows/{workflow_id}/review-disposition/preview")' in source
+    assert '@router.post("/workflows/{workflow_id}/review-disposition")' in source
     assert 'payload.get("confirm") is not True' in source
 
 
@@ -279,6 +285,259 @@ def test_exact_plan_approval_mutates_only_after_full_identity_match() -> None:
         "workflow_id": "workflow-1",
         "approval": {"plan_digest": "b" * 64},
     }
+
+
+def test_review_decision_returns_verified_path_free_evidence() -> None:
+    api = load_api()
+    implementation_digest = "d" * 64
+    verification_digest = "e" * 64
+
+    class Summary:
+        def to_dict(self) -> dict[str, object]:
+            return {
+                "headline": "Review <script>literal</script>",
+                "changes": ["Keep the diff literal."],
+                "affected_areas": ["dashboard"],
+                "risks": [],
+                "verification": ["pytest passed"],
+            }
+
+    review = types.SimpleNamespace(
+        implementation_digest=implementation_digest,
+        verification_digests=(verification_digest,),
+        summary=Summary(),
+        summary_digest="f" * 64,
+    )
+    ledger = types.SimpleNamespace(
+        review=review,
+        plan_revision=2,
+        verification_evidence=(
+            types.SimpleNamespace(
+                command="pytest -q",
+                exit_code=0,
+                output_digest=verification_digest,
+                output_reference="/must/not/escape",
+                recorded_at=types.SimpleNamespace(isoformat=lambda: "2026-07-27T20:00:00+00:00"),
+            ),
+        ),
+    )
+    packet = {
+        "schema": "daidala.review-packet/v1",
+        "workflow_id": "workflow-1",
+        "review": {"outcome": "accepted", "findings": []},
+        "review_digest": "a" * 64,
+        "disposition": None,
+        "allowed_actions": ["accept_delivery", "request_revision", "reject_workflow"],
+        "exact_tuple": {"implementation_digest": implementation_digest},
+        "cards": {"review": "t_review", "plan": "t_plan"},
+        "pending_revision_request": None,
+    }
+
+    class Service:
+        def status(self, _workflow_id: str) -> object:
+            return ledger
+
+        def review_packet(self, _workflow_id: str) -> dict[str, object]:
+            return packet
+
+        def list_artifacts(self, *_args: object, **_kwargs: object) -> tuple[object, ...]:
+            return (
+                types.SimpleNamespace(
+                    stage="implement",
+                    digest=implementation_digest,
+                    artifact_id="b" * 64,
+                ),
+            )
+
+        def read_artifact_text(self, *_args: object) -> object:
+            return types.SimpleNamespace(content="diff --git a/a b/a\n+<script>literal</script>\n")
+
+        def current_implementation_changed_paths(self, _workflow_id: str) -> tuple[str, ...]:
+            return ("a",)
+
+    api.__dict__["service_factory"] = Service
+
+    result = api.review_decision("workflow-1")
+
+    assert result["evidence"]["implementation"] == {
+        "artifact_id": "b" * 64,
+        "digest": implementation_digest,
+        "content": "diff --git a/a b/a\n+<script>literal</script>\n",
+        "changed_paths": ["a"],
+    }
+    assert result["evidence"]["verification"] == [
+        {
+            "command": "pytest -q",
+            "exit_code": 0,
+            "output_digest": verification_digest,
+            "recorded_at": "2026-07-27T20:00:00+00:00",
+        }
+    ]
+    serialized = json.dumps(result)
+    assert "/must/not/escape" not in serialized
+    assert "target_repository" not in serialized
+
+    ledger.verification_evidence = ()
+    with pytest.raises(FakeHTTPException) as incomplete:
+        api.review_decision("workflow-1")
+    assert incomplete.value.status_code == 409
+    assert incomplete.value.detail == "Review evidence unavailable"
+
+
+def test_review_preview_and_apply_use_server_actor_and_hide_worktree_path() -> None:
+    api = load_api()
+    calls: list[tuple[object, ...]] = []
+
+    class Preview:
+        def to_dict(self) -> dict[str, object]:
+            return {
+                "action": "request_revision",
+                "review_digest": "a" * 64,
+                "preview_digest": "b" * 64,
+                "cards_to_archive": [],
+                "worktree_to_release": "/profile/private/worktree",
+                "successor_packet": {"target_plan_revision": 2},
+            }
+
+    class Service:
+        def preview_review_decision(self, workflow_id: str, **kwargs: object) -> Preview:
+            calls.append(("preview", workflow_id, kwargs))
+            return Preview()
+
+        def apply_review_decision(self, workflow_id: str, **kwargs: object) -> dict[str, object]:
+            calls.append(("apply", workflow_id, kwargs))
+            return {
+                "preview": Preview().to_dict(),
+                "workflow": {"workflow_id": workflow_id, "plan_revision": 2},
+            }
+
+    api.__dict__["service_factory"] = Service
+    rationale = "Address the exact findings and rerun pytest."
+
+    preview = api.review_disposition_preview(
+        "workflow-1", {"action": "request_revision", "rationale": rationale}
+    )
+    applied = api.review_disposition(
+        "workflow-1",
+        {
+            "action": "request_revision",
+            "review_digest": "a" * 64,
+            "preview_digest": "b" * 64,
+            "rationale": rationale,
+            "confirm": True,
+        },
+    )
+
+    assert preview["owned_worktree_release"] is True
+    applied_preview = applied["preview"]
+    assert isinstance(applied_preview, dict)
+    assert applied_preview["owned_worktree_release"] is True
+    assert "/profile/private/worktree" not in json.dumps([preview, applied])
+    for _, _, kwargs in calls:
+        assert kwargs["actor"] == "dashboard:attended-operator"
+
+
+def test_review_route_errors_redact_profile_local_paths() -> None:
+    api = load_api()
+    private_path = "/profile/private/worktree"
+
+    class Backend:
+        def __init__(self, **_kwargs: object) -> None:
+            pass
+
+        def review_decision(self, _workflow_id: str) -> object:
+            raise api.ServiceError(f"cannot read review artifact at {private_path}")
+
+    api.__dict__["DashboardBackend"] = Backend
+    with pytest.raises(FakeHTTPException) as evidence_error:
+        api.review_decision("workflow-1")
+    assert evidence_error.value.status_code == 409
+    assert evidence_error.value.detail == "Review evidence unavailable"
+
+    class Service:
+        def preview_review_decision(self, *_args: object, **_kwargs: object) -> object:
+            raise api.ServiceError(f"cannot inspect worktree {private_path}")
+
+        def apply_review_decision(self, *_args: object, **_kwargs: object) -> object:
+            raise api.ServiceError(f"cannot release worktree {private_path}")
+
+    api.__dict__["service_factory"] = Service
+    rationale = "Apply the exact attended decision."
+    with pytest.raises(FakeHTTPException) as preview_error:
+        api.review_disposition_preview(
+            "workflow-1", {"action": "accept_delivery", "rationale": rationale}
+        )
+    assert preview_error.value.status_code == 409
+    assert preview_error.value.detail == "Review disposition preview unavailable"
+
+    with pytest.raises(FakeHTTPException) as apply_error:
+        api.review_disposition(
+            "workflow-1",
+            {
+                "action": "accept_delivery",
+                "review_digest": "a" * 64,
+                "preview_digest": "b" * 64,
+                "rationale": rationale,
+                "confirm": True,
+            },
+        )
+    assert apply_error.value.status_code == 409
+    assert apply_error.value.detail == "Review disposition could not be applied"
+    assert private_path not in json.dumps(
+        [evidence_error.value.detail, preview_error.value.detail, apply_error.value.detail]
+    )
+
+
+def test_review_preview_rejects_noncanonical_inputs_before_service_dispatch() -> None:
+    api = load_api()
+
+    class Service:
+        def preview_review_decision(self, *_args: object, **_kwargs: object) -> object:
+            raise AssertionError("invalid review input reached the service")
+
+    api.__dict__["service_factory"] = Service
+    invalid_payloads = (
+        {"action": "request_revision", "rationale": "feedback", "actor": "browser"},
+        {"action": "challenge_reviewer", "rationale": "feedback"},
+        {"action": "request_revision", "rationale": "   "},
+        {"action": "request_revision", "rationale": "bad\x00feedback"},
+        {"action": "request_revision", "rationale": "é" * 2049},
+    )
+
+    for payload in invalid_payloads:
+        with pytest.raises(FakeHTTPException) as invalid:
+            api.review_disposition_preview("workflow-1", payload)
+        assert invalid.value.status_code == 400
+
+
+def test_review_disposition_rejects_unchecked_or_stale_requests() -> None:
+    api = load_api()
+    calls = 0
+
+    class Service:
+        def apply_review_decision(self, *_args: object, **_kwargs: object) -> object:
+            nonlocal calls
+            calls += 1
+            raise api.ServiceError("review decision inputs changed after preview")
+
+    api.__dict__["service_factory"] = Service
+    payload = {
+        "action": "accept_delivery",
+        "review_digest": "a" * 64,
+        "preview_digest": "b" * 64,
+        "rationale": "Accept the exact reviewed evidence.",
+        "confirm": False,
+    }
+    with pytest.raises(FakeHTTPException) as unchecked:
+        api.review_disposition("workflow-1", payload)
+    assert unchecked.value.status_code == 400
+    assert calls == 0
+
+    payload["confirm"] = True
+    with pytest.raises(FakeHTTPException) as stale:
+        api.review_disposition("workflow-1", payload)
+    assert stale.value.status_code == 409
+    assert calls == 1
 
 
 def test_card_detail_uses_bounded_show_and_runs_adapters(

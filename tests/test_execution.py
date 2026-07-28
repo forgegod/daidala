@@ -528,6 +528,10 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
     review = reviewed.review
     assert review is not None
     assert review.summary_digest == review.summary.digest_for(implementation.digest)
+    assert service.current_implementation_changed_paths(workflow_id) == (
+        "calculator.py",
+        "notes.txt",
+    )
     assert reviewed.card_for(WorkflowStage.DELIVER) is None
     replayed_review = service.submit_review(workflow_id, **review_request)
     assert replayed_review.review == review

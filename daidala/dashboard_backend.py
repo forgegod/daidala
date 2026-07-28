@@ -285,6 +285,81 @@ class DashboardBackend:
         current_plan = service.current_plan_evidence(workflow_id).to_dict()
         return _approval_review_packet(ledger, current_plan)
 
+    def review_decision(self, workflow_id: str) -> dict[str, Any]:
+        """Return exact reviewed evidence and attended disposition state."""
+
+        service = self.service
+        try:
+            ledger = service.status(workflow_id)
+        except StoreError as error:
+            raise UnknownWorkflowError(str(error)) from error
+        packet = service.review_packet(workflow_id)
+        review = ledger.review
+        if review is None:
+            return {**packet, "available": True, "evidence": None}
+
+        implementation_entry = next(
+            (
+                entry
+                for entry in service.list_artifacts(
+                    workflow_id,
+                    kinds=("stage",),
+                    revisions=(ledger.plan_revision,),
+                )
+                if entry.stage == WorkflowStage.IMPLEMENT.value
+                and entry.digest == review.implementation_digest
+            ),
+            None,
+        )
+        if implementation_entry is None:
+            raise ServiceError("reviewed implementation artifact is unavailable")
+        implementation = service.read_artifact_text(
+            workflow_id, implementation_entry.artifact_id
+        )
+        verification = [
+            {
+                "command": row.command,
+                "exit_code": row.exit_code,
+                "output_digest": row.output_digest,
+                "recorded_at": row.recorded_at.isoformat(),
+            }
+            for row in ledger.verification_evidence
+            if row.output_digest in review.verification_digests
+        ]
+        if sorted(row["output_digest"] for row in verification) != list(
+            review.verification_digests
+        ):
+            raise ServiceError("review verification evidence is incomplete")
+        return {
+            **packet,
+            "available": True,
+            "evidence": {
+                "change_summary": review.summary.to_dict(),
+                "summary_digest": review.summary_digest,
+                "implementation": {
+                    "artifact_id": str(implementation_entry.artifact_id),
+                    "digest": implementation_entry.digest,
+                    "content": implementation.content,
+                    "changed_paths": list(
+                        service.current_implementation_changed_paths(workflow_id)
+                    ),
+                },
+                "verification": verification,
+            },
+            "consequences": {
+                "accept_delivery": (
+                    "Record the exact attended disposition and create one delivery card."
+                ),
+                "request_revision": (
+                    "Preserve the rejected evidence, archive current post-gate cards, "
+                    "release the owned worktree, and create one successor Plan card."
+                ),
+                "reject_workflow": (
+                    "Preserve the exact evidence and reject the workflow without delivery."
+                ),
+            },
+        }
+
     def decisions_with_constraints(self, workflow_id: str) -> dict[str, Any]:
         """Decisions plus the current constraint view and revision history."""
 
@@ -569,6 +644,32 @@ def _workflow_timeline(
                 ),
             }
         )
+        if stage is WorkflowStage.REVIEW:
+            disposition = ledger.review_disposition
+            review = ledger.review
+            rows.append(
+                {
+                    "kind": "review_gate",
+                    "stage": "review_disposition",
+                    "label": "Human review disposition — Daidala policy gate",
+                    "status": (
+                        "recorded"
+                        if disposition is not None
+                        else "pending"
+                        if review is not None
+                        else "waiting"
+                    ),
+                    "card_id": None,
+                    "assignee": None,
+                    "occurred_at": (
+                        disposition.decided_at.isoformat()
+                        if disposition is not None
+                        else None
+                    ),
+                    "review_digest": review.digest if review is not None else None,
+                    "disposition": disposition.to_dict() if disposition else None,
+                }
+            )
     return rows
 
 

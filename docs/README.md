@@ -70,8 +70,8 @@ Automated review is evidence, not delivery authority. A delivery card exists
 only after an attended actor accepts the exact current review tuple. A revision
 request preserves the rejected evidence, creates a revision-addressed Plan card,
 and requires a newly recorded plan plus fresh exact approval before implementation.
-The current dashboard does not render these review actions; use the verified
-native or standalone CLI.
+The dashboard and verified native/standalone CLI expose the same preview-confirm
+review authority; the dashboard renders source-bound evidence as literal text.
 
 Every executable card loads the complete exact pack-stage candidate set. After
 `kanban_show`, its worker must persist a finalized, unblocked activation manifest

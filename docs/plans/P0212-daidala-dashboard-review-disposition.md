@@ -18,7 +18,7 @@
 
 **Produces:** an escaped, source-bound review-evidence panel with attended disposition and revision-request preview/confirm actions that navigate to the successor exact-plan approval decision.
 
-**Status:** pending — blocked until P0210 Phase 2 completes and human implementation approval is recorded.
+**Status:** complete — Phase 0 is implemented and verified.
 
 ## Goal
 
@@ -34,7 +34,7 @@ Present P0207's existing attended review authority in the workflow detail withou
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Add attended review disposition and revision request | pending | Focused API and asset tests prove escaped exact review evidence, delivery absence before attended acceptance, stale/unchecked disposition rejection, and convergent revision request navigation to one successor plan approval. |
+| 0 | Add attended review disposition and revision request | done (525 tests; isolated desktop/narrow browser revision loop and exact-route reopen passed) | Focused API and asset tests prove escaped exact review evidence, delivery absence before attended acceptance, stale/unchecked disposition rejection, and convergent revision request navigation to one successor plan approval. |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
 
@@ -51,6 +51,14 @@ Steps:
 5. Extend the closed route inventory, dashboard mutation allowlist, and asset contract in the same implementation commit. Add focused API and asset coverage before or with the routes, then run the isolated browser gate for review evidence and revision navigation.
 
 Verification gate: `pytest tests/test_dashboard_api.py tests/test_dashboard_assets.py -q` exits 0 and proves exact escaped review rendering, delivery absence before attended acceptance, stale or unchecked disposition rejection, accepted-only delivery control, required revision feedback, canonical successor-packet preview/apply parity, navigation to one new plan approval, literal text rendering, and absence of arbitrary dispatch, commit, or push routes. The isolated browser probe proves review evidence precedes authority controls and a revision request cannot mutate the rejected diff or imply an in-place phase rewind.
+
+## Completion evidence
+
+- `python -m pytest` passed 525 tests; the frozen package-resource unittest and `ruff check .` also passed.
+- Both pack validators, `node --check dashboard/dist/index.js`, the 64-file Markdown link check, wheel/sdist build, Twine checks, the 222-source/55-wheel-member release-content check, and `git diff --check` passed.
+- An isolated Hermes profile, Kanban board, repository, owned detached worktree, and Chromium browser rendered the exact review summary, literal `<script>` diff text without a nested script node, changed paths, verification evidence, findings, identity tuple, and pending non-Kanban review gate. The desktop and 390-pixel layouts had no document overflow, review API payloads exposed no profile-local path, and delivery authority was absent.
+- The browser previewed and confirmed `request_revision`. Durable state advanced to plan revision 1, preserved one review, disposition, and revision-request history entry, cleared approval and review authority, released the owned worktree, archived the current review card, created exactly one ready successor Plan card, and navigated to the revision-addressed exact-plan approval URL. The disposable profile, board, repository, browser artifacts, process, and port were removed afterward.
+- A self-contained Chromium route gate proved initial exact-ID reopen, `popstate` reopen to another workflow, and approval focus only after the server-returned packet matched the requested plan revision.
 
 ## Out of scope
 

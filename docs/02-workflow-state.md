@@ -138,8 +138,9 @@ Runtime SQLite files and policy-ledger records are never repository artifacts.
 Dashboard responses are snapshots only. Daidala's ledger owns policy identity,
 Hermes Kanban owns live status, and the browser owns neither. Setup and constraint
 forms must submit an exact typed request; explicit confirmation and current
-digests are revalidated server-side before mutation. The current dashboard does
-not render review-disposition or plan-revision controls; P0212 owns that later UI after P0210 establishes the exact-plan approval detail foundation.
+digests are revalidated server-side before mutation. Dashboard review disposition
+uses the same server-derived exact evidence and preview-confirm authority as the
+CLI; a revision request reopens only the successor plan's exact approval decision.
 
 - Contract: this document
 - Ledger model: `daidala/state.py`

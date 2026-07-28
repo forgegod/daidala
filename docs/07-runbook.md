@@ -110,9 +110,11 @@ hermes daidala review show <workflow-id>
 ```
 
 The response supplies the board, review card ID, exact evidence tuple, current
-disposition, allowed actions, and any pending successor packet. The current
-dashboard does not render these authority controls; P0210 adds presentation over
-the already implemented service and CLI operations.
+disposition, allowed actions, and any pending successor packet. The dashboard
+workflow detail exposes the same authority through a source-bound evidence panel:
+preview the selected disposition, inspect its fixed consequences and successor
+packet, check the literal confirmation, then apply. The browser never selects an
+actor, card, artifact path, worktree path, or revision identity.
 
 Every rationale file must be direct, regular, non-symlinked, non-empty UTF-8 and
 at most 4096 bytes. The file path is input only and is never persisted.

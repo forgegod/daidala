@@ -3,7 +3,7 @@
 This module is the dashboard backend proven by Phase 0. It exports the
 ``router`` symbol the Hermes dashboard process mounts under
 ``/api/plugins/daidala/``. The implementation is profile-safe, exposes only
-closed pack/setup/constraint/approval mutations, never imports Hermes internals,
+closed pack/setup/constraint/approval/review mutations, never imports Hermes internals,
 and never writes the Kanban database. Live card detail is read on demand through
 bounded public ``hermes kanban`` commands.
 
@@ -18,9 +18,12 @@ Supervision endpoints include:
 - ``GET  /api/plugins/daidala/workflows``
 - ``GET  /api/plugins/daidala/workflows/{workflow_id}``
 - ``GET  /api/plugins/daidala/workflows/{workflow_id}/approval-review``
+- ``GET  /api/plugins/daidala/workflows/{workflow_id}/review-decision``
 - ``GET  /api/plugins/daidala/workflows/{workflow_id}/decisions``
 - ``GET  /api/plugins/daidala/workflows/{workflow_id}/recommendations``
 - ``POST /api/plugins/daidala/workflows/{workflow_id}/approve``
+- ``POST /api/plugins/daidala/workflows/{workflow_id}/review-disposition/preview``
+- ``POST /api/plugins/daidala/workflows/{workflow_id}/review-disposition``
 - ``POST /api/plugins/daidala/constraints/preview``
 """
 
@@ -44,6 +47,7 @@ from daidala.dashboard_backend import (
     HostUnavailableError,
     UnknownWorkflowError,
 )
+from daidala.errors import WorkflowError
 from daidala.locations import resolve_data_root
 from daidala.pack_service import (
     PackConfirmationError,
@@ -58,6 +62,7 @@ from daidala.registrations import (
     ControllerRegistration,
     list_controller_registrations,
 )
+from daidala.revision import MAX_REVIEW_FEEDBACK_BYTES
 from daidala.service import ServiceError
 from daidala.setup_wizard import (
     SetupRequest,
@@ -72,6 +77,7 @@ from daidala.skills import (
     ProfileSkillContentRegistry,
     SkillRevisionError,
 )
+from daidala.state import ReviewDispositionAction
 from daidala.store import StoreError
 
 router = APIRouter()
@@ -80,6 +86,7 @@ router = APIRouter()
 ServiceFactory = Callable[[], Any]
 PackServiceFactory = Callable[[], PackService]
 _default_service_lock = Lock()
+_DASHBOARD_REVIEW_ACTOR = "dashboard:attended-operator"
 
 
 @lru_cache(maxsize=1)
@@ -144,6 +151,8 @@ def health() -> dict[str, Any]:
             "workflow_setup",
             "constraints_replace",
             "workflow_approve",
+            "review_disposition_preview",
+            "review_disposition",
         ],
     }
 
@@ -310,6 +319,91 @@ def workflow_approve(workflow_id: str, payload: dict[str, Any]) -> dict[str, Any
         ) from error
     except (ServiceError, StoreError) as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@router.get("/workflows/{workflow_id}/review-decision")
+def review_decision(workflow_id: str) -> dict[str, Any]:
+    """Return exact source-bound review evidence and attended decision state."""
+
+    backend = DashboardBackend(service_factory=service_factory)
+    try:
+        return backend.review_decision(workflow_id)
+    except UnknownWorkflowError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ArtifactAccessError as error:
+        raise HTTPException(
+            status_code=409,
+            detail={"message": "Review evidence unavailable", "reason": error.reason.value},
+        ) from error
+    except WorkflowError as error:
+        raise HTTPException(status_code=409, detail="Review evidence unavailable") from error
+
+
+@router.post("/workflows/{workflow_id}/review-disposition/preview")
+def review_disposition_preview(
+    workflow_id: str, payload: dict[str, Any]
+) -> dict[str, Any]:
+    """Preview one exact attended review action without mutation."""
+
+    action, rationale = _review_action_payload(
+        payload,
+        expected_fields={"action", "rationale"},
+    )
+    try:
+        preview = service_factory().preview_review_decision(
+            workflow_id,
+            action=action,
+            actor=_DASHBOARD_REVIEW_ACTOR,
+            rationale=rationale,
+        )
+        return _browser_review_preview(preview.to_dict())
+    except StoreError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except WorkflowError as error:
+        raise HTTPException(
+            status_code=409, detail="Review disposition preview unavailable"
+        ) from error
+
+
+@router.post("/workflows/{workflow_id}/review-disposition")
+def review_disposition(workflow_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Apply only the exact freshly previewed attended review action."""
+
+    action, rationale = _review_action_payload(
+        payload,
+        expected_fields={
+            "action",
+            "review_digest",
+            "preview_digest",
+            "rationale",
+            "confirm",
+        },
+    )
+    if payload.get("confirm") is not True:
+        raise HTTPException(status_code=400, detail="explicit review confirmation is required")
+    for field in ("review_digest", "preview_digest"):
+        if not _is_sha256(payload.get(field)):
+            raise HTTPException(status_code=400, detail=f"{field} must be a SHA-256 identity")
+    try:
+        result = service_factory().apply_review_decision(
+            workflow_id,
+            action=action,
+            actor=_DASHBOARD_REVIEW_ACTOR,
+            rationale=rationale,
+            expected_review_digest=payload["review_digest"],
+            expected_preview_digest=payload["preview_digest"],
+            confirm=True,
+        )
+    except StoreError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except WorkflowError as error:
+        raise HTTPException(
+            status_code=409, detail="Review disposition could not be applied"
+        ) from error
+    preview = result.get("preview")
+    if isinstance(preview, dict):
+        result = {**result, "preview": _browser_review_preview(preview)}
+    return result
 
 
 @router.get("/workflows/{workflow_id}/decisions")
@@ -624,6 +718,33 @@ def _board_request(payload: dict[str, Any]) -> tuple[str, str]:
     if not isinstance(name, str) or not name.strip():
         raise HTTPException(status_code=400, detail="board display name is required")
     return slug, name.strip()
+
+
+def _review_action_payload(
+    payload: dict[str, Any], *, expected_fields: set[str]
+) -> tuple[str, str]:
+    if set(payload) != expected_fields:
+        raise HTTPException(status_code=400, detail="exact review decision fields are required")
+    action = payload.get("action")
+    try:
+        selected = ReviewDispositionAction(action)
+    except (TypeError, ValueError) as error:
+        raise HTTPException(status_code=400, detail="invalid review disposition action") from error
+    rationale = payload.get("rationale")
+    if not isinstance(rationale, str) or not rationale.strip():
+        raise HTTPException(status_code=400, detail="review rationale is required")
+    normalized = rationale.strip()
+    if "\x00" in normalized or len(normalized.encode("utf-8")) > MAX_REVIEW_FEEDBACK_BYTES:
+        raise HTTPException(status_code=400, detail="review rationale exceeds its text bounds")
+    return selected.value, normalized
+
+
+def _browser_review_preview(preview: dict[str, Any]) -> dict[str, Any]:
+    """Remove the profile-local worktree path while preserving preview identity."""
+    result = dict(preview)
+    worktree = result.pop("worktree_to_release", None)
+    result["owned_worktree_release"] = worktree is not None
+    return result
 
 
 def _digest(value: Any) -> str:

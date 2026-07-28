@@ -254,6 +254,7 @@
 
 .daidala-decision-panel,
 .daidala-approval,
+.daidala-review,
 .daidala-next-packet {
   display: grid;
   gap: 0.5rem;
@@ -266,6 +267,9 @@
 .daidala-approval h5,
 .daidala-approval p,
 .daidala-approval ul,
+.daidala-review h5,
+.daidala-review p,
+.daidala-review ul,
 .daidala-next-packet p,
 .daidala-next-packet ul {
   margin: 0;
@@ -281,12 +285,14 @@
   gap: 0.5rem;
 }
 
-.daidala-approval button:disabled {
+.daidala-approval button:disabled,
+.daidala-review button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
 
-.daidala-plan-text {
+.daidala-plan-text,
+.daidala-review-diff {
   max-height: 24rem;
   overflow: auto;
   padding: 0.75rem;
@@ -331,7 +337,8 @@
   overflow-wrap: anywhere;
 }
 
-.daidala-post-approval {
+.daidala-post-approval,
+.daidala-review-digest {
   font-family: var(--font-mono, ui-monospace, "SFMono-Regular", monospace);
   overflow-wrap: anywhere;
 }
@@ -361,12 +368,14 @@
   background: var(--surface-base, rgba(0, 0, 0, 0.08));
 }
 
-.daidala-approval-gate {
+.daidala-approval-gate,
+.daidala-review-gate {
   border-left-color: var(--daidala-accent);
   font-weight: 600;
 }
 
-.daidala-approval-gate span:last-child {
+.daidala-approval-gate span:last-child,
+.daidala-review-gate span:last-child {
   grid-column: 1 / -1;
   color: var(--daidala-muted);
   font-family: var(--font-mono, ui-monospace, "SFMono-Regular", monospace);

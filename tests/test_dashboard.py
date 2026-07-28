@@ -22,6 +22,8 @@ def _ledger(**overrides: object) -> WorkflowLedger:
         "pack_name": "addyosmani",
         "pack_source_revision": "pack-v1",
         "approval": None,
+        "review": None,
+        "review_disposition": None,
         "baseline_commit": "f" * 40,
         "worktree_path": "/profile/workflows/workflow-1/worktree",
         "worktree_owned": True,
@@ -101,3 +103,24 @@ def test_timeline_inserts_distinct_non_kanban_approval_gate() -> None:
     }
     assert rows[plan_index + 2]["stage"] == "implement"
     assert rows[plan_index]["card_id"] == "t_plan"
+
+
+def test_timeline_inserts_distinct_non_kanban_review_gate() -> None:
+    rows = _workflow_timeline(
+        _ledger(review=SimpleNamespace(digest="a" * 64)),
+        (),
+    )
+
+    review_index = next(index for index, row in enumerate(rows) if row["stage"] == "review")
+    gate = rows[review_index + 1]
+    assert gate == {
+        "kind": "review_gate",
+        "stage": "review_disposition",
+        "label": "Human review disposition — Daidala policy gate",
+        "status": "pending",
+        "card_id": None,
+        "assignee": None,
+        "occurred_at": None,
+        "review_digest": "a" * 64,
+        "disposition": None,
+    }

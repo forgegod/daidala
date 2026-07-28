@@ -150,8 +150,10 @@ verification evidence, records `committed: false` and `pushed: false`, and then
 releases the owned worktree. Committing or pushing the target requires a separate
 future authorization surface.
 
-The current dashboard does not render review-disposition or plan-revision
-controls. Until P0212 follows P0210's detail foundation, operators use the native CLI for those attended actions.
+The dashboard renders the exact review evidence and attended preview-confirm
+disposition over the same service authority as the native CLI. A revision request
+returns to the successor exact-plan approval decision; it never rewinds a phase or
+mutates the rejected captured diff in place.
 
 ## Source of truth
 

@@ -943,6 +943,17 @@ class WorkflowService:
         """Resolve the exact current plan and its source-bound approval summary."""
         return self._artifact_access.current_plan(workflow_id)
 
+    def current_implementation_changed_paths(self, workflow_id: str) -> tuple[str, ...]:
+        """Return the generated changed-path manifest for the exact current review."""
+        ledger = self.store.get(workflow_id)
+        review = ledger.review
+        implementation = ledger.artifact_for(WorkflowStage.IMPLEMENT)
+        if review is None or implementation is None:
+            raise ServiceError("workflow has no current reviewed implementation")
+        if implementation.digest != review.implementation_digest:
+            raise ServiceError("review implementation identity is stale")
+        return self._implementation_changed_paths(ledger)
+
     def prepare_implementation(self, workflow_id: str) -> WorkflowLedger:
         """Create and record a worktree only after exact plan approval."""
         observed = self.store.get_with_token(workflow_id)
@@ -1171,22 +1182,11 @@ class WorkflowService:
         if delivery is None:
             if not ledger.worktree_path or not ledger.worktree_owned:
                 raise ExecutionError("workflow has no Daidala-owned implementation worktree")
-            implementation_reference = ledger.artifact_for(WorkflowStage.IMPLEMENT)
-            if implementation_reference is None:
-                raise ExecutionError("workflow has no current implementation artifact")
-            implementation = self._workspace.read_json_artifact(
-                workflow_id,
-                str(Path(implementation_reference.path).with_name("implementation-paths.json")),
-            )
-            changed_paths = implementation.get("changed_paths")
-            if not isinstance(changed_paths, list) or not all(
-                isinstance(path, str) and path for path in changed_paths
-            ):
-                raise ExecutionError("implementation changed-path manifest is invalid")
+            changed_paths = self._implementation_changed_paths(ledger)
             payload = {
                 "workflow_id": ledger.workflow_id,
                 "baseline_commit": ledger.baseline_commit,
-                "changed_paths": changed_paths,
+                "changed_paths": list(changed_paths),
                 "verification": [
                     evidence.to_dict() for evidence in ledger.verification_evidence
                 ],
@@ -1226,6 +1226,30 @@ class WorkflowService:
                 expected_updated_at=observed_after_delivery,
             )
         return ledger
+
+    def _implementation_changed_paths(self, ledger: WorkflowLedger) -> tuple[str, ...]:
+        implementation_reference = ledger.artifact_for(WorkflowStage.IMPLEMENT)
+        if implementation_reference is None:
+            raise ExecutionError("workflow has no current implementation artifact")
+        manifest = self._workspace.read_json_artifact(
+            ledger.workflow_id,
+            str(Path(implementation_reference.path).with_name("implementation-paths.json")),
+        )
+        changed_paths = manifest.get("changed_paths")
+        if (
+            not isinstance(changed_paths, list)
+            or len(changed_paths) > 4096
+            or not all(
+                isinstance(path, str)
+                and bool(path)
+                and "\x00" not in path
+                and len(path.encode("utf-8")) <= 4096
+                for path in changed_paths
+            )
+            or changed_paths != sorted(set(changed_paths))
+        ):
+            raise ExecutionError("implementation changed-path manifest is invalid")
+        return tuple(changed_paths)
 
     def _ensure_initial_graph(self, ledger: WorkflowLedger, pack) -> WorkflowLedger:
         ledger = self._ensure_card(ledger, pack, WorkflowStage.DEFINE)

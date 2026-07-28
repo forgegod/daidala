@@ -7,8 +7,12 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
 ## Ownership
 
 - `manifest.json` declares the `/daidala` tab, `sessions:top` slot, assets, and backend router.
-- `plugin_api.py` mounts the profile-safe read model, bounded pack operations, narrowly scoped setup routes, bounded Kanban detail reads, and exact-plan approval.
-- `dist/index.js` renders workflow progress, the inventory-backed Start workflow wizard, Config → Packs readiness/content, decision-first supervision, and exact-plan approval.
+- `plugin_api.py` mounts the profile-safe read model, bounded pack operations,
+  narrowly scoped setup routes, bounded Kanban detail reads, exact-plan approval,
+  and exact attended review preview/apply routes.
+- `dist/index.js` renders workflow progress, the inventory-backed Start workflow
+  wizard, Config → Packs readiness/content, decision-first supervision, exact-plan
+  approval, and literal source-bound review evidence/disposition.
 - `dist/style.css` adapts the extension to host themes and narrow layouts.
 
 ## Local Contracts
@@ -23,11 +27,21 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
 - Workflow polling is read-only. Mutations are limited to confirmed external
   pack-skill installation, board creation, confirmed setup, and compare-and-swap
   constraint replacement, plus exact current-plan approval through
-  `POST /workflows/{workflow_id}/approve`.
+  `POST /workflows/{workflow_id}/approve` and exact attended review disposition
+  through `POST /workflows/{workflow_id}/review-disposition`.
 - Exact-plan approval accepts only `{artifact_id, plan_digest, summary_digest,
   confirm: true}`, re-resolves the current verified plan and bound summary, and
   fails closed on stale or unavailable evidence. The browser renders the plan as
   literal text and never substitutes a summary or Kanban unblock for approval.
+- Review preview accepts only `{action, rationale}`; apply accepts only `{action,
+  review_digest, preview_digest, rationale, confirm: true}`. The server derives
+  the attended actor and every workflow/artifact/card/worktree identity, recomputes
+  the current preview, and fails closed on stale evidence. Browser responses expose
+  only whether an owned worktree will be released, never its profile-local path.
+- Captured implementation diffs, paths, verification outcomes, findings, and
+  successor packets render as literal source-bound facts. Delivery authority is
+  shown only when the service allows `accept_delivery`; revision requires feedback
+  plus preview and literal confirmation before one successor Plan card is created.
 - Workflow card detail uses only bounded `hermes kanban --board <derived-board>
   show <card_id> --json` and `runs <card_id> --json` reads. Each card is derived
   from the workflow ledger; output is capped at 64 KiB, execution at ten seconds,
