@@ -263,6 +263,25 @@ def test_current_plan_returns_exact_text_and_bound_summary_without_mutation(
     assert store.get_with_token(workflow_id) == before
 
 
+def test_artifact_reads_accept_only_the_matching_captured_ledger_snapshot(
+    artifact_fixture: tuple[WorkflowStore, ArtifactAccessService, str],
+) -> None:
+    store, access, workflow_id = artifact_fixture
+    captured_ledger = store.get(workflow_id)
+
+    entries = access.list(workflow_id, kinds={"stage"}, ledger=captured_ledger)
+    plan_entry = next(entry for entry in entries if entry.stage == "plan")
+    text = access.read_text(
+        workflow_id, plan_entry.artifact_id, ledger=captured_ledger
+    )
+    current = access.current_plan(workflow_id, ledger=captured_ledger)
+
+    assert text.content == current.content
+    mismatched = replace(captured_ledger, workflow_id="different-workflow")
+    with pytest.raises(ArtifactAccessError, match="snapshot workflow identity"):
+        access.list(workflow_id, ledger=mismatched)
+
+
 def test_resolver_rejects_forged_corrupt_binary_oversized_and_cross_workflow_ids(
     artifact_fixture: tuple[WorkflowStore, ArtifactAccessService, str],
 ) -> None:

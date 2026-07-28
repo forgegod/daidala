@@ -4,9 +4,13 @@ from __future__ import annotations
 
 import json
 from types import SimpleNamespace
-from typing import cast
+from typing import Any, cast
 
-from daidala.dashboard_backend import _approval_review_packet, _workflow_timeline
+from daidala.dashboard_backend import (
+    DashboardBackend,
+    _approval_review_packet,
+    _workflow_timeline,
+)
 from daidala.recommendations import KanbanSnapshot
 from daidala.state import WorkflowLedger, WorkflowStage
 
@@ -68,6 +72,42 @@ def test_approval_review_packet_is_exact_bounded_and_path_free() -> None:
     assert packet["successor_packet"]["worktree"] is None
     assert packet["consequences"]["next_cards"] == ["implement", "verify", "review"]
     assert "/profile/" not in json.dumps(packet)
+
+
+def test_approval_review_resolves_plan_from_captured_ledger_snapshot() -> None:
+    captured_ledger = _ledger()
+    snapshots: list[WorkflowLedger] = []
+
+    class Evidence:
+        def to_dict(self) -> dict[str, object]:
+            return {
+                "artifact_id": "a" * 64,
+                "policy_revision": 2,
+                "plan_revision": 3,
+                "plan_digest": "b" * 64,
+                "approval_summary": {"headline": "Exact plan"},
+                "approval_summary_digest": "c" * 64,
+                "content": "# Exact plan\n",
+            }
+
+    class Service:
+        def status(self, _workflow_id: str) -> WorkflowLedger:
+            return captured_ledger
+
+        def current_plan_evidence(
+            self, _workflow_id: str, *, ledger: WorkflowLedger | None = None
+        ) -> Evidence:
+            assert ledger is captured_ledger
+            assert ledger is not None
+            snapshots.append(ledger)
+            return Evidence()
+
+    backend = DashboardBackend(service_factory=cast(Any, Service))
+
+    packet = backend.approval_review("workflow-1")
+
+    assert snapshots == [captured_ledger]
+    assert packet["tuple"]["plan_digest"] == "b" * 64
 
 
 def test_timeline_inserts_distinct_non_kanban_approval_gate() -> None:

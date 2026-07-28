@@ -916,15 +916,24 @@ class WorkflowService:
         *,
         kinds: tuple[str, ...] | None = None,
         revisions: tuple[int, ...] | None = None,
+        ledger: WorkflowLedger | None = None,
     ) -> tuple[ArtifactCatalogEntry, ...]:
         """List metadata for exact active ledger-owned artifacts."""
-        return self._artifact_access.list(workflow_id, kinds=kinds, revisions=revisions)
+        return self._artifact_access.list(
+            workflow_id, kinds=kinds, revisions=revisions, ledger=ledger
+        )
 
     def read_artifact_text(
-        self, workflow_id: str, artifact_id: str | ArtifactId
+        self,
+        workflow_id: str,
+        artifact_id: str | ArtifactId,
+        *,
+        ledger: WorkflowLedger | None = None,
     ) -> ArtifactText:
         """Read one verified bounded text artifact by opaque ledger identity."""
-        return self._artifact_access.read_text(workflow_id, artifact_id)
+        return self._artifact_access.read_text(
+            workflow_id, artifact_id, ledger=ledger
+        )
 
     def export_artifact(
         self,
@@ -939,13 +948,20 @@ class WorkflowService:
             workflow_id, artifact_id, output, overwrite=overwrite
         )
 
-    def current_plan_evidence(self, workflow_id: str) -> CurrentPlanEvidence:
+    def current_plan_evidence(
+        self, workflow_id: str, *, ledger: WorkflowLedger | None = None
+    ) -> CurrentPlanEvidence:
         """Resolve the exact current plan and its source-bound approval summary."""
-        return self._artifact_access.current_plan(workflow_id)
+        return self._artifact_access.current_plan(workflow_id, ledger=ledger)
 
-    def current_implementation_changed_paths(self, workflow_id: str) -> tuple[str, ...]:
+    def current_implementation_changed_paths(
+        self, workflow_id: str, *, ledger: WorkflowLedger | None = None
+    ) -> tuple[str, ...]:
         """Return the generated changed-path manifest for the exact current review."""
-        ledger = self.store.get(workflow_id)
+        if ledger is None:
+            ledger = self.store.get(workflow_id)
+        elif ledger.workflow_id != workflow_id:
+            raise ServiceError("implementation snapshot workflow identity is stale")
         review = ledger.review
         implementation = ledger.artifact_for(WorkflowStage.IMPLEMENT)
         if review is None or implementation is None:

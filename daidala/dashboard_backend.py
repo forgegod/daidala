@@ -34,6 +34,7 @@ from .recommendations import (
     KanbanSnapshot,
     derive_recommendations,
 )
+from .revision import build_review_packet
 from .service import ServiceError, WorkflowService
 from .skills import (
     ProfileSkillContentRegistry,
@@ -282,7 +283,9 @@ class DashboardBackend:
             ledger = service.status(workflow_id)
         except StoreError as error:
             raise UnknownWorkflowError(str(error)) from error
-        current_plan = service.current_plan_evidence(workflow_id).to_dict()
+        current_plan = service.current_plan_evidence(
+            workflow_id, ledger=ledger
+        ).to_dict()
         return _approval_review_packet(ledger, current_plan)
 
     def review_decision(self, workflow_id: str) -> dict[str, Any]:
@@ -293,7 +296,7 @@ class DashboardBackend:
             ledger = service.status(workflow_id)
         except StoreError as error:
             raise UnknownWorkflowError(str(error)) from error
-        packet = service.review_packet(workflow_id)
+        packet = build_review_packet(ledger)
         review = ledger.review
         if review is None:
             return {**packet, "available": True, "evidence": None}
@@ -305,6 +308,7 @@ class DashboardBackend:
                     workflow_id,
                     kinds=("stage",),
                     revisions=(ledger.plan_revision,),
+                    ledger=ledger,
                 )
                 if entry.stage == WorkflowStage.IMPLEMENT.value
                 and entry.digest == review.implementation_digest
@@ -314,7 +318,7 @@ class DashboardBackend:
         if implementation_entry is None:
             raise ServiceError("reviewed implementation artifact is unavailable")
         implementation = service.read_artifact_text(
-            workflow_id, implementation_entry.artifact_id
+            workflow_id, implementation_entry.artifact_id, ledger=ledger
         )
         verification = [
             {
@@ -341,7 +345,9 @@ class DashboardBackend:
                     "digest": implementation_entry.digest,
                     "content": implementation.content,
                     "changed_paths": list(
-                        service.current_implementation_changed_paths(workflow_id)
+                        service.current_implementation_changed_paths(
+                            workflow_id, ledger=ledger
+                        )
                     ),
                 },
                 "verification": verification,

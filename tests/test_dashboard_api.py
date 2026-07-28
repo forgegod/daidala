@@ -13,6 +13,8 @@ from typing import Any
 
 import pytest
 
+from daidala.state import ReviewOutcome
+
 ROOT = Path(__file__).parents[1]
 MODULE = ROOT / "dashboard" / "plugin_api.py"
 
@@ -307,10 +309,25 @@ def test_review_decision_returns_verified_path_free_evidence() -> None:
         verification_digests=(verification_digest,),
         summary=Summary(),
         summary_digest="f" * 64,
-    )
-    ledger = types.SimpleNamespace(
-        review=review,
+        outcome=ReviewOutcome.ACCEPTED,
+        findings=(),
+        plan_digest="c" * 64,
         plan_revision=2,
+        policy_revision=1,
+        constraints_revision=0,
+        constraints_digest="1" * 64,
+        activation_digest="2" * 64,
+        digest="a" * 64,
+        to_dict=lambda: {"outcome": "accepted", "findings": []},
+    )
+    captured_ledger = types.SimpleNamespace(
+        workflow_id="workflow-1",
+        board_slug="board-1",
+        review=review,
+        review_disposition=None,
+        pending_revision_request=None,
+        plan_revision=2,
+        card_for=lambda _stage: None,
         verification_evidence=(
             types.SimpleNamespace(
                 command="pytest -q",
@@ -321,26 +338,20 @@ def test_review_decision_returns_verified_path_free_evidence() -> None:
             ),
         ),
     )
-    packet = {
-        "schema": "daidala.review-packet/v1",
-        "workflow_id": "workflow-1",
-        "review": {"outcome": "accepted", "findings": []},
-        "review_digest": "a" * 64,
-        "disposition": None,
-        "allowed_actions": ["accept_delivery", "request_revision", "reject_workflow"],
-        "exact_tuple": {"implementation_digest": implementation_digest},
-        "cards": {"review": "t_review", "plan": "t_plan"},
-        "pending_revision_request": None,
-    }
+    snapshot_reads: list[str] = []
 
     class Service:
         def status(self, _workflow_id: str) -> object:
-            return ledger
+            return captured_ledger
 
         def review_packet(self, _workflow_id: str) -> dict[str, object]:
-            return packet
+            raise AssertionError("review packet must use the captured ledger snapshot")
 
-        def list_artifacts(self, *_args: object, **_kwargs: object) -> tuple[object, ...]:
+        def list_artifacts(
+            self, *_args: object, ledger: object | None = None, **_kwargs: object
+        ) -> tuple[object, ...]:
+            assert ledger is captured_ledger
+            snapshot_reads.append("list")
             return (
                 types.SimpleNamespace(
                     stage="implement",
@@ -349,16 +360,25 @@ def test_review_decision_returns_verified_path_free_evidence() -> None:
                 ),
             )
 
-        def read_artifact_text(self, *_args: object) -> object:
+        def read_artifact_text(
+            self, *_args: object, ledger: object | None = None
+        ) -> object:
+            assert ledger is captured_ledger
+            snapshot_reads.append("read")
             return types.SimpleNamespace(content="diff --git a/a b/a\n+<script>literal</script>\n")
 
-        def current_implementation_changed_paths(self, _workflow_id: str) -> tuple[str, ...]:
+        def current_implementation_changed_paths(
+            self, _workflow_id: str, *, ledger: object | None = None
+        ) -> tuple[str, ...]:
+            assert ledger is captured_ledger
+            snapshot_reads.append("paths")
             return ("a",)
 
     api.__dict__["service_factory"] = Service
 
     result = api.review_decision("workflow-1")
 
+    assert snapshot_reads == ["list", "read", "paths"]
     assert result["evidence"]["implementation"] == {
         "artifact_id": "b" * 64,
         "digest": implementation_digest,
@@ -377,7 +397,7 @@ def test_review_decision_returns_verified_path_free_evidence() -> None:
     assert "/must/not/escape" not in serialized
     assert "target_repository" not in serialized
 
-    ledger.verification_evidence = ()
+    captured_ledger.verification_evidence = ()
     with pytest.raises(FakeHTTPException) as incomplete:
         api.review_decision("workflow-1")
     assert incomplete.value.status_code == 409

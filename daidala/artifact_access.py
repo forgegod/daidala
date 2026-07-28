@@ -180,10 +180,12 @@ class ArtifactAccessService:
         workflow_id: str,
         kinds: Iterable[str] | None = None,
         revisions: Iterable[int] | None = None,
+        *,
+        ledger: WorkflowLedger | None = None,
     ) -> tuple[ArtifactCatalogEntry, ...]:
         selected_kinds = self._selected_kinds(kinds)
         selected_revisions = self._selected_revisions(revisions)
-        records = self._records(workflow_id, selected_kinds)
+        records = self._records(workflow_id, selected_kinds, ledger=ledger)
         if selected_revisions is not None:
             records = tuple(
                 record
@@ -193,9 +195,13 @@ class ArtifactAccessService:
         return tuple(record.entry for record in records)
 
     def read_text(
-        self, workflow_id: str, artifact_id: str | ArtifactId
+        self,
+        workflow_id: str,
+        artifact_id: str | ArtifactId,
+        *,
+        ledger: WorkflowLedger | None = None,
     ) -> ArtifactText:
-        record = self._resolve_record(workflow_id, artifact_id)
+        record = self._resolve_record(workflow_id, artifact_id, ledger=ledger)
         try:
             content = self._verified_bytes(record).decode("utf-8", errors="strict")
         except UnicodeDecodeError as error:
@@ -267,8 +273,10 @@ class ArtifactAccessService:
             output=str(destination),
         )
 
-    def current_plan(self, workflow_id: str) -> CurrentPlanEvidence:
-        ledger = self._ledger(workflow_id)
+    def current_plan(
+        self, workflow_id: str, *, ledger: WorkflowLedger | None = None
+    ) -> CurrentPlanEvidence:
+        ledger = self._snapshot_ledger(workflow_id, ledger)
         current = ledger.artifact_for(WorkflowStage.PLAN)
         if current is None:
             raise ArtifactAccessError(
@@ -278,7 +286,9 @@ class ArtifactAccessService:
         record = next(
             (
                 candidate
-                for candidate in self._records(ledger.workflow_id, frozenset({"stage"}))
+                for candidate in self._records(
+                    ledger.workflow_id, frozenset({"stage"}), ledger=ledger
+                )
                 if candidate.entry.stage == WorkflowStage.PLAN.value
                 and candidate.entry.policy_revision == ledger.policy_revision
                 and candidate.entry.plan_revision == ledger.plan_revision
@@ -303,7 +313,7 @@ class ArtifactAccessService:
                 "current plan approval summary identity is invalid",
                 reason=ArtifactFailureReason.INVALID_SUMMARY,
             )
-        text = self.read_text(workflow_id, record.entry.artifact_id)
+        text = self.read_text(workflow_id, record.entry.artifact_id, ledger=ledger)
         return CurrentPlanEvidence(
             workflow_id=workflow_id,
             artifact_id=record.entry.artifact_id,
@@ -316,7 +326,11 @@ class ArtifactAccessService:
         )
 
     def _resolve_record(
-        self, workflow_id: str, artifact_id: str | ArtifactId
+        self,
+        workflow_id: str,
+        artifact_id: str | ArtifactId,
+        *,
+        ledger: WorkflowLedger | None = None,
     ) -> _ArtifactRecord:
         identity = (
             artifact_id if isinstance(artifact_id, ArtifactId) else ArtifactId(artifact_id)
@@ -324,7 +338,9 @@ class ArtifactAccessService:
         record = next(
             (
                 candidate
-                for candidate in self._records(workflow_id, _ALLOWED_KINDS)
+                for candidate in self._records(
+                    workflow_id, _ALLOWED_KINDS, ledger=ledger
+                )
                 if candidate.entry.artifact_id == identity
             ),
             None,
@@ -337,9 +353,13 @@ class ArtifactAccessService:
         return record
 
     def _records(
-        self, workflow_id: str, selected_kinds: frozenset[str]
+        self,
+        workflow_id: str,
+        selected_kinds: frozenset[str],
+        *,
+        ledger: WorkflowLedger | None = None,
     ) -> tuple[_ArtifactRecord, ...]:
-        ledger = self._ledger(workflow_id)
+        ledger = self._snapshot_ledger(workflow_id, ledger)
         records: list[_ArtifactRecord] = []
         if "stage" in selected_kinds:
             for reference in ledger.artifacts:
@@ -422,6 +442,17 @@ class ArtifactAccessService:
                 ),
             )
         )
+
+    def _snapshot_ledger(
+        self, workflow_id: str, ledger: WorkflowLedger | None
+    ) -> WorkflowLedger:
+        if ledger is None:
+            return self._ledger(workflow_id)
+        if ledger.workflow_id != workflow_id:
+            raise ArtifactAccessError(
+                "artifact snapshot workflow identity does not match request"
+            )
+        return ledger
 
     def _record(
         self,

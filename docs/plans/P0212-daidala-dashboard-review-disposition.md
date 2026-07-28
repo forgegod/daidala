@@ -54,11 +54,17 @@ Verification gate: `pytest tests/test_dashboard_api.py tests/test_dashboard_asse
 
 ## Completion evidence
 
-- `python -m pytest` passed 525 tests; the frozen package-resource unittest and `ruff check .` also passed.
+- `python -m pytest` passed 527 tests; the frozen package-resource unittest and `ruff check .` also passed.
 - Both pack validators, `node --check dashboard/dist/index.js`, the 64-file Markdown link check, wheel/sdist build, Twine checks, the 222-source/55-wheel-member release-content check, and `git diff --check` passed.
 - An isolated Hermes profile, Kanban board, repository, owned detached worktree, and Chromium browser rendered the exact review summary, literal `<script>` diff text without a nested script node, changed paths, verification evidence, findings, identity tuple, and pending non-Kanban review gate. The desktop and 390-pixel layouts had no document overflow, review API payloads exposed no profile-local path, and delivery authority was absent.
 - The browser previewed and confirmed `request_revision`. Durable state advanced to plan revision 1, preserved one review, disposition, and revision-request history entry, cleared approval and review authority, released the owned worktree, archived the current review card, created exactly one ready successor Plan card, and navigated to the revision-addressed exact-plan approval URL. The disposable profile, board, repository, browser artifacts, process, and port were removed afterward.
 - A self-contained Chromium route gate proved initial exact-ID reopen, `popstate` reopen to another workflow, and approval focus only after the server-returned packet matched the requested plan revision.
+
+Post-checkpoint review follow-up completed: review packets, reviewed
+implementation paths, and the sibling exact-plan approval projection now use
+one captured ledger snapshot, so an authenticated read cannot combine
+concurrent workflow revisions. Focused snapshot-identity and mismatch tests plus
+the 527-test full suite passed.
 
 ## Out of scope
 

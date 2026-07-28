@@ -36,14 +36,14 @@ workflow-pack adapters, and bundled orchestration skills.
 | `project_cycles.py` | Dry-run-first production project-cycle admission/completion/cancellation/reconciliation, prerequisite enforcement, stable one-item selection, exact identity confirmation, and profile-local runtime wiring. |
 | `reconciliation.py` | Two-authority claim recovery evidence, strict reconciliation previews/results, mode-`0600` content-addressed tick records, and local pending-to-published finding synchronization. |
 | `execution.py` | Immutable revision-addressed profile-local artifacts, detached worktrees, and diff capture. |
-| `artifact_access.py` | Opaque ledger-bound artifact identity, active metadata catalog, bounded digest-verified text reads, private exports, and exact current-plan evidence. |
+| `artifact_access.py` | Opaque ledger-bound artifact identity, active metadata catalog, bounded digest-verified text reads, private exports, exact current-plan evidence, and caller-captured snapshot validation. |
 | `archive_io.py` | Policy-neutral deterministic tar/gzip creation, manifest verification, inventory, and safe restore for caller-authorized roots. |
 | `kanban.py` | Public host-boundary adapter for the idempotent, approval-gated and revision-addressed Hermes card graph. |
 | `schemas.py` | Tool schemas exposed to the model. |
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
 | `packs.py` | Pack loading and deterministic validation. |
 | `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle and attended-review dispatch, pack operations, dry-run-first project-cycle operations, exact preview-digest apply gates, bounded inspection output, and subprocess mutation boundary. |
-| `dashboard_backend.py` | Profile-safe dashboard read model, live Kanban snapshots, exact plan/review evidence projections, constraint previews, and typed compare-and-swap replacement adapter. |
+| `dashboard_backend.py` | Profile-safe dashboard read model, live Kanban snapshots, single-ledger exact plan/review evidence projections, constraint previews, and typed compare-and-swap replacement adapter. |
 | `recommendations.py` | Pure finite pending-decision and next-action derivation from ledger facts and live Kanban snapshots. |
 | `setup_wizard.py` | Typed setup preview, confirmation gate, and documented Hermes board/profile inventory commands with bounded long-name table parsing. |
 | `packs/` | Skill-set-specific lifecycle mappings. |
@@ -77,6 +77,10 @@ workflow-pack adapters, and bundled orchestration skills.
   decide` is preview-only by default and applies only a freshly recomputed exact
   review/preview digest pair with literal confirmation and bounded direct UTF-8
   rationale input; the rationale path is never persisted.
+- Exact dashboard plan/review evidence reads capture one ledger snapshot and
+  thread it through artifact catalog, text, and changed-path verification.
+  Snapshot workflow identity must match the request; artifact paths and digests
+  remain independently bounded and verified.
 - `request_revision` writes canonical revision-request and successor packets
   before host mutation, archives only the recorded current post-gate card IDs,
   releases only the owned worktree, preserves prior evidence in immutable
