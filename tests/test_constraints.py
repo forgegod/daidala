@@ -3,10 +3,15 @@ from __future__ import annotations
 import json
 from dataclasses import FrozenInstanceError
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 
-from daidala.constraints import extract_policy_skill_constraints, parse_workflow_constraints
+from daidala.constraints import (
+    DEFAULT_CONSTRAINT_TEMPLATE,
+    extract_policy_skill_constraints,
+    parse_workflow_constraints,
+)
 from daidala.errors import PolicyViolationError
 from daidala.state import (
     ConstraintSourceProvenance,
@@ -17,6 +22,7 @@ from daidala.state import (
 )
 
 NOW = datetime(2026, 7, 12, 12, 0, tzinfo=UTC)
+ROOT = Path(__file__).parents[1]
 VALID = """\
 schema: daidala.workflow-constraints/v1
 global:
@@ -46,6 +52,17 @@ description: Reusable delivery constraints.
 
     assert content == VALID.rstrip()
     assert parse_workflow_constraints(content).global_constraints[0] == "Never commit or push."
+
+
+def test_starter_template_matches_docs_and_parses() -> None:
+    documentation = (ROOT / "docs" / "14-workflow-constraints.md").read_text(
+        encoding="utf-8"
+    )
+    section = documentation.split("## Starter template\n", maxsplit=1)[1]
+    documented = section.split("```yaml\n", maxsplit=1)[1].split("\n```", maxsplit=1)[0]
+
+    assert documented + "\n" == DEFAULT_CONSTRAINT_TEMPLATE
+    assert parse_workflow_constraints(DEFAULT_CONSTRAINT_TEMPLATE).canonical_bytes()
 
 
 @pytest.mark.parametrize(

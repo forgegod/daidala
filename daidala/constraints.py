@@ -21,6 +21,16 @@ CONSTRAINTS_SCHEMA = "daidala.workflow-constraints/v1"
 MAX_CONSTRAINTS_PER_SCOPE = 16
 MAX_CONSTRAINT_BYTES = 1024
 MAX_CANONICAL_BYTES = 4096
+DEFAULT_CONSTRAINT_TEMPLATE = """\
+schema: daidala.workflow-constraints/v1
+global:
+  - Preserve approved scope and repository instructions.
+phases:
+  implement:
+    - Add or update tests for changed behavior.
+  verify:
+    - Run the repository's documented verification.
+"""
 _EXECUTABLE_STAGES = tuple(stage for stage in WorkflowStage if stage is not WorkflowStage.APPROVAL)
 
 

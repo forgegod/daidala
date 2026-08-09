@@ -12,12 +12,17 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   exact attended review preview/apply routes, workflow-owned card comment/unblock,
   cancellation preview/apply routes, registration projections, checkout-root and
   checkout lifecycle preview/apply, and GitHub Projects v2 link read/verify/
-  preview/apply routes.
+  preview/apply routes, read-only reusable constraint-source list/detail routes,
+  persisted-configuration verification, non-mutating initialization preview/confirmed apply,
+  and trusted-registration prerequisite diagnosis routes.
 - `dist/index.js` renders workflow progress, the inventory-backed Start workflow
-  wizard, Config → Packs readiness/content, GitHub Projects v2 links, and confirmed
-  checkout refresh/adoption/backup-pruning/policy controls; decision-first
-  supervision; exact-plan approval; literal source-bound review evidence/
-  disposition; blocked-card remediation; and previewed cancellation.
+  wizard, Config → Packs readiness/content, GitHub Projects v2 links,
+  constraint source selection and schema-aware authoring, read-only configuration
+  verification, initialization preview/apply, prerequisite diagnosis, operator-runbook
+  guidance, and confirmed checkout refresh/adoption/backup-pruning/policy
+  controls; decision-first supervision;
+  exact-plan approval; literal source-bound review evidence/disposition;
+  blocked-card remediation; and previewed cancellation.
 - `dist/style.css` adapts the extension to host themes and narrow layouts.
 
 ## Local Contracts
@@ -80,6 +85,28 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   checkout, credential, or filesystem path.
 - Constraint preview is non-mutating; replacement requires the displayed current
   digest and explicit invalidation confirmation.
+- Constraint-source list/detail routes accept only exact inventory names. They
+  expose only installed skills with a complete valid reusable-policy document;
+  details render literal `SKILL.md` content only up to 1 MiB and otherwise return
+  a sanitized unavailable state. Source selection copies only into a browser draft
+  or explicit Start return context and cannot mutate a source.
+- `GET /configuration` projects only the persisted checkout root/policy, derived
+  registration checkout status, GitHub Project metadata state, bounded intake
+  evidence health, evaluator state, and notification destination presence. It
+  never returns aliases, credentials, raw probe output, private destinations,
+  registration checkout paths, or GitHub Project node IDs.
+- Initialization preview exposes only the resolved profile-local ledger target and
+  observed schema state; apply accepts exactly `{preview_digest, confirm: true}`
+  and resets the cached service only after creation. Prerequisite diagnosis accepts
+  exactly `{project_id, live}`, derives all paths from the trusted registration,
+  and returns the bounded existing report without protected values.
+- Health identity exposes only the observed profile, Daidala and Hermes versions,
+  supported Hermes range, and an unavailable install source. The runbook renders
+  exact host-owned install/upgrade commands as copyable guidance and resumes only
+  an exact existing workflow through ordinary read-only polling.
+- The operator-runbook panel maps every runbook operation to an existing browser
+  surface or native CLI guidance. It never renders an execute control for plugin,
+  gateway, or Hermes lifecycle commands.
 - Poll no faster than every five seconds while visible, stop while hidden, and retain manual refresh.
 - Treat API responses as snapshots; never authorize workflow operations from client state.
 - After setup or exact-ID reopen, render the selected workflow from its fresh

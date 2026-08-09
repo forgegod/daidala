@@ -74,6 +74,11 @@
   color: var(--daidala-error);
 }
 
+.daidala-banner-warning {
+  background: var(--surface-raised, rgba(183, 121, 31, 0.16));
+  color: var(--warning, #d29922);
+}
+
 .daidala-state {
   margin: 0;
   padding: var(--daidala-padding);

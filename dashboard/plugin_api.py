@@ -14,6 +14,9 @@ projections to FastAPI.
 Supervision endpoints include:
 
 - ``GET  /api/plugins/daidala/health``
+- ``GET  /api/plugins/daidala/initialization``
+- ``POST /api/plugins/daidala/initialization``
+- ``POST /api/plugins/daidala/diagnostics/prerequisites``
 - ``GET  /api/plugins/daidala/prerequisites``
 - ``GET  /api/plugins/daidala/workflows``
 - ``GET  /api/plugins/daidala/workflows/{workflow_id}``
@@ -29,6 +32,9 @@ Supervision endpoints include:
 - ``POST /api/plugins/daidala/workflows/{workflow_id}/cancel/preview``
 - ``POST /api/plugins/daidala/workflows/{workflow_id}/cancel``
 - ``POST /api/plugins/daidala/constraints/preview``
+- ``GET  /api/plugins/daidala/constraints/sources``
+- ``GET  /api/plugins/daidala/constraints/sources/{source_name}``
+- ``GET  /api/plugins/daidala/configuration``
 - ``GET  /api/plugins/daidala/registrations``
 - ``GET  /api/plugins/daidala/github-project-links``
 - ``GET  /api/plugins/daidala/github-project-links/{project_id}``
@@ -55,9 +61,11 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 import subprocess
 from collections.abc import Callable
 from functools import lru_cache
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from threading import Lock
 from typing import Any
@@ -72,21 +80,28 @@ from daidala.checkout_root import (
     discover_owned_checkouts,
 )
 from daidala.checkouts import CheckoutError, CheckoutManager
+from daidala.constraints import extract_policy_skill_constraints, parse_workflow_constraints
 from daidala.dashboard_backend import (
     DashboardBackend,
     DashboardBackendError,
     HostUnavailableError,
     UnknownWorkflowError,
 )
-from daidala.errors import WorkflowError
+from daidala.errors import PolicyViolationError, WorkflowError
 from daidala.github_project_links import (
     GitHubProjectLink,
     GitHubProjectLinkError,
     GitHubProjectLinksStore,
     GitHubProjectVerifier,
 )
+from daidala.initialization import (
+    InitializationError,
+    apply_initialization,
+    preview_initialization,
+)
 from daidala.locations import resolve_data_root
 from daidala.pack_service import (
+    MAX_SKILL_DOCUMENT_BYTES,
     PackConfirmationError,
     PackInstallError,
     PackService,
@@ -95,6 +110,7 @@ from daidala.pack_service import (
     UnknownPackSkillError,
 )
 from daidala.packs import PackError
+from daidala.prerequisites import run_prerequisite_diagnosis
 from daidala.registrations import (
     ControllerRegistration,
     list_controller_registrations,
@@ -125,6 +141,7 @@ ServiceFactory = Callable[[], Any]
 PackServiceFactory = Callable[[], PackService]
 _default_service_lock = Lock()
 _DASHBOARD_REVIEW_ACTOR = "dashboard:attended-operator"
+_SUPPORTED_HERMES_RANGE = ">=0.18.2,<0.20.0"
 
 
 @lru_cache(maxsize=1)
@@ -185,7 +202,9 @@ def health() -> dict[str, Any]:
         "success": True,
         "plugin": "daidala",
         "read_model": True,
+        "identity": _dashboard_identity(),
         "bounded_mutations": [
+            "initialization",
             "pack_install",
             "workflow_setup",
             "constraints_replace",
@@ -194,6 +213,57 @@ def health() -> dict[str, Any]:
             "review_disposition",
         ],
     }
+
+
+def _dashboard_identity() -> dict[str, str]:
+    """Return bounded runtime identity without making missing host metadata fatal."""
+
+    try:
+        profile = active_profile(_run_command)
+    except (SetupWizardError, OSError):
+        profile = "unavailable"
+    try:
+        package_version = version("daidala")
+    except PackageNotFoundError:
+        package_version = "unavailable"
+    code, output = _run_command(("hermes", "--version"))
+    match = re.search(r"Hermes Agent v(\d+\.\d+\.\d+)", output)
+    hermes_version = match.group(1) if code == 0 and match is not None else "unavailable"
+    return {
+        "profile": profile,
+        "daidala_version": package_version,
+        "install_source": "unavailable",
+        "hermes_version": hermes_version,
+        "supported_hermes_range": _SUPPORTED_HERMES_RANGE,
+    }
+
+
+@router.get("/initialization")
+def initialization() -> dict[str, Any]:
+    """Preview profile-local policy-ledger initialization without mutation."""
+
+    return preview_initialization(resolve_data_root()).to_dict()
+
+
+@router.post("/initialization")
+def initialize(payload: dict[str, Any]) -> dict[str, Any]:
+    """Create the schema only for one fresh, literally confirmed preview."""
+
+    if set(payload) != {"preview_digest", "confirm"}:
+        raise HTTPException(
+            status_code=400, detail="exact initialization apply fields are required"
+        )
+    try:
+        preview, created = apply_initialization(
+            resolve_data_root(),
+            preview_digest=payload["preview_digest"],
+            confirm=payload["confirm"],
+        )
+    except InitializationError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    if created:
+        _reset_default_service()
+    return {"created": created, "initialization": preview.to_dict()}
 
 
 @router.get("/prerequisites")
@@ -220,12 +290,47 @@ def _registered_project(project_id: str) -> ControllerRegistration:
     return registration
 
 
+@router.post("/diagnostics/prerequisites")
+def prerequisite_diagnosis(payload: dict[str, Any]) -> dict[str, Any]:
+    """Run strict prerequisite diagnosis for one trusted registration."""
+
+    if set(payload) != {"project_id", "live"} or not isinstance(payload["live"], bool):
+        raise HTTPException(
+            status_code=400, detail="exact prerequisite diagnosis fields are required"
+        )
+    project_id = payload["project_id"]
+    if not isinstance(project_id, str):
+        raise HTTPException(status_code=400, detail="project ID must be a string")
+    data_root = resolve_data_root().resolve()
+    try:
+        trusted_registration_path = registration_path(data_root, project_id)
+    except PolicyViolationError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    registration = _registered_project(project_id)
+    report = run_prerequisite_diagnosis(
+        project_manifest=Path(registration.checkout) / ".daidala" / "project.yaml",
+        registration=trusted_registration_path,
+        live=payload["live"],
+    )
+    return {"report": report.to_dict(), "exit_code": report.exit_code}
+
+
 def _project_link_store() -> GitHubProjectLinksStore:
     return GitHubProjectLinksStore(resolve_data_root().resolve())
 
 
 def _checkout_manager() -> CheckoutManager:
     return CheckoutManager(resolve_data_root().resolve())
+
+
+@router.get("/configuration")
+def configuration() -> dict[str, Any]:
+    """Return one read-only persisted-configuration verification snapshot."""
+
+    try:
+        return DashboardBackend(service_factory=service_factory).configuration()
+    except DashboardBackendError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
 
 
 def _link_preview_digest(link: GitHubProjectLink, store_digest: str) -> str:
@@ -988,6 +1093,35 @@ def constraint_replace(payload: dict[str, Any]) -> dict[str, Any]:
         raise HTTPException(status_code=409, detail=str(error)) from error
 
 
+@router.get("/constraints/sources")
+def constraint_sources() -> dict[str, Any]:
+    """List only installed skills that validate as reusable policy sources."""
+
+    return {"sources": _profile_policy_sources()}
+
+
+@router.get("/constraints/sources/{name}")
+def constraint_source_detail(name: str) -> dict[str, Any]:
+    """Read one listed policy source without accepting paths or mutations."""
+
+    registry = ProfileSkillContentRegistry(resolve_data_root() / "skills")
+    sources = {source["name"]: source for source in _profile_policy_sources()}
+    source = sources.get(name)
+    if source is None:
+        raise HTTPException(status_code=404, detail="unknown reusable policy source")
+    try:
+        detail = _policy_source_detail(registry, name)
+    except (SkillRevisionError, WorkflowError) as error:
+        raise HTTPException(status_code=409, detail="policy source is unavailable") from error
+    if detail is None:
+        return {
+            "available": False,
+            "source": source,
+            "reason": "policy source document exceeds the 1 MiB response bound",
+        }
+    return {"available": True, **detail}
+
+
 @router.get("/wizard/inventory")
 def wizard_inventory() -> dict[str, Any]:
     """List the profile-safe identities eligible for setup selection."""
@@ -1202,16 +1336,54 @@ def _preflight_kwargs(request: SetupRequest) -> dict[str, Any]:
 
 
 def _profile_policy_sources() -> list[dict[str, str]]:
+    """Return verified reusable sources only; unrelated skills stay private."""
+
     registry = ProfileSkillContentRegistry(resolve_data_root() / "skills")
     try:
         sources = []
         for name in sorted(registry.installed_names()):
-            digest = registry.content_digest(name)
-            if digest is not None:
-                sources.append({"name": name, "digest": digest})
+            try:
+                source = _policy_source_projection(registry, name)
+            except (SkillRevisionError, WorkflowError):
+                continue
+            sources.append(source)
         return sources
     except SkillRevisionError as error:
         raise SetupWizardError("installed policy source inventory is invalid") from error
+
+
+def _policy_source_detail(
+    registry: ProfileSkillContentRegistry, name: str
+) -> dict[str, object] | None:
+    """Return a bounded literal document plus its canonical policy projection."""
+
+    source = _policy_source_projection(registry, name)
+    markdown = registry.skill_markdown(name)
+    assert markdown is not None
+    if len(markdown.encode("utf-8")) > MAX_SKILL_DOCUMENT_BYTES:
+        return None
+    content = extract_policy_skill_constraints(markdown)
+    return {
+        "source": source,
+        "skill_markdown": markdown,
+        "canonical_content": parse_workflow_constraints(content).canonical_bytes().decode(
+            "utf-8"
+        ),
+    }
+
+
+def _policy_source_projection(
+    registry: ProfileSkillContentRegistry, name: str
+) -> dict[str, str]:
+    """Validate one exact installed source through the shared parser path."""
+
+    digest = registry.content_digest(name)
+    markdown = registry.skill_markdown(name)
+    if digest is None or markdown is None:
+        raise SkillRevisionError(f"policy source is unavailable: {name!r}")
+    content = extract_policy_skill_constraints(markdown)
+    parse_workflow_constraints(content)
+    return {"name": name, "digest": digest}
 
 
 def _board_request(payload: dict[str, Any]) -> tuple[str, str]:

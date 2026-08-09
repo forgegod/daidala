@@ -98,6 +98,23 @@ phases:
       any required operator action.
 ```
 
+## Starter template
+
+The dashboard's **Insert schema skeleton** action and the runtime API use this
+exact starter template. It is a valid constraint document, not a workflow
+methodology template.
+
+```yaml
+schema: daidala.workflow-constraints/v1
+global:
+  - Preserve approved scope and repository instructions.
+phases:
+  implement:
+    - Add or update tests for changed behavior.
+  verify:
+    - Run the repository's documented verification.
+```
+
 The optional `/daidala` editor displays the complete current canonical YAML,
 revision, digest, provenance, and server limits. Preview uses the same parser and
 digest identity as the service and never mutates. Formatting-only edits are a
@@ -203,6 +220,14 @@ Reusable sources and one-off content use the same validation, materialization,
 persistence, projection, approval, and replacement path. One-off input uses an
 explicit constraints file or inline content; no interface infers a path or source
 name from arbitrary text.
+
+Config → Constraints lists only installed skills whose complete `SKILL.md`
+validates as a reusable policy source. Its detail route accepts an inventory name,
+never a path, and renders the literal document only when it is at most 1 MiB;
+larger documents return a sanitized unavailable state. Selecting a listed source
+is read-only until an operator explicitly copies its canonical content into a
+browser draft, selects it as a reference skill, or returns its name and digest to
+the browser-held Start workflow draft.
 
 ## Conflict correction
 

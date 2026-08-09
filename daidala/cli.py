@@ -14,6 +14,7 @@ from typing import NoReturn, cast
 
 from .cycles import CycleMode
 from .evaluation import EvaluatorIsolationEvidence
+from .initialization import apply_initialization, preview_initialization
 from .kanban import KanbanGraphAdapter
 from .locations import resolve_data_root
 from .pack_service import PackCheck, PackService
@@ -50,6 +51,12 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
 
     init = sub.add_parser("init", help="Preview or initialize the profile-local policy ledger")
     init.add_argument("--apply", action="store_true", help="Create the ledger directory and schema")
+    init.add_argument(
+        "--preview-digest", help="Fresh initialization preview digest required by --apply"
+    )
+    init.add_argument(
+        "--confirm", action="store_true", help="Confirm the exact initialization preview"
+    )
 
     doctor = sub.add_parser(
         "doctor", help="Diagnose self-improvement prerequisites without mutation"
@@ -685,25 +692,35 @@ def _reconciliation_output(
 
 
 def _run_init(args: argparse.Namespace) -> int:
-    data_root = resolve_data_root() / "daidala"
+    profile_root = resolve_data_root()
+    preview = preview_initialization(profile_root)
     if not args.apply:
         _print(
             {
                 "success": True,
                 "operation": "init",
                 "dry_run": True,
-                "data_root": str(data_root),
+                "data_root": str(preview.data_root),
+                "preview": preview.to_dict(),
             }
         )
         return 0
-    store = WorkflowStore(data_root)
+    if args.preview_digest is None:
+        raise ValueError("--apply requires --preview-digest")
+    applied, created = apply_initialization(
+        profile_root,
+        preview_digest=args.preview_digest,
+        confirm=args.confirm,
+    )
     _print(
         {
             "success": True,
             "operation": "init",
             "dry_run": False,
-            "data_root": str(store.data_root),
-            "database": str(store.db_path),
+            "data_root": str(applied.data_root),
+            "database": str(applied.database),
+            "created": created,
+            "preview": applied.to_dict(),
         }
     )
     return 0

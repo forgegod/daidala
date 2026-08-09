@@ -522,13 +522,19 @@ def test_init_apply_creates_profile_local_schema(tmp_path: Path, monkeypatch, ca
     sentinel = legacy_root / "do-not-read"
     sentinel.write_text("legacy", encoding="utf-8")
 
-    result = cli.main(["init", "--apply"])
+    assert cli.main(["init"]) == 0
+    preview = json.loads(capsys.readouterr().out)["preview"]
+
+    result = cli.main(
+        ["init", "--apply", "--preview-digest", preview["preview_digest"], "--confirm"]
+    )
     payload = json.loads(capsys.readouterr().out)
 
     assert result == 0
     assert payload["dry_run"] is False
     assert Path(payload["database"]).is_file()
     assert Path(payload["database"]).parent == tmp_path / "daidala"
+    assert payload["created"] is True
     assert sentinel.read_text(encoding="utf-8") == "legacy"
 
 

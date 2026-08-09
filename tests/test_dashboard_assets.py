@@ -99,6 +99,30 @@ def test_dashboard_mutations_use_only_closed_post_routes() -> None:
     assert "method: \"PATCH\"" not in source
 
 
+def test_bundle_exposes_preview_confirmed_initialization_and_bounded_diagnosis() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    required = (
+        'API_BASE + "/initialization"',
+        'API_BASE + "/diagnostics/prerequisites"',
+        "preview_digest: previewDigest",
+        "confirm: true",
+        "Open initialization preview",
+        "← Back to verification",
+        "I confirm this exact initialization preview",
+        "Run local checks",
+        "Run live checks",
+        "project_id: projectId",
+        "live: live",
+    )
+    for text in required:
+        assert text in source
+
+    assert 'data-testid": "daidala-initialization"' in source
+    assert "project_manifest:" not in source
+    assert "registration_path:" not in source
+
+
 def test_bundle_polls_at_least_every_five_seconds_and_respects_visibility() -> None:
     source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
 
@@ -121,9 +145,43 @@ def test_bundle_exposes_manual_refresh() -> None:
     assert '"Preview mutations"' not in source
     assert '"Start workflow"' in source
     assert '"Preview constraint change"' in source
-    assert '"Replace constraints"' in source
+    assert '"Apply replacement"' in source
     assert '"No semantic change; replacement is unnecessary."' in source
     assert "expected_current_digest" in source
+
+
+def test_bundle_exposes_schema_aware_constraint_authoring_and_source_selection() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    required_strings = (
+        'API_BASE + "/constraints/sources"',
+        '"/constraints/sources/" + encodeURIComponent(name)',
+        "Constraints",
+        "Reusable policy sources",
+        "Workflow policy maintenance",
+        "New workflow constraints",
+        "Edit constraints",
+        "create with null current digest",
+        "Insert schema skeleton",
+        "Copy selected template into draft",
+        "Use as reference skill",
+        "Create constraints",
+        "Apply replacement",
+        "Use selected source in Start draft",
+        "canonical_content",
+        "Preview digest ",
+        "worker card body 8192 characters",
+        "expected_current_digest: currentDigest",
+        "constraint_template",
+        "schemaLimits",
+    )
+    for text in required_strings:
+        assert text in source, f"missing constraint authoring contract text: {text}"
+
+    assert 'data-testid": "daidala-constraint-authoring"' in source
+    assert 'data-testid": "daidala-constraint-source"' in source
+    assert "innerHTML" not in source
+    assert "constraints/sources/{path}" not in source
 
 
 def test_bundle_exposes_pack_inventory_readiness_content_and_confirmed_install() -> None:
@@ -215,6 +273,68 @@ def test_bundle_exposes_confirmed_path_free_checkout_lifecycle_actions() -> None
     assert "checkout_path" not in source
     assert "repository_path" not in source
 
+
+def test_bundle_exposes_read_only_configuration_verification() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    required_strings = (
+        'API_BASE + "/configuration"',
+        "Verification",
+        "Configuration verification",
+        "Refresh verification",
+        "Read-only persisted configuration",
+        "Checkout policy",
+        "Derived checkout: ",
+        "GitHub intake: ",
+        "Evaluator: ",
+        "Notifications: ",
+        "node_id_configured",
+        "Manual stale refresh may wipe or back up clean local data",
+    )
+    for text in required_strings:
+        assert text in source, f"missing configuration verification contract text: {text}"
+    panel = source[
+        source.index("function ConfigurationVerificationPanel"):
+        source.index("function ConstraintAuthoringPanel")
+    ]
+    assert 'data-testid": "daidala-configuration-verification"' in panel
+    assert "project_node_id" not in panel
+    assert ".daidala-banner-warning" in (DASHBOARD / "dist" / "style.css").read_text(
+        encoding="utf-8"
+    )
+
+
+def test_bundle_exposes_operator_runbook_without_host_lifecycle_mutations() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    required = (
+        'data-testid": "daidala-operator-runbook"',
+        '"Runbook"',
+        "Install and enable",
+        "Initialize",
+        "Diagnose prerequisites",
+        "Start and resume",
+        "Approve the exact plan",
+        "Review disposition",
+        "Cancel and recovery",
+        "Upgrade",
+        "Standalone diagnostics",
+        "Host-owned CLI",
+        "Resume existing workflow ID",
+        "Opened the existing workflow and resumed read-only polling.",
+        "supported_hermes_range",
+    )
+    for text in required:
+        assert text in source
+
+    assert 'API_BASE + "/plugins"' not in source
+    assert 'API_BASE + "/gateway"' not in source
+    runbook = source[
+        source.index("function OperatorRunbookPanel"):
+        source.index("function ConfigurationVerificationPanel")
+    ]
+    assert "props.onResume" in runbook
+    assert "runStart" not in runbook
 
 def test_bundle_exposes_the_closed_inventory_backed_start_workflow_wizard() -> None:
     source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")

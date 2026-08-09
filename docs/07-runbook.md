@@ -24,12 +24,13 @@ Initialization is dry-run by default:
 
 ```bash
 hermes daidala init
-hermes daidala init --apply
+hermes daidala init --apply --preview-digest <preview-digest> --confirm
 ```
 
-The applied command creates the profile-local `daidala/workflows.sqlite3`
-schema. Repeating it is safe. The dry run prints the target path and does not
-create directories or files.
+The applied command requires the fresh digest printed by the dry run and literal
+confirmation. It creates the profile-local `daidala/policy-ledger.sqlite3`
+schema. Repeating it with a fresh preview is safe and reports a no-op. The dry
+run prints the target path and does not create directories or files.
 
 ## Diagnose prerequisites
 
@@ -225,6 +226,20 @@ show`, disposition, and delivery fail closed. Never infer acceptance from a
 historical `review.md`. Resume the current review worker so it records supported
 structured evidence when that graph remains active; otherwise cancel and start a
 new workflow under the current contract.
+
+## Dashboard equivalence
+
+The optional **Daidala → Config → Runbook** panel links each runbook operation
+to its bounded browser surface: initialization preview/apply and prerequisite
+diagnosis, pack inspection, workflow supervision/resume, exact-plan approval,
+review disposition, and cancellation. Browser workflow selection only reopens an
+existing workflow for read-only polling; it never starts another graph or
+scheduler.
+
+Install, enable, upgrade, plugin removal, gateway lifecycle, and standalone
+diagnostics remain native CLI operations. The dashboard renders their exact
+commands as guidance only and has no plugin-management, restart, or generic
+command-dispatch route.
 
 ## Upgrade
 
