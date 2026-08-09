@@ -69,7 +69,7 @@ workflow-pack adapters, and bundled orchestration skills.
   `HERMES_KANBAN_TASK` against the ledger's current stage card; handler `task_id`
   is turn isolation and never grants workflow authority.
 - External packs pin a Git source revision, bounded Hermes version, and complete-directory digest per required skill.
-- Standalone CLI inventory comes from the profile skill directory; it never imports Hermes runtime internals.
+- Standalone profile-backed pack inventory comes from the resolved profile skill directory; bundled `packs list` and `packs validate` read packaged definitions without resolving a profile root. The CLI never imports Hermes runtime internals.
 - Native and standalone operator commands share one parser and dispatch layer;
   setup, external installation, evaluator probes, and project-cycle admission
   remain dry-run by default.

@@ -236,7 +236,8 @@ class PackService:
             )
         )
 
-    def validate(self, name: str) -> PackValidation:
+    @staticmethod
+    def validate(name: str) -> PackValidation:
         return _validation(load_pack(name))
 
     def check(self, name: str, *, recursive: bool = False) -> PackCheck:

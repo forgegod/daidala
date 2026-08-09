@@ -852,6 +852,21 @@ def _run_pack_operation(
     command_runner: CommandRunner | None,
     operation: str | None = None,
 ) -> int:
+    if args.packs_command == "list":
+        _print(
+            {
+                "success": True,
+                "operation": "list",
+                "packs": list(PackService.bundled_names()),
+            }
+        )
+        return 0
+
+    if args.packs_command == "validate":
+        validation = PackService.validate(args.name).to_dict()
+        _print({"success": True, "operation": "validate", **validation})
+        return 0
+
     selected_registry = registry or ProfileSkillContentRegistry(resolve_data_root() / "skills")
     selected_inventory = inventory or cast(SkillInventory, selected_registry)
     resolver = revision_resolver or _resolve_revision
@@ -863,21 +878,6 @@ def _run_pack_operation(
         hermes_version_resolver=lambda: hermes_version or _resolve_hermes_version(),
         command_runner=runner,
     )
-    if args.packs_command == "list":
-        _print(
-            {
-                "success": True,
-                "operation": "list",
-                "packs": list(service.bundled_names()),
-            }
-        )
-        return 0
-
-    if args.packs_command == "validate":
-        validation = service.validate(args.name).to_dict()
-        _print({"success": True, "operation": "validate", **validation})
-        return 0
-
     selected_operation = operation or args.packs_command
     check = service.check(args.name, recursive=getattr(args, "recursive", False))
     if args.packs_command == "install":

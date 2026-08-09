@@ -1110,6 +1110,34 @@ def test_packs_list_uses_shared_command_tree(capsys) -> None:
     }
 
 
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["packs", "list"],
+        ["packs", "validate", "addyosmani"],
+        ["packs", "validate", "aidlc"],
+    ],
+)
+def test_stateless_pack_commands_do_not_resolve_a_profile_root(
+    argv: list[str], monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    def fail_root_resolution() -> Path:
+        raise AssertionError("stateless pack command must not resolve a profile root")
+
+    monkeypatch.setattr(cli, "resolve_data_root", fail_root_resolution)
+
+    standalone_code = cli.main(argv)
+    standalone = json.loads(capsys.readouterr().out)
+    host_code = cli.run_command(_host_args(argv))
+    host = json.loads(capsys.readouterr().out)
+
+    assert host_code == standalone_code == 0
+    assert host == standalone
+    assert standalone["success"] is True
+    if argv[1] == "validate":
+        assert standalone["name"] == argv[2]
+
+
 def test_service_error_has_same_nonzero_exit_code(capsys) -> None:
     standalone = FakeService(fail=True)
     host = FakeService(fail=True)
