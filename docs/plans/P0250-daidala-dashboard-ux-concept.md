@@ -16,7 +16,7 @@
 
 **Produces:** a single UX concept and design contract (information architecture, decision-card pattern, preview-confirm envelope, status semantics) that P0200–P0240 and P0320 cite for all dashboard presentation work
 
-**Status:** partially approved — Config → Packs inventory, readiness, declared-skill content, and preview-confirm installation are approved for P0200 Phase 1; Start workflow selectors, defaults, and host handoffs still require fresh human approval before implementation
+**Status:** approved — Config → Packs inventory, readiness, declared-skill content, and preview-confirm installation are approved for P0200 Phase 1; Start workflow selectors, browser-local defaults, and host handoffs are approved and implemented by P0210 Phase 1 (`3b657d1`).
 
 ## Goal
 
@@ -123,7 +123,7 @@ Actor is always an attended human operator. Legend: ✅ implemented · 🟡 plan
    `project_id`; no credential values.
 
 ### Surface B — Start a workflow (P0210 Phase 1)
-6. **Guided setup wizard** 🟡 — read-only mounted controller profile, optional browser-local start preset, ready installed pack, registered repository, requested outcome / prompt, worker-profile default plus stage overrides, constraints, and existing/create board; `Manage sources` opens Config → Constraints with a return to the in-progress form. The UI maps requested outcome / prompt to the existing `request.goal` field, the server resolves the selected registration to the trusted target, and only the resolved setup request reaches `SetupRequest.from_payload`; readiness → preview → literal confirm → start now. Delayed/recurring admission hands off to Hermes Cron.
+6. **Guided setup wizard** ✅ — read-only mounted controller profile, optional browser-local start preset, ready installed pack, registered repository, requested outcome / prompt, worker-profile default plus stage overrides, constraints, and existing/create board; `Manage sources` opens Config → Constraints with a return to the in-progress form. The UI maps requested outcome / prompt to the existing `request.goal` field, the server resolves the selected registration to the trusted target, and only the resolved setup request reaches `SetupRequest.from_payload`; readiness → preview → literal confirm → start now. Delayed/recurring admission hands off to Hermes Cron.
 
 ### Surface C — Supervise & decide (P0210 Phase 2, P0212 Phase 0, P0214 Phase 0) ✅/🟡
 7. **Watch workflows (read-only)** ✅ — poll ≥5s while visible; manual refresh.
