@@ -6,6 +6,7 @@ import json
 from types import SimpleNamespace
 from typing import Any, cast
 
+from daidala import dashboard_backend
 from daidala.constraints import DEFAULT_CONSTRAINT_TEMPLATE
 from daidala.dashboard_backend import (
     DashboardBackend,
@@ -161,6 +162,114 @@ def test_prerequisites_project_the_exact_runtime_constraint_template() -> None:
         "source": "docs/14-workflow-constraints.md#starter-template",
         "content": DEFAULT_CONSTRAINT_TEMPLATE,
     }
+
+
+def test_configuration_delegates_only_to_the_profile_safe_provider() -> None:
+    expected = {"checkouts": {"root": "/safe/root"}, "registrations": []}
+    backend = DashboardBackend(
+        service_factory=cast(
+            Any,
+            lambda: (_ for _ in ()).throw(
+                AssertionError("configuration must not resolve a service")
+            ),
+        ),
+        configuration_provider=lambda: expected,
+    )
+
+    assert backend.configuration() is expected
+
+
+def test_configuration_projects_persisted_state_without_private_values(
+    tmp_path: Any, monkeypatch: Any
+) -> None:
+    registration = SimpleNamespace(
+        project_id="forgegod-daidala",
+        checkout="/private/checkouts/forgegod-daidala",
+        intake_credential="github-daidala-read",
+        evaluator_backend="restricted-container",
+        evaluator_network="denied-by-default",
+        notification_adapter="hermes-gateway",
+        notification_target="attended-daidala",
+        notification_destination="telegram:operator:delivery",
+    )
+    status = SimpleNamespace(
+        project_id="forgegod-daidala",
+        to_dict=lambda: {"project_id": "forgegod-daidala", "state": "ok"},
+    )
+
+    class CheckoutRoot:
+        def __init__(self, _data_root: object) -> None:
+            pass
+
+        def read(self) -> object:
+            return SimpleNamespace(
+                to_dict=lambda: {
+                    "checkouts": {
+                        "root": "/safe/checkouts",
+                        "mode": "disabled",
+                        "ttl_hours": 0,
+                    }
+                }
+            )
+
+    monkeypatch.setattr(dashboard_backend, "resolve_data_root", lambda: tmp_path)
+    monkeypatch.setattr(
+        dashboard_backend, "list_controller_registrations", lambda _root: (registration,)
+    )
+    monkeypatch.setattr(dashboard_backend, "CheckoutRootStore", CheckoutRoot)
+    monkeypatch.setattr(
+        dashboard_backend,
+        "CheckoutManager",
+        lambda _root: SimpleNamespace(statuses=lambda _rows: (status,)),
+    )
+    monkeypatch.setattr(
+        dashboard_backend,
+        "GitHubProjectLinksStore",
+        lambda _root: SimpleNamespace(read=lambda _rows: ()),
+    )
+    monkeypatch.setattr(dashboard_backend, "read_private_text", lambda *_args, **_kwargs: "{}")
+    monkeypatch.setattr(
+        dashboard_backend,
+        "parse_prerequisite_evidence",
+        lambda _text: SimpleNamespace(
+            project_id="forgegod-daidala",
+            credential_capabilities=(
+                SimpleNamespace(
+                    alias="github-daidala-read",
+                    capability="github-intake",
+                    allowed=("read-organization", "read-project", "read-public-repository"),
+                ),
+            ),
+        ),
+    )
+
+    payload = DashboardBackend(service_factory=cast(Any, lambda: None)).configuration()
+
+    assert payload["checkouts"] == {
+        "root": "/safe/checkouts",
+        "mode": "disabled",
+        "ttl_hours": 0,
+    }
+    row = payload["registrations"][0]
+    assert row["checkout"] == {"project_id": "forgegod-daidala", "state": "ok"}
+    assert row["github_project"] == {"status": "not_configured"}
+    assert row["intake"] == {"status": "healthy"}
+    assert row["notification"] == {
+        "status": "healthy",
+        "adapter": "hermes-gateway",
+        "destination_configured": True,
+    }
+    rendered = json.dumps(payload)
+    assert registration.checkout not in rendered
+    assert registration.notification_target not in rendered
+    assert registration.notification_destination not in rendered
+
+    monkeypatch.setattr(dashboard_backend, "list_controller_registrations", lambda _root: ())
+    assert DashboardBackend(service_factory=cast(Any, lambda: None)).configuration()[
+        "registrations"
+    ] == []
+
+
 def test_timeline_inserts_distinct_non_kanban_review_gate() -> None:
     rows = _workflow_timeline(
         _ledger(review=SimpleNamespace(digest="a" * 64)),

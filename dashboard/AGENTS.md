@@ -12,12 +12,13 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   exact attended review preview/apply routes, workflow-owned card comment/unblock,
   cancellation preview/apply routes, registration projections, checkout-root and
   checkout lifecycle preview/apply, and GitHub Projects v2 link read/verify/
-  preview/apply routes, and read-only reusable constraint-source list/detail
-  routes.
+  preview/apply routes, read-only reusable constraint-source list/detail routes,
+  and one read-only persisted-configuration verification route.
 - `dist/index.js` renders workflow progress, the inventory-backed Start workflow
   wizard, Config → Packs readiness/content, GitHub Projects v2 links,
-  constraint source selection and schema-aware authoring, and confirmed checkout
-  refresh/adoption/backup-pruning/policy controls; decision-first supervision;
+  constraint source selection and schema-aware authoring, read-only configuration
+  verification, and confirmed checkout refresh/adoption/backup-pruning/policy
+  controls; decision-first supervision;
   exact-plan approval; literal source-bound review evidence/disposition;
   blocked-card remediation; and previewed cancellation.
 - `dist/style.css` adapts the extension to host themes and narrow layouts.
@@ -87,6 +88,11 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   details render literal `SKILL.md` content only up to 1 MiB and otherwise return
   a sanitized unavailable state. Source selection copies only into a browser draft
   or explicit Start return context and cannot mutate a source.
+- `GET /configuration` projects only the persisted checkout root/policy, derived
+  registration checkout status, GitHub Project metadata state, bounded intake
+  evidence health, evaluator state, and notification destination presence. It
+  never returns aliases, credentials, raw probe output, private destinations,
+  registration checkout paths, or GitHub Project node IDs.
 - Poll no faster than every five seconds while visible, stop while hidden, and retain manual refresh.
 - Treat API responses as snapshots; never authorize workflow operations from client state.
 - After setup or exact-ID reopen, render the selected workflow from its fresh

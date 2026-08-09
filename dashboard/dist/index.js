@@ -114,7 +114,7 @@
         : null,
       decision: decision === "plan-approval" ? decision : null,
       planRevision: planRevision && /^\d+$/.test(planRevision) ? planRevision : null,
-      section: ["packs", "github-projects", "checkouts", "constraints"].indexOf(section) >= 0
+      section: ["packs", "github-projects", "checkouts", "constraints", "verification"].indexOf(section) >= 0
         ? section
         : null,
       returnToStart: query.get("return") === "start-workflow"
@@ -137,6 +137,10 @@
     return fetchJson(API_BASE + "/registrations").then(function (payload) {
       return payload && Array.isArray(payload.registrations) ? payload.registrations : [];
     });
+  }
+
+  function buildConfiguration() {
+    return fetchJson(API_BASE + "/configuration");
   }
 
   function buildGitHubProjectLinks() {
@@ -1443,7 +1447,12 @@
           type: "button", role: "tab", "aria-selected": tab === "constraints",
           className: tab === "constraints" ? "is-selected" : "",
           onClick: function () { setTab("constraints"); }
-        }, "Constraints")
+        }, "Constraints"),
+        createElement("button", {
+          type: "button", role: "tab", "aria-selected": tab === "verification",
+          className: tab === "verification" ? "is-selected" : "",
+          onClick: function () { setTab("verification"); }
+        }, "Verification")
       ),
       tab === "packs"
         ? createElement(PackBrowser)
@@ -1451,10 +1460,89 @@
           ? createElement(GitHubProjectLinksPanel)
           : tab === "checkouts"
             ? createElement(CheckoutManagerPanel)
-            : createElement(ConstraintAuthoringPanel, {
+            : tab === "constraints"
+              ? createElement(ConstraintAuthoringPanel, {
                 returnToStart: props.returnToStart,
                 onReturnSource: props.onReturnSource
               })
+              : createElement(ConfigurationVerificationPanel)
+    );
+  }
+
+  function configurationStatus(value) {
+    if (!value) return "unavailable";
+    if (["healthy", "blocked", "not_configured", "unavailable"].indexOf(value.status) >= 0) {
+      return value.status;
+    }
+    if (value.state === "ok") return "healthy";
+    return value.state ? "blocked" : "unavailable";
+  }
+
+  function ConfigurationVerificationPanel() {
+    var state = useState(undefined);
+    var inventory = state[0];
+    var setInventory = state[1];
+    var errorState = useState("");
+    var error = errorState[0];
+    var setError = errorState[1];
+
+    function refresh() {
+      setError("");
+      return buildConfiguration().then(function (value) {
+        setInventory(value);
+      }).catch(function (caught) {
+        setInventory(null);
+        setError(errorText(caught));
+        throw caught;
+      });
+    }
+
+    useEffect(function () { refresh().catch(function () {}); }, []);
+    return createElement("section", { className: "daidala-config", "data-testid": "daidala-configuration-verification" },
+      createElement("header", { className: "daidala-config-header" },
+        createElement("div", null,
+          createElement("h2", null, "Configuration verification"),
+          createElement("p", { className: "daidala-workflow-meta" },
+            "Read-only persisted configuration and cross-object invariant status."
+          )
+        ),
+        createElement("button", { type: "button", onClick: function () { refresh().catch(function () {}); } }, "Refresh verification")
+      ),
+      error ? createElement("p", { className: "daidala-banner daidala-banner-error" }, error) : null,
+      inventory === undefined
+        ? createElement("p", { className: "daidala-state daidala-state-loading" }, "Loading configuration verification")
+        : inventory === null
+          ? null
+          : createElement(React.Fragment, null,
+              createElement("article", { className: "daidala-github-project-card" },
+                createElement("h3", null, "Checkout policy"),
+                createElement("p", { className: "daidala-workflow-meta" }, "Root: " + inventory.checkouts.root),
+                createElement("p", { className: "daidala-workflow-meta" }, "Mode: " + inventory.checkouts.mode + " · TTL: " + inventory.checkouts.ttl_hours + " hours")
+              ),
+              inventory.checkouts.mode !== "disabled"
+                ? createElement("p", { className: "daidala-banner daidala-banner-warning" },
+                    "Manual stale refresh may wipe or back up clean local data; it never runs during admission."
+                  )
+                : null,
+              inventory.registrations.length
+                ? inventory.registrations.map(function (registration) {
+                    var checkout = registration.checkout || {};
+                    var project = registration.github_project || {};
+                    var intake = registration.intake || {};
+                    var evaluator = registration.evaluator || {};
+                    var notification = registration.notification || {};
+                    return createElement("article", { className: "daidala-github-project-card", key: registration.project_id },
+                      createElement("h3", null, registration.project_id),
+                      createElement("p", { className: "daidala-workflow-meta" }, "Derived checkout: " + inventory.checkouts.root + "/" + registration.project_id),
+                      createElement("p", { className: "daidala-workflow-meta" }, "Checkout: " + configurationStatus(checkout) + (checkout.state && checkout.state !== "ok" ? " · " + checkout.state : "")),
+                      createElement("p", { className: "daidala-workflow-meta" }, "GitHub Project: " + configurationStatus(project) + (project.owner ? " · " + project.owner + " #" + project.project_number : "") + (project.node_id_configured ? " · identity recorded" : "")),
+                      createElement("p", { className: "daidala-workflow-meta" }, "GitHub intake: " + configurationStatus(intake) + (intake.reason ? " · " + intake.reason : "")),
+                      createElement("p", { className: "daidala-workflow-meta" }, "Evaluator: " + configurationStatus(evaluator) + " · " + (evaluator.backend || "unavailable") + " · " + (evaluator.network || "unavailable")),
+                      createElement("p", { className: "daidala-workflow-meta" }, "Notifications: " + configurationStatus(notification) + " · " + (notification.adapter || "unavailable") + " · destination " + (notification.destination_configured ? "configured" : "missing"))
+                    );
+                  })
+                : createElement("p", { className: "daidala-state daidala-state-empty" }, "No registered projects")
+            )
     );
   }
 

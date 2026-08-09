@@ -1684,8 +1684,8 @@ and cancellation belong only to Phase 3.
    registered `(project_id, <root>/<project_id>/)` pair, the persisted
    `checkouts.yaml` mapping (`root`, `mode`, `ttl_hours`), each zero-or-one GitHub Project
    owner/number/node-ID state, sanitized intake-capability health from strict
-   prerequisite evidence, evaluator backend
-   + network, notification adapter + target alias + destination-presence boolean,
+   prerequisite evidence, evaluator backend + network, notification adapter +
+   destination-presence boolean,
    and `CheckoutStatus` summaries. The route is added to the closed route
    inventory assertion in `tests/test_dashboard_api.py` alongside the other
    `/configuration` consumers. It must not return environment-variable

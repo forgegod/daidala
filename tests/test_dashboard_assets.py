@@ -250,6 +250,37 @@ def test_bundle_exposes_confirmed_path_free_checkout_lifecycle_actions() -> None
     assert "repository_path" not in source
 
 
+def test_bundle_exposes_read_only_configuration_verification() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    required_strings = (
+        'API_BASE + "/configuration"',
+        "Verification",
+        "Configuration verification",
+        "Refresh verification",
+        "Read-only persisted configuration",
+        "Checkout policy",
+        "Derived checkout: ",
+        "GitHub intake: ",
+        "Evaluator: ",
+        "Notifications: ",
+        "node_id_configured",
+        "Manual stale refresh may wipe or back up clean local data",
+    )
+    for text in required_strings:
+        assert text in source, f"missing configuration verification contract text: {text}"
+
+    panel = source[
+        source.index("function ConfigurationVerificationPanel"):
+        source.index("function ConstraintAuthoringPanel")
+    ]
+    assert 'data-testid": "daidala-configuration-verification"' in panel
+    assert "project_node_id" not in panel
+    assert ".daidala-banner-warning" in (DASHBOARD / "dist" / "style.css").read_text(
+        encoding="utf-8"
+    )
+
+
 def test_bundle_exposes_the_closed_inventory_backed_start_workflow_wizard() -> None:
     source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
 

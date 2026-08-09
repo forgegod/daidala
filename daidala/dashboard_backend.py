@@ -19,8 +19,11 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any, cast
 
+from .checkout_root import CheckoutRootError, CheckoutRootStore
+from .checkouts import CheckoutError, CheckoutManager
 from .constraints import (
     CONSTRAINTS_SCHEMA,
     DEFAULT_CONSTRAINT_TEMPLATE,
@@ -28,12 +31,21 @@ from .constraints import (
     MAX_CONSTRAINT_BYTES,
     MAX_CONSTRAINTS_PER_SCOPE,
 )
+from .errors import PolicyViolationError
+from .github_project_links import GitHubProjectLinkError, GitHubProjectLinksStore
 from .locations import resolve_data_root
 from .packs import load_pack
+from .prerequisites import parse_prerequisite_evidence, prerequisite_evidence_path
+from .profile_files import ProfileFileError, read_private_text
 from .recommendations import (
     ConstraintView,
     KanbanSnapshot,
     derive_recommendations,
+)
+from .registrations import (
+    ControllerRegistration,
+    list_controller_registrations,
+    registration_path,
 )
 from .revision import build_review_packet
 from .service import ServiceError, WorkflowService
@@ -65,6 +77,107 @@ class UnknownWorkflowError(DashboardBackendError):
 
 ServiceFactory = Callable[[], WorkflowService]
 CardDetailProvider = Callable[[str, str], dict[str, Any]]
+ConfigurationProvider = Callable[[], dict[str, Any]]
+
+
+def _intake_configuration_status(
+    registration: ControllerRegistration, data_root: Path
+) -> dict[str, object]:
+    evidence_path = prerequisite_evidence_path(
+        registration_path(data_root, registration.project_id)
+    )
+    try:
+        evidence = parse_prerequisite_evidence(
+            read_private_text(
+                evidence_path,
+                maximum_bytes=65_536,
+                label="prerequisite evidence",
+            )
+        )
+    except FileNotFoundError:
+        return {"status": "not_configured", "reason": "prerequisite evidence is missing"}
+    except ProfileFileError:
+        return {"status": "unavailable", "reason": "prerequisite evidence is unavailable"}
+    except PolicyViolationError:
+        return {"status": "blocked", "reason": "prerequisite evidence is malformed"}
+    if evidence.project_id != registration.project_id:
+        return {"status": "blocked", "reason": "prerequisite evidence project does not match"}
+    capability = next(
+        (
+            row
+            for row in evidence.credential_capabilities
+            if row.alias == registration.intake_credential and row.capability == "github-intake"
+        ),
+        None,
+    )
+    if capability is None:
+        return {"status": "blocked", "reason": "GitHub intake capability is not recorded"}
+    required = {"read-organization", "read-project", "read-public-repository"}
+    if required.issubset(set(capability.allowed)):
+        return {"status": "healthy"}
+    return {"status": "blocked", "reason": "GitHub intake capability is incomplete"}
+
+
+def _configuration_projection() -> dict[str, Any]:
+    """Build the one persisted, credential-minimal configuration snapshot."""
+
+    data_root = resolve_data_root().resolve()
+    try:
+        registrations = list_controller_registrations(data_root)
+        config = CheckoutRootStore(data_root).read()
+        checkouts = {
+            row.project_id: row.to_dict()
+            for row in CheckoutManager(data_root).statuses(registrations)
+        }
+        links = {
+            row.project_id: row
+            for row in GitHubProjectLinksStore(data_root).read(registrations)
+        }
+    except (
+        CheckoutError,
+        CheckoutRootError,
+        GitHubProjectLinkError,
+        PolicyViolationError,
+    ) as error:
+        raise DashboardBackendError(str(error)) from error
+
+    projected = []
+    for registration in registrations:
+        link = links.get(registration.project_id)
+        github_project: dict[str, object] = (
+            {"status": "not_configured"}
+            if link is None
+            else {
+                "status": "healthy",
+                "owner": link.owner,
+                "project_number": link.project_number,
+                "node_id_configured": bool(link.project_node_id),
+            }
+        )
+        projected.append(
+            {
+                "project_id": registration.project_id,
+                "checkout": checkouts.get(
+                    registration.project_id,
+                    {"state": "unavailable", "reason": "checkout status is unavailable"},
+                ),
+                "github_project": github_project,
+                "intake": _intake_configuration_status(registration, data_root),
+                "evaluator": {
+                    "status": "healthy",
+                    "backend": registration.evaluator_backend,
+                    "network": registration.evaluator_network,
+                },
+                "notification": {
+                    "status": (
+                        "healthy" if registration.notification_destination else "not_configured"
+                    ),
+                    "adapter": registration.notification_adapter,
+                    "destination_configured": bool(registration.notification_destination),
+                },
+            }
+        )
+    return {"checkouts": config.to_dict()["checkouts"], "registrations": projected}
 
 
 class DashboardBackend:
@@ -75,9 +188,11 @@ class DashboardBackend:
         *,
         service_factory: ServiceFactory,
         card_detail_provider: CardDetailProvider | None = None,
+        configuration_provider: ConfigurationProvider | None = None,
     ) -> None:
         self._service_factory = service_factory
         self._card_detail_provider = card_detail_provider
+        self._configuration_provider = configuration_provider
 
     @property
     def service(self) -> WorkflowService:
@@ -125,6 +240,12 @@ class DashboardBackend:
         return cls(service_factory=lambda: service)
 
     # ---- endpoints ----------------------------------------------------
+
+    def configuration(self) -> dict[str, Any]:
+        """Return the profile-safe persisted-configuration projection."""
+
+        provider = self._configuration_provider or _configuration_projection
+        return provider()
 
     def prerequisites(self) -> dict[str, Any]:
         """Return pack metadata and the profile-safe workflow inventory."""

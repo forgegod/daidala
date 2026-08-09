@@ -70,6 +70,7 @@ def test_router_exports_all_phase_two_routes() -> None:
     for name in (
         "health",
         "prerequisites",
+        "configuration",
         "registrations",
         "github_project_links",
         "github_project_link",
@@ -174,6 +175,7 @@ assert api_module.router is not None
 def test_router_source_exposes_only_closed_mutation_routes() -> None:
     source = MODULE.read_text(encoding="utf-8")
 
+    assert '@router.get("/configuration")' in source
     assert '@router.put("/github-project-links/{project_id}")' in source
     assert '@router.delete("/github-project-links/{project_id}")' in source
     assert '@router.put("/checkout-root")' in source
@@ -1158,6 +1160,52 @@ def test_registration_projection_is_path_free_for_project_link_ui(
         }
     ]
     assert registration.checkout not in json.dumps(payload)
+
+
+def test_configuration_route_delegates_to_the_profile_safe_backend() -> None:
+    api = load_api()
+    expected = {
+        "checkouts": {"root": "/safe/checkouts", "mode": "wipe-if-clean", "ttl_hours": 24},
+        "registrations": [
+            {
+                "project_id": "forgegod-daidala",
+                "checkout": {
+                    "project_id": "forgegod-daidala",
+                    "state": "ok",
+                    "path_exists": True,
+                },
+                "github_project": {
+                    "status": "healthy",
+                    "owner": "forgegod",
+                    "project_number": 3,
+                    "node_id_configured": True,
+                },
+                "intake": {"status": "healthy"},
+                "evaluator": {
+                    "status": "healthy",
+                    "backend": "restricted-container",
+                    "network": "denied-by-default",
+                },
+                "notification": {
+                    "status": "healthy",
+                    "adapter": "hermes-gateway",
+                    "destination_configured": True,
+                },
+            }
+        ],
+    }
+
+    class Backend:
+        def __init__(self, *, service_factory: object) -> None:
+            self.service_factory = service_factory
+
+        def configuration(self) -> dict[str, object]:
+            return expected
+
+    api.__dict__["DashboardBackend"] = Backend
+    payload = api.configuration()
+
+    assert payload == expected
 
 
 def test_project_link_verify_returns_only_sanitized_session_result(tmp_path: Path) -> None:

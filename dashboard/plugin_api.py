@@ -31,6 +31,7 @@ Supervision endpoints include:
 - ``POST /api/plugins/daidala/constraints/preview``
 - ``GET  /api/plugins/daidala/constraints/sources``
 - ``GET  /api/plugins/daidala/constraints/sources/{source_name}``
+- ``GET  /api/plugins/daidala/configuration``
 - ``GET  /api/plugins/daidala/registrations``
 - ``GET  /api/plugins/daidala/github-project-links``
 - ``GET  /api/plugins/daidala/github-project-links/{project_id}``
@@ -230,6 +231,16 @@ def _project_link_store() -> GitHubProjectLinksStore:
 
 def _checkout_manager() -> CheckoutManager:
     return CheckoutManager(resolve_data_root().resolve())
+
+
+@router.get("/configuration")
+def configuration() -> dict[str, Any]:
+    """Return one read-only persisted-configuration verification snapshot."""
+
+    try:
+        return DashboardBackend(service_factory=service_factory).configuration()
+    except DashboardBackendError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
 
 
 def _link_preview_digest(link: GitHubProjectLink, store_digest: str) -> str:
