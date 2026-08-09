@@ -1038,3 +1038,101 @@ def test_default_service_is_process_cached_to_avoid_concurrent_store_initializat
 
     assert services == [service] * worker_count
     assert calls == 1
+
+
+def test_registration_projection_is_path_free_for_project_link_ui(
+    tmp_path: Path,
+) -> None:
+    api = load_api()
+    registration = types.SimpleNamespace(
+        project_id="forgegod-daidala",
+        controller_profile="controller",
+        board="daidala",
+        repository_canonical="forgegod/daidala",
+        verified_remote="git@github.com:forgegod/daidala.git",
+        intake_credential="github-daidala-read",
+        notification_adapter="hermes-gateway",
+        notification_target="attended-daidala",
+        evaluator_backend="restricted-container",
+        evaluator_network="denied-by-default",
+        checkout="/private/checkouts/forgegod-daidala",
+    )
+
+    class CheckoutRoot:
+        def __init__(self, _data_root: Path) -> None:
+            pass
+
+        def read(self) -> object:
+            return types.SimpleNamespace(root=Path("/private/checkouts"))
+
+    api.__dict__["_current_registrations"] = lambda: (registration,)
+    api.__dict__["CheckoutRootStore"] = CheckoutRoot
+    api.__dict__["resolve_data_root"] = lambda: tmp_path
+
+    payload = api.registrations()
+
+    assert payload["registrations"] == [
+        {
+            "project_id": "forgegod-daidala",
+            "controller_profile": "controller",
+            "board": "daidala",
+            "repository_canonical": "forgegod/daidala",
+            "verified_remote": "git@github.com:forgegod/daidala.git",
+            "intake_credential": "github-daidala-read",
+            "notification_adapter": "hermes-gateway",
+            "notification_target": "attended-daidala",
+            "evaluator_backend": "restricted-container",
+            "evaluator_network": "denied-by-default",
+            "checkout_match": True,
+        }
+    ]
+    assert registration.checkout not in json.dumps(payload)
+
+
+def test_project_link_verify_returns_only_sanitized_session_result(tmp_path: Path) -> None:
+    api = load_api()
+    registration = types.SimpleNamespace(project_id="forgegod-daidala")
+    link = api.GitHubProjectLink(
+        project_id="forgegod-daidala",
+        owner="forgegod",
+        project_number=3,
+        project_node_id="PVT_kwDOB7_R_5m",
+    )
+
+    class Store:
+        def read(self, _registrations: object) -> tuple[object, ...]:
+            return (link,)
+
+    verifier = types.SimpleNamespace(
+        verify=lambda **_kwargs: (
+            link,
+            {
+                "owner": "forgegod",
+                "project_number": 3,
+                "project_node_id": "PVT_kwDOB7_R_5m",
+                "title": "Daidala delivery",
+                "url": "https://github.com/orgs/forgegod/projects/3",
+            },
+        )
+    )
+    api.__dict__["_current_registrations"] = lambda: (registration,)
+    api.__dict__["_registered_project"] = lambda _project_id: registration
+    api.__dict__["_project_link_store"] = Store
+    api.__dict__["github_project_verifier_factory"] = lambda: verifier
+    api.__dict__["registration_path"] = lambda _root, _project_id: tmp_path / "registration.yaml"
+    api.__dict__["resolve_data_root"] = lambda: tmp_path
+
+    payload = api.github_project_link_verify("forgegod-daidala")
+
+    assert payload == {
+        "healthy": True,
+        "link": link.to_dict(),
+        "project": {
+            "owner": "forgegod",
+            "project_number": 3,
+            "project_node_id": "PVT_kwDOB7_R_5m",
+            "title": "Daidala delivery",
+            "url": "https://github.com/orgs/forgegod/projects/3",
+        },
+    }
+    assert "token" not in json.dumps(payload).lower()

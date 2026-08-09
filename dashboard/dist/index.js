@@ -9,7 +9,8 @@
  *
  * Live state is polled on a fixed >= 5 second cadence while the page is visible;
  * the timer is paused when the tab is hidden. Mutations are limited to the named
- * pack, board, setup, constraint, exact-plan, and review preview-confirm routes.
+ * pack, board, setup, constraint, GitHub Project link, exact-plan, and review
+ * preview-confirm routes.
  *
  * The Hermes dashboard host invokes this bundle once per session after
  * authenticating and discovering the manifest. The SDK exposes React and
@@ -48,6 +49,28 @@
   function postJson(url, payload) {
     return SDK.fetchJSON(url, {
       method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+  }
+
+  function putJson(url, payload) {
+    return SDK.fetchJSON(url, {
+      method: "PUT",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+  }
+
+  function deleteJson(url, payload) {
+    return SDK.fetchJSON(url, {
+      method: "DELETE",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json"
@@ -103,6 +126,45 @@
     return fetchJson(API_BASE + "/packs").then(function (payload) {
       return payload && Array.isArray(payload.packs) ? payload.packs : [];
     });
+  }
+
+  function buildRegistrations() {
+    return fetchJson(API_BASE + "/registrations").then(function (payload) {
+      return payload && Array.isArray(payload.registrations) ? payload.registrations : [];
+    });
+  }
+
+  function buildGitHubProjectLinks() {
+    return fetchJson(API_BASE + "/github-project-links").then(function (payload) {
+      return payload && Array.isArray(payload.links) ? payload.links : [];
+    });
+  }
+
+  function previewGitHubProjectLink(payload) {
+    return postJson(API_BASE + "/github-project-links/preview", payload);
+  }
+
+  function verifyGitHubProjectLink(projectId) {
+    return postJson(
+      API_BASE + "/github-project-links/" + encodeURIComponent(projectId) + "/verify",
+      {}
+    );
+  }
+
+  function readGitHubProjectLink(projectId) {
+    return fetchJson(API_BASE + "/github-project-links/" + encodeURIComponent(projectId));
+  }
+
+  function replaceGitHubProjectLink(projectId, payload) {
+    return putJson(
+      API_BASE + "/github-project-links/" + encodeURIComponent(projectId), payload
+    );
+  }
+
+  function removeGitHubProjectLink(projectId, payload) {
+    return deleteJson(
+      API_BASE + "/github-project-links/" + encodeURIComponent(projectId), payload
+    );
   }
 
   function validatePack(packName) {
@@ -1270,6 +1332,396 @@
     };
   }
 
+  function ConfigurationPanel() {
+    var tabState = useState("packs");
+    var tab = tabState[0];
+    var setTab = tabState[1];
+
+    return createElement(
+      "section",
+      { className: "daidala-config-section", "data-testid": "daidala-config" },
+      createElement(
+        "header",
+        { className: "daidala-config-section-header" },
+        createElement("p", { className: "daidala-eyebrow" }, "Configuration"),
+        createElement("p", { className: "daidala-workflow-meta" },
+          "Profile-local settings use server-derived identity and explicit preview confirmation."
+        )
+      ),
+      createElement(
+        "div",
+        { className: "daidala-config-tabs", role: "tablist", "aria-label": "Configuration" },
+        createElement("button", {
+          type: "button", role: "tab", "aria-selected": tab === "packs",
+          className: tab === "packs" ? "is-selected" : "",
+          onClick: function () { setTab("packs"); }
+        }, "Packs"),
+        createElement("button", {
+          type: "button", role: "tab", "aria-selected": tab === "github-projects",
+          className: tab === "github-projects" ? "is-selected" : "",
+          onClick: function () { setTab("github-projects"); }
+        }, "GitHub Projects")
+      ),
+      tab === "packs"
+        ? createElement(PackBrowser)
+        : createElement(GitHubProjectLinksPanel)
+    );
+  }
+
+  function GitHubProjectLinksPanel() {
+    var registrationsState = useState(undefined);
+    var registrations = registrationsState[0];
+    var setRegistrations = registrationsState[1];
+    var linksState = useState(undefined);
+    var links = linksState[0];
+    var setLinks = linksState[1];
+    var errorState = useState("");
+    var error = errorState[0];
+    var setError = errorState[1];
+
+    function refreshLinks() {
+      setError("");
+      return Promise.all([buildRegistrations(), buildGitHubProjectLinks()])
+        .then(function (results) {
+          setRegistrations(results[0]);
+          setLinks(results[1]);
+        })
+        .catch(function (caught) {
+          setError(errorText(caught));
+          setRegistrations([]);
+          setLinks([]);
+          throw caught;
+        });
+    }
+
+    useEffect(function () {
+      refreshLinks().catch(function () {});
+    }, []);
+
+    return createElement(
+      "section",
+      { className: "daidala-config", "data-testid": "daidala-github-project-links" },
+      createElement(
+        "header",
+        { className: "daidala-config-header" },
+        createElement("div", null,
+          createElement("h2", null, "GitHub Projects"),
+          createElement("p", { className: "daidala-workflow-meta" },
+            "One verified Projects v2 link per registered project. Links are profile-local metadata."
+          )
+        ),
+        createElement("button", { type: "button", onClick: function () { refreshLinks().catch(function () {}); } }, "Refresh links")
+      ),
+      registrations === undefined || links === undefined
+        ? createElement("p", { className: "daidala-state daidala-state-loading" }, "Loading GitHub Projects")
+        : error
+          ? createElement("p", { className: "daidala-banner daidala-banner-error" }, error)
+          : registrations.length === 0
+            ? createElement("p", { className: "daidala-state daidala-state-empty" }, "No registered projects")
+            : createElement(
+                "div",
+                { className: "daidala-github-project-links-grid" },
+                registrations.map(function (registration) {
+                  var link = links.filter(function (row) {
+                    return row.project_id === registration.project_id;
+                  })[0] || null;
+                  return createElement(GitHubProjectLinkCard, {
+                    key: registration.project_id,
+                    registration: registration,
+                    link: link,
+                    onChanged: refreshLinks
+                  });
+                })
+              )
+    );
+  }
+
+  function linkIssueLabel(message) {
+    var normalized = String(message || "").toLowerCase();
+    if (normalized.indexOf("credential") !== -1 || normalized.indexOf("binding") !== -1 || normalized.indexOf("capability") !== -1) {
+      return "GitHub Project read capability blocked";
+    }
+    if (normalized.indexOf("node") !== -1 || normalized.indexOf("stale") !== -1) {
+      return "GitHub Project link is stale";
+    }
+    if (normalized.indexOf("not found") !== -1 || normalized.indexOf("inaccessible") !== -1) {
+      return "GitHub Project is unavailable";
+    }
+    return "GitHub Project operation blocked";
+  }
+
+  function linkIssueMessage(reason) {
+    var message = errorText(reason);
+    var payloadStart = message.indexOf("{");
+    if (payloadStart !== -1) {
+      try {
+        var payload = JSON.parse(message.slice(payloadStart));
+        if (payload && typeof payload.detail === "string") message = payload.detail;
+      } catch (_error) {}
+    }
+    return linkIssueLabel(message) + ": " + message;
+  }
+
+  function linkSummary(link) {
+    return link
+      ? link.owner + " · #" + String(link.project_number) + " · " + link.project_node_id
+      : "No GitHub Project configured";
+  }
+
+  function GitHubProjectLinkCard(props) {
+    var registration = props.registration;
+    var ownerState = useState(props.link ? props.link.owner : "");
+    var owner = ownerState[0];
+    var setOwner = ownerState[1];
+    var numberState = useState(props.link ? String(props.link.project_number) : "");
+    var number = numberState[0];
+    var setNumber = numberState[1];
+    var previewState = useState(null);
+    var preview = previewState[0];
+    var setPreview = previewState[1];
+    var verificationState = useState(null);
+    var verification = verificationState[0];
+    var setVerification = verificationState[1];
+    var removalState = useState(null);
+    var removal = removalState[0];
+    var setRemoval = removalState[1];
+    var applyConfirmedState = useState(false);
+    var applyConfirmed = applyConfirmedState[0];
+    var setApplyConfirmed = applyConfirmedState[1];
+    var removeConfirmedState = useState(false);
+    var removeConfirmed = removeConfirmedState[0];
+    var setRemoveConfirmed = removeConfirmedState[1];
+    var busyState = useState(false);
+    var busy = busyState[0];
+    var setBusy = busyState[1];
+    var messageState = useState("");
+    var message = messageState[0];
+    var setMessage = messageState[1];
+
+    function payload() {
+      var parsedNumber = number.trim();
+      if (!owner.trim() || !/^[1-9][0-9]*$/.test(parsedNumber)) return null;
+      return {
+        project_id: registration.project_id,
+        owner: owner.trim(),
+        project_number: Number(parsedNumber)
+      };
+    }
+
+    function invalidatePreview() {
+      setPreview(null);
+      setApplyConfirmed(false);
+      setRemoval(null);
+      setRemoveConfirmed(false);
+    }
+
+    function previewChange() {
+      var request = payload();
+      if (!request) {
+        setMessage("Owner and a positive Project number are required.");
+        return;
+      }
+      setBusy(true);
+      setMessage("");
+      previewGitHubProjectLink(request)
+        .then(function (value) {
+          setPreview(value);
+          setVerification(null);
+          setRemoval(null);
+          setApplyConfirmed(false);
+        })
+        .catch(function (caught) {
+          setPreview(null);
+          setMessage(linkIssueMessage(caught));
+        })
+        .finally(function () { setBusy(false); });
+    }
+
+    function verifyLink() {
+      if (!props.link) return;
+      setBusy(true);
+      setMessage("");
+      verifyGitHubProjectLink(registration.project_id)
+        .then(function (value) {
+          setVerification(value);
+          if (value.healthy) setMessage("GitHub Project verified for this session.");
+          else setMessage(linkIssueLabel(value.reason) + ": " + value.reason);
+        })
+        .catch(function (caught) {
+          setVerification(null);
+          setMessage(linkIssueMessage(caught));
+        })
+        .finally(function () { setBusy(false); });
+    }
+
+    function applyLink() {
+      if (!preview || !applyConfirmed) return;
+      setBusy(true);
+      setMessage("");
+      replaceGitHubProjectLink(registration.project_id, {
+        owner: preview.link.owner,
+        project_number: preview.link.project_number,
+        preview_digest: preview.preview_digest,
+        confirm: true
+      })
+        .then(function () {
+          setOwner(preview.link.owner);
+          setNumber(String(preview.link.project_number));
+          setPreview(null);
+          setApplyConfirmed(false);
+          setVerification(null);
+          setMessage("GitHub Project link saved.");
+          return props.onChanged();
+        })
+        .catch(function (caught) {
+          setMessage(linkIssueMessage(caught));
+        })
+        .finally(function () { setBusy(false); });
+    }
+
+    function previewRemoval() {
+      if (!props.link) return;
+      setBusy(true);
+      setMessage("");
+      readGitHubProjectLink(registration.project_id)
+        .then(function (value) {
+          setRemoval(value);
+          setPreview(null);
+          setRemoveConfirmed(false);
+        })
+        .catch(function (caught) {
+          setRemoval(null);
+          setMessage(linkIssueMessage(caught));
+        })
+        .finally(function () { setBusy(false); });
+    }
+
+    function removeLink() {
+      if (!removal || !removeConfirmed) return;
+      setBusy(true);
+      setMessage("");
+      removeGitHubProjectLink(registration.project_id, {
+        delete_preview_digest: removal.delete_preview_digest,
+        confirm: true
+      })
+        .then(function () {
+          setOwner("");
+          setNumber("");
+          setRemoval(null);
+          setRemoveConfirmed(false);
+          setVerification(null);
+          setMessage("GitHub Project link removed.");
+          return props.onChanged();
+        })
+        .catch(function (caught) {
+          setMessage(linkIssueMessage(caught));
+        })
+        .finally(function () { setBusy(false); });
+    }
+
+    return createElement(
+      "article",
+      {
+        className: "daidala-github-project-link",
+        "data-testid": "daidala-github-project-link",
+        "data-project-id": registration.project_id
+      },
+      createElement("header", { className: "daidala-github-project-link-header" },
+        createElement("div", null,
+          createElement("h3", null, registration.project_id),
+          props.link
+            ? createElement("p", { className: "daidala-workflow-meta" }, linkSummary(props.link))
+            : null
+        ),
+        props.link
+          ? createElement("button", { type: "button", disabled: busy, onClick: verifyLink }, "Verify")
+          : null
+      ),
+      createElement("section", { className: "daidala-github-registration-context" },
+        createElement("h4", null, "Registration context"),
+        createElement("dl", null,
+          createElement("div", null, createElement("dt", null, "Repository"), createElement("dd", null, registration.repository_canonical)),
+          createElement("div", null, createElement("dt", null, "Verified remote"), createElement("dd", null, registration.verified_remote)),
+          createElement("div", null, createElement("dt", null, "Intake alias"), createElement("dd", null, registration.intake_credential)),
+          createElement("div", null, createElement("dt", null, "Checkout configuration"), createElement("dd", null,
+            registration.checkout_match ? "Matches registration" : "Does not match registration"
+          ))
+        )
+      ),
+      props.link
+        ? createElement("section", { className: "daidala-github-current-link" },
+            createElement("h4", null, "Current Projects v2 link"),
+            createElement("dl", null,
+              createElement("div", null, createElement("dt", null, "Owner / number"), createElement("dd", null, props.link.owner + " · #" + props.link.project_number)),
+              createElement("div", null, createElement("dt", null, "Node ID"), createElement("dd", { className: "daidala-skill-digest" }, props.link.project_node_id))
+            ),
+            createElement("button", { type: "button", disabled: busy, onClick: previewRemoval }, "Preview removal")
+          )
+        : createElement("p", { className: "daidala-state daidala-state-empty" }, "No GitHub Project configured"),
+      createElement("section", { className: "daidala-github-link-form" },
+        createElement("h4", null, props.link ? "Edit GitHub Project link" : "Add GitHub Project link"),
+        createElement("label", { className: "daidala-github-field" },
+          createElement("span", null, "Projects owner"),
+          createElement("input", {
+            value: owner,
+            maxLength: 39,
+            onChange: function (event) { setOwner(event.target.value); invalidatePreview(); },
+            "aria-label": "GitHub Projects owner for " + registration.project_id
+          })
+        ),
+        createElement("label", { className: "daidala-github-field" },
+          createElement("span", null, "Project number"),
+          createElement("input", {
+            type: "number", min: 1, step: 1, value: number,
+            onChange: function (event) { setNumber(event.target.value); invalidatePreview(); },
+            "aria-label": "GitHub Project number for " + registration.project_id
+          })
+        ),
+        createElement("button", { type: "button", disabled: busy, onClick: previewChange }, "Preview link change")
+      ),
+      preview
+        ? createElement("section", { className: "daidala-github-link-preview" },
+            createElement("h4", null, "Preview link change"),
+            createElement("p", { className: "daidala-skill-digest" }, "Preview digest " + preview.preview_digest),
+            createElement("p", null, "Current: " + linkSummary(props.link)),
+            createElement("p", null, "Proposed: " + linkSummary(preview.link)),
+            createElement("p", null, "Resolved Project: " + (preview.project.title || "title unavailable")),
+            createElement("p", null, "Resolved URL: " + (preview.project.url || "URL unavailable")),
+            createElement("label", { className: "daidala-pack-confirm" },
+              createElement("input", {
+                type: "checkbox", checked: applyConfirmed,
+                onChange: function (event) { setApplyConfirmed(event.target.checked); }
+              }),
+              "I confirm applying this exact verified link"
+            ),
+            createElement("button", { type: "button", disabled: busy || !applyConfirmed, onClick: applyLink }, "Apply link")
+          )
+        : null,
+      removal
+        ? createElement("section", { className: "daidala-github-link-preview" },
+            createElement("h4", null, "Remove GitHub Project link"),
+            createElement("p", null, linkSummary(removal.link)),
+            createElement("label", { className: "daidala-pack-confirm" },
+              createElement("input", {
+                type: "checkbox", checked: removeConfirmed,
+                onChange: function (event) { setRemoveConfirmed(event.target.checked); }
+              }),
+              "I confirm removing this GitHub Project link"
+            ),
+            createElement("button", { type: "button", disabled: busy || !removeConfirmed, onClick: removeLink }, "Remove link")
+          )
+        : null,
+      verification
+        ? createElement("p", { className: verification.healthy ? "daidala-github-verified" : "daidala-banner daidala-banner-error" },
+            verification.healthy
+              ? "GitHub Project verified for this session: " + (verification.project.title || "title unavailable")
+              : linkIssueLabel(verification.reason) + ": " + verification.reason
+          )
+        : null,
+      message ? createElement("p", { role: "status" }, message) : null
+    );
+  }
+
   function PackBrowser() {
     var packsState = useState(undefined);
     var packs = packsState[0];
@@ -1955,7 +2407,7 @@
             })
           )
         : null,
-      createElement(PackBrowser),
+      createElement(ConfigurationPanel),
       firstLoad
         ? createElement(
             "p",

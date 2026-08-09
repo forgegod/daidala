@@ -13,9 +13,9 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   cancellation preview/apply routes, registration projections, checkout-root
   preview/apply, and GitHub Projects v2 link read/verify/preview/apply routes.
 - `dist/index.js` renders workflow progress, the inventory-backed Start workflow
-  wizard, Config → Packs readiness/content, decision-first supervision, exact-plan
-  approval, literal source-bound review evidence/disposition, blocked-card
-  remediation, and previewed cancellation.
+  wizard, Config → Packs readiness/content and GitHub Projects v2 link
+  management, decision-first supervision, exact-plan approval, literal source-bound
+  review evidence/disposition, blocked-card remediation, and previewed cancellation.
 - `dist/style.css` adapts the extension to host themes and narrow layouts.
 
 ## Local Contracts
