@@ -18,7 +18,7 @@
 
 **Produces:** targeted blocked-card comment/unblock actions and a digest-bound cancellation preview/confirm surface over the existing public Hermes Kanban and `WorkflowService.cancel` boundaries.
 
-**Status:** in-progress — Phase 0 complete (commit pending); P0210 Phase 2 is complete and human implementation approval is recorded for Phase 0.
+**Status:** complete — Phase 0 is implemented and verified at `721266b`; P0210 Phase 2 is complete and human implementation approval was recorded for Phase 0.
 
 ## Goal
 
