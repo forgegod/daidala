@@ -16,7 +16,7 @@
 
 **Produces:** clean-host parity for bundled `packs list` and `packs validate` on standalone and native command paths, with profile-root resolution retained only for profile-backed pack operations.
 
-**Status:** in-progress — human implementation approval is recorded for the branch-integration remediation.
+**Status:** complete — Phase 0 is implemented at `cf143a3`; the local full gate passed (534 tests, release build, clean-wheel audit) and PR #17 passed Python 3.11, Python 3.12, and package-audit checks.
 
 ## Goal
 
@@ -24,15 +24,15 @@ Make bundled pack discovery and validation runnable from an installed wheel with
 
 ## Current state
 
-- PR #17 failed on Python 3.11 and 3.12 because `_run_pack_operation` constructs `ProfileSkillContentRegistry(resolve_data_root() / "skills")` before branching for `list` or `validate`.
-- The package audit independently reproduces the same defect from a clean wheel virtual environment with no Hermes installation.
+- `_run_pack_operation` dispatches bundled `list` and `validate` before constructing profile-backed inventory.
+- A clean wheel virtual environment without Hermes validates both bundled packs; PR #17 confirms the same result on Python 3.11 and 3.12.
 - `list` and `validate` consume bundled pack definitions only; `check`, `install`, and `update-plan` remain profile-backed.
 
 ## Phase table
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Defer profile-root resolution for stateless pack operations | in-progress | With root resolution forced to fail, standalone and native `packs list` and `packs validate` retain identical successful JSON results; profile-backed operations retain their existing root requirement; the full release gate passes on CI. |
+| 0 | Defer profile-root resolution for stateless pack operations | done (`cf143a3`; local 534-test/release gate and PR #17 Python 3.11, Python 3.12, and package-audit checks passed) | With root resolution forced to fail, standalone and native `packs list` and `packs validate` retain identical successful JSON results; profile-backed operations retain their existing root requirement; the full release gate passes on CI. |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
 
