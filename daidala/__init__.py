@@ -22,6 +22,7 @@ def register(ctx) -> None:
         "daidala_pack_info": tools.pack_info,
         "daidala_start": tools.start,
         "daidala_status": tools.status,
+        "daidala_checkouts_status": tools.checkouts_status,
         "daidala_replace_constraints": tools.replace_constraints,
         "daidala_approve": tools.approve,
         "daidala_cancel": tools.cancel,

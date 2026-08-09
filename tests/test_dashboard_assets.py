@@ -188,6 +188,34 @@ def test_bundle_exposes_path_free_github_project_link_management() -> None:
     assert "repository_path" not in source
 
 
+def test_bundle_exposes_confirmed_path_free_checkout_lifecycle_actions() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    required_strings = (
+        'API_BASE + "/checkouts"',
+        '"/" + kind + "/preview"',
+        '"/" + pending.kind',
+        '"/checkouts/_backups/prune/preview"',
+        '"/checkouts/_backups/prune"',
+        '"/checkouts/policy/preview"',
+        '"/checkouts/policy"',
+        "Checkouts",
+        "Preview refresh",
+        "Preview adoption",
+        "Preview prune",
+        "Preview policy change",
+        "I confirm applying this exact checkout preview",
+        "Apply confirmed checkout action",
+    )
+    for text in required_strings:
+        assert text in source, f"missing checkout UI contract text: {text}"
+
+    assert 'data-testid": "daidala-checkouts"' in source
+    assert 'data-testid": "daidala-checkout-preview"' in source
+    assert "checkout_path" not in source
+    assert "repository_path" not in source
+
+
 def test_bundle_exposes_the_closed_inventory_backed_start_workflow_wizard() -> None:
     source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
 

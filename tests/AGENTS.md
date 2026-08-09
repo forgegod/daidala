@@ -45,6 +45,10 @@ completeness without touching a real Hermes profile.
   server-derived attended identity, literal diff rendering, preview/apply parity,
   single-ledger plan/review snapshot binding, stale or unchecked rejection, and
   successor-plan navigation without arbitrary dispatch, commit, or push authority.
+- Checkout lifecycle tests use fake Git boundaries and temporary working trees to
+  prove bounded NUL status parsing, receipt-TTL decisions, clone/swap rollback,
+  archive-before-wipe failure safety, clean unowned adoption, backup pruning, and
+  path-free digest-confirmed dashboard actions.
 - Fake host-dispatch tests for ledger-owned approval, worker rejection,
   restart-safe plan-parented post-gate graphs, and idempotent Kanban mapping.
 - Review-disposition tests prove structured review bounds, exact evidence-tuple

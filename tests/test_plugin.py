@@ -38,6 +38,7 @@ def test_register_exposes_tool_and_namespaced_skill_source() -> None:
         "daidala_pack_info",
         "daidala_start",
         "daidala_status",
+        "daidala_checkouts_status",
         "daidala_replace_constraints",
         "daidala_approve",
         "daidala_cancel",

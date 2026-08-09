@@ -1489,8 +1489,9 @@ confirmation, and clean-tree safeguards. This phase does not alter admission.
      `subprocess.run` is pattern consistency, not that AGENTS citation.
      Decode paths with the filesystem encoding plus `surrogateescape`; do not
      split on spaces/newlines. Discard only the exact untracked marker record
-     after validating that its bytes are exactly `<project_id>\n`, its mode is
-     `0600`, and it is neither a symlink nor tracked/ignored.
+     after validating that its bytes equal `owner_marker_content(<project_id>)`
+     (the canonical JSON witness defined in **Checkout location decision**), its
+     mode is `0600`, and it is neither a symlink nor tracked/ignored.
      Any tracked/untracked row returns 409 before backup, clone, rename, or
      deletion. Ignored-only rows also abort `disabled`/`wipe-if-clean`; under
      `backup-then-wipe` they must be included in the archive before replacement;

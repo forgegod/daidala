@@ -7,9 +7,11 @@ import os
 from collections.abc import Callable
 from typing import Any
 
+from .checkouts import CheckoutManager
 from .kanban import KanbanGraphAdapter, ToolDispatcher
 from .locations import resolve_data_root
 from .packs import load_pack
+from .registrations import list_controller_registrations
 from .service import WorkflowService
 from .skills import pack_skill_digests
 from .state import WorkflowStage
@@ -148,6 +150,20 @@ def status(args: dict[str, Any], **kwargs: Any) -> str:
             _service_factory(), str(values["workflow_id"])
         ),
     )
+
+
+def checkouts_status(args: dict[str, Any], **kwargs: Any) -> str:
+    """Return report-only checkout status projections for future cron consumption."""
+
+    del kwargs
+
+    def operation(_values: dict[str, Any]) -> dict[str, Any]:
+        data_root = resolve_data_root().resolve()
+        manager = CheckoutManager(data_root)
+        registrations = list_controller_registrations(data_root)
+        return {"checkouts": [row.to_dict() for row in manager.statuses(registrations)]}
+
+    return _handle(args, allowed=set(), required=set(), operation=operation)
 
 
 def _combined_status(service: WorkflowService, workflow_id: str) -> dict[str, Any]:

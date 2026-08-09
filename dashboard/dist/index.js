@@ -1360,11 +1360,264 @@
           type: "button", role: "tab", "aria-selected": tab === "github-projects",
           className: tab === "github-projects" ? "is-selected" : "",
           onClick: function () { setTab("github-projects"); }
-        }, "GitHub Projects")
+        }, "GitHub Projects"),
+        createElement("button", {
+          type: "button", role: "tab", "aria-selected": tab === "checkouts",
+          className: tab === "checkouts" ? "is-selected" : "",
+          onClick: function () { setTab("checkouts"); }
+        }, "Checkouts")
       ),
       tab === "packs"
         ? createElement(PackBrowser)
-        : createElement(GitHubProjectLinksPanel)
+        : tab === "github-projects"
+          ? createElement(GitHubProjectLinksPanel)
+          : createElement(CheckoutManagerPanel)
+    );
+  }
+
+  function CheckoutManagerPanel() {
+    var state = useState(undefined);
+    var inventory = state[0];
+    var setInventory = state[1];
+    var errorState = useState("");
+    var error = errorState[0];
+    var setError = errorState[1];
+    var pendingState = useState(null);
+    var pending = pendingState[0];
+    var setPending = pendingState[1];
+    var confirmedState = useState(false);
+    var confirmed = confirmedState[0];
+    var setConfirmed = confirmedState[1];
+    var busyState = useState(false);
+    var busy = busyState[0];
+    var setBusy = busyState[1];
+    var policyModeState = useState("wipe-if-clean");
+    var policyMode = policyModeState[0];
+    var setPolicyMode = policyModeState[1];
+    var ttlState = useState("24");
+    var ttlHours = ttlState[0];
+    var setTtlHours = ttlState[1];
+
+    function refresh() {
+      setError("");
+      return fetchJson(API_BASE + "/checkouts")
+        .then(function (value) { setInventory(value); })
+        .catch(function (caught) {
+          setInventory(null);
+          setError(errorText(caught));
+          throw caught;
+        });
+    }
+
+    function previewCheckoutAction(projectId, kind) {
+      setBusy(true);
+      setError("");
+      return postJson(
+        API_BASE + "/checkouts/" + encodeURIComponent(projectId) + "/" + kind + "/preview",
+        {}
+      ).then(function (preview) {
+        setPending({ kind: kind, project_id: projectId, preview: preview });
+        setConfirmed(false);
+      }).catch(function (caught) {
+        setError(errorText(caught));
+        throw caught;
+      }).finally(function () { setBusy(false); });
+    }
+
+    function previewBackupPrune(name) {
+      setBusy(true);
+      setError("");
+      return postJson(API_BASE + "/checkouts/_backups/prune/preview", { filenames: [name] })
+        .then(function (preview) {
+          setPending({ kind: "backup-prune", filenames: [name], preview: preview });
+          setConfirmed(false);
+        }).catch(function (caught) {
+          setError(errorText(caught));
+          throw caught;
+        }).finally(function () { setBusy(false); });
+    }
+
+    function previewPolicy() {
+      var hours = Number(ttlHours);
+      setBusy(true);
+      setError("");
+      return postJson(API_BASE + "/checkouts/policy/preview", {
+        mode: policyMode,
+        ttl_hours: hours
+      }).then(function (preview) {
+        setPending({
+          kind: "policy",
+          mode: policyMode,
+          ttl_hours: hours,
+          preview: preview
+        });
+        setConfirmed(false);
+      }).catch(function (caught) {
+        setError(errorText(caught));
+        throw caught;
+      }).finally(function () { setBusy(false); });
+    }
+
+    function applyPending() {
+      if (!pending || !confirmed) {
+        return;
+      }
+      var request;
+      if (pending.kind === "backup-prune") {
+        request = postJson(API_BASE + "/checkouts/_backups/prune", {
+          filenames: pending.filenames,
+          preview_digest: pending.preview.preview_digest,
+          confirm: true
+        });
+      } else if (pending.kind === "policy") {
+        request = putJson(API_BASE + "/checkouts/policy", {
+          mode: pending.mode,
+          ttl_hours: pending.ttl_hours,
+          preview_digest: pending.preview.preview_digest,
+          confirm: true
+        });
+      } else {
+        request = postJson(
+          API_BASE + "/checkouts/" + encodeURIComponent(pending.project_id) + "/" + pending.kind,
+          { preview_digest: pending.preview.preview_digest, confirm: true }
+        );
+      }
+      setBusy(true);
+      setError("");
+      return request.then(function () {
+        setPending(null);
+        setConfirmed(false);
+        return refresh();
+      }).catch(function (caught) {
+        setError(errorText(caught));
+        throw caught;
+      }).finally(function () { setBusy(false); });
+    }
+
+    useEffect(function () { refresh().catch(function () {}); }, []);
+    return createElement(
+      "section",
+      { className: "daidala-config", "data-testid": "daidala-checkouts" },
+      createElement(
+        "header",
+        { className: "daidala-config-header" },
+        createElement("div", null,
+          createElement("h2", null, "Checkouts"),
+          createElement("p", { className: "daidala-workflow-meta" },
+            "Server-derived inventory. Every lifecycle change requires an exact preview and confirmation."
+          )
+        ),
+        createElement("button", {
+          type: "button", disabled: busy,
+          onClick: function () { refresh().catch(function () {}); }
+        }, "Refresh status")
+      ),
+      inventory === undefined
+        ? createElement("p", { className: "daidala-state daidala-state-loading" }, "Loading checkouts")
+        : error
+          ? createElement("p", { className: "daidala-banner daidala-banner-error" }, error)
+          : createElement(
+              "div",
+              { className: "daidala-github-project-links-grid" },
+              createElement("p", { className: "daidala-workflow-meta" },
+                "Policy: " + inventory.policy.mode + " · TTL: " + String(inventory.policy.ttl_hours) + " hours"
+              ),
+              createElement("div", { className: "daidala-config-actions" },
+                createElement("label", null, "Checkout policy ",
+                  createElement("select", {
+                    value: policyMode,
+                    onChange: function (event) {
+                      var nextMode = event.target.value;
+                      setPolicyMode(nextMode);
+                      if (nextMode === "disabled") {
+                        setTtlHours("0");
+                      } else if (ttlHours === "0") {
+                        setTtlHours("24");
+                      }
+                    }
+                  },
+                  createElement("option", { value: "disabled" }, "disabled"),
+                  createElement("option", { value: "wipe-if-clean" }, "wipe-if-clean"),
+                  createElement("option", { value: "backup-then-wipe" }, "backup-then-wipe"))
+                ),
+                createElement("label", null, "TTL hours ",
+                  createElement("input", {
+                    type: "number", min: "0", max: "8760", value: ttlHours,
+                    onChange: function (event) { setTtlHours(event.target.value); }
+                  })
+                ),
+                createElement("button", {
+                  type: "button", disabled: busy,
+                  onClick: function () { previewPolicy().catch(function () {}); }
+                }, "Preview policy change")
+              ),
+              inventory.checkouts.map(function (checkout) {
+                return createElement("article", { className: "daidala-github-project-card", key: checkout.project_id },
+                  createElement("h3", null, checkout.project_id),
+                  createElement("p", { className: "daidala-workflow-meta" },
+                    "Status: " + checkout.state + " · tracked " + String(checkout.tracked_count) +
+                    " · untracked " + String(checkout.untracked_count) +
+                    " · ignored " + String(checkout.ignored_count)
+                  ),
+                  checkout.recovery_required
+                    ? createElement("p", { className: "daidala-banner daidala-banner-error" },
+                        "A prior operation needs manual recovery before another action.")
+                    : createElement("div", { className: "daidala-config-actions" },
+                        createElement("button", {
+                          type: "button", disabled: busy,
+                          onClick: function () {
+                            previewCheckoutAction(checkout.project_id, "refresh").catch(function () {});
+                          }
+                        }, "Preview refresh"),
+                        checkout.state === "unowned"
+                          ? createElement("button", {
+                              type: "button", disabled: busy,
+                              onClick: function () {
+                                previewCheckoutAction(checkout.project_id, "adopt").catch(function () {});
+                              }
+                            }, "Preview adoption")
+                          : null
+                      )
+                );
+              }),
+              Array.isArray(inventory.backups) && inventory.backups.length
+                ? createElement("article", { className: "daidala-github-project-card" },
+                    createElement("h3", null, "Backups"),
+                    inventory.backups.map(function (name) {
+                      return createElement("div", { className: "daidala-config-actions", key: name },
+                        createElement("span", { className: "daidala-workflow-meta" }, name),
+                        createElement("button", {
+                          type: "button", disabled: busy,
+                          onClick: function () { previewBackupPrune(name).catch(function () {}); }
+                        }, "Preview prune")
+                      );
+                    })
+                  )
+                : null,
+              pending
+                ? createElement("article", {
+                    className: "daidala-github-project-card",
+                    "data-testid": "daidala-checkout-preview"
+                  },
+                  createElement("h3", null, "Checkout action preview"),
+                  createElement("p", { className: "daidala-workflow-meta" },
+                    "Action: " + pending.kind + " · server decision: " +
+                    (pending.preview.action || pending.kind)
+                  ),
+                  createElement("label", null,
+                    createElement("input", {
+                      type: "checkbox", checked: confirmed,
+                      onChange: function (event) { setConfirmed(event.target.checked); }
+                    }),
+                    " I confirm applying this exact checkout preview"
+                  ),
+                  createElement("button", {
+                    type: "button", disabled: !confirmed || busy,
+                    onClick: function () { applyPending().catch(function () {}); }
+                  }, busy ? "Applying…" : "Apply confirmed checkout action")
+                )
+                : null
+            )
     );
   }
 

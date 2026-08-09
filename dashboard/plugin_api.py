@@ -39,6 +39,15 @@ Supervision endpoints include:
 - ``GET  /api/plugins/daidala/checkout-root``
 - ``POST /api/plugins/daidala/checkout-root/preview``
 - ``PUT  /api/plugins/daidala/checkout-root``
+- ``GET  /api/plugins/daidala/checkouts``
+- ``POST /api/plugins/daidala/checkouts/{project_id}/refresh/preview``
+- ``POST /api/plugins/daidala/checkouts/{project_id}/refresh``
+- ``POST /api/plugins/daidala/checkouts/{project_id}/adopt/preview``
+- ``POST /api/plugins/daidala/checkouts/{project_id}/adopt``
+- ``POST /api/plugins/daidala/checkouts/_backups/prune/preview``
+- ``POST /api/plugins/daidala/checkouts/_backups/prune``
+- ``POST /api/plugins/daidala/checkouts/policy/preview``
+- ``PUT  /api/plugins/daidala/checkouts/policy``
 """
 
 from __future__ import annotations
@@ -62,6 +71,7 @@ from daidala.checkout_root import (
     CheckoutRootStore,
     discover_owned_checkouts,
 )
+from daidala.checkouts import CheckoutError, CheckoutManager
 from daidala.dashboard_backend import (
     DashboardBackend,
     DashboardBackendError,
@@ -212,6 +222,10 @@ def _registered_project(project_id: str) -> ControllerRegistration:
 
 def _project_link_store() -> GitHubProjectLinksStore:
     return GitHubProjectLinksStore(resolve_data_root().resolve())
+
+
+def _checkout_manager() -> CheckoutManager:
+    return CheckoutManager(resolve_data_root().resolve())
 
 
 def _link_preview_digest(link: GitHubProjectLink, store_digest: str) -> str:
@@ -469,6 +483,124 @@ def checkout_root_replace(payload: dict[str, Any]) -> dict[str, Any]:
     except CheckoutRootError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
     return {"changed": changed, "checkouts": store.read().to_dict()["checkouts"]}
+
+
+@router.get("/checkouts")
+def checkouts_status() -> dict[str, Any]:
+    """Return only server-derived checkout state and policy projections."""
+
+    try:
+        manager = _checkout_manager()
+        return {
+            "policy": manager.policy().to_dict(),
+            "checkouts": [row.to_dict() for row in manager.statuses(_current_registrations())],
+            "backups": list(manager.backups()),
+        }
+    except CheckoutError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@router.post("/checkouts/{project_id}/refresh/preview")
+def checkout_refresh_preview(project_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    if payload:
+        raise HTTPException(status_code=400, detail="checkout refresh preview accepts no fields")
+    try:
+        return _checkout_manager().preview_refresh(_registered_project(project_id))
+    except CheckoutError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@router.post("/checkouts/{project_id}/adopt/preview")
+def checkout_adopt_preview(project_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    if payload:
+        raise HTTPException(status_code=400, detail="checkout adoption preview accepts no fields")
+    try:
+        return _checkout_manager().preview_adopt(_registered_project(project_id))
+    except CheckoutError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@router.post("/checkouts/{project_id}/adopt")
+def checkout_adopt_apply(project_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    if set(payload) != {"preview_digest", "confirm"}:
+        raise HTTPException(status_code=400, detail="exact checkout adoption fields are required")
+    try:
+        return _checkout_manager().apply_adopt(
+            _registered_project(project_id),
+            preview_digest=payload["preview_digest"],
+            confirm=payload["confirm"],
+        )
+    except CheckoutError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@router.post("/checkouts/{project_id}/refresh")
+def checkout_refresh_apply(project_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    if set(payload) != {"preview_digest", "confirm"}:
+        raise HTTPException(status_code=400, detail="exact checkout refresh fields are required")
+    try:
+        return _checkout_manager().apply_refresh(
+            _registered_project(project_id),
+            preview_digest=payload["preview_digest"],
+            confirm=payload["confirm"],
+        )
+    except CheckoutError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@router.post("/checkouts/_backups/prune/preview")
+def checkout_backups_prune_preview(payload: dict[str, Any]) -> dict[str, Any]:
+    if set(payload) != {"filenames"}:
+        raise HTTPException(status_code=400, detail="checkout backup prune fields are invalid")
+    try:
+        return _checkout_manager().preview_backup_prune(payload["filenames"])
+    except CheckoutError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@router.post("/checkouts/_backups/prune")
+def checkout_backups_prune_apply(payload: dict[str, Any]) -> dict[str, Any]:
+    if set(payload) != {"filenames", "preview_digest", "confirm"}:
+        raise HTTPException(
+            status_code=400, detail="exact checkout backup prune fields are required"
+        )
+    try:
+        return _checkout_manager().apply_backup_prune(
+            filenames=payload["filenames"],
+            preview_digest=payload["preview_digest"],
+            confirm=payload["confirm"],
+        )
+    except CheckoutError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@router.post("/checkouts/policy/preview")
+def checkouts_policy_preview(payload: dict[str, Any]) -> dict[str, Any]:
+    if set(payload) != {"mode", "ttl_hours"}:
+        raise HTTPException(status_code=400, detail="checkout policy preview fields are invalid")
+    try:
+        return _checkout_manager().preview_policy(
+            mode=payload["mode"], ttl_hours=payload["ttl_hours"]
+        )
+    except CheckoutError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@router.put("/checkouts/policy")
+def checkouts_policy_apply(payload: dict[str, Any]) -> dict[str, Any]:
+    if set(payload) != {"mode", "ttl_hours", "preview_digest", "confirm"}:
+        raise HTTPException(
+            status_code=400, detail="exact checkout policy apply fields are required"
+        )
+    try:
+        return _checkout_manager().apply_policy(
+            mode=payload["mode"],
+            ttl_hours=payload["ttl_hours"],
+            preview_digest=payload["preview_digest"],
+            confirm=payload["confirm"],
+        )
+    except CheckoutError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
 
 
 @router.get("/packs")
