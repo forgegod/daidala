@@ -196,14 +196,37 @@ def test_router_source_exposes_only_closed_mutation_routes() -> None:
     assert 'payload.get("confirm") is not True' in source
 
 
-def test_health_distinguishes_the_read_model_from_bounded_mutations() -> None:
+def test_health_distinguishes_the_read_model_from_bounded_mutations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     api = load_api()
     api.__dict__["service_factory"] = lambda: object()
+    monkeypatch.setattr(api, "_dashboard_identity", lambda: {"profile": "test"})
 
     payload = api.health()
 
     assert payload["read_model"] is True
     assert "read_only" not in payload
+    assert payload["identity"] == {"profile": "test"}
+
+
+def test_dashboard_identity_sanitizes_missing_or_observed_host_metadata(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    api = load_api()
+    monkeypatch.setattr(api, "active_profile", lambda _run: "operator")
+    monkeypatch.setattr(api, "version", lambda _name: "0.2.0")
+    monkeypatch.setattr(
+        api, "_run_command", lambda command: (0, "Hermes Agent v0.19.0")
+    )
+
+    assert api._dashboard_identity() == {
+        "profile": "operator",
+        "daidala_version": "0.2.0",
+        "install_source": "unavailable",
+        "hermes_version": "0.19.0",
+        "supported_hermes_range": ">=0.18.2,<0.20.0",
+    }
 
 
 def test_initialization_routes_preview_then_apply_one_fresh_digest(

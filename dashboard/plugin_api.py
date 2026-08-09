@@ -61,9 +61,11 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 import subprocess
 from collections.abc import Callable
 from functools import lru_cache
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from threading import Lock
 from typing import Any
@@ -139,6 +141,7 @@ ServiceFactory = Callable[[], Any]
 PackServiceFactory = Callable[[], PackService]
 _default_service_lock = Lock()
 _DASHBOARD_REVIEW_ACTOR = "dashboard:attended-operator"
+_SUPPORTED_HERMES_RANGE = ">=0.18.2,<0.20.0"
 
 
 @lru_cache(maxsize=1)
@@ -199,6 +202,7 @@ def health() -> dict[str, Any]:
         "success": True,
         "plugin": "daidala",
         "read_model": True,
+        "identity": _dashboard_identity(),
         "bounded_mutations": [
             "initialization",
             "pack_install",
@@ -208,6 +212,29 @@ def health() -> dict[str, Any]:
             "review_disposition_preview",
             "review_disposition",
         ],
+    }
+
+
+def _dashboard_identity() -> dict[str, str]:
+    """Return bounded runtime identity without making missing host metadata fatal."""
+
+    try:
+        profile = active_profile(_run_command)
+    except (SetupWizardError, OSError):
+        profile = "unavailable"
+    try:
+        package_version = version("daidala")
+    except PackageNotFoundError:
+        package_version = "unavailable"
+    code, output = _run_command(("hermes", "--version"))
+    match = re.search(r"Hermes Agent v(\d+\.\d+\.\d+)", output)
+    hermes_version = match.group(1) if code == 0 and match is not None else "unavailable"
+    return {
+        "profile": profile,
+        "daidala_version": package_version,
+        "install_source": "unavailable",
+        "hermes_version": hermes_version,
+        "supported_hermes_range": _SUPPORTED_HERMES_RANGE,
     }
 
 

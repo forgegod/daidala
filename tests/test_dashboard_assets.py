@@ -293,7 +293,6 @@ def test_bundle_exposes_read_only_configuration_verification() -> None:
     )
     for text in required_strings:
         assert text in source, f"missing configuration verification contract text: {text}"
-
     panel = source[
         source.index("function ConfigurationVerificationPanel"):
         source.index("function ConstraintAuthoringPanel")
@@ -304,6 +303,38 @@ def test_bundle_exposes_read_only_configuration_verification() -> None:
         encoding="utf-8"
     )
 
+
+def test_bundle_exposes_operator_runbook_without_host_lifecycle_mutations() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    required = (
+        'data-testid": "daidala-operator-runbook"',
+        '"Runbook"',
+        "Install and enable",
+        "Initialize",
+        "Diagnose prerequisites",
+        "Start and resume",
+        "Approve the exact plan",
+        "Review disposition",
+        "Cancel and recovery",
+        "Upgrade",
+        "Standalone diagnostics",
+        "Host-owned CLI",
+        "Resume existing workflow ID",
+        "Opened the existing workflow and resumed read-only polling.",
+        "supported_hermes_range",
+    )
+    for text in required:
+        assert text in source
+
+    assert 'API_BASE + "/plugins"' not in source
+    assert 'API_BASE + "/gateway"' not in source
+    runbook = source[
+        source.index("function OperatorRunbookPanel"):
+        source.index("function ConfigurationVerificationPanel")
+    ]
+    assert "props.onResume" in runbook
+    assert "runStart" not in runbook
 
 def test_bundle_exposes_the_closed_inventory_backed_start_workflow_wizard() -> None:
     source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")

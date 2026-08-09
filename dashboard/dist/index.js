@@ -114,7 +114,7 @@
         : null,
       decision: decision === "plan-approval" ? decision : null,
       planRevision: planRevision && /^\d+$/.test(planRevision) ? planRevision : null,
-      section: ["packs", "github-projects", "checkouts", "constraints", "verification"].indexOf(section) >= 0
+      section: ["packs", "github-projects", "checkouts", "constraints", "verification", "runbook"].indexOf(section) >= 0
         ? section
         : null,
       returnToStart: query.get("return") === "start-workflow"
@@ -1470,7 +1470,12 @@
           type: "button", role: "tab", "aria-selected": tab === "verification",
           className: tab === "verification" ? "is-selected" : "",
           onClick: function () { setTab("verification"); }
-        }, "Verification")
+        }, "Verification"),
+        createElement("button", {
+          type: "button", role: "tab", "aria-selected": tab === "runbook",
+          className: tab === "runbook" ? "is-selected" : "",
+          onClick: function () { setTab("runbook"); }
+        }, "Runbook")
       ),
       tab === "packs"
         ? createElement(PackBrowser)
@@ -1483,7 +1488,9 @@
                 returnToStart: props.returnToStart,
                 onReturnSource: props.onReturnSource
               })
-              : createElement(ConfigurationVerificationPanel)
+              : tab === "runbook"
+                ? createElement(OperatorRunbookPanel, { health: props.health, onResume: props.onResume })
+                : createElement(ConfigurationVerificationPanel)
     );
   }
 
@@ -1575,6 +1582,39 @@
           );
         })
       ) : null
+    );
+  }
+
+  function OperatorRunbookPanel(props) {
+    var workflowIdState = useState("");
+    var workflowId = workflowIdState[0];
+    var setWorkflowId = workflowIdState[1];
+    var identity = props.health && props.health.identity ? props.health.identity : {};
+    var rows = [
+      ["Install and enable", "Host-owned CLI", "hermes plugins install forgegod/daidala --enable\nhermes plugins list"],
+      ["Initialize", "Configuration verification", "Open initialization preview"],
+      ["Diagnose prerequisites", "Configuration verification", "Run local checks or Run live checks"],
+      ["Pack dependencies", "Config → Packs", "Validate, inspect, then explicitly install"],
+      ["Start and resume", "Workflow supervision", "Select an existing workflow ID to resume read-only polling"],
+      ["Approve the exact plan", "Workflow detail", "Inspect the exact plan and confirm approval"],
+      ["Review disposition", "Workflow detail", "Preview source-bound review disposition before applying"],
+      ["Cancel and recovery", "Workflow detail", "Preview cancellation or use native Hermes Kanban recovery"],
+      ["Upgrade", "Host-owned CLI", "hermes plugins update daidala\nhermes daidala doctor --project-manifest /absolute/repository/.daidala/project.yaml\nhermes daidala packs check addyosmani"],
+      ["Standalone diagnostics", "Host-owned CLI", "daidala status <workflow-id>"]
+    ];
+    return createElement("section", { className: "daidala-config", "data-testid": "daidala-operator-runbook" },
+      createElement("h2", null, "Operator runbook"),
+      createElement("p", { className: "daidala-workflow-meta" }, "Dashboard links are guidance or existing bounded surfaces. Install, enable, upgrade, and gateway lifecycle remain native CLI operations."),
+      createElement("p", { className: "daidala-workflow-meta" },
+        "Profile: " + (identity.profile || "unavailable") + " · Daidala: " + (identity.daidala_version || "unavailable") + " · Hermes: " + (identity.hermes_version || "unavailable") + " · Supported: " + (identity.supported_hermes_range || "unavailable")
+      ),
+      createElement("label", null, "Resume existing workflow ID", createElement("input", { value: workflowId, onChange: function (event) { setWorkflowId(event.target.value); } })),
+      createElement("button", { type: "button", disabled: !workflowId.trim(), onClick: function () { props.onResume(workflowId.trim()); } }, "Open workflow"),
+      createElement("ul", null, rows.map(function (row) {
+        return createElement("li", { key: row[0] },
+          createElement("strong", null, row[0] + ": "), row[1] + " · ", createElement("code", null, row[2])
+        );
+      }))
     );
   }
 
@@ -3004,6 +3044,14 @@
       window.dispatchEvent(new PopStateEvent("popstate"));
     }
 
+    function resumeExistingWorkflow(workflowId) {
+      window.history.pushState({}, "", "/daidala?workflow=" + encodeURIComponent(workflowId));
+      window.dispatchEvent(new PopStateEvent("popstate"));
+      setStarting(false);
+      setStartNotice("Opened the existing workflow and resumed read-only polling.");
+      workflowsState.refresh();
+    }
+
     var detailStates = {};
     for (var i = 0; i < workflowIds.length; i += 1) {
       var id = workflowIds[i];
@@ -3062,7 +3110,9 @@
             route.section ? createElement(ConfigurationPanel, {
               section: route.section,
               returnToStart: route.returnToStart,
-              onReturnSource: returnSourceToStart
+              onReturnSource: returnSourceToStart,
+              health: health.snapshot,
+              onResume: resumeExistingWorkflow
             }) : null,
             createElement(StartWorkflow, {
               onClose: function () { setStarting(false); },
@@ -3094,7 +3144,11 @@
             })
           )
         : null,
-      createElement(ConfigurationPanel, { section: route.section }),
+      createElement(ConfigurationPanel, {
+        section: route.section,
+        health: health.snapshot,
+        onResume: resumeExistingWorkflow
+      }),
       firstLoad
         ? createElement(
             "p",

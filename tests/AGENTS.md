@@ -71,6 +71,9 @@ completeness without touching a real Hermes profile.
   finite recommendation vocabulary, exact approval identity, and absence of
   persisted live-card status, including concurrent first-request service
   initialization.
+- Runbook tests prove sanitized health identity, complete runbook-section
+  coverage, guidance-only host lifecycle commands, and exact-ID resume without
+  a Start workflow request.
 - Initialization tests prove zero-write preview, stale-digest rejection, literal
   confirmation, and idempotent schema creation; dashboard diagnosis tests prove
   trusted registration-derived inputs and reject browser-supplied paths.

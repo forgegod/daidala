@@ -18,7 +18,8 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
 - `dist/index.js` renders workflow progress, the inventory-backed Start workflow
   wizard, Config → Packs readiness/content, GitHub Projects v2 links,
   constraint source selection and schema-aware authoring, read-only configuration
-  verification, initialization preview/apply, prerequisite diagnosis, and confirmed checkout refresh/adoption/backup-pruning/policy
+  verification, initialization preview/apply, prerequisite diagnosis, operator-runbook
+  guidance, and confirmed checkout refresh/adoption/backup-pruning/policy
   controls; decision-first supervision;
   exact-plan approval; literal source-bound review evidence/disposition;
   blocked-card remediation; and previewed cancellation.
@@ -99,6 +100,13 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   and resets the cached service only after creation. Prerequisite diagnosis accepts
   exactly `{project_id, live}`, derives all paths from the trusted registration,
   and returns the bounded existing report without protected values.
+- Health identity exposes only the observed profile, Daidala and Hermes versions,
+  supported Hermes range, and an unavailable install source. The runbook renders
+  exact host-owned install/upgrade commands as copyable guidance and resumes only
+  an exact existing workflow through ordinary read-only polling.
+- The operator-runbook panel maps every runbook operation to an existing browser
+  surface or native CLI guidance. It never renders an execute control for plugin,
+  gateway, or Hermes lifecycle commands.
 - Poll no faster than every five seconds while visible, stop while hidden, and retain manual refresh.
 - Treat API responses as snapshots; never authorize workflow operations from client state.
 - After setup or exact-ID reopen, render the selected workflow from its fresh
