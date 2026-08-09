@@ -14,6 +14,9 @@ projections to FastAPI.
 Supervision endpoints include:
 
 - ``GET  /api/plugins/daidala/health``
+- ``GET  /api/plugins/daidala/initialization``
+- ``POST /api/plugins/daidala/initialization``
+- ``POST /api/plugins/daidala/diagnostics/prerequisites``
 - ``GET  /api/plugins/daidala/prerequisites``
 - ``GET  /api/plugins/daidala/workflows``
 - ``GET  /api/plugins/daidala/workflows/{workflow_id}``
@@ -82,12 +85,17 @@ from daidala.dashboard_backend import (
     HostUnavailableError,
     UnknownWorkflowError,
 )
-from daidala.errors import WorkflowError
+from daidala.errors import PolicyViolationError, WorkflowError
 from daidala.github_project_links import (
     GitHubProjectLink,
     GitHubProjectLinkError,
     GitHubProjectLinksStore,
     GitHubProjectVerifier,
+)
+from daidala.initialization import (
+    InitializationError,
+    apply_initialization,
+    preview_initialization,
 )
 from daidala.locations import resolve_data_root
 from daidala.pack_service import (
@@ -100,6 +108,7 @@ from daidala.pack_service import (
     UnknownPackSkillError,
 )
 from daidala.packs import PackError
+from daidala.prerequisites import run_prerequisite_diagnosis
 from daidala.registrations import (
     ControllerRegistration,
     list_controller_registrations,
@@ -191,6 +200,7 @@ def health() -> dict[str, Any]:
         "plugin": "daidala",
         "read_model": True,
         "bounded_mutations": [
+            "initialization",
             "pack_install",
             "workflow_setup",
             "constraints_replace",
@@ -199,6 +209,34 @@ def health() -> dict[str, Any]:
             "review_disposition",
         ],
     }
+
+
+@router.get("/initialization")
+def initialization() -> dict[str, Any]:
+    """Preview profile-local policy-ledger initialization without mutation."""
+
+    return preview_initialization(resolve_data_root()).to_dict()
+
+
+@router.post("/initialization")
+def initialize(payload: dict[str, Any]) -> dict[str, Any]:
+    """Create the schema only for one fresh, literally confirmed preview."""
+
+    if set(payload) != {"preview_digest", "confirm"}:
+        raise HTTPException(
+            status_code=400, detail="exact initialization apply fields are required"
+        )
+    try:
+        preview, created = apply_initialization(
+            resolve_data_root(),
+            preview_digest=payload["preview_digest"],
+            confirm=payload["confirm"],
+        )
+    except InitializationError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    if created:
+        _reset_default_service()
+    return {"created": created, "initialization": preview.to_dict()}
 
 
 @router.get("/prerequisites")
@@ -223,6 +261,31 @@ def _registered_project(project_id: str) -> ControllerRegistration:
     if registration is None:
         raise HTTPException(status_code=404, detail="unknown registered project")
     return registration
+
+
+@router.post("/diagnostics/prerequisites")
+def prerequisite_diagnosis(payload: dict[str, Any]) -> dict[str, Any]:
+    """Run strict prerequisite diagnosis for one trusted registration."""
+
+    if set(payload) != {"project_id", "live"} or not isinstance(payload["live"], bool):
+        raise HTTPException(
+            status_code=400, detail="exact prerequisite diagnosis fields are required"
+        )
+    project_id = payload["project_id"]
+    if not isinstance(project_id, str):
+        raise HTTPException(status_code=400, detail="project ID must be a string")
+    data_root = resolve_data_root().resolve()
+    try:
+        trusted_registration_path = registration_path(data_root, project_id)
+    except PolicyViolationError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    registration = _registered_project(project_id)
+    report = run_prerequisite_diagnosis(
+        project_manifest=Path(registration.checkout) / ".daidala" / "project.yaml",
+        registration=trusted_registration_path,
+        live=payload["live"],
+    )
+    return {"report": report.to_dict(), "exit_code": report.exit_code}
 
 
 def _project_link_store() -> GitHubProjectLinksStore:

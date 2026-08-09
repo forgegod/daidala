@@ -99,6 +99,30 @@ def test_dashboard_mutations_use_only_closed_post_routes() -> None:
     assert "method: \"PATCH\"" not in source
 
 
+def test_bundle_exposes_preview_confirmed_initialization_and_bounded_diagnosis() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    required = (
+        'API_BASE + "/initialization"',
+        'API_BASE + "/diagnostics/prerequisites"',
+        "preview_digest: previewDigest",
+        "confirm: true",
+        "Open initialization preview",
+        "← Back to verification",
+        "I confirm this exact initialization preview",
+        "Run local checks",
+        "Run live checks",
+        "project_id: projectId",
+        "live: live",
+    )
+    for text in required:
+        assert text in source
+
+    assert 'data-testid": "daidala-initialization"' in source
+    assert "project_manifest:" not in source
+    assert "registration_path:" not in source
+
+
 def test_bundle_polls_at_least_every_five_seconds_and_respects_visibility() -> None:
     source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
 

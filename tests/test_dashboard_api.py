@@ -69,6 +69,9 @@ def test_router_exports_all_phase_two_routes() -> None:
     assert api.router is not None
     for name in (
         "health",
+        "initialization",
+        "initialize",
+        "prerequisite_diagnosis",
         "prerequisites",
         "configuration",
         "registrations",
@@ -201,6 +204,78 @@ def test_health_distinguishes_the_read_model_from_bounded_mutations() -> None:
 
     assert payload["read_model"] is True
     assert "read_only" not in payload
+
+
+def test_initialization_routes_preview_then_apply_one_fresh_digest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    api = load_api()
+    monkeypatch.setattr(api, "resolve_data_root", lambda: tmp_path)
+
+    preview = api.initialization()
+
+    assert preview["initialized"] is False
+    assert not (tmp_path / "daidala").exists()
+    applied = api.initialize({"preview_digest": preview["preview_digest"], "confirm": True})
+    repeated = api.initialize(
+        {
+            "preview_digest": applied["initialization"]["preview_digest"],
+            "confirm": True,
+        }
+    )
+
+    assert applied["created"] is True
+    assert repeated["created"] is False
+    assert (tmp_path / "daidala" / "policy-ledger.sqlite3").is_file()
+
+
+def test_initialization_route_rejects_extra_or_stale_browser_fields(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    api = load_api()
+    monkeypatch.setattr(api, "resolve_data_root", lambda: tmp_path)
+
+    with pytest.raises(FakeHTTPException) as malformed:
+        api.initialize({"preview_digest": "a" * 64, "confirm": True, "path": "/tmp"})
+    with pytest.raises(FakeHTTPException) as stale:
+        api.initialize({"preview_digest": "a" * 64, "confirm": True})
+
+    assert malformed.value.status_code == 400
+    assert stale.value.status_code == 409
+    assert not (tmp_path / "daidala").exists()
+
+
+def test_prerequisite_diagnosis_uses_only_trusted_registration_paths(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    api = load_api()
+    registration = types.SimpleNamespace(project_id="example", checkout="/trusted/checkout")
+    calls: dict[str, object] = {}
+
+    class Report:
+        exit_code = 2
+
+        def to_dict(self) -> dict[str, object]:
+            return {"status": "blocked", "checks": []}
+
+    monkeypatch.setattr(api, "resolve_data_root", lambda: tmp_path)
+    monkeypatch.setattr(api, "_registered_project", lambda project_id: registration)
+    monkeypatch.setattr(api, "registration_path", lambda *_args: tmp_path / "registration.yaml")
+
+    def diagnose(**kwargs: object) -> Report:
+        calls.update(kwargs)
+        return Report()
+
+    monkeypatch.setattr(api, "run_prerequisite_diagnosis", diagnose)
+
+    payload = api.prerequisite_diagnosis({"project_id": "example", "live": False})
+
+    assert payload == {"report": {"status": "blocked", "checks": []}, "exit_code": 2}
+    assert calls["project_manifest"] == Path("/trusted/checkout/.daidala/project.yaml")
+    assert calls["live"] is False
+    with pytest.raises(FakeHTTPException) as malformed:
+        api.prerequisite_diagnosis({"project_id": "example", "live": False, "path": "/tmp"})
+    assert malformed.value.status_code == 400
 
 
 def _approval_identity(**overrides: object) -> dict[str, object]:

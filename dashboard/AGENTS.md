@@ -13,11 +13,12 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   cancellation preview/apply routes, registration projections, checkout-root and
   checkout lifecycle preview/apply, and GitHub Projects v2 link read/verify/
   preview/apply routes, read-only reusable constraint-source list/detail routes,
-  and one read-only persisted-configuration verification route.
+  persisted-configuration verification, non-mutating initialization preview/confirmed apply,
+  and trusted-registration prerequisite diagnosis routes.
 - `dist/index.js` renders workflow progress, the inventory-backed Start workflow
   wizard, Config → Packs readiness/content, GitHub Projects v2 links,
   constraint source selection and schema-aware authoring, read-only configuration
-  verification, and confirmed checkout refresh/adoption/backup-pruning/policy
+  verification, initialization preview/apply, prerequisite diagnosis, and confirmed checkout refresh/adoption/backup-pruning/policy
   controls; decision-first supervision;
   exact-plan approval; literal source-bound review evidence/disposition;
   blocked-card remediation; and previewed cancellation.
@@ -93,6 +94,11 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   evidence health, evaluator state, and notification destination presence. It
   never returns aliases, credentials, raw probe output, private destinations,
   registration checkout paths, or GitHub Project node IDs.
+- Initialization preview exposes only the resolved profile-local ledger target and
+  observed schema state; apply accepts exactly `{preview_digest, confirm: true}`
+  and resets the cached service only after creation. Prerequisite diagnosis accepts
+  exactly `{project_id, live}`, derives all paths from the trusted registration,
+  and returns the bounded existing report without protected values.
 - Poll no faster than every five seconds while visible, stop while hidden, and retain manual refresh.
 - Treat API responses as snapshots; never authorize workflow operations from client state.
 - After setup or exact-ID reopen, render the selected workflow from its fresh

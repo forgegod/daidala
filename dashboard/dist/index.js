@@ -143,6 +143,24 @@
     return fetchJson(API_BASE + "/configuration");
   }
 
+  function buildInitialization() {
+    return fetchJson(API_BASE + "/initialization");
+  }
+
+  function applyInitialization(previewDigest) {
+    return postJson(API_BASE + "/initialization", {
+      preview_digest: previewDigest,
+      confirm: true
+    });
+  }
+
+  function runPrerequisiteDiagnosis(projectId, live) {
+    return postJson(API_BASE + "/diagnostics/prerequisites", {
+      project_id: projectId,
+      live: live
+    });
+  }
+
   function buildGitHubProjectLinks() {
     return fetchJson(API_BASE + "/github-project-links").then(function (payload) {
       return payload && Array.isArray(payload.links) ? payload.links : [];
@@ -1478,10 +1496,95 @@
     return value.state ? "blocked" : "unavailable";
   }
 
+  function InitializationPanel(props) {
+    var state = useState(undefined);
+    var preview = state[0];
+    var setPreview = state[1];
+    var confirmedState = useState(false);
+    var confirmed = confirmedState[0];
+    var setConfirmed = confirmedState[1];
+    var messageState = useState("");
+    var message = messageState[0];
+    var setMessage = messageState[1];
+
+    function refresh() {
+      setMessage("");
+      return buildInitialization().then(setPreview).catch(function (caught) {
+        setPreview(null);
+        setMessage(errorText(caught));
+      });
+    }
+
+    function apply() {
+      if (!preview || !confirmed) return;
+      applyInitialization(preview.preview_digest).then(function (result) {
+        setPreview(result.initialization);
+        setConfirmed(false);
+        setMessage(result.created ? "Initialization complete." : "Already initialized; no changes made.");
+      }).catch(function (caught) { setMessage(errorText(caught)); });
+    }
+
+    useEffect(function () { refresh(); }, []);
+    return createElement("section", { className: "daidala-config", "data-testid": "daidala-initialization" },
+      createElement("button", { type: "button", onClick: props.onBack }, "← Back to verification"),
+      createElement("h2", null, "Profile initialization"),
+      createElement("p", { className: "daidala-workflow-meta" }, "Preview first. No profile files are created until confirmation."),
+      message ? createElement("p", { className: "daidala-banner" }, message) : null,
+      preview === undefined ? createElement("p", null, "Loading initialization preview")
+        : preview === null ? null
+        : createElement(React.Fragment, null,
+            createElement("p", null, "Target: " + preview.database),
+            createElement("p", null, preview.initialized ? "Schema is initialized." : "Schema is not initialized."),
+            createElement("ul", null, preview.effects.map(function (effect) { return createElement("li", { key: effect }, effect); })),
+            createElement("code", null, preview.preview_digest),
+            createElement("label", null,
+              createElement("input", { type: "checkbox", checked: confirmed, onChange: function (event) { setConfirmed(event.target.checked); } }),
+              " I confirm this exact initialization preview"
+            ),
+            createElement("button", { type: "button", disabled: !confirmed, onClick: apply }, "Initialize profile ledger"),
+            createElement("button", { type: "button", onClick: refresh }, "Refresh initialization preview")
+          )
+    );
+  }
+
+  function PrerequisiteDiagnosisPanel(props) {
+    var resultState = useState(null);
+    var result = resultState[0];
+    var setResult = resultState[1];
+
+    function diagnose(live) {
+      runPrerequisiteDiagnosis(props.projectId, live).then(setResult).catch(function (caught) {
+        setResult({ error: errorText(caught) });
+      });
+    }
+
+    return createElement("section", { className: "daidala-prerequisite-diagnosis" },
+      createElement("h4", null, "Prerequisite diagnosis"),
+      createElement("button", { type: "button", onClick: function () { diagnose(false); } }, "Run local checks"),
+      createElement("button", { type: "button", onClick: function () { diagnose(true); } }, "Run live checks"),
+      result && result.error ? createElement("p", { className: "daidala-banner daidala-banner-error" }, result.error) : null,
+      result && result.report ? createElement("p", { className: "daidala-workflow-meta" },
+        (result.report.live ? "Live" : "Local") + " report · Status: " + result.report.status + " · Exit code: " + result.exit_code + " · Checklist " + result.report.checklist_digest
+      ) : null,
+      result && result.report && result.report.checks ? createElement("ul", null,
+        result.report.checks.map(function (check) {
+          return createElement("li", { key: check.check_id },
+            check.check_id + " · " + check.status + " · " + check.guide +
+            (check.blocker ? " · " + check.blocker : "") +
+            (check.evidence && check.evidence.length ? " · " + check.evidence.join("; ") : "")
+          );
+        })
+      ) : null
+    );
+  }
+
   function ConfigurationVerificationPanel() {
     var state = useState(undefined);
     var inventory = state[0];
     var setInventory = state[1];
+    var initializationViewState = useState(false);
+    var initializationView = initializationViewState[0];
+    var setInitializationView = initializationViewState[1];
     var errorState = useState("");
     var error = errorState[0];
     var setError = errorState[1];
@@ -1498,6 +1601,9 @@
     }
 
     useEffect(function () { refresh().catch(function () {}); }, []);
+    if (initializationView) {
+      return createElement(InitializationPanel, { onBack: function () { setInitializationView(false); } });
+    }
     return createElement("section", { className: "daidala-config", "data-testid": "daidala-configuration-verification" },
       createElement("header", { className: "daidala-config-header" },
         createElement("div", null,
@@ -1506,7 +1612,10 @@
             "Read-only persisted configuration and cross-object invariant status."
           )
         ),
-        createElement("button", { type: "button", onClick: function () { refresh().catch(function () {}); } }, "Refresh verification")
+        createElement("div", null,
+          createElement("button", { type: "button", onClick: function () { refresh().catch(function () {}); } }, "Refresh verification"),
+          createElement("button", { type: "button", onClick: function () { setInitializationView(true); } }, "Open initialization preview")
+        )
       ),
       error ? createElement("p", { className: "daidala-banner daidala-banner-error" }, error) : null,
       inventory === undefined
@@ -1538,7 +1647,8 @@
                       createElement("p", { className: "daidala-workflow-meta" }, "GitHub Project: " + configurationStatus(project) + (project.owner ? " · " + project.owner + " #" + project.project_number : "") + (project.node_id_configured ? " · identity recorded" : "")),
                       createElement("p", { className: "daidala-workflow-meta" }, "GitHub intake: " + configurationStatus(intake) + (intake.reason ? " · " + intake.reason : "")),
                       createElement("p", { className: "daidala-workflow-meta" }, "Evaluator: " + configurationStatus(evaluator) + " · " + (evaluator.backend || "unavailable") + " · " + (evaluator.network || "unavailable")),
-                      createElement("p", { className: "daidala-workflow-meta" }, "Notifications: " + configurationStatus(notification) + " · " + (notification.adapter || "unavailable") + " · destination " + (notification.destination_configured ? "configured" : "missing"))
+                      createElement("p", { className: "daidala-workflow-meta" }, "Notifications: " + configurationStatus(notification) + " · " + (notification.adapter || "unavailable") + " · destination " + (notification.destination_configured ? "configured" : "missing")),
+                      createElement(PrerequisiteDiagnosisPanel, { projectId: registration.project_id })
                     );
                   })
                 : createElement("p", { className: "daidala-state daidala-state-empty" }, "No registered projects")

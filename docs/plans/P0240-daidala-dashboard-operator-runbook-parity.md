@@ -16,7 +16,7 @@
 
 **Produces:** a non-eager profile initialization service and panel, strict local/live prerequisite diagnosis, complete operator-runbook navigation with host-owned lifecycle guidance, and full dashboard-family verification evidence
 
-**Status:** pending — blocked until P0230 completes and human implementation approval is recorded
+**Status:** in-progress — Phase 0 complete; Phase 1 pending
 
 ## Goal
 
@@ -40,7 +40,7 @@ Live prerequisite diagnosis may read GitHub, gateway, container, and credential-
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Add profile initialization and prerequisite diagnosis | pending | `pytest tests/test_cli.py tests/test_dashboard_api.py tests/test_dashboard_assets.py -q` exits 0; health/preview create no schema, confirmed apply is idempotent, and local/live reports preserve strict checker semantics without browser paths or protected values |
+| 0 | Add profile initialization and prerequisite diagnosis | done (`2026-08-09`: focused CLI/API/asset tests, Ruff, JavaScript syntax, Markdown links, and diff check passed) | `pytest tests/test_cli.py tests/test_dashboard_api.py tests/test_dashboard_assets.py -q` exits 0; health/preview create no schema, confirmed apply is idempotent, and local/live reports preserve strict checker semantics without browser paths or protected values |
 | 1 | Add operator runbook parity and host-owned lifecycle guidance | pending | Focused CLI/API/asset tests and `python scripts/check_md_links.py .` exit 0; every runbook section has one dashboard-family owner; no route can install, enable, remove, update, restart, or dispatch arbitrary commands |
 | 2 | Reconcile DOX and run full verification | pending | Every root AGENTS.md verification command exits 0; ownership, route, tool, runbook, package, and browser contracts are current; `git diff --check` exits 0 |
 
