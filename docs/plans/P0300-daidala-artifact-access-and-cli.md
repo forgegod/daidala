@@ -24,9 +24,10 @@ Expose active and archived workflow evidence through bounded native and standalo
 
 ## Current state
 
-- P0205 provides the active exact-ID catalog and verified bounded text/export service.
-- P0100 provides policy-neutral verified archive creation, manifest validation, and bounded reads.
-- Workflow status exposes ledger artifact paths and SHA-256 digests, but no dedicated list/show/export command exists.
+- The artifact-access service catalogs immutable ledger records and resolves active or injected archived sources by exact opaque ID.
+- Shared archive I/O revalidates archive, manifest, member metadata, bounds, and digest on each member read.
+- Native `hermes daidala` and standalone `daidala` expose equivalent `artifacts list`, `show`, and `export` commands.
+- P0310 still owns persistent curator state, archive publication, and wiring the injected lookup from profile-local state.
 - Runtime data is profile-local and must resolve through the active Hermes home/profile.
 - The shared artifact contract owns the CLI selector, output, export, and error semantics.
 
