@@ -8,8 +8,10 @@ from daidala.github_project_links import (
     GitHubProjectLink,
     GitHubProjectLinkError,
     GitHubProjectLinksStore,
+    GitHubProjectVerifier,
     parse_github_project_links,
 )
+from daidala.profile_files import atomic_write_private_text
 from daidala.registrations import ControllerRegistration, RegistrationLimits
 
 
@@ -71,3 +73,60 @@ def test_project_links_reject_unregistered_project(tmp_path: Path) -> None:
     store = GitHubProjectLinksStore(tmp_path)
     with pytest.raises(GitHubProjectLinkError, match="not registered"):
         store.replace((link(),), ())
+
+
+def test_verifier_reports_missing_credential_bindings_as_a_bounded_blocker(
+    tmp_path: Path,
+) -> None:
+    def runner(command: tuple[str, ...], _environment: object) -> tuple[int, str]:
+        if command == ("gh", "--version"):
+            return 0, "gh version 2.40.0"
+        if command == ("gh", "project", "view", "--help"):
+            return 0, "<number> --owner --format json"
+        raise AssertionError(f"unexpected command: {command}")
+
+    verifier = GitHubProjectVerifier(runner=runner, environ={})
+
+    with pytest.raises(GitHubProjectLinkError, match="credential bindings are unavailable"):
+        verifier.verify(
+            registration=registration(),
+            registration_file=tmp_path / "registration.yaml",
+            owner="forgegod",
+            project_number=1,
+        )
+
+
+def test_verifier_reports_missing_prerequisite_evidence_as_a_bounded_blocker(
+    tmp_path: Path,
+) -> None:
+    def runner(command: tuple[str, ...], _environment: object) -> tuple[int, str]:
+        if command == ("gh", "--version"):
+            return 0, "gh version 2.40.0"
+        if command == ("gh", "project", "view", "--help"):
+            return 0, "<number> --owner --format json"
+        raise AssertionError(f"unexpected command: {command}")
+
+    atomic_write_private_text(
+        tmp_path / "credential-bindings.yaml",
+        """\
+schema: daidala.credential-bindings/v1
+project_id: project-one
+bindings:
+  - alias: github-read
+    resolver: environment
+    environment_variable: DAIDALA_GITHUB_READ_TOKEN
+""",
+        label="credential bindings",
+    )
+    verifier = GitHubProjectVerifier(
+        runner=runner,
+        environ={"DAIDALA_GITHUB_READ_TOKEN": "fixture"},
+    )
+
+    with pytest.raises(GitHubProjectLinkError, match="prerequisite evidence is unavailable"):
+        verifier.verify(
+            registration=registration(),
+            registration_file=tmp_path / "registration.yaml",
+            owner="forgegod",
+            project_number=1,
+        )

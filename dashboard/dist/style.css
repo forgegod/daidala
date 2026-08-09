@@ -650,6 +650,141 @@
   font-family: var(--font-mono, ui-monospace, monospace);
 }
 
+.daidala-config-section,
+.daidala-github-project-links-grid,
+.daidala-github-project-link,
+.daidala-github-registration-context,
+.daidala-github-current-link,
+.daidala-github-link-form,
+.daidala-github-link-preview {
+  display: grid;
+  gap: var(--daidala-gap);
+}
+
+.daidala-config-section-header p {
+  margin: 0;
+}
+
+.daidala-config-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  border-bottom: var(--daidala-border);
+  padding-bottom: 0.5rem;
+}
+
+.daidala-config-tabs button {
+  padding: 0.45rem 0.65rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-base, transparent);
+  color: var(--text-primary, inherit);
+  cursor: pointer;
+  font: inherit;
+}
+
+.daidala-config-tabs button.is-selected {
+  border-color: var(--daidala-accent);
+  color: var(--daidala-accent);
+}
+
+.daidala-github-project-link {
+  padding: var(--daidala-padding);
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+}
+
+.daidala-github-project-link-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--daidala-gap);
+}
+
+.daidala-github-project-link h3,
+.daidala-github-project-link h4,
+.daidala-github-project-link p {
+  margin: 0;
+}
+
+.daidala-github-registration-context,
+.daidala-github-current-link,
+.daidala-github-link-preview {
+  padding: 0.75rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-base, transparent);
+}
+
+.daidala-github-link-preview {
+  border-color: var(--daidala-warning);
+}
+
+.daidala-github-registration-context dl,
+.daidala-github-current-link dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.daidala-github-registration-context dt,
+.daidala-github-current-link dt {
+  color: var(--daidala-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.daidala-github-registration-context dd,
+.daidala-github-current-link dd {
+  min-width: 0;
+  margin: 0.15rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.daidala-github-link-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+}
+
+.daidala-github-link-form h4,
+.daidala-github-link-form button {
+  grid-column: 1 / -1;
+}
+
+.daidala-github-field {
+  display: grid;
+  gap: 0.3rem;
+  color: var(--daidala-muted);
+}
+
+.daidala-github-field input,
+.daidala-github-link-form button,
+.daidala-github-project-link button {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 0.5rem 0.65rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+  color: var(--text-primary, inherit);
+  font: inherit;
+}
+
+.daidala-github-project-link button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.daidala-github-verified {
+  margin: 0;
+  color: var(--daidala-ok);
+}
+
 @media (max-width: 64rem) {
   .daidala-root {
     padding: 0.75rem;
@@ -663,7 +798,10 @@
     grid-template-columns: 1fr 1fr;
   }
   .daidala-card,
-  .daidala-decision {
+  .daidala-decision,
+  .daidala-github-registration-context dl,
+  .daidala-github-current-link dl,
+  .daidala-github-link-form {
     grid-template-columns: 1fr;
   }
 }

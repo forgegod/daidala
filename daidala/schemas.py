@@ -99,6 +99,18 @@ STATUS = {
     },
 }
 
+CHECKOUTS_STATUS = {
+    "name": "daidala_checkouts_status",
+    "description": (
+        "Report checkout status without refreshing, adopting, pruning, or changing policy."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": False,
+    },
+}
+
 APPROVE = {
     "name": "daidala_approve",
     "description": "Approve the exact current plan digest for implementation.",
@@ -338,7 +350,7 @@ DELIVER = {
     },
 }
 
-LIFECYCLE_TOOLS = (START, STATUS, REPLACE_CONSTRAINTS, APPROVE, CANCEL)
+LIFECYCLE_TOOLS = (START, STATUS, CHECKOUTS_STATUS, REPLACE_CONSTRAINTS, APPROVE, CANCEL)
 EXECUTION_TOOLS = (
     SUBMIT_ARTIFACT,
     SUBMIT_REVIEW,

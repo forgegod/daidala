@@ -18,7 +18,7 @@
 
 **Produces:** strict profile-local checkout/link stores, verified Projects v2 link UI, collision-safe manual checkout refresh and backup/prune actions, and a report-only cron-compatible status tool
 
-**Status:** Phase 0 done (2026-08-09: 542 tests, `ruff`, `lefthook validate`, pack validation, build and release-content checks); Phase 1 pending human approval
+**Status:** Phase 0 done (2026-08-09: 542 tests, `ruff`, `lefthook validate`, pack validation, build and release-content checks); Phase 1 done (2026-08-09: 547 tests, the same repository gate, and an isolated Hermes browser fixture); Phase 2 done (2026-08-09: 568 tests via `python -m pytest`, `ruff`, `lefthook validate`, pack/build/release checks, and isolated Hermes dashboard and directory-plugin probes)
 
 ## Goal
 
@@ -40,8 +40,8 @@ Checkout replacement can destroy local work if ownership or Git status is classi
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
 | 0 | Add checkout configuration and GitHub Projects v2 link model | done (2026-08-09; 542 tests, `ruff`, `lefthook validate`, pack validation, build/release checks) | Strict mode-`0600` stores enforce collision safety, root-change blocking, registration equality, and verified owner/number/node-ID links; focused model tests pass |
-| 1 | Add GitHub Projects v2 link UI | pending | The UI manages one verified link per registered project; mutation requires a fresh bounded GitHub read, matching preview digest, and literal confirmation; token values never cross the boundary |
-| 2 | Add manual checkout refresh, TTL policy, backup pruning, and report-only cron hook | pending | Checkout inventory and confirmed actions validate path, marker, origin, receipt, and Git status; ignored-only files require backup mode; TTL defaults disabled; the cron-compatible tool is read-only |
+| 1 | Add GitHub Projects v2 link UI | done (2026-08-09; full repository gate; isolated browser fixture verified the path-free no-link state and bounded 409 preview block) | The UI manages one verified link per registered project; mutation requires a fresh bounded GitHub read, matching preview digest, and literal confirmation; token values never cross the boundary |
+| 2 | Add manual checkout refresh, TTL policy, backup pruning, and report-only cron hook | done (2026-08-09; 568 tests via `python -m pytest`, repository gate, and isolated dashboard/directory-plugin probes) | Checkout inventory and confirmed actions validate path, marker, origin, receipt, and Git status; ignored-only files require backup mode; TTL defaults disabled; the cron-compatible tool is read-only |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
 
@@ -61,17 +61,23 @@ Verification gate: The Phase 0 table predicate and detailed contract gates pass.
 
 ## Phase 1 — Add the Projects v2 link UI
 
-**Goal:** Expose bounded list, preview, verify, add, edit, and delete operations for one Projects v2 link per registered project.
+**Goal:** Expose bounded list, preview, verify, add, edit, and delete operations for one Projects v2 link per registered project, with path-free registration context.
 
 Steps:
 
 1. Read contract Phase 5, its mutation risk, and `dashboard/AGENTS.md`.
-2. Implement the list/read model and fresh bounded GitHub verification before any mutation.
-3. Require matching preview digest and literal `confirm: true`; keep repository remote and intake alias display-only and registration-derived.
-4. Extend the closed route inventory and same-commit DOX contracts.
-5. Run focused API, asset, and disposable-browser verification from the contract.
+2. Map missing or malformed profile credential bindings to a bounded prerequisite response rather than an internal server failure, so the UI can distinguish a blocked GitHub read without exposing a credential value.
+3. Implement the list/read model and fresh bounded GitHub verification before any mutation.
+4. Require matching preview digest and literal `confirm: true`; keep repository identity, verified remote, intake alias, and checkout-configuration match display-only and registration-derived. Never render or return a checkout path; filesystem checkout state remains Phase 2 work.
+5. Extend the closed route inventory and same-commit DOX contracts.
+6. Run focused API, asset, and disposable-browser verification from the contract.
 
-Verification gate: The Phase 1 table predicate passes without exposing secrets or altering project-cycle admission.
+Atomicity: the dependency-free bundle's request helpers, configuration tab, link
+panel, stylesheet, asset contract tests, and plan/contract wording land in one
+checkpoint. Separating them would leave either an unreachable UI surface or an
+unreviewed mutation route in the shipped browser asset.
+
+Verification gate: The Phase 1 table predicate passes without exposing secrets, returning an internal server failure for a missing binding, or altering project-cycle admission.
 
 ## Phase 2 — Add manual refresh and report-only status
 
@@ -80,10 +86,11 @@ Verification gate: The Phase 1 table predicate passes without exposing secrets o
 Steps:
 
 1. Read contract Phase 6, the complete filesystem risk section, P0100's completed `Produces` evidence, and linked AGENTS files.
-2. Implement owner markers, freshness receipts, strict preflight, three TTL modes, clone/swap recovery, and named backup pruning exactly as specified.
-3. Use `daidala.archive_io` for backup creation and verification; do not duplicate tar/gzip policy.
-4. Register `daidala_checkouts_status` as report-only and ensure cron can invoke only that non-mutating surface.
-5. Update route/tool inventories and DOX in the same commit, then run the complete focused tests and disposable-browser gates.
+2. Replace the Phase 0 provisional `manual`/`ttl` mode vocabulary with the exact `disabled`/`wipe-if-clean`/`backup-then-wipe` policy before exposing any Phase 2 surface; reject obsolete persisted values rather than translating them.
+3. Replace the Phase 0 text owner-marker implementation with the contract's strict JSON witness before implementing freshness receipts, preflight, the three exact policy modes, clone/swap recovery, and named backup pruning.
+4. Use `daidala.archive_io` for backup creation and verification; do not duplicate tar/gzip policy.
+5. Register `daidala_checkouts_status` as report-only and ensure cron can invoke only that non-mutating surface.
+6. Update route/tool inventories and DOX in the same commit, then run the complete focused tests and disposable-browser gates.
 
 Verification gate: The Phase 2 table predicate passes, failed clone/archive paths preserve the original checkout, and report-only execution cannot mutate state.
 

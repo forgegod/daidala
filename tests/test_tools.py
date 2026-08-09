@@ -830,6 +830,7 @@ def test_public_schemas_have_no_removed_lifecycle_aliases() -> None:
         "daidala_pack_info",
         "daidala_start",
         "daidala_status",
+        "daidala_checkouts_status",
         "daidala_replace_constraints",
         "daidala_approve",
         "daidala_cancel",

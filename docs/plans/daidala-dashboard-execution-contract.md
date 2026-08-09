@@ -1394,8 +1394,9 @@ preview/replace compare-and-swap pattern.
    Projects owner, project number, and verified node ID. An explicit `Verify`
    action calls the read-only live endpoint and displays sanitized title/URL and
    a session-only result; the result is not persisted. Display repository identity, verified remote,
-   intake alias, and resolved checkout path in a separate "registration context"
-   block so the UI does not imply they are duplicated link fields.
+   intake alias, and checkout-configuration match in a separate "registration context"
+   block so the UI does not imply they are duplicated link fields. The context never
+   renders a checkout path.
 2. The "Add link" form requires only `project_id` (chosen from the Phase 4
    `/registrations` projection), owner, and project number. Submit to
    `/github-project-links/preview`, show the live-resolved Project identity and
@@ -1407,8 +1408,10 @@ preview/replace compare-and-swap pattern.
    row read; it does not depend on live GitHub availability.
 3. Render distinct blocked states for missing registration/bindings, failed
    Project read capability, nonexistent/inaccessible Project, stale node ID, and
-   missing or ownership-invalid checkout. A checkout warning does not prevent an
-   otherwise valid Projects link because the two records have separate authority.
+   checkout-root/registration mismatch. Missing or ownership-invalid checkout is
+   Phase 6 inventory work and is not inferred here. A checkout-configuration warning
+   does not prevent an otherwise valid Projects link because the two records have
+   separate authority.
 4. The mutation never invokes or changes `project-cycle admit`; v1 uses the link
    for configuration/verification display only.
 
@@ -1486,8 +1489,9 @@ confirmation, and clean-tree safeguards. This phase does not alter admission.
      `subprocess.run` is pattern consistency, not that AGENTS citation.
      Decode paths with the filesystem encoding plus `surrogateescape`; do not
      split on spaces/newlines. Discard only the exact untracked marker record
-     after validating that its bytes are exactly `<project_id>\n`, its mode is
-     `0600`, and it is neither a symlink nor tracked/ignored.
+     after validating that its bytes equal `owner_marker_content(<project_id>)`
+     (the canonical JSON witness defined in **Checkout location decision**), its
+     mode is `0600`, and it is neither a symlink nor tracked/ignored.
      Any tracked/untracked row returns 409 before backup, clone, rename, or
      deletion. Ignored-only rows also abort `disabled`/`wipe-if-clean`; under
      `backup-then-wipe` they must be included in the archive before replacement;

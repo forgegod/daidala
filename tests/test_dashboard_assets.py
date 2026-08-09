@@ -96,8 +96,6 @@ def test_dashboard_mutations_use_only_closed_post_routes() -> None:
     assert '"/cards/" + encodeURIComponent(card.task_id) +' in source
     assert '"/cancel/preview"' in source
     assert '"/cancel"' in source
-    assert "method: \"PUT\"" not in source
-    assert "method: \"DELETE\"" not in source
     assert "method: \"PATCH\"" not in source
 
 
@@ -156,6 +154,66 @@ def test_bundle_exposes_pack_inventory_readiness_content_and_confirmed_install()
     assert 'data-testid": "daidala-pack-preview"' in source
     assert '"/dispatch"' not in source.lower()
     assert "dispatch_tool" not in source.lower()
+
+
+def test_bundle_exposes_path_free_github_project_link_management() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    required_strings = (
+        'API_BASE + "/registrations"',
+        'API_BASE + "/github-project-links"',
+        'API_BASE + "/github-project-links/preview"',
+        '"/verify"',
+        'method: "PUT"',
+        'method: "DELETE"',
+        "GitHub Projects",
+        "Registration context",
+        "No GitHub Project configured",
+        "Preview link change",
+        "Verify",
+        "I confirm applying this exact verified link",
+        "I confirm removing this GitHub Project link",
+        "linkIssueMessage",
+        "payload.detail",
+        "checkout_match",
+        "intake_credential",
+        "project_node_id",
+    )
+    for text in required_strings:
+        assert text in source, f"missing GitHub Project link UI contract text: {text}"
+
+    assert 'data-testid": "daidala-github-project-links"' in source
+    assert 'data-testid": "daidala-github-project-link"' in source
+    assert "checkout_path" not in source
+    assert "repository_path" not in source
+
+
+def test_bundle_exposes_confirmed_path_free_checkout_lifecycle_actions() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    required_strings = (
+        'API_BASE + "/checkouts"',
+        '"/" + kind + "/preview"',
+        '"/" + pending.kind',
+        '"/checkouts/_backups/prune/preview"',
+        '"/checkouts/_backups/prune"',
+        '"/checkouts/policy/preview"',
+        '"/checkouts/policy"',
+        "Checkouts",
+        "Preview refresh",
+        "Preview adoption",
+        "Preview prune",
+        "Preview policy change",
+        "I confirm applying this exact checkout preview",
+        "Apply confirmed checkout action",
+    )
+    for text in required_strings:
+        assert text in source, f"missing checkout UI contract text: {text}"
+
+    assert 'data-testid": "daidala-checkouts"' in source
+    assert 'data-testid": "daidala-checkout-preview"' in source
+    assert "checkout_path" not in source
+    assert "repository_path" not in source
 
 
 def test_bundle_exposes_the_closed_inventory_backed_start_workflow_wizard() -> None:

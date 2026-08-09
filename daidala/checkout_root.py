@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -20,7 +21,7 @@ OWNER_FILENAME = ".daidala-owner"
 MAX_CHECKOUTS_BYTES = 16 * 1024
 MAX_ROOT_BYTES = 4096
 MAX_DISCOVERED_CHECKOUTS = 1024
-_VALID_MODES = frozenset({"disabled", "manual", "ttl"})
+_VALID_MODES = frozenset({"disabled", "wipe-if-clean", "backup-then-wipe"})
 
 
 class CheckoutRootError(PolicyViolationError):
@@ -38,15 +39,19 @@ class CheckoutConfig:
     def __post_init__(self) -> None:
         _require_checkout_root(self.root)
         if self.mode not in _VALID_MODES:
-            raise CheckoutRootError("checkout mode must be disabled, manual, or ttl")
+            raise CheckoutRootError(
+                "checkout mode must be disabled, wipe-if-clean, or backup-then-wipe"
+            )
         if (
             isinstance(self.ttl_hours, bool)
             or not isinstance(self.ttl_hours, int)
             or not 0 <= self.ttl_hours <= 8760
         ):
             raise CheckoutRootError("checkout ttl_hours must be an integer from 0 to 8760")
-        if (self.mode == "ttl") != (self.ttl_hours > 0):
-            raise CheckoutRootError("checkout ttl mode and ttl_hours must agree")
+        if self.mode == "disabled" and self.ttl_hours != 0:
+            raise CheckoutRootError("disabled checkout mode requires ttl_hours 0")
+        if self.mode != "disabled" and self.ttl_hours == 0:
+            raise CheckoutRootError("TTL checkout modes require ttl_hours from 1 to 8760")
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -223,11 +228,14 @@ def validate_reusable_checkout(
     ):
         code, output = runner(command, {})
         if label == "origin":
-            if code != 0 or output.strip() != registration.verified_remote:
+            if code != 0 or output not in {
+                registration.verified_remote,
+                f"{registration.verified_remote}\n",
+            }:
                 raise CheckoutRootError(
                     "existing checkout origin does not match trusted registration"
                 )
-        elif code == 0:
+        elif code != 1:
             raise CheckoutRootError(f"{label} is invalid")
 
 
@@ -236,7 +244,38 @@ def _owner_marker_matches(path: Path, project_id: str) -> bool:
         content = read_private_text(path, maximum_bytes=256, label="checkout owner marker")
     except (FileNotFoundError, ProfileFileError):
         return False
-    return content.strip() == project_id
+    try:
+        raw = json.loads(content)
+    except json.JSONDecodeError:
+        return False
+    return raw == {"schema": "daidala.checkout-owner/v1", "project_id": project_id}
+
+
+def owner_marker_content(project_id: str) -> str:
+    """Return the canonical JSON witness for one registration-derived checkout."""
+
+    _require_slug(project_id, "checkout project ID")
+    return json.dumps(
+        {"schema": "daidala.checkout-owner/v1", "project_id": project_id},
+        separators=(",", ":"),
+        sort_keys=True,
+    ) + "\n"
+
+
+def write_owner_marker(path: Path, project_id: str) -> None:
+    """Atomically persist the exact private ownership witness after a safe operation."""
+
+    expected = checkout_path(path.parent, project_id)
+    if path != expected:
+        raise CheckoutRootError("checkout path does not match the registration-derived path")
+    try:
+        atomic_write_private_text(
+            path / OWNER_FILENAME,
+            owner_marker_content(project_id),
+            label="checkout owner marker",
+        )
+    except ProfileFileError as error:
+        raise CheckoutRootError(str(error)) from error
 
 
 def _require_checkout_root(path: Path) -> None:
@@ -248,6 +287,6 @@ def _require_checkout_root(path: Path) -> None:
     pure = PurePosixPath(raw)
     if not pure.is_absolute() or "." in pure.parts or ".." in pure.parts or raw != str(pure):
         raise CheckoutRootError("checkout root must be a normalized absolute POSIX path")
-    for parent in reversed(path.parents):
-        if parent.exists() and parent.is_symlink():
+    for parent in (*reversed(path.parents), path):
+        if (parent.exists() or parent.is_symlink()) and parent.is_symlink():
             raise CheckoutRootError("checkout root cannot traverse a symlink")

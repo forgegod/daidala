@@ -282,7 +282,7 @@ def _load_bindings(registration: ControllerRegistration, registration_file: Path
                 label="credential bindings",
             )
         )
-    except (ProfileFileError, PolicyViolationError) as error:
+    except (FileNotFoundError, ProfileFileError, PolicyViolationError) as error:
         raise GitHubProjectLinkError("GitHub intake credential bindings are unavailable") from error
     if bindings.project_id != registration.project_id:
         raise GitHubProjectLinkError("GitHub intake credential bindings project does not match")
@@ -300,7 +300,7 @@ def _load_evidence(
                 label="prerequisite evidence",
             )
         )
-    except (ProfileFileError, PolicyViolationError) as error:
+    except (FileNotFoundError, ProfileFileError, PolicyViolationError) as error:
         raise GitHubProjectLinkError(
             "GitHub intake prerequisite evidence is unavailable"
         ) from error

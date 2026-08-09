@@ -5,10 +5,13 @@ from pathlib import Path
 import pytest
 
 from daidala.checkout_root import (
+    OWNER_FILENAME,
     CheckoutConfig,
     CheckoutRootError,
     CheckoutRootStore,
+    owner_marker_content,
     parse_checkout_config,
+    write_owner_marker,
 )
 from daidala.registrations import ControllerRegistration, RegistrationLimits
 
@@ -67,3 +70,35 @@ def test_checkout_root_rejects_symlink_components(tmp_path: Path) -> None:
 
     with pytest.raises(CheckoutRootError, match="symlink"):
         CheckoutConfig(root=alias / "work")
+
+
+def test_checkout_root_uses_the_exact_phase_two_ttl_modes(tmp_path: Path) -> None:
+    root = tmp_path / "root"
+
+    assert CheckoutConfig(root=root) == CheckoutConfig(
+        root=root, mode="disabled", ttl_hours=0
+    )
+    assert CheckoutConfig(root=root, mode="wipe-if-clean", ttl_hours=1).mode == "wipe-if-clean"
+    assert (
+        CheckoutConfig(root=root, mode="backup-then-wipe", ttl_hours=8760).mode
+        == "backup-then-wipe"
+    )
+    with pytest.raises(CheckoutRootError, match="mode"):
+        CheckoutConfig(root=root, mode="manual", ttl_hours=0)
+    with pytest.raises(CheckoutRootError, match="requires ttl_hours 0"):
+        CheckoutConfig(root=root, mode="disabled", ttl_hours=1)
+    with pytest.raises(CheckoutRootError, match="TTL checkout modes"):
+        CheckoutConfig(root=root, mode="wipe-if-clean", ttl_hours=0)
+
+
+def test_checkout_owner_witness_is_strict_json_and_private(tmp_path: Path) -> None:
+    root = tmp_path / "root"
+    checkout = root / "project-one"
+    checkout.mkdir(parents=True)
+
+    write_owner_marker(checkout, "project-one")
+
+    marker = checkout / OWNER_FILENAME
+    assert marker.read_text(encoding="utf-8") == owner_marker_content("project-one")
+    assert marker.stat().st_mode & 0o777 == 0o600
+    assert owner_marker_content("project-one") != "project-one\n"
