@@ -8,10 +8,10 @@ pinned stage skills, activation policy, and methodology judgment differ.
 
 ## Implemented adapters
 
-| Pack | Upstream source | Pinned revision | Human gate |
+| Pack | Upstream source | Pinned revision | Human gates |
 |---|---|---|---|
-| `addyosmani` | `https://github.com/addyosmani/agent-skills` | `7ce442de03ddc1b72480c3b48d55c62880ea2a90` | After `plan` |
-| `aidlc` | `https://github.com/awslabs/aidlc-workflows` | `e49341dbeb8af82758dd85e96ed7fe9bcf38a447` (`v1.0.1`) | After `plan` |
+| `addyosmani` | `https://github.com/addyosmani/agent-skills` | `7ce442de03ddc1b72480c3b48d55c62880ea2a90` | Exact plan approval; exact attended review disposition |
+| `aidlc` | `https://github.com/awslabs/aidlc-workflows` | `e49341dbeb8af82758dd85e96ed7fe9bcf38a447` (`v1.0.1`) | Exact plan approval; exact attended review disposition |
 
 ## Addyosmani mapping
 
@@ -45,10 +45,12 @@ The Addyosmani adapter does not add conditionals to Python. All packs share:
 
 - the ordered `define`, `plan`, `implement`, `verify`, `review`, `deliver`
   lifecycle;
-- one human gate after plan and before implementation;
+- one exact human gate after plan and a separate exact attended disposition
+  after automated review;
 - exact skill-name and install-target validation;
 - the same required/conditional activation schema and fail-closed evidence gate;
-- the same artifact, worktree, verification, review, and delivery mechanics.
+- the same artifact, worktree, verification, structured-review, disposition,
+  revision-request, and delivery mechanics.
 
 A pack-specific behavior belongs in YAML or its orchestration instructions. A
 capability needed by multiple packs requires a shared schema extension and

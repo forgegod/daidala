@@ -192,18 +192,60 @@ def cancel(args: dict[str, Any], **kwargs: Any) -> str:
 
 
 def submit_artifact(args: dict[str, Any], **kwargs: Any) -> str:
-    """Persist a definition, plan, or review artifact."""
+    """Persist a definition or plan artifact."""
     del kwargs
     return _service_handler(
         args,
-        allowed={"workflow_id", "stage", "content"},
+        allowed={"workflow_id", "stage", "content", "approval_summary"},
         required={"workflow_id", "stage", "content"},
         operation=lambda service, values: service.submit_artifact(
             str(values["workflow_id"]),
             stage=WorkflowStage(str(values["stage"])),
             content=str(values["content"]),
+            approval_summary=values.get("approval_summary"),
             **_worker_context(),
         ),
+    )
+
+
+def submit_review(args: dict[str, Any], **kwargs: Any) -> str:
+    """Persist source-bound structured review evidence from the review worker."""
+    del kwargs
+    return _service_handler(
+        args,
+        allowed={"workflow_id", "outcome", "summary", "findings"},
+        required={"workflow_id", "outcome", "summary", "findings"},
+        operation=lambda service, values: service.submit_review(
+            str(values["workflow_id"]),
+            outcome=str(values["outcome"]),
+            summary=values["summary"],
+            findings=values["findings"],
+            **_worker_context(),
+        ),
+    )
+
+
+def decide_review(args: dict[str, Any], **kwargs: Any) -> str:
+    """Record an attended review disposition for the exact review digest."""
+    del kwargs
+
+    def operation(values: dict[str, Any]) -> dict[str, Any]:
+        if "HERMES_KANBAN_TASK" in os.environ:
+            raise ValueError("review disposition is unavailable from Hermes Kanban worker context")
+        workflow = _service_factory().decide_review(
+            str(values["workflow_id"]),
+            review_digest=str(values["review_digest"]),
+            action=str(values["action"]),
+            actor=str(values["actor"]),
+            rationale=str(values["rationale"]),
+        )
+        return {"workflow": workflow.to_dict()}
+
+    return _handle(
+        args,
+        allowed={"workflow_id", "review_digest", "action", "actor", "rationale"},
+        required={"workflow_id", "review_digest", "action", "actor", "rationale"},
+        operation=operation,
     )
 
 

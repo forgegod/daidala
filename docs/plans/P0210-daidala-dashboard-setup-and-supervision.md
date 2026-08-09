@@ -1,0 +1,194 @@
+# Daidala dashboard setup and workflow supervision
+
+**Plan ID:** daidala-dashboard-setup-and-supervision
+
+**Execution slot:** P0210
+
+**Created:** 2026-07-23
+
+**Depends on:** daidala-dashboard-user-config-packs-start-constraints-github-links, daidala-artifact-access-core, daidala-review-disposition-and-revision-loop
+
+**Split from:** daidala-dashboard-user-config-packs-start-constraints-github-links
+
+**Plan family:** daidala-dashboard
+
+**Entry checkpoint:** P0200 completed with a verified mounted host, disposable fixture recipe, and pack readiness surface; P0205 completed exact current-plan artifact resolution; P0207 completed structured review, attended disposition, revision-loop authority, and synchronized runtime documentation
+
+**Context sources:** [Supervise & decide UX surface](P0250-daidala-dashboard-ux-concept.md#surface-c-supervise-decide-p0210-phase-2-p0212-phase-0-p0214-phase-0), [approval summary and escaped-text contract](daidala-dashboard-execution-contract.md#approval-summary-and-escaped-text-contract), [operator runbook coverage](daidala-dashboard-execution-contract.md#operator-runbook-coverage), [implementer discipline](daidala-dashboard-execution-contract.md#implementer-discipline), [exact approval](../07-runbook.md#approve-the-exact-plan), [artifact resolver contract](daidala-artifact-review-execution-contract.md#phase-0-add-the-ledger-owned-artifact-catalog-and-resolver), P0205 completion evidence, and detailed [contract Phase 3](daidala-dashboard-execution-contract.md#phase-3-workflow-supervision-actions)
+
+**Produces:** an inventory-backed first-workflow wizard with mounted-profile scope, registered-repository capability readiness, non-authoritative defaults and Hermes Cron handoff, plus the decision-first workflow-detail foundation, bounded read-only card projection, and exact-plan approval surface consumed by P0212 and P0214
+
+**Status:** Complete — Phases 0 through 2 provide setup, first-workflow start, decision-first detail, and exact-plan approval. P0212 and P0214 own the extracted review and recovery/cancellation supervision slices.
+
+## Goal
+
+Add the browser path that resolves one mounted-profile registration into the existing setup model, starts a first workflow only after exact capability readiness, reopens an existing exact workflow as the runbook's resume path, and supervises it without introducing a second workflow engine, scheduler, timed pause, or general command-dispatch route.
+
+## Current state
+
+- P0200 owns the mounted host, fixture recipe, pack readiness, and supported React SDK boundary.
+- P0205 owns exact ledger-bound plan text resolution; approval must consume it rather than a profile-local path.
+- P0207 owns structured automated review, attended review disposition, delivery release, revision-request cleanup, revisioned planning, CLI fallback, and synchronized current-behavior documentation; this plan only presents those services in Hermes Dashboard.
+- `SetupRequest.from_payload`, `confirmed_start`, workflow read models, approval, Kanban recovery, and cancellation already define the authority boundaries.
+- The workflow detail renders the primary pending decision, verified literal plan body, complete approval tuple, immediate consequences, successor packet, lifecycle timeline, and bounded collapsed Kanban audit detail.
+- The shared contract pins the exact request envelope, blank workflow-ID behavior, disposable fixture rules, closed route inventory, and cancellation recovery path; resume means reopen and continue watching an existing workflow, not create a duplicate.
+
+## Phase table
+
+| # | Phase | Status | Verification gate |
+|---|---|---|---|
+| 0 | Establish the registered setup boundary | done (`python -m pytest -q`; Ruff; Lefthook; pack/link/build/release checks; isolated live Hermes compatibility probe) | The service and closed dashboard routes resolve only a selected mounted-profile registration into the exact `SetupRequest` path, share mutation-free start readiness with confirmed start, bind preview/apply to a fresh exact digest, and reject browser paths, unknown fields, stale previews, and explicit existing workflow IDs |
+| 1 | Render the inventory-backed first-workflow wizard | done (focused and full repository gates; unchanged long-name fixture; stateful disposable-browser readiness, stale-preview invalidation, confirmed Start, detail reload, and cleanup) | The browser consumes the Phase 0 boundary to select ready packs, registrations, profiles, boards, and constraints; preserves an in-memory non-secret draft/default; creates boards only through preview-confirm; and reaches a newly created workflow or a safe existing-workflow reference |
+| 2 | Add the decision-first detail foundation and exact-plan approval | done (39 focused and 517 full tests; Ruff; Lefthook; JavaScript syntax; pack, link, build, Twine, release-content, and supported-host compatibility checks; stateful disposable-browser exact-plan approval and cleanup) | Existing workflows reopen by exact ID; focused API and asset tests prove bounded read-only card projection, escaped verified plan evidence, a complete approval tuple and next-stage packet, and literal-confirmation approval bound to fresh artifact and summary identities |
+
+Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
+
+## Phase 0 — Establish the registered setup boundary
+
+**Goal:** Make the typed, registration-resolved, digest-bound setup contract a
+closed dashboard API before a browser view can consume it.
+
+Steps:
+
+1. Read contract Phase 2, the SetupRequest decision, and all linked AGENTS files.
+2. Extract one typed, mutation-free start-readiness preflight from
+   `WorkflowService.start`; use it for both confirmed start and the dashboard
+   readiness/preview routes so the browser cannot replace repository, pack,
+   board, or stage-profile checks with a weaker copy.
+3. Replace direct browser setup payloads with the strict `{selection,
+   request}` preview envelope and `{selection, request, preview_digest,
+   confirm}` apply envelope. Resolve `selection.project_id` only through the
+   mounted profile's registration and trusted checkout; reject browser paths,
+   unknown outer/request fields, non-literal confirmation, stale digests, and an
+   explicit workflow ID that already names a ledger. Remove the legacy
+   three-field browser control in this phase rather than retaining a direct-path
+   compatibility call; Phase 1 reintroduces Start workflow only through this
+   boundary.
+4. Add profile-safe inventory, readiness, and board preview/confirmed-creation
+   routes. Keep readiness and previews mutation-free; board apply reruns current
+   inventory and conflicts if the reviewed slug now exists.
+5. Extend typed setup/API tests and the closed route inventory. Verify that the
+   service and dashboard preflight share their behavior and that declined or
+   stale dashboard operations create no ledger, artifact, worktree, card, or
+   board.
+
+Verification gate: The Phase 0 table predicate passes. Focused setup/API tests
+prove the registration-resolved envelope, strict field rejection, shared
+preflight, mutation-free readiness, exact preview/apply binding, and board
+creation conflict handling. Asset tests prove the legacy direct-path control is
+absent. Phase 1 owns the static bundle's new browser-memory draft and rendered
+inventory controls.
+
+## Phase 1 — Render the inventory-backed first-workflow wizard
+
+**Goal:** Present the Phase 0 API as the guided first-run browser flow without
+adding browser authority or persistent dashboard state.
+
+Steps:
+
+1. Read Phase 0 completion evidence and contract Phase 2's selector, default,
+   constraints, and handoff rules.
+2. Extend the existing closed inventory/readiness projection only as needed to
+   identify the mounted controller profile and bind a selected registration to
+   that profile before the browser can render it. Keep controller identity
+   read-only, derive it through the documented profile inventory, and reject a
+   registration belonging to another profile; do not accept a browser profile,
+   checkout, credential, or path. This closes the missing Phase 0 browser input
+   discovered during Phase 1 execution.
+3. Implement the read-only mounted controller identity; ready-pack,
+   registered-repository, worker-default/six-stage-profile, and existing-board
+   selectors; requested outcome / prompt (mapped to `SetupRequest.goal`);
+   constraint source controls; browser-local non-secret defaults; readiness;
+   preview; and literal confirmation. Never label the browser control `Goal`.
+4. Add the preview-confirm board action, source-change invalidation, and the
+   `Manage sources` navigation affordance to Config → Constraints. P0230 owns
+   that destination's reusable-source browser and return implementation; this
+   phase keeps the draft only in browser memory.
+5. Persist only `{project_id, pack, board_slug, stage_profiles}` in the
+   mounted-profile-scoped browser preset. Inventory/readiness changes invalidate
+   preview; stale/missing identities remain unselected and never authorize start.
+6. On successful creation open the returned workflow; on an explicit existing
+   workflow conflict offer only the safe exact-ID reopen path. Include Hermes
+   Cron as a host-owned admission handoff, not a Daidala scheduler.
+7. Recreate the disposable stateful fixture for browser evidence and remove it
+   after stopping its owned process. Update asset tests, CSS, route inventory,
+   and owning DOX contracts.
+
+Verification gate: The Phase 1 table predicate and exact detailed Phase 2
+browser/asset gates pass. Browser evidence proves a Start draft is neither
+persisted nor included in defaults, a returned source selection invalidates the
+prior preview, and the old preview cannot authorize Start after a source change.
+The `Manage sources` link is present and routes to Config → Constraints; its
+full destination surface is verified under P0230.
+
+### Current Phase 1 state
+
+- The wizard implementation now includes installed policy-source inventory and
+  exact digests, board display names, browser-memory source return navigation,
+  the strict preset shape, safe existing-workflow reopen, and the host-owned
+  Cron handoff. Compatibility probes verify the executable's local Git revision
+  or build metadata rather than the banner's mutable `origin/main` label.
+- A fresh isolated fixture process proves the mounted identity and renders the
+  profile, board, worker, constraint-tab, and installed policy-source
+  inventories. The fixture exposed a valid long-name profile row with only one
+  separator space; the shared parser now handles display-column overflow and
+  validates the runtime-root candidate against the complete profile inventory.
+  Source navigation reaches the `return=start-workflow` context, and browser Back
+  preserves the in-memory prompt and constraint mode without writing a default.
+- The unchanged long-name fixture remains stopped and unmodified. A separate
+  approved disposable profile supplied one clean registered repository, one
+  isolated board, the exact bundled AI-DLC adapter, and a deterministic pinned
+  source-resolution boundary for the declared pack revision. Browser evidence
+  proves readiness, non-mutating preview, source-change invalidation of Start
+  authority, fresh preview confirmation, confirmed Start, live define/plan card
+  state, and one complete workflow card after reload. The fixture profile,
+  temporary repository, source shim, board, dashboard process, and runtime state
+  were removed; port 9121 is closed.
+- Live Start exposed an incomplete duplicate selected-workflow card: the opened
+  component passed only an ID while its renderer continued reading summary fields
+  from that placeholder. The renderer now hydrates identity from the fresh detail
+  response and filters the selected ID from the ordinary list; focused asset tests
+  and the browser reload prove one complete card with no `undefined` identity.
+- Full pytest, Ruff, Lefthook validation, both pack validations, fixture unittest,
+  Markdown links, build, Twine, release contents, and the isolated Hermes
+  dashboard compatibility probe pass.
+
+## Phase 2 — Add the decision-first detail foundation and exact-plan approval
+
+**Goal:** Make a newly started workflow understandable through a decision-first detail view and allow only an exact, source-bound plan approval while Hermes remains the dashboard host and Kanban lifecycle authority.
+
+Steps:
+
+1. Read the linked Phase 3 contract sections and the P0205 current-plan resolver evidence. Keep hidden-tab polling paused, poll no faster than five seconds while visible, and keep manual refresh read-only.
+2. Add the primary `Needs your decision` panel, lower-noise timeline, exact-ID reopen, and bounded `kanban show`/`kanban runs` detail projection. Parse only allowlisted fields under the contract's timeout and output bounds, preserving finite numeric lifecycle timestamps while rejecting booleans and non-finite values; every card must belong to the current workflow ledger. Represent `Human approval — Daidala policy gate` between `plan` and `implement` without a Kanban task ID or fabricated approval card.
+3. Add the authenticated approval-review route and `Approve exact plan` route as thin adapters over P0205 and `WorkflowService.approve`. Render the bound AI-assisted summary, escaped verified plan body, complete tuple, fixed immediate consequences (`implement → verify → review`, with delivery absent until attended acceptance), and a separately titled read-only `What the next card receives` packet. Require the displayed artifact ID, plan digest, summary digest, and literal `I reviewed this exact plan` confirmation; stale, malformed, unbound, binary, oversized, or mismatched evidence fails closed.
+4. Update the closed route inventory, dashboard mutation allowlist, and asset contract in the same implementation commit. P0212 owns review disposition/revision; P0214 owns blocked-card remediation and cancellation.
+5. Add focused API and asset coverage before or with the routes. Run the isolated browser gate for the exact approval surface only.
+
+Verification gate: `pytest tests/test_dashboard_api.py tests/test_dashboard_assets.py -q` exits 0 and proves bounded read-only watch/refresh, workflow-owned card projection, verified current-plan rendering, complete displayed tuple/immediate consequences without a delivery card, stale or unchecked approval rejection, literal escaped evidence, no summary-only approval, no approval Kanban card, and no route that commits or pushes. The isolated browser probe proves the approval control remains absent until the exact plan body verifies and the primary decision is understandable without expanding audit detail.
+
+### Current Phase 2 state
+
+- The workflow detail places attended decisions before recommendations, the
+  lifecycle timeline, and collapsed bounded Kanban audit detail. The approval
+  gate is a ledger-owned timeline row between plan and implementation and never
+  fabricates a Kanban card.
+- Exact approval re-resolves the verified plan and summary server-side, requires
+  the displayed artifact, plan, and summary identities plus literal
+  confirmation, and creates only the immediate implement, verify, and review
+  cards. Delivery remains pending until attended review acceptance.
+- A fresh disposable profile and real Hermes v0.19.0 dashboard proved literal
+  escaped plan rendering, confirmation gating, exact approval, owned detached
+  worktree creation, post-approval timeline state, and absence of a delivery
+  card. The owned process, profile, board, repository, and port were removed.
+
+## Out of scope
+
+- Do not change `SetupRequest`, registration storage, P0207 review/revision semantics, or Kanban authority; this plan is presentation and bounded routing only.
+- Do not add a wizard-local controller-profile switch, Daidala scheduler, timed
+  pause/resume, arbitrary repository URI/path field, pack upload/enable/disable,
+  credential storage, or server-side default store. Hermes Cron owns
+  delayed/recurring admission; pausing it affects future admissions only.
+- Do not implement checkout policy, GitHub Projects links, constraints, configuration verification, or the general artifact browser; this plan exposes only the exact current plan and review evidence required for attended decisions.
+- Do not implement review disposition, revision request, blocked-card comment/unblock, or cancellation here; P0212 and P0214 own those independently gated presentation slices.
+- Do not reuse state from a deleted fixture profile.

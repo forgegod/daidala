@@ -51,7 +51,7 @@ def test_historical_approval_stage_has_no_worker_skills() -> None:
         ("plan", 'daidala_submit_artifact(stage: "plan")'),
         ("implement", "daidala_capture_implementation"),
         ("verify", "daidala_record_verification"),
-        ("review", 'daidala_submit_artifact(stage: "review")'),
+        ("review", "daidala_submit_review"),
         ("deliver", "daidala_deliver"),
     ),
 )
@@ -89,6 +89,14 @@ def test_worker_contract_requires_kanban_handoff_and_recovery_protocol() -> None
         "`constraints_revision`, `constraints_digest`",
         "Daidala creates no approval Kanban card",
         "Kanban workers must never call `daidala_approve`",
+        "evidence-derived `approval_summary`",
+        "Invalid structured output blocks the plan handoff",
+        "there is no\nsummary fallback",
+        "Automated review is evidence, not delivery authority",
+        "Blocking findings cannot be overridden",
+        "`request-revision` flow",
+        "newly recorded plan plus fresh exact approval",
+        "rewind directly to another\nstage",
     )
     for statement in required:
         assert statement in instructions
@@ -124,5 +132,7 @@ def test_worker_contract_forbids_post_capture_mutation_and_target_delivery() -> 
 
     assert "Implementation scope is immutable" in instructions
     assert "must not modify it" in instructions
-    assert "new approved graph revision" in instructions
+    assert "revision-addressed Plan card" in instructions
     assert "`committed: false` and `pushed: false`" in instructions
+    assert "Review workers must never\ncall attended disposition tools" in instructions
+    assert "no direct phase rewind occurred" in instructions

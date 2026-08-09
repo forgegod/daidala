@@ -1,30 +1,41 @@
-"""Read-only Daidala routes mounted by the Hermes dashboard host.
+"""Bounded Daidala routes mounted by the Hermes dashboard host.
 
 This module is the dashboard backend proven by Phase 0. It exports the
 ``router`` symbol the Hermes dashboard process mounts under
-``/api/plugins/daidala/``. The implementation is profile-safe, read-only,
-and never imports Hermes internals or writes the Kanban database. Live
-card data is read on demand through the same public
-``KanbanGraphAdapter`` boundary the existing ``daidala_status`` tool
-already uses.
+``/api/plugins/daidala/``. The implementation is profile-safe, exposes only
+closed pack/setup/constraint/approval/review/card-remediation/cancellation mutations,
+never imports Hermes internals, and never writes the Kanban database. Live card
+detail is read on demand through bounded public ``hermes kanban`` commands.
 
 The pure deterministic recommendation logic lives in
 :mod:`daidala.recommendations`. The factory below only wires those pure
 projections to FastAPI.
 
-Phase 2 endpoints (all read-only):
+Supervision endpoints include:
 
 - ``GET  /api/plugins/daidala/health``
 - ``GET  /api/plugins/daidala/prerequisites``
 - ``GET  /api/plugins/daidala/workflows``
 - ``GET  /api/plugins/daidala/workflows/{workflow_id}``
+- ``GET  /api/plugins/daidala/workflows/{workflow_id}/approval-review``
+- ``GET  /api/plugins/daidala/workflows/{workflow_id}/review-decision``
 - ``GET  /api/plugins/daidala/workflows/{workflow_id}/decisions``
 - ``GET  /api/plugins/daidala/workflows/{workflow_id}/recommendations``
+- ``POST /api/plugins/daidala/workflows/{workflow_id}/approve``
+- ``POST /api/plugins/daidala/workflows/{workflow_id}/review-disposition/preview``
+- ``POST /api/plugins/daidala/workflows/{workflow_id}/review-disposition``
+- ``POST /api/plugins/daidala/workflows/{workflow_id}/cards/{card_id}/comment``
+- ``POST /api/plugins/daidala/workflows/{workflow_id}/cards/{card_id}/unblock``
+- ``POST /api/plugins/daidala/workflows/{workflow_id}/cancel/preview``
+- ``POST /api/plugins/daidala/workflows/{workflow_id}/cancel``
 - ``POST /api/plugins/daidala/constraints/preview``
 """
 
 from __future__ import annotations
 
+import hashlib
+import json
+import math
 import subprocess
 from collections.abc import Callable
 from functools import lru_cache
@@ -33,26 +44,53 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
+from daidala.artifact_access import ArtifactAccessError
 from daidala.dashboard_backend import (
     DashboardBackend,
     DashboardBackendError,
     HostUnavailableError,
     UnknownWorkflowError,
 )
+from daidala.errors import WorkflowError
+from daidala.locations import resolve_data_root
+from daidala.pack_service import (
+    PackConfirmationError,
+    PackInstallError,
+    PackService,
+    PackServiceError,
+    StalePackPreviewError,
+    UnknownPackSkillError,
+)
+from daidala.packs import PackError
+from daidala.registrations import (
+    ControllerRegistration,
+    list_controller_registrations,
+)
+from daidala.revision import MAX_REVIEW_FEEDBACK_BYTES
+from daidala.service import ServiceError
 from daidala.setup_wizard import (
     SetupRequest,
     SetupWizardError,
-    confirmed_start,
+    active_profile,
     create_board,
     list_boards,
     list_profiles,
 )
+from daidala.skills import (
+    MissingSkillsError,
+    ProfileSkillContentRegistry,
+    SkillRevisionError,
+)
+from daidala.state import ReviewDispositionAction
+from daidala.store import StoreError
 
 router = APIRouter()
 
 
 ServiceFactory = Callable[[], Any]
+PackServiceFactory = Callable[[], PackService]
 _default_service_lock = Lock()
+_DASHBOARD_REVIEW_ACTOR = "dashboard:attended-operator"
 
 
 @lru_cache(maxsize=1)
@@ -72,14 +110,32 @@ def _reset_default_service() -> None:
 
 
 service_factory: ServiceFactory = _default_service
+card_detail_provider: Callable[[str, str], dict[str, Any]]
 
 
-def configure_backend(backend: Any) -> None:
+@lru_cache(maxsize=1)
+def _cached_default_pack_service() -> PackService:
+    return PackService.from_default_profile()
+
+
+def _default_pack_service() -> PackService:
+    return _cached_default_pack_service()
+
+
+pack_service_factory: PackServiceFactory = _default_pack_service
+
+
+def configure_backend(backend: Any, *, pack_service: PackService | None = None) -> None:
     """Inject a pre-built backend (used by tests and setup wiring)."""
 
-    global service_factory
+    global pack_service_factory, service_factory
 
     service_factory = backend.service_factory()
+    if pack_service is not None:
+        def configured_pack_service() -> PackService:
+            return pack_service
+
+        pack_service_factory = configured_pack_service
 
 
 @router.get("/health")
@@ -93,7 +149,15 @@ def health() -> dict[str, Any]:
     return {
         "success": True,
         "plugin": "daidala",
-        "read_only": True,
+        "read_model": True,
+        "bounded_mutations": [
+            "pack_install",
+            "workflow_setup",
+            "constraints_replace",
+            "workflow_approve",
+            "review_disposition_preview",
+            "review_disposition",
+        ],
     }
 
 
@@ -103,6 +167,78 @@ def prerequisites() -> dict[str, Any]:
 
     backend = DashboardBackend(service_factory=service_factory)
     return backend.prerequisites()
+
+
+@router.get("/packs")
+def packs() -> dict[str, Any]:
+    """List bundled packs with their validated six-stage declarations."""
+
+    service = pack_service_factory()
+    return {
+        "packs": [service.validate(name).to_dict() for name in service.bundled_names()]
+    }
+
+
+@router.post("/packs/{pack_name}/validate")
+def pack_validate(pack_name: str) -> dict[str, Any]:
+    """Explicitly validate one bundled pack through the shared service."""
+
+    try:
+        return {"valid": True, "pack": pack_service_factory().validate(pack_name).to_dict()}
+    except PackError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@router.post("/packs/{pack_name}/check")
+def pack_check(pack_name: str) -> dict[str, Any]:
+    """Resolve current host, source, and exact installed-skill readiness."""
+
+    try:
+        return pack_service_factory().check(pack_name).to_dict()
+    except (PackError, PackServiceError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@router.get("/packs/{pack_name}/skills/{skill_name}")
+def pack_skill_content(pack_name: str, skill_name: str) -> dict[str, Any]:
+    """Return one declared, path-free, bounded installed SKILL.md document."""
+
+    try:
+        return pack_service_factory().skill_content(pack_name, skill_name).to_dict()
+    except UnknownPackSkillError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except PackError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@router.post("/packs/{pack_name}/install/preview")
+def pack_install_preview(pack_name: str) -> dict[str, Any]:
+    """Return the complete canonical installation preview without mutation."""
+
+    return pack_check(pack_name)
+
+
+@router.post("/packs/{pack_name}/install")
+def pack_install(pack_name: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Apply only the exact reviewed preview after literal confirmation."""
+
+    if payload.get("confirm") is not True:
+        raise HTTPException(status_code=400, detail="explicit confirmation is required")
+    preview_digest = payload.get("preview_digest")
+    if not isinstance(preview_digest, str) or not preview_digest.strip():
+        raise HTTPException(status_code=400, detail="preview_digest is required")
+    try:
+        return pack_service_factory().install(
+            pack_name,
+            expected_preview_digest=preview_digest,
+            confirm=True,
+        ).to_dict()
+    except PackConfirmationError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except StalePackPreviewError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    except (PackInstallError, PackError, PackServiceError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
 
 
 @router.get("/workflows")
@@ -117,7 +253,10 @@ def workflows() -> dict[str, Any]:
 def workflow_detail(workflow_id: str) -> dict[str, Any]:
     """Return policy facts and a live, read-only Kanban snapshot."""
 
-    backend = DashboardBackend(service_factory=service_factory)
+    backend = DashboardBackend(
+        service_factory=service_factory,
+        card_detail_provider=card_detail_provider,
+    )
     try:
         return backend.workflow_view(workflow_id)
     except UnknownWorkflowError as error:
@@ -128,6 +267,220 @@ def workflow_detail(workflow_id: str) -> dict[str, Any]:
             "workflow": None,
             "kanban": {"available": False, "cards": [], "error": str(error)},
         }
+
+
+@router.get("/workflows/{workflow_id}/approval-review")
+def approval_review(workflow_id: str) -> dict[str, Any]:
+    """Return server-resolved, verified evidence for the current plan only."""
+
+    backend = DashboardBackend(service_factory=service_factory)
+    try:
+        return backend.approval_review(workflow_id)
+    except UnknownWorkflowError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ArtifactAccessError as error:
+        raise HTTPException(
+            status_code=409,
+            detail={"message": "Plan unavailable", "reason": error.reason.value},
+        ) from error
+
+
+@router.post("/workflows/{workflow_id}/approve")
+def workflow_approve(workflow_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Approve only the exact current plan evidence reviewed by the operator."""
+
+    expected_fields = {"artifact_id", "plan_digest", "summary_digest", "confirm"}
+    if set(payload) != expected_fields:
+        raise HTTPException(status_code=400, detail="exact approval fields are required")
+    if payload.get("confirm") is not True:
+        raise HTTPException(status_code=400, detail="explicit confirmation is required")
+    for field in ("artifact_id", "plan_digest", "summary_digest"):
+        if not _is_sha256(payload.get(field)):
+            raise HTTPException(status_code=400, detail=f"{field} must be a SHA-256 identity")
+
+    service = service_factory()
+    try:
+        evidence = service.current_plan_evidence(workflow_id).to_dict()
+        current_identity = {
+            "artifact_id": evidence["artifact_id"],
+            "plan_digest": evidence["plan_digest"],
+            "summary_digest": evidence["approval_summary_digest"],
+            "confirm": True,
+        }
+        if payload != current_identity:
+            raise HTTPException(
+                status_code=409,
+                detail="plan identity changed after review; refresh approval evidence",
+            )
+        service.approve(workflow_id, plan_digest=evidence["plan_digest"])
+        return DashboardBackend(service_factory=lambda: service).approval_review(workflow_id)
+    except HTTPException:
+        raise
+    except ArtifactAccessError as error:
+        raise HTTPException(
+            status_code=409,
+            detail={"message": "Plan unavailable", "reason": error.reason.value},
+        ) from error
+    except (ServiceError, StoreError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@router.get("/workflows/{workflow_id}/review-decision")
+def review_decision(workflow_id: str) -> dict[str, Any]:
+    """Return exact source-bound review evidence and attended decision state."""
+
+    backend = DashboardBackend(service_factory=service_factory)
+    try:
+        return backend.review_decision(workflow_id)
+    except UnknownWorkflowError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ArtifactAccessError as error:
+        raise HTTPException(
+            status_code=409,
+            detail={"message": "Review evidence unavailable", "reason": error.reason.value},
+        ) from error
+    except WorkflowError as error:
+        raise HTTPException(status_code=409, detail="Review evidence unavailable") from error
+
+
+@router.post("/workflows/{workflow_id}/review-disposition/preview")
+def review_disposition_preview(
+    workflow_id: str, payload: dict[str, Any]
+) -> dict[str, Any]:
+    """Preview one exact attended review action without mutation."""
+
+    action, rationale = _review_action_payload(
+        payload,
+        expected_fields={"action", "rationale"},
+    )
+    try:
+        preview = service_factory().preview_review_decision(
+            workflow_id,
+            action=action,
+            actor=_DASHBOARD_REVIEW_ACTOR,
+            rationale=rationale,
+        )
+        return _browser_review_preview(preview.to_dict())
+    except StoreError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except WorkflowError as error:
+        raise HTTPException(
+            status_code=409, detail="Review disposition preview unavailable"
+        ) from error
+
+
+@router.post("/workflows/{workflow_id}/review-disposition")
+def review_disposition(workflow_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Apply only the exact freshly previewed attended review action."""
+
+    action, rationale = _review_action_payload(
+        payload,
+        expected_fields={
+            "action",
+            "review_digest",
+            "preview_digest",
+            "rationale",
+            "confirm",
+        },
+    )
+    if payload.get("confirm") is not True:
+        raise HTTPException(status_code=400, detail="explicit review confirmation is required")
+    for field in ("review_digest", "preview_digest"):
+        if not _is_sha256(payload.get(field)):
+            raise HTTPException(status_code=400, detail=f"{field} must be a SHA-256 identity")
+    try:
+        result = service_factory().apply_review_decision(
+            workflow_id,
+            action=action,
+            actor=_DASHBOARD_REVIEW_ACTOR,
+            rationale=rationale,
+            expected_review_digest=payload["review_digest"],
+            expected_preview_digest=payload["preview_digest"],
+            confirm=True,
+        )
+    except StoreError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except WorkflowError as error:
+        raise HTTPException(
+            status_code=409, detail="Review disposition could not be applied"
+        ) from error
+    preview = result.get("preview")
+    if isinstance(preview, dict):
+        result = {**result, "preview": _browser_review_preview(preview)}
+    return result
+
+
+@router.post("/workflows/{workflow_id}/cards/{card_id}/comment")
+def workflow_card_comment(
+    workflow_id: str, card_id: str, payload: dict[str, Any]
+) -> dict[str, Any]:
+    """Add one confirmed bounded remediation comment to a ledger-owned card."""
+
+    comment = _confirmed_operator_text(payload, field="comment")
+    board_slug = _workflow_card_board(workflow_id, card_id)
+    try:
+        kanban_comment(board_slug, card_id, comment)
+    except DashboardBackendError as error:
+        raise HTTPException(status_code=409, detail="Card comment could not be recorded") from error
+    return {"commented": True, "card_id": card_id}
+
+
+@router.post("/workflows/{workflow_id}/cards/{card_id}/unblock")
+def workflow_card_unblock(
+    workflow_id: str, card_id: str, payload: dict[str, Any]
+) -> dict[str, Any]:
+    """Unblock one confirmed workflow-owned card through the public CLI."""
+
+    reason = _confirmed_operator_text(payload, field="reason")
+    board_slug = _workflow_card_board(workflow_id, card_id)
+    try:
+        kanban_unblock(board_slug, card_id, reason)
+    except DashboardBackendError as error:
+        raise HTTPException(status_code=409, detail="Card could not be unblocked") from error
+    return {"unblocked": True, "card_id": card_id}
+
+
+@router.post("/workflows/{workflow_id}/cancel/preview")
+def workflow_cancel_preview(workflow_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Project the current cancellation impact without exposing a worktree path."""
+
+    reason = _operator_text(payload, expected_fields={"reason"}, field="reason")
+    try:
+        return _cancellation_preview(service_factory(), workflow_id, reason)
+    except StoreError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+
+
+@router.post("/workflows/{workflow_id}/cancel")
+def workflow_cancel(workflow_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Cancel only when the current canonical cancellation preview still matches."""
+
+    reason = _operator_text(
+        payload,
+        expected_fields={"reason", "preview_digest", "confirm"},
+        field="reason",
+    )
+    if payload.get("confirm") is not True:
+        raise HTTPException(
+            status_code=400, detail="explicit cancellation confirmation is required"
+        )
+    expected_digest = payload.get("preview_digest")
+    if not _is_sha256(expected_digest):
+        raise HTTPException(status_code=400, detail="preview_digest must be a SHA-256 identity")
+    service = service_factory()
+    try:
+        preview = _cancellation_preview(service, workflow_id, reason)
+    except StoreError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    if preview["preview_digest"] != expected_digest:
+        raise HTTPException(status_code=409, detail="cancellation inputs changed after preview")
+    try:
+        service.cancel(workflow_id, reason)
+    except (ServiceError, StoreError, WorkflowError) as error:
+        raise HTTPException(
+            status_code=409, detail="Workflow cancellation could not be applied"
+        ) from error
+    return {"cancelled": True, "workflow_id": workflow_id}
 
 
 @router.get("/workflows/{workflow_id}/decisions")
@@ -203,57 +556,499 @@ def constraint_replace(payload: dict[str, Any]) -> dict[str, Any]:
 
 @router.get("/wizard/inventory")
 def wizard_inventory() -> dict[str, Any]:
-    """List existing boards, profiles, and supported workflow packs."""
+    """List the profile-safe identities eligible for setup selection."""
     try:
+        controller_profile = active_profile(
+            _run_command,
+            fallback_name=resolve_data_root().name,
+        )
         return {
+            "controller_profile": controller_profile,
             "boards": list_boards(_run_command),
             "profiles": list_profiles(_run_command),
             "packs": ["addyosmani", "aidlc"],
+            "policy_sources": _profile_policy_sources(),
+            "projects": [
+                {
+                    "project_id": registration.project_id,
+                    "repository": registration.verified_remote,
+                }
+                for registration in _registered_projects(controller_profile).values()
+            ],
         }
     except SetupWizardError as error:
         raise HTTPException(status_code=502, detail=str(error)) from error
 
 
+@router.post("/wizard/boards/preview")
+def wizard_board_preview(payload: dict[str, Any]) -> dict[str, Any]:
+    """Preview an explicit board creation against the current inventory."""
+    slug, name = _board_request(payload)
+    try:
+        boards = list_boards(_run_command)
+    except SetupWizardError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+    if any(row.get("slug") == slug for row in boards):
+        raise HTTPException(status_code=409, detail="board slug already exists")
+    command = ["hermes", "kanban", "boards", "create", slug]
+    if name:
+        command.extend(("--name", name))
+    preview = {"command": command, "boards": boards, "slug": slug, "name": name}
+    return {"preview": preview, "preview_digest": _digest(preview)}
+
+
 @router.post("/wizard/boards")
 def wizard_create_board(payload: dict[str, Any]) -> dict[str, Any]:
-    """Create one explicitly requested board through the public Hermes CLI."""
+    """Create one board only from the exact current preview and confirmation."""
+    if payload.get("confirm") is not True:
+        raise HTTPException(status_code=400, detail="explicit confirmation is required")
+    expected = payload.get("preview_digest")
+    if not isinstance(expected, str) or len(expected) != 64:
+        raise HTTPException(status_code=400, detail="preview_digest is required")
+    slug, name = _board_request(payload)
+    preview = wizard_board_preview({"slug": slug, "name": name})
+    if preview["preview_digest"] != expected:
+        raise HTTPException(status_code=409, detail="board inputs changed after preview")
     try:
-        create_board(
-            _run_command,
-            slug=str(payload.get("slug", "")),
-            name=_optional_str(payload.get("name")),
-        )
+        create_board(_run_command, slug=slug, name=name)
     except SetupWizardError as error:
-        raise HTTPException(status_code=400, detail=str(error)) from error
-    return {"created": True, "slug": payload["slug"]}
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return {"created": True, "slug": slug}
+
+
+@router.post("/wizard/readiness")
+def wizard_readiness(payload: dict[str, Any]) -> dict[str, Any]:
+    """Run the same mutation-free preflight used by confirmed start."""
+    request, service = _resolved_setup_request(payload, apply=False)
+    try:
+        preflight = service.validate_start_preflight(**_preflight_kwargs(request))
+    except (ServiceError, MissingSkillsError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return _setup_preview(request, preflight)
 
 
 @router.post("/wizard/preview")
 def wizard_preview(payload: dict[str, Any]) -> dict[str, Any]:
-    """Validate and display the exact start request without mutating."""
+    """Return the safe request projection and exact fresh start digest."""
+    request, service = _resolved_setup_request(payload, apply=False)
     try:
-        return SetupRequest.from_payload(payload).preview()
-    except SetupWizardError as error:
-        raise HTTPException(status_code=400, detail=str(error)) from error
+        preflight = service.validate_start_preflight(**_preflight_kwargs(request))
+    except (ServiceError, MissingSkillsError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return _setup_preview(request, preflight)
 
 
 @router.post("/wizard/start")
 def wizard_start(payload: dict[str, Any]) -> dict[str, Any]:
-    """Invoke the existing service path after explicit confirmation."""
-
-    def start(**kwargs: Any) -> Any:
-        return service_factory().start(**kwargs)
-
+    """Apply only the exact, revalidated selected-registration preview."""
+    request, service = _resolved_setup_request(payload, apply=True)
     try:
-        ledger = confirmed_start(payload, start)
+        preflight = service.validate_start_preflight(**_preflight_kwargs(request))
+    except (ServiceError, MissingSkillsError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    preview = _setup_preview(request, preflight)
+    if payload["preview_digest"] != preview["preview_digest"]:
+        raise HTTPException(status_code=409, detail="setup inputs changed after preview")
+    if request.workflow_id is not None:
+        try:
+            service.store.get(request.workflow_id)
+        except StoreError as error:
+            if not str(error).startswith("unknown workflow:"):
+                raise HTTPException(status_code=409, detail=str(error)) from error
+        else:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "code": "workflow_exists",
+                    "workflow_id": request.workflow_id,
+                },
+            )
+    try:
+        ledger = service.start(**request.start_kwargs())
+    except (ServiceError, MissingSkillsError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return {"workflow": ledger.to_dict()}
+
+
+_SETUP_REQUEST_FIELDS = frozenset(
+    {
+        "board_slug",
+        "goal",
+        "pack",
+        "workflow_id",
+        "stage_profiles",
+        "constraints_content",
+        "constraints_skill",
+        "constraints_skill_digest",
+    }
+)
+
+
+def _registered_projects(
+    controller_profile: str | None = None,
+) -> dict[str, ControllerRegistration]:
+    """Read only registrations bound to the mounted controller profile."""
+    try:
+        registrations = list_controller_registrations(resolve_data_root().resolve())
+    except ValueError as error:
+        raise SetupWizardError("registered project is invalid") from error
+    if controller_profile is not None:
+        registrations = tuple(
+            registration
+            for registration in registrations
+            if registration.controller_profile == controller_profile
+        )
+    return {registration.project_id: registration for registration in registrations}
+
+
+def _resolved_setup_request(payload: dict[str, Any], *, apply: bool) -> tuple[SetupRequest, Any]:
+    required_fields = {"selection", "request"}
+    if apply:
+        if payload.get("confirm") is not True:
+            raise HTTPException(status_code=400, detail="explicit confirmation is required")
+        digest = payload.get("preview_digest")
+        if not isinstance(digest, str) or len(digest) != 64:
+            raise HTTPException(status_code=400, detail="preview_digest is required")
+        required_fields.update({"preview_digest", "confirm"})
+    if set(payload) != required_fields:
+        raise HTTPException(status_code=400, detail="unknown wizard envelope fields")
+    selection = payload.get("selection")
+    request = payload.get("request")
+    if not isinstance(selection, dict) or set(selection) != {"project_id"}:
+        raise HTTPException(status_code=400, detail="selection must contain only project_id")
+    project_id = selection.get("project_id")
+    if not isinstance(project_id, str) or not project_id:
+        raise HTTPException(status_code=400, detail="project_id is required")
+    if not isinstance(request, dict) or set(request) - _SETUP_REQUEST_FIELDS:
+        raise HTTPException(status_code=400, detail="unknown setup request fields")
+    try:
+        registration = _registered_projects(active_profile(_run_command)).get(project_id)
+    except SetupWizardError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+    if registration is None:
+        raise HTTPException(status_code=404, detail="unknown registered project")
+    try:
+        resolved = SetupRequest.from_payload(
+            {**request, "target_repository": registration.checkout}
+        )
     except SetupWizardError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
-    return {"workflow": ledger.to_dict()}
+    return resolved, service_factory()
+
+
+def _setup_preview(request: SetupRequest, preflight: Any) -> dict[str, Any]:
+    """Return path-free UI facts while binding the full trusted request."""
+    private_request = request.start_kwargs()
+    projection = {
+        key: value for key, value in private_request.items() if key != "target_repository"
+    }
+    readiness = {
+        "checks": [
+            {"id": "pack-ready", "passed": True},
+            {"id": "repository-clean", "passed": True},
+            {"id": "board-available", "passed": True},
+            {"id": "stage-profiles-available", "passed": True},
+        ],
+        "baseline_commit": preflight.baseline_commit,
+    }
+    digest_source = {"request": private_request, "readiness": readiness}
+    return {
+        "confirmed": False,
+        "request": projection,
+        "readiness": readiness,
+        "preview_digest": _digest(digest_source),
+    }
+
+
+def _preflight_kwargs(request: SetupRequest) -> dict[str, Any]:
+    """Project the complete setup request onto the shared readiness contract."""
+    values = request.start_kwargs()
+    values.pop("goal")
+    return values
+
+
+def _profile_policy_sources() -> list[dict[str, str]]:
+    registry = ProfileSkillContentRegistry(resolve_data_root() / "skills")
+    try:
+        sources = []
+        for name in sorted(registry.installed_names()):
+            digest = registry.content_digest(name)
+            if digest is not None:
+                sources.append({"name": name, "digest": digest})
+        return sources
+    except SkillRevisionError as error:
+        raise SetupWizardError("installed policy source inventory is invalid") from error
+
+
+def _board_request(payload: dict[str, Any]) -> tuple[str, str]:
+    allowed = {"slug", "name", "preview_digest", "confirm"}
+    if set(payload) - allowed:
+        raise HTTPException(status_code=400, detail="unknown board request fields")
+    slug = payload.get("slug")
+    if not isinstance(slug, str):
+        raise HTTPException(status_code=400, detail="board slug is required")
+    try:
+        create_board(lambda _command: (0, ""), slug=slug, name=None)
+    except SetupWizardError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    name = payload.get("name")
+    if not isinstance(name, str) or not name.strip():
+        raise HTTPException(status_code=400, detail="board display name is required")
+    return slug, name.strip()
+
+
+def _review_action_payload(
+    payload: dict[str, Any], *, expected_fields: set[str]
+) -> tuple[str, str]:
+    if set(payload) != expected_fields:
+        raise HTTPException(status_code=400, detail="exact review decision fields are required")
+    action = payload.get("action")
+    try:
+        selected = ReviewDispositionAction(action)
+    except (TypeError, ValueError) as error:
+        raise HTTPException(status_code=400, detail="invalid review disposition action") from error
+    rationale = payload.get("rationale")
+    if not isinstance(rationale, str) or not rationale.strip():
+        raise HTTPException(status_code=400, detail="review rationale is required")
+    normalized = rationale.strip()
+    if "\x00" in normalized or len(normalized.encode("utf-8")) > MAX_REVIEW_FEEDBACK_BYTES:
+        raise HTTPException(status_code=400, detail="review rationale exceeds its text bounds")
+    return selected.value, normalized
+
+
+def _browser_review_preview(preview: dict[str, Any]) -> dict[str, Any]:
+    """Remove the profile-local worktree path while preserving preview identity."""
+    result = dict(preview)
+    worktree = result.pop("worktree_to_release", None)
+    result["owned_worktree_release"] = worktree is not None
+    return result
+
+
+def _operator_text(
+    payload: dict[str, Any], *, expected_fields: set[str], field: str
+) -> str:
+    if set(payload) != expected_fields:
+        raise HTTPException(status_code=400, detail=f"exact {field} fields are required")
+    value = payload.get(field)
+    if not isinstance(value, str):
+        raise HTTPException(status_code=400, detail=f"{field} is required")
+    normalized = value.strip()
+    if (
+        not normalized
+        or any(ord(character) < 32 or ord(character) == 127 for character in normalized)
+        or len(normalized.encode("utf-8")) > 4000
+    ):
+        raise HTTPException(status_code=400, detail=f"{field} exceeds its text bounds")
+    return normalized
+
+
+def _confirmed_operator_text(payload: dict[str, Any], *, field: str) -> str:
+    value = _operator_text(payload, expected_fields={field, "confirm"}, field=field)
+    if payload.get("confirm") is not True:
+        raise HTTPException(status_code=400, detail="explicit confirmation is required")
+    return value
+
+
+def _workflow_card_board(workflow_id: str, card_id: str) -> str:
+    try:
+        ledger = service_factory().status(workflow_id)
+    except StoreError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    if not any(card.task_id == card_id for card in ledger.card_references):
+        raise HTTPException(status_code=400, detail="card is not recorded for this workflow")
+    return ledger.board_slug
+
+
+def _cancellation_preview(service: Any, workflow_id: str, reason: str) -> dict[str, Any]:
+    observed = service.store.get_with_token(workflow_id)
+    ledger = observed.ledger
+    cards = [
+        {
+            "task_id": card.task_id,
+            "stage": getattr(card.stage, "value", card.stage),
+        }
+        for card in ledger.card_references
+    ]
+    projection = {
+        "workflow_id": workflow_id,
+        "ledger_token": observed.updated_at,
+        "cards": cards,
+        "owned_worktree_release": bool(ledger.worktree_owned and ledger.worktree_path),
+        "reason": reason,
+    }
+    return {
+        "workflow_id": workflow_id,
+        "cards": cards,
+        "owned_worktree_release": projection["owned_worktree_release"],
+        "reason": reason,
+        "preview_digest": _digest(projection),
+    }
+
+
+def _digest(value: Any) -> str:
+    return hashlib.sha256(
+        json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    ).hexdigest()
+
+
+def _is_sha256(value: Any) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+    )
 
 
 def _run_command(command: tuple[str, ...]) -> tuple[int, str]:
     completed = subprocess.run(command, check=False, capture_output=True, text=True)
     return completed.returncode, completed.stdout or completed.stderr
+
+
+def _bounded_kanban_json(command: tuple[str, ...], label: str) -> Any:
+    try:
+        completed = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except subprocess.TimeoutExpired as error:
+        raise DashboardBackendError(f"Kanban {label} timed out") from error
+    stdout = completed.stdout or ""
+    stderr = completed.stderr or ""
+    if len(stdout.encode("utf-8")) + len(stderr.encode("utf-8")) > 64 * 1024:
+        raise DashboardBackendError(f"Kanban {label} exceeded the 64 KiB output limit")
+    if completed.returncode != 0:
+        raise DashboardBackendError(f"Kanban {label} is unavailable")
+    try:
+        return json.loads(stdout)
+    except (TypeError, ValueError) as error:
+        raise DashboardBackendError(f"Kanban {label} returned invalid JSON") from error
+
+
+def _bounded_kanban_mutation(command: tuple[str, ...], label: str) -> None:
+    try:
+        completed = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except subprocess.TimeoutExpired as error:
+        raise DashboardBackendError(f"Kanban {label} timed out") from error
+    stdout = completed.stdout or ""
+    stderr = completed.stderr or ""
+    if len(stdout.encode("utf-8")) + len(stderr.encode("utf-8")) > 64 * 1024:
+        raise DashboardBackendError(f"Kanban {label} exceeded the 64 KiB output limit")
+    if completed.returncode != 0:
+        raise DashboardBackendError(f"Kanban {label} is unavailable")
+
+
+def kanban_comment(board_slug: str, task_id: str, comment: str) -> None:
+    _bounded_kanban_mutation(
+        ("hermes", "kanban", "--board", board_slug, "comment", task_id, comment),
+        "card comment",
+    )
+
+
+def kanban_unblock(board_slug: str, task_id: str, reason: str) -> None:
+    _bounded_kanban_mutation(
+        ("hermes", "kanban", "--board", board_slug, "unblock", task_id, "--reason", reason),
+        "card unblock",
+    )
+
+
+def kanban_show(board_slug: str, task_id: str) -> dict[str, Any]:
+    payload = _bounded_kanban_json(
+        ("hermes", "kanban", "--board", board_slug, "show", task_id, "--json"),
+        "card detail",
+    )
+    if not isinstance(payload, dict):
+        raise DashboardBackendError("Kanban card detail has an invalid shape")
+    return payload
+
+
+def kanban_runs(board_slug: str, task_id: str) -> list[Any]:
+    payload = _bounded_kanban_json(
+        ("hermes", "kanban", "--board", board_slug, "runs", task_id, "--json"),
+        "run history",
+    )
+    if not isinstance(payload, list):
+        raise DashboardBackendError("Kanban run history has an invalid shape")
+    return payload
+
+
+def _bounded_text(value: Any, *, limit: int = 4000) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise DashboardBackendError("Kanban detail contains invalid text")
+    return value[:limit]
+
+
+def _bounded_timestamp(value: Any) -> int | float | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    return value if math.isfinite(value) else None
+
+
+def _kanban_card_detail(board_slug: str, task_id: str) -> dict[str, Any]:
+    """Read one ledger-bound card through bounded public Hermes CLI adapters."""
+
+    show = kanban_show(board_slug, task_id)
+    runs = kanban_runs(board_slug, task_id)
+    task = show.get("task")
+    if not isinstance(task, dict) or task.get("id") != task_id:
+        raise DashboardBackendError("Kanban card identity does not match the ledger")
+    comments = show.get("comments", [])
+    events = show.get("events", [])
+    if not isinstance(comments, list) or not isinstance(events, list):
+        raise DashboardBackendError("Kanban card history has an invalid shape")
+    return {
+        "detail_available": True,
+        "title": _bounded_text(task.get("title"), limit=300),
+        "priority": task.get("priority") if isinstance(task.get("priority"), int) else None,
+        "created_at": _bounded_timestamp(task.get("created_at")),
+        "started_at": _bounded_timestamp(task.get("started_at")),
+        "completed_at": _bounded_timestamp(task.get("completed_at")),
+        "comments": [
+            {
+                "author": _bounded_text(row.get("author"), limit=100),
+                "body": _bounded_text(row.get("body")),
+                "created_at": _bounded_timestamp(row.get("created_at")),
+            }
+            for row in comments[-20:]
+            if isinstance(row, dict)
+        ],
+        "events": [
+            {
+                "kind": _bounded_text(row.get("kind"), limit=100),
+                "created_at": _bounded_timestamp(row.get("created_at")),
+                "run_id": row.get("run_id") if isinstance(row.get("run_id"), int) else None,
+            }
+            for row in events[-50:]
+            if isinstance(row, dict)
+        ],
+        "runs": [
+            {
+                "id": row.get("id") if isinstance(row.get("id"), int) else None,
+                "profile": _bounded_text(row.get("profile"), limit=100),
+                "status": _bounded_text(row.get("status"), limit=100),
+                "outcome": _bounded_text(row.get("outcome"), limit=100),
+                "started_at": _bounded_timestamp(row.get("started_at")),
+                "ended_at": _bounded_timestamp(row.get("ended_at")),
+                "summary": _bounded_text(row.get("summary")),
+                "error": _bounded_text(row.get("error")),
+            }
+            for row in runs[-20:]
+            if isinstance(row, dict)
+        ],
+    }
+
+
+card_detail_provider = _kanban_card_detail
 
 
 def _optional_str(value: Any) -> str | None:
@@ -264,4 +1059,9 @@ def _optional_str(value: Any) -> str | None:
     raise HTTPException(status_code=400, detail="string fields must be strings")
 
 
-__all__ = ["router", "configure_backend", "ServiceFactory"]
+__all__ = [
+    "router",
+    "configure_backend",
+    "ServiceFactory",
+    "PackServiceFactory",
+]

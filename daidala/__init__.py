@@ -26,6 +26,8 @@ def register(ctx) -> None:
         "daidala_approve": tools.approve,
         "daidala_cancel": tools.cancel,
         "daidala_submit_artifact": tools.submit_artifact,
+        "daidala_submit_review": tools.submit_review,
+        "daidala_review_disposition": tools.decide_review,
         "daidala_prepare_implementation": tools.prepare_implementation,
         "daidala_capture_implementation": tools.capture_implementation,
         "daidala_record_skill_activation": tools.record_skill_activation,

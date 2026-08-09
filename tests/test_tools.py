@@ -31,6 +31,13 @@ STAGE_PROFILES = {
     "review": "reviewer",
     "deliver": "engineer",
 }
+PLAN_SUMMARY = {
+    "headline": "Plan the fixture change.",
+    "changes": ["Update the fixture behavior."],
+    "affected_areas": ["fixture"],
+    "risks": [],
+    "verification": ["Run the fixture tests."],
+}
 
 
 class TickClock:
@@ -124,6 +131,7 @@ def seed_planned(service: WorkflowService, target: Path) -> str:
         ledger.workflow_id,
         stage=WorkflowStage.PLAN,
         content="# Plan\n",
+        approval_summary=PLAN_SUMMARY,
         **worker_context(service, ledger.workflow_id, WorkflowStage.PLAN),
     )
     return ledger.workflow_id
@@ -167,6 +175,74 @@ def record_activation(
         board_slug=ledger.board_slug,
         task_id=card.task_id,
     )
+
+
+def test_plan_submission_requires_summary_and_failed_update_is_unreferenced(
+    service: WorkflowService,
+    target_repository: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ledger = service.start(
+        board_slug="daidala-test",
+        target_repository=str(target_repository),
+        goal="Exercise atomic plan submission",
+        stage_profiles=STAGE_PROFILES,
+        workflow_id="workflow-summary",
+    )
+    record_activation(service, ledger.workflow_id, WorkflowStage.DEFINE)
+    service.submit_artifact(
+        ledger.workflow_id,
+        stage=WorkflowStage.DEFINE,
+        content="# Definition\n",
+        **worker_context(service, ledger.workflow_id, WorkflowStage.DEFINE),
+    )
+    record_activation(service, ledger.workflow_id, WorkflowStage.PLAN)
+    context = worker_context(service, ledger.workflow_id, WorkflowStage.PLAN)
+
+    with pytest.raises(ServiceError, match="only for plan"):
+        service.submit_artifact(
+            ledger.workflow_id,
+            stage=WorkflowStage.DEFINE,
+            content="# Definition replacement\n",
+            approval_summary=PLAN_SUMMARY,
+            board_slug=context["board_slug"],
+            task_id=context["task_id"],
+        )
+    with pytest.raises(ServiceError, match="approval_summary"):
+        service.submit_artifact(
+            ledger.workflow_id,
+            stage=WorkflowStage.PLAN,
+            content="# Plan\n",
+            board_slug=context["board_slug"],
+            task_id=context["task_id"],
+        )
+    assert service.status(ledger.workflow_id).artifact_for(WorkflowStage.PLAN) is None
+
+    def fail_update(*args, **kwargs):
+        del args, kwargs
+        raise StoreError("simulated ledger update failure")
+
+    monkeypatch.setattr(service.store, "update", fail_update)
+    with pytest.raises(StoreError, match="simulated ledger update failure"):
+        service.submit_artifact(
+            ledger.workflow_id,
+            stage=WorkflowStage.PLAN,
+            content="# Plan\n",
+            approval_summary=PLAN_SUMMARY,
+            board_slug=context["board_slug"],
+            task_id=context["task_id"],
+        )
+    plan_path = (
+        service.store.data_root
+        / "workflows"
+        / ledger.workflow_id
+        / "artifacts"
+        / "policy-0000"
+        / "plan-0000"
+        / "plan.md"
+    )
+    assert plan_path.is_file()
+    assert service.status(ledger.workflow_id).artifact_for(WorkflowStage.PLAN) is None
 
 
 def test_start_and_status_return_policy_ledger_without_status(
@@ -250,6 +326,7 @@ def test_start_restart_and_approval_create_one_idempotent_graph(
         second.workflow_id,
         stage=WorkflowStage.PLAN,
         content="# Plan\n",
+        approval_summary=PLAN_SUMMARY,
         **worker_context(service, second.workflow_id, WorkflowStage.PLAN),
     )
     plan = planned.artifact_for(WorkflowStage.PLAN)
@@ -260,22 +337,22 @@ def test_start_restart_and_approval_create_one_idempotent_graph(
 
     approved = service.approve(second.workflow_id, plan_digest=plan.digest)
 
-    assert len(fake_kanban_host.cards) == 6
+    assert len(fake_kanban_host.cards) == 5
     assert [card.stage for card in approved.card_references] == [
-        stage for stage in WorkflowStage if stage is not WorkflowStage.APPROVAL
+        stage
+        for stage in WorkflowStage
+        if stage not in {WorkflowStage.APPROVAL, WorkflowStage.DELIVER}
     ]
     for parent, child in zip(
         (
             WorkflowStage.PLAN,
             WorkflowStage.IMPLEMENT,
             WorkflowStage.VERIFY,
-            WorkflowStage.REVIEW,
         ),
         (
             WorkflowStage.IMPLEMENT,
             WorkflowStage.VERIFY,
             WorkflowStage.REVIEW,
-            WorkflowStage.DELIVER,
         ),
         strict=True,
     ):
@@ -287,7 +364,7 @@ def test_start_restart_and_approval_create_one_idempotent_graph(
 
     replayed = service.approve(second.workflow_id, plan_digest=plan.digest)
     assert replayed.card_references == approved.card_references
-    assert len(fake_kanban_host.cards) == 6
+    assert len(fake_kanban_host.cards) == 5
 
 
 @pytest.mark.parametrize("worker_task", ("", "t_plan"))
@@ -409,6 +486,7 @@ def test_approve_binds_exact_digest_and_service_replacement_invalidates_it(
             workflow_id,
             path=plan.path,
             digest=plan.digest,
+            approval_summary=PLAN_SUMMARY,
         )
     assert service.status(workflow_id) == before_replacement
 
@@ -429,12 +507,14 @@ def test_approve_binds_exact_digest_and_service_replacement_invalidates_it(
             workflow_id,
             path=replacement_artifact.path,
             digest="0" * 64,
+            approval_summary=PLAN_SUMMARY,
         )
     assert service.status(workflow_id) == before_replacement
     replacement = service.replace_plan(
         workflow_id,
         path=replacement_artifact.path,
         digest=replacement_artifact.digest,
+        approval_summary=PLAN_SUMMARY,
     )
     assert replacement.plan_revision == 1
     assert replacement.approval is None
@@ -753,7 +833,9 @@ def test_public_schemas_have_no_removed_lifecycle_aliases() -> None:
         "daidala_replace_constraints",
         "daidala_approve",
         "daidala_cancel",
+        "daidala_review_disposition",
         "daidala_submit_artifact",
+        "daidala_submit_review",
         "daidala_prepare_implementation",
         "daidala_capture_implementation",
         "daidala_record_skill_activation",
@@ -765,6 +847,35 @@ def test_public_schemas_have_no_removed_lifecycle_aliases() -> None:
     decision = schemas.RECORD_SKILL_ACTIVATION["parameters"]["properties"]["decisions"]
     assert decision["maxItems"] == 32
     assert decision["items"]["additionalProperties"] is False
+    submit = schemas.SUBMIT_ARTIFACT["parameters"]
+    summary = submit["properties"]["approval_summary"]
+    assert summary["additionalProperties"] is False
+    assert set(summary["required"]) == {
+        "headline", "changes", "affected_areas", "risks", "verification",
+    }
+
+
+def test_review_disposition_tool_rejects_kanban_worker_context(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("HERMES_KANBAN_TASK", "t_review")
+
+    result = call(
+        tools.decide_review,
+        {
+            "workflow_id": "workflow",
+            "review_digest": "a" * 64,
+            "action": "accept_delivery",
+            "actor": "operator",
+            "rationale": "The reviewed evidence is accepted.",
+        },
+    )
+
+    assert result == {
+        "success": False,
+        "error": "ValueError",
+        "message": "review disposition is unavailable from Hermes Kanban worker context",
+    }
 
 
 def test_service_rejects_repository_subdirectory(

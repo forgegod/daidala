@@ -12,6 +12,7 @@ import pytest
 from daidala.state import (
     ActivationManifestReference,
     ActivationReferenceState,
+    ApprovalSummary,
     SkillDigest,
     StageProfile,
     WorkflowLedger,
@@ -27,6 +28,13 @@ PROFILES = tuple(
     if stage is not WorkflowStage.APPROVAL
 )
 TARGET = "/tmp/daidala-store-target"
+PLAN_SUMMARY = ApprovalSummary(
+    headline="Plan the fixture change.",
+    changes=("Update the fixture behavior.",),
+    affected_areas=("fixture",),
+    risks=(),
+    verification=("Run the fixture tests.",),
+)
 
 
 def make_ledger(workflow_id: str = "workflow-1") -> WorkflowLedger:
@@ -78,6 +86,7 @@ def make_planned() -> WorkflowLedger:
         path="artifacts/plan.md",
         digest="plan-v1",
         recorded_at=NOW + timedelta(minutes=2),
+        approval_summary=PLAN_SUMMARY,
     )
 
 
@@ -118,6 +127,17 @@ def test_store_read_only_open_never_initializes_missing_ledger(data_root: Path) 
     reopened = WorkflowStore(data_root, initialize=False)
 
     assert reopened.db_path == initialized.db_path
+
+
+def test_deferred_store_initializes_only_when_a_ledger_is_created(data_root: Path) -> None:
+    store = WorkflowStore(data_root, defer_initialization=True)
+
+    assert store.list_all() == ()
+    assert not data_root.exists()
+
+    ledger = make_ledger()
+    assert store.create(ledger) == ledger
+    assert store.get(ledger.workflow_id) == ledger
 
 
 def test_create_get_update_and_list_round_trip(data_root: Path) -> None:

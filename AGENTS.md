@@ -129,6 +129,10 @@ Project-wide durable preferences (style, workflow, conventions) live in user mem
   workflow ID, writes the canonical manifest snapshot before dispatch, binds the
   expected baseline, constraints, and stage profiles, and validates adapter
   claims and event-specific notification receipts before Kanban mutation.
+- An attended `request_revision` preserves the rejected plan, implementation,
+  verification, review, disposition, and card history; it creates a canonical
+  successor packet and one revision-addressed Plan card. No new implementation
+  authority exists until the successor plan is recorded and freshly approved.
 - The persistent self-improvement controller loads Daidala from an exact detached
   committed revision installed through verified Git or a detached local clone;
   never from a mutable symlink, editable checkout, or uncommitted working tree.

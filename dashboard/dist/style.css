@@ -1,10 +1,10 @@
 /*
- * Daidala dashboard UI styles — Phase 3 read-only surface.
+ * Daidala dashboard UI styles — bounded operator surface.
  *
  * The stylesheet is dependency-free and uses the host dashboard's
  * --text-primary, --surface-raised, and related theme tokens so the UI
  * inherits the built-in light/dark themes. Layouts collapse to a single
- * column below 40rem so the panel remains usable on narrow viewports.
+ * column below 64rem so the panel remains usable on narrow viewports.
  */
 
 :root {
@@ -252,6 +252,142 @@
   font-size: 0.75rem;
 }
 
+.daidala-decision-panel,
+.daidala-approval,
+.daidala-review,
+.daidala-next-packet {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-base, rgba(0, 0, 0, 0.08));
+}
+
+.daidala-approval h5,
+.daidala-approval p,
+.daidala-approval ul,
+.daidala-review h5,
+.daidala-review p,
+.daidala-review ul,
+.daidala-next-packet p,
+.daidala-next-packet ul {
+  margin: 0;
+}
+
+.daidala-approval-headline {
+  font-weight: 600;
+}
+
+.daidala-confirm {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.daidala-approval button:disabled,
+.daidala-review button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.daidala-plan-text,
+.daidala-review-diff {
+  max-height: 24rem;
+  overflow: auto;
+  padding: 0.75rem;
+  border: var(--daidala-border);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", monospace);
+  font-size: 0.8rem;
+}
+
+.daidala-recommendations {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.daidala-recommendation {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border-left: 3px solid var(--daidala-accent);
+  background: var(--surface-base, rgba(0, 0, 0, 0.08));
+}
+
+.daidala-card-history,
+.daidala-card-events {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--daidala-muted);
+  font-size: 0.78rem;
+}
+
+.daidala-card-history {
+  display: grid;
+  gap: 0.2rem;
+  padding-left: 1rem;
+}
+
+.daidala-card-events {
+  overflow-wrap: anywhere;
+}
+
+.daidala-post-approval,
+.daidala-review-digest {
+  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", monospace);
+  overflow-wrap: anywhere;
+}
+
+.daidala-decision-panel {
+  border-color: var(--daidala-accent);
+}
+
+.daidala-next-packet {
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+}
+
+.daidala-timeline {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.daidala-timeline-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  border-left: 3px solid var(--border-subtle, rgba(148, 163, 160, 0.28));
+  background: var(--surface-base, rgba(0, 0, 0, 0.08));
+}
+
+.daidala-approval-gate,
+.daidala-review-gate {
+  border-left-color: var(--daidala-accent);
+  font-weight: 600;
+}
+
+.daidala-approval-gate span:last-child,
+.daidala-review-gate span:last-child {
+  grid-column: 1 / -1;
+  color: var(--daidala-muted);
+  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", monospace);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.daidala-card-audit summary {
+  color: var(--daidala-accent);
+  cursor: pointer;
+}
+
 .daidala-workflow-loading,
 .daidala-workflow-unavailable,
 .daidala-workflow-empty {
@@ -267,6 +403,190 @@
 .daidala-slot {
   font-size: 0.85rem;
   color: var(--daidala-accent);
+}
+
+.daidala-config,
+.daidala-pack,
+.daidala-pack-stage,
+.daidala-skill-document,
+.daidala-pack-preview {
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+}
+
+.daidala-config {
+  display: grid;
+  gap: var(--daidala-gap);
+  padding: var(--daidala-padding);
+}
+
+.daidala-config-header,
+.daidala-pack-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--daidala-gap);
+}
+
+.daidala-config-header h2,
+.daidala-pack-header h3,
+.daidala-pack-stage h4,
+.daidala-skill-document h4,
+.daidala-pack-preview h4 {
+  margin: 0;
+}
+
+.daidala-eyebrow {
+  margin: 0 0 0.15rem;
+  color: var(--daidala-accent);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.daidala-pack-grid {
+  display: grid;
+  gap: var(--daidala-gap);
+}
+
+.daidala-pack {
+  display: grid;
+  gap: var(--daidala-gap);
+  padding: var(--daidala-padding);
+}
+
+.daidala-pack-meta {
+  margin: 0;
+  color: var(--daidala-muted);
+  font-size: 0.8rem;
+}
+
+.daidala-pack-status {
+  flex: 0 0 auto;
+  padding: 0.2rem 0.5rem;
+  border: var(--daidala-border);
+  border-radius: 999px;
+  font-size: 0.75rem;
+}
+
+.daidala-pack-status.is-ready {
+  border-color: var(--daidala-ok);
+  color: var(--daidala-ok);
+}
+
+.daidala-pack-status.is-installation-available {
+  border-color: var(--daidala-warning);
+  color: var(--daidala-warning);
+}
+
+.daidala-pack-status.is-blocked {
+  border-color: var(--daidala-error);
+  color: var(--daidala-error);
+}
+
+.daidala-pack-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.daidala-config button,
+.daidala-pack button {
+  padding: 0.45rem 0.65rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-base, transparent);
+  color: var(--text-primary, inherit);
+  cursor: pointer;
+  font: inherit;
+}
+
+.daidala-config button:hover,
+.daidala-config button:focus-visible,
+.daidala-pack button:hover,
+.daidala-pack button:focus-visible {
+  outline: 2px solid var(--daidala-accent);
+  outline-offset: 2px;
+}
+
+.daidala-config button:disabled,
+.daidala-pack button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.daidala-pack-stages {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.daidala-pack-stage {
+  padding: 0.6rem;
+}
+
+.daidala-pack-stage ul,
+.daidala-pack-preview ul {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.daidala-skill {
+  display: grid;
+  width: 100%;
+  gap: 0.15rem;
+  text-align: left;
+}
+
+.daidala-skill-name {
+  font-weight: 650;
+}
+
+.daidala-skill-meta {
+  color: var(--daidala-muted);
+  font-size: 0.75rem;
+}
+
+.daidala-skill-digest {
+  margin: 0;
+  color: var(--daidala-muted);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.68rem;
+  overflow-wrap: anywhere;
+}
+
+.daidala-skill-document,
+.daidala-pack-preview {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+.daidala-skill-document pre {
+  box-sizing: border-box;
+  width: 100%;
+  max-height: 28rem;
+  margin: 0;
+  overflow: auto;
+  padding: 0.75rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-base, transparent);
+  color: var(--text-primary, inherit);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  white-space: pre-wrap;
+}
+
+.daidala-pack-confirm {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .daidala-setup {
@@ -335,7 +655,8 @@
     padding: 0.75rem;
   }
   .daidala-workflows,
-  .daidala-setup {
+  .daidala-setup,
+  .daidala-pack-stages {
     grid-template-columns: 1fr;
   }
   .daidala-workflow-identity {
@@ -345,4 +666,189 @@
   .daidala-decision {
     grid-template-columns: 1fr;
   }
+}
+
+.daidala-wizard {
+  display: grid;
+  gap: var(--daidala-gap);
+  padding: var(--daidala-padding);
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+}
+
+.daidala-wizard-header,
+.daidala-wizard-section-heading,
+.daidala-board-control,
+.daidala-wizard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--daidala-gap);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.daidala-wizard-header h2,
+.daidala-wizard-header p,
+.daidala-wizard-section h3,
+.daidala-readiness h3,
+.daidala-wizard-preview h3 {
+  margin: 0;
+}
+
+.daidala-wizard-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.35fr);
+  gap: var(--daidala-gap);
+}
+
+.daidala-wizard-form,
+.daidala-readiness,
+.daidala-wizard-section,
+.daidala-wizard-preview,
+.daidala-confirm-box {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+}
+
+.daidala-wizard-field {
+  display: grid;
+  gap: 0.3rem;
+  color: var(--daidala-muted);
+}
+
+.daidala-wizard-field select,
+.daidala-wizard-field input,
+.daidala-wizard-field textarea,
+.daidala-wizard-pair input,
+.daidala-wizard button,
+.daidala-wizard-actions button {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 0.5rem 0.65rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-base, transparent);
+  color: var(--text-primary, inherit);
+  font: inherit;
+}
+
+.daidala-wizard textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.daidala-wizard-advanced {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.daidala-wizard-advanced summary,
+.daidala-back,
+.daidala-cron-link,
+.daidala-wizard-section a {
+  color: var(--daidala-accent);
+  cursor: pointer;
+}
+
+.daidala-wizard-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--daidala-gap);
+}
+
+.daidala-constraint-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.daidala-constraint-tabs button.is-selected {
+  border-color: var(--daidala-accent);
+  color: var(--daidala-accent);
+}
+
+.daidala-readiness {
+  align-content: start;
+}
+
+.daidala-readiness ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.daidala-readiness .is-ready {
+  color: var(--daidala-ok);
+}
+
+.daidala-readiness .is-blocked {
+  color: var(--daidala-error);
+}
+
+.daidala-wizard-preview {
+  border-color: var(--daidala-ok);
+}
+
+@media (max-width: 64rem) {
+  .daidala-wizard-layout,
+  .daidala-wizard-pair,
+  .daidala-decision-panel,
+  .daidala-approval,
+  .daidala-next-packet {
+    grid-template-columns: 1fr;
+  }
+}
+
+.daidala-remediation,
+.daidala-cancellation,
+.daidala-cancellation-preview {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-base, rgba(0, 0, 0, 0.08));
+}
+
+.daidala-remediation {
+  margin-top: 0.5rem;
+  border-color: var(--daidala-warning);
+}
+
+.daidala-remediation h5,
+.daidala-remediation p,
+.daidala-remediation ul,
+.daidala-cancellation p,
+.daidala-cancellation h5,
+.daidala-cancellation-preview p,
+.daidala-cancellation-preview ul {
+  margin: 0;
+}
+
+.daidala-remediation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.daidala-remediation input,
+.daidala-cancellation input,
+.daidala-remediation button,
+.daidala-cancellation button {
+  box-sizing: border-box;
+  padding: 0.5rem 0.65rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+  color: var(--text-primary, inherit);
+  font: inherit;
+}
+
+.daidala-remediation button:disabled,
+.daidala-cancellation button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }

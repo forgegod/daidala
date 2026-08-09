@@ -13,6 +13,7 @@ from daidala.errors import PolicyViolationError
 from daidala.execution import ExecutionError, ExecutionWorkspace
 from daidala.kanban import KanbanError, KanbanGraphAdapter
 from daidala.packs import SkillActivationMode, load_pack
+from daidala.recommendations import KanbanSnapshot, derive_recommendations
 from daidala.service import ServiceError, WorkflowService
 from daidala.skills import (
     content_registry_from_digests,
@@ -39,6 +40,13 @@ STAGE_PROFILES = {
     "review": "reviewer",
     "deliver": "engineer",
 }
+PLAN_SUMMARY = {
+    "headline": "Plan the fixture implementation.",
+    "changes": ["Update calculator behavior."],
+    "affected_areas": ["calculator.py"],
+    "risks": [],
+    "verification": ["Run pytest."],
+}
 
 
 class TickClock:
@@ -62,6 +70,13 @@ class FixtureWorkflowService(WorkflowService):
     def submit_artifact(self, workflow_id: str, *, stage: WorkflowStage, **kwargs):
         return super().submit_artifact(
             workflow_id, stage=stage, **self._current_context(workflow_id, stage), **kwargs
+        )
+
+    def submit_review(self, workflow_id: str, **kwargs):
+        return super().submit_review(
+            workflow_id,
+            **self._current_context(workflow_id, WorkflowStage.REVIEW),
+            **kwargs,
         )
 
     def capture_implementation(self, workflow_id: str, **kwargs):
@@ -232,10 +247,119 @@ def prepare_planned_workflow(
         state.workflow_id,
         stage=WorkflowStage.PLAN,
         content="# Plan\n\nChange `calculator.py`, run pytest, review the diff.\n",
+        approval_summary=PLAN_SUMMARY,
     )
     plan = state.artifact_for(WorkflowStage.PLAN)
     assert plan is not None
     return state.workflow_id, plan.digest
+
+
+def complete_fixture_stage(
+    service: FixtureWorkflowService,
+    fake_kanban_host,
+    workflow_id: str,
+    stage: WorkflowStage,
+    artifact_digest: str,
+) -> None:
+    ledger = service.status(workflow_id)
+    card = ledger.card_for(stage)
+    assert card is not None
+    activation_digest, active_skills = activation_handoff(ledger, stage)
+    fake_kanban_host.dispatch(
+        "kanban_complete",
+        {
+            "task_id": card.task_id,
+            "summary": f"{stage.value} evidence recorded",
+            "metadata": {
+                "schema": "daidala.handoff/v1",
+                "workflow_id": workflow_id,
+                "plan_revision": ledger.activation_revision_for(stage),
+                "stage": stage.value,
+                "pack": ledger.pack_name,
+                "pack_revision": ledger.pack_source_revision,
+                "outcome": "completed",
+                "artifact_refs": [artifact_digest],
+                "artifact_digest": artifact_digest,
+                "skill_activation_digest": activation_digest,
+                "active_skills": active_skills,
+            },
+        },
+    )
+
+
+def prepare_reviewed_workflow(
+    service: FixtureWorkflowService,
+    target: Path,
+    fake_kanban_host,
+    workflow_id: str,
+) -> tuple[str, str]:
+    workflow_id, plan_digest = prepare_planned_workflow(service, target, workflow_id)
+    planned = service.status(workflow_id)
+    definition = planned.artifact_for(WorkflowStage.DEFINE)
+    plan = planned.artifact_for(WorkflowStage.PLAN)
+    assert definition is not None and plan is not None
+    complete_fixture_stage(
+        service, fake_kanban_host, workflow_id, WorkflowStage.DEFINE, definition.digest
+    )
+    complete_fixture_stage(
+        service, fake_kanban_host, workflow_id, WorkflowStage.PLAN, plan.digest
+    )
+    implementing = service.approve(workflow_id, plan_digest)
+    assert implementing.worktree_path is not None
+    worktree = Path(implementing.worktree_path)
+    (worktree / "calculator.py").write_text(
+        "def answer():\n    return 2\n", encoding="utf-8"
+    )
+    record_stage_activation(service, workflow_id, WorkflowStage.IMPLEMENT)
+    implemented = service.capture_implementation(workflow_id)
+    implementation = implemented.artifact_for(WorkflowStage.IMPLEMENT)
+    assert implementation is not None
+    complete_fixture_stage(
+        service,
+        fake_kanban_host,
+        workflow_id,
+        WorkflowStage.IMPLEMENT,
+        implementation.digest,
+    )
+    record_stage_activation(service, workflow_id, WorkflowStage.VERIFY)
+    verified = service.record_verification(
+        workflow_id,
+        command="python -m pytest -q",
+        exit_code=0,
+        output="1 passed\n",
+    )
+    evidence = verified.verification_evidence[-1]
+    complete_fixture_stage(
+        service,
+        fake_kanban_host,
+        workflow_id,
+        WorkflowStage.VERIFY,
+        evidence.output_digest,
+    )
+    record_stage_activation(service, workflow_id, WorkflowStage.REVIEW)
+    reviewed = service.submit_review(
+        workflow_id,
+        outcome="changes_requested",
+        summary={
+            "headline": "The behavior works but the plan omitted a boundary case.",
+            "changes": ["Update calculator behavior."],
+            "affected_areas": ["calculator.py"],
+            "risks": ["The boundary case is not represented in the plan."],
+            "verification": ["The current focused test passes."],
+        },
+        findings=[
+            {
+                "id": "plan-boundary-gap",
+                "severity": "high",
+                "title": "The plan omits the boundary case.",
+                "rationale": "Revise the plan to cover the boundary case.",
+                "blocking": True,
+                "evidence_digests": [implementation.digest, evidence.output_digest],
+            }
+        ],
+    )
+    assert reviewed.review is not None
+    return workflow_id, reviewed.review.digest
 
 
 def run_fixture_tests(worktree: Path) -> subprocess.CompletedProcess[str]:
@@ -258,6 +382,7 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
     service: FixtureWorkflowService,
     target_repository: Path,
     fake_kanban_host,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     baseline = subprocess.run(
         ["git", "-C", str(target_repository), "rev-parse", "HEAD"],
@@ -364,17 +489,129 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
     )
 
     record_stage_activation(service, workflow_id, WorkflowStage.REVIEW)
-    reviewed = service.submit_artifact(
-        workflow_id,
-        stage=WorkflowStage.REVIEW,
-        content="# Review\n\nThe diff is scoped and pytest passes.\n",
+    review_request = {
+        "outcome": "accepted",
+        "summary": {
+            "headline": "The diff is scoped and pytest passes.",
+            "changes": ["Update calculator behavior."],
+            "affected_areas": ["calculator.py", "notes.txt"],
+            "risks": [],
+            "verification": ["pytest passes."],
+        },
+        "findings": [],
+    }
+    review_completion_failed = False
+
+    def fail_first_review_completion(name: str, args: dict[str, object]) -> str:
+        nonlocal review_completion_failed
+        if name == "kanban_complete" and not review_completion_failed:
+            review_completion_failed = True
+            raise KanbanError("transient review completion failure")
+        return fake_kanban_host.dispatch(name, args)
+
+    monkeypatch.setattr(
+        service,
+        "_kanban",
+        KanbanGraphAdapter(fail_first_review_completion),
     )
-    review = reviewed.artifact_for(WorkflowStage.REVIEW)
+    with pytest.raises(KanbanError, match="transient review completion failure"):
+        service.submit_review(workflow_id, **review_request)
+    persisted_after_review_failure = service.status(workflow_id)
+    assert persisted_after_review_failure.review is not None
+    assert persisted_after_review_failure.card_for(WorkflowStage.DELIVER) is None
+    monkeypatch.setattr(
+        service,
+        "_kanban",
+        KanbanGraphAdapter(fake_kanban_host.dispatch),
+    )
+    reviewed = service.submit_review(workflow_id, **review_request)
+    review = reviewed.review
     assert review is not None
-    assert artifact_relative_path(service, workflow_id, review.path) == (
-        "artifacts/policy-0000/plan-0000/review.md"
+    assert review.summary_digest == review.summary.digest_for(implementation.digest)
+    assert service.current_implementation_changed_paths(workflow_id) == (
+        "calculator.py",
+        "notes.txt",
     )
+    assert reviewed.card_for(WorkflowStage.DELIVER) is None
+    replayed_review = service.submit_review(workflow_id, **review_request)
+    assert replayed_review.review == review
     complete_stage(WorkflowStage.REVIEW, review.digest)
+    with pytest.raises(ServiceError, match="exact current review digest"):
+        service.decide_review(
+            workflow_id,
+            review_digest="f" * 64,
+            action="accept_delivery",
+            actor="fixture operator",
+            rationale="The exact review evidence is accepted for delivery.",
+        )
+    delivery_creation_failed = False
+
+    def fail_first_delivery_creation(name: str, args: dict[str, object]) -> str:
+        nonlocal delivery_creation_failed
+        if (
+            name == "kanban_create"
+            and str(args.get("title", "")).endswith(": deliver")
+            and not delivery_creation_failed
+        ):
+            delivery_creation_failed = True
+            raise KanbanError("transient delivery creation failure")
+        return fake_kanban_host.dispatch(name, args)
+
+    monkeypatch.setattr(
+        service,
+        "_kanban",
+        KanbanGraphAdapter(fail_first_delivery_creation),
+    )
+    with pytest.raises(KanbanError, match="transient delivery creation failure"):
+        service.decide_review(
+            workflow_id,
+            review_digest=review.digest,
+            action="accept_delivery",
+            actor="fixture operator",
+            rationale="The exact review evidence is accepted for delivery.",
+        )
+    persisted_after_delivery_failure = service.status(workflow_id)
+    assert persisted_after_delivery_failure.review_disposition is not None
+    assert persisted_after_delivery_failure.card_for(WorkflowStage.DELIVER) is None
+    monkeypatch.setattr(
+        service,
+        "_kanban",
+        KanbanGraphAdapter(fake_kanban_host.dispatch),
+    )
+    reviewed = service.decide_review(
+        workflow_id,
+        review_digest=review.digest,
+        action="accept_delivery",
+        actor="fixture operator",
+        rationale="The exact review evidence is accepted for delivery.",
+    )
+    assert reviewed.review_disposition is not None
+    deliver_card = reviewed.card_for(WorkflowStage.DELIVER)
+    assert deliver_card is not None
+    replayed_disposition = service.decide_review(
+        workflow_id,
+        review_digest=review.digest,
+        action="accept_delivery",
+        actor="fixture operator",
+        rationale="The exact review evidence is accepted for delivery.",
+    )
+    assert replayed_disposition.review_disposition == reviewed.review_disposition
+    assert replayed_disposition.card_for(WorkflowStage.DELIVER) == deliver_card
+    snapshots = tuple(
+        KanbanSnapshot(
+            card.stage,
+            card.task_id,
+            str(fake_kanban_host.cards[card.task_id]["status"]),
+            str(fake_kanban_host.cards[card.task_id]["assignee"]),
+        )
+        for card in replayed_disposition.card_references
+    )
+    delivery_recommendation = next(
+        row
+        for row in derive_recommendations(replayed_disposition, snapshots)
+        if row.action_kind == "deliver_reviewed_diff"
+    )
+    assert delivery_recommendation.evidence_ref == review.digest
     worktree_head = subprocess.run(
         ["git", "-C", str(worktree), "rev-parse", "HEAD"],
         check=True,
@@ -437,6 +674,287 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
         } <= categories
     else:
         assert categories == {ActivationCategory.APPLICABLE.value}
+
+
+def test_review_revision_preview_apply_retries_and_preserves_rejected_evidence(
+    service: FixtureWorkflowService,
+    target_repository: Path,
+    fake_kanban_host,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workflow_id, review_digest = prepare_reviewed_workflow(
+        service,
+        target_repository,
+        fake_kanban_host,
+        "workflow-plan-revision",
+    )
+    before = service.status(workflow_id)
+    old_plan = before.artifact_for(WorkflowStage.PLAN)
+    old_implementation = before.artifact_for(WorkflowStage.IMPLEMENT)
+    assert old_plan is not None and old_implementation is not None
+    old_verification = before.verification_evidence
+    old_worktree = before.worktree_path
+    rationale = "Cover the blocking boundary case, then rerun the exact verification."
+    preview = service.preview_review_decision(
+        workflow_id,
+        action="request_revision",
+        actor="fixture operator",
+        rationale=rationale,
+    )
+
+    assert service.status(workflow_id) == before
+    assert preview.review_digest == review_digest
+    assert preview.next_plan_revision == 1
+    assert preview.next_assignee == "architect"
+    assert preview.worktree_to_release == old_worktree
+    assert preview.revision_request_digest is not None
+    assert preview.successor_packet_digest is not None
+    assert preview.successor_packet is not None
+    assert preview.successor_packet["source_review"]["digest"] == review_digest
+    assert preview.successor_packet["source_disposition_preview"]["digest"]
+    current_implementation = service.status(workflow_id).artifact_for(
+        WorkflowStage.IMPLEMENT
+    )
+    assert current_implementation is not None
+    assert preview.successor_packet["source_implementation"]["digest"] == (
+        current_implementation.digest
+    )
+    assert preview.successor_packet["source_verification"]
+    with pytest.raises(ServiceError, match="changed after preview"):
+        service.apply_review_decision(
+            workflow_id,
+            action="request_revision",
+            actor="fixture operator",
+            rationale=rationale,
+            expected_review_digest=review_digest,
+            expected_preview_digest="f" * 64,
+            confirm=True,
+        )
+    assert service.status(workflow_id) == before
+
+    real_write_artifact = service._workspace.write_artifact
+    artifact_write_failed = False
+
+    def fail_first_artifact_write(
+        workflow_id: str,
+        relative_path: str,
+        content: str,
+    ):
+        nonlocal artifact_write_failed
+        if not artifact_write_failed:
+            artifact_write_failed = True
+            raise ExecutionError("transient revision artifact failure")
+        return real_write_artifact(workflow_id, relative_path, content)
+
+    monkeypatch.setattr(service._workspace, "write_artifact", fail_first_artifact_write)
+    with pytest.raises(ExecutionError, match="transient revision artifact failure"):
+        service.apply_review_decision(
+            workflow_id,
+            action="request_revision",
+            actor="fixture operator",
+            rationale=rationale,
+            expected_review_digest=review_digest,
+            expected_preview_digest=preview.digest,
+            confirm=True,
+        )
+    after_artifact_failure = service.status(workflow_id)
+    assert after_artifact_failure.pending_revision_request is None
+    assert after_artifact_failure.review_disposition is not None
+    assert (
+        service.preview_review_decision(
+            workflow_id,
+            action="request_revision",
+            actor="fixture operator",
+            rationale=rationale,
+        ).digest
+        == preview.digest
+    )
+    monkeypatch.setattr(service._workspace, "write_artifact", real_write_artifact)
+
+    archive_failed = False
+
+    def fail_first_archive(name: str, args: dict[str, object]) -> str:
+        nonlocal archive_failed
+        if (
+            name == "terminal"
+            and " archive " in str(args.get("command", ""))
+            and not archive_failed
+        ):
+            archive_failed = True
+            raise KanbanError("transient archive failure")
+        return fake_kanban_host.dispatch(name, args)
+
+    monkeypatch.setattr(service, "_kanban", KanbanGraphAdapter(fail_first_archive))
+    with pytest.raises(KanbanError, match="transient archive failure"):
+        service.apply_review_decision(
+            workflow_id,
+            action="request_revision",
+            actor="fixture operator",
+            rationale=rationale,
+            expected_review_digest=review_digest,
+            expected_preview_digest=preview.digest,
+            confirm=True,
+        )
+    after_archive_failure = service.status(workflow_id)
+    request = after_archive_failure.pending_revision_request
+    assert request is not None
+    assert request.cards_archived_at is None
+    assert after_archive_failure.plan_revision == 0
+    assert after_archive_failure.review_disposition is not None
+    partial_packet = service.review_packet(workflow_id)["pending_revision_request"]
+    assert isinstance(partial_packet, dict)
+    assert "request_path" not in partial_packet
+    assert "successor_packet_path" not in partial_packet
+    comment_count_after_archive_failure = sum(
+        len(rows) for rows in fake_kanban_host.comments.values()
+    )
+
+    monkeypatch.setattr(
+        service,
+        "_kanban",
+        KanbanGraphAdapter(fake_kanban_host.dispatch),
+    )
+    real_remove = service._workspace.remove_worktree
+    cleanup_failed = False
+
+    def fail_first_cleanup(target_repository: str, worktree_path: str) -> None:
+        nonlocal cleanup_failed
+        if not cleanup_failed:
+            cleanup_failed = True
+            raise ExecutionError("transient worktree cleanup failure")
+        real_remove(target_repository, worktree_path)
+
+    monkeypatch.setattr(service._workspace, "remove_worktree", fail_first_cleanup)
+    with pytest.raises(ExecutionError, match="transient worktree cleanup failure"):
+        service.apply_review_decision(
+            workflow_id,
+            action="request_revision",
+            actor="fixture operator",
+            rationale=rationale,
+            expected_review_digest=review_digest,
+            expected_preview_digest=preview.digest,
+            confirm=True,
+        )
+    after_cleanup_failure = service.status(workflow_id)
+    request = after_cleanup_failure.pending_revision_request
+    assert request is not None
+    assert request.cards_archived_at is not None
+    assert request.worktree_released_at is None
+    comment_count = sum(len(rows) for rows in fake_kanban_host.comments.values())
+    assert comment_count == comment_count_after_archive_failure
+
+    monkeypatch.setattr(service._workspace, "remove_worktree", real_remove)
+    plan_create_failed = False
+
+    def fail_first_plan_create(name: str, args: dict[str, object]) -> str:
+        nonlocal plan_create_failed
+        if (
+            name == "kanban_create"
+            and str(args.get("title", "")).endswith(": plan")
+            and not plan_create_failed
+        ):
+            plan_create_failed = True
+            raise KanbanError("transient successor Plan card failure")
+        return fake_kanban_host.dispatch(name, args)
+
+    monkeypatch.setattr(service, "_kanban", KanbanGraphAdapter(fail_first_plan_create))
+    with pytest.raises(KanbanError, match="transient successor Plan card failure"):
+        service.apply_review_decision(
+            workflow_id,
+            action="request_revision",
+            actor="fixture operator",
+            rationale=rationale,
+            expected_review_digest=review_digest,
+            expected_preview_digest=preview.digest,
+            confirm=True,
+        )
+    after_plan_card_failure = service.status(workflow_id)
+    assert after_plan_card_failure.plan_revision == 1
+    assert after_plan_card_failure.pending_revision_request is not None
+    assert after_plan_card_failure.card_for(WorkflowStage.PLAN) is None
+
+    monkeypatch.setattr(
+        service,
+        "_kanban",
+        KanbanGraphAdapter(fake_kanban_host.dispatch),
+    )
+    result = service.apply_review_decision(
+        workflow_id,
+        action="request_revision",
+        actor="fixture operator",
+        rationale=rationale,
+        expected_review_digest=review_digest,
+        expected_preview_digest=preview.digest,
+        confirm=True,
+    )
+    revised = service.status(workflow_id)
+    plan_card = revised.card_for(WorkflowStage.PLAN)
+    assert plan_card is not None
+    assert result["replayed"] is True
+    assert result["workflow"] == {
+        "workflow_id": workflow_id,
+        "plan_revision": 1,
+        "plan_card_id": plan_card.task_id,
+    }
+    assert revised.plan_revision == 1
+    assert revised.current_plan_digest is None
+    assert revised.approval is None
+    assert revised.review is None
+    assert revised.review_disposition is None
+    assert revised.verification_evidence == ()
+    assert revised.review_history[-1].digest == review_digest
+    assert revised.review_disposition_history[-1].action.value == "request_revision"
+    assert revised.verification_history[-1] == old_verification[-1]
+    assert old_plan in revised.artifacts
+    assert old_implementation in revised.artifacts
+    assert revised.worktree_owned is False
+    assert old_worktree is not None and not Path(old_worktree).exists()
+    assert sum(len(rows) for rows in fake_kanban_host.comments.values()) == comment_count
+    request = revised.pending_revision_request
+    assert request is not None
+    review_packet = service.review_packet(workflow_id)
+    pending_packet = review_packet["pending_revision_request"]
+    assert isinstance(pending_packet, dict)
+    assert "request_path" not in pending_packet
+    assert "successor_packet_path" not in pending_packet
+    assert Path(request.request_path).is_file()
+    assert Path(request.successor_packet_path).is_file()
+    assert hashlib.sha256(Path(request.request_path).read_bytes()).hexdigest() == (
+        preview.revision_request_digest
+    )
+    assert hashlib.sha256(Path(request.successor_packet_path).read_bytes()).hexdigest() == (
+        preview.successor_packet_digest
+    )
+    assert plan_card.plan_revision == 1
+    assert fake_kanban_host.cards[plan_card.task_id]["args"]["parents"] == [
+        request.source_review_card_id
+    ]
+    assert revised.card_for(WorkflowStage.IMPLEMENT) is None
+    with pytest.raises(PolicyViolationError, match="current plan"):
+        service.approve(workflow_id, plan_digest=old_plan.digest)
+
+    record_stage_activation(service, workflow_id, WorkflowStage.PLAN)
+    planned = service.submit_artifact(
+        workflow_id,
+        stage=WorkflowStage.PLAN,
+        content=(
+            "# Revised plan\n\nCover the blocking boundary case and rerun verification.\n"
+        ),
+        approval_summary={
+            **PLAN_SUMMARY,
+            "headline": "Cover the blocking boundary case before implementation.",
+        },
+    )
+    new_plan = planned.artifact_for(WorkflowStage.PLAN)
+    assert new_plan is not None and new_plan.digest != old_plan.digest
+    assert planned.pending_revision_request is None
+    assert planned.revision_requests[-1].resolved_at is not None
+    approved = service.approve(workflow_id, plan_digest=new_plan.digest)
+    assert approved.approval is not None
+    assert approved.worktree_owned is True
+    implementation_card = approved.card_for(WorkflowStage.IMPLEMENT)
+    assert implementation_card is not None
+    assert implementation_card.plan_revision == 1
 
 
 def test_blocked_activation_denies_stage_evidence_without_completion_handoff(
@@ -616,6 +1134,7 @@ def test_constraint_replacement_invalidates_and_recreates_graph_recoverably(
         workflow_id,
         stage=WorkflowStage.PLAN,
         content="# Revised plan\n",
+        approval_summary=PLAN_SUMMARY,
     )
     plan = planned.artifact_for(WorkflowStage.PLAN)
     definition = planned.artifact_for(WorkflowStage.DEFINE)
@@ -714,9 +1233,7 @@ def test_failed_verification_blocks_delivery(
 
     assert blocked.verification_evidence[-1].exit_code != 0
     assert "status" not in blocked.to_dict()
-    record_stage_activation(service, workflow_id, WorkflowStage.DELIVER)
-    with pytest.raises(PolicyViolationError, match="successful verification"):
-        service.deliver(workflow_id)
+    assert blocked.card_for(WorkflowStage.DELIVER) is None
 
 
 def test_verification_worker_blocks_and_resumes_same_card_and_workspace(
@@ -781,7 +1298,7 @@ def test_verification_worker_blocks_and_resumes_same_card_and_workspace(
     assert restarted_verify is not None
     assert restarted_verify.task_id == verify_card.task_id
     assert restarted.worktree_path == str(worktree)
-    assert len(fake_kanban_host.cards) == 6
+    assert len(fake_kanban_host.cards) == 5
 
     fake_kanban_host.dispatch("kanban_unblock", {"task_id": verify_card.task_id})
     retry_show = json.loads(

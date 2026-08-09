@@ -13,6 +13,7 @@ from daidala.packs import load_pack
 from daidala.state import (
     ActivationManifestReference,
     ActivationReferenceState,
+    ApprovalSummary,
     CardReference,
     SkillDigest,
     StageProfile,
@@ -29,6 +30,13 @@ from daidala.workflow import (
 )
 
 NOW = datetime(2026, 7, 10, 14, 0, tzinfo=UTC)
+PLAN_SUMMARY = ApprovalSummary(
+    headline="Plan the fixture implementation.",
+    changes=("Update the fixture behavior.",),
+    affected_areas=("fixture",),
+    risks=(),
+    verification=("Run pytest.",),
+)
 
 
 class FakeHost:
@@ -185,6 +193,7 @@ def make_approved_worktree():
         path="artifacts/plan.md",
         digest="plan-v1",
         recorded_at=NOW + timedelta(minutes=2),
+        approval_summary=PLAN_SUMMARY,
     )
     ledger = approve_plan(
         ledger,
@@ -318,12 +327,29 @@ def test_card_rejects_missing_current_constraint_content() -> None:
         )
 
 
-def test_card_rejects_oversized_rendered_body_instead_of_truncating() -> None:
-    ledger = replace(make_ledger(), requested_goal="x" * 8192)
+def test_card_body_accepts_exact_limit_and_rejects_one_character_more() -> None:
+    pack = load_pack("addyosmani")
+    baseline = replace(make_ledger(), requested_goal="x")
+    sizing_adapter = KanbanGraphAdapter(FakeHost().dispatch)
+    baseline_body = sizing_adapter._card_body(
+        baseline, WorkflowStage.DEFINE, constraints=None
+    )
+    goal_length = sizing_adapter.MAX_CARD_BODY_CHARS - len(baseline_body) + 1
 
+    host = FakeHost()
+    exact_ledger = replace(baseline, requested_goal="x" * goal_length)
+    exact_card = KanbanGraphAdapter(host.dispatch).ensure_card(
+        exact_ledger, pack, stage=WorkflowStage.DEFINE
+    )
+    exact_args = host.cards[exact_card.task_id]["args"]
+    assert isinstance(exact_args, dict)
+    exact_body = str(exact_args["body"])
+    assert len(exact_body) == 8192
+
+    oversized = replace(exact_ledger, requested_goal=exact_ledger.requested_goal + "x")
     with pytest.raises(KanbanError, match="at most 8192"):
         KanbanGraphAdapter(FakeHost().dispatch).ensure_card(
-            ledger, load_pack("addyosmani"), stage=WorkflowStage.DEFINE
+            oversized, pack, stage=WorkflowStage.DEFINE
         )
 
 

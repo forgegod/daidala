@@ -17,14 +17,18 @@ Own current architecture documentation, the numbered reading set, and executable
   and gates.
 - `06-security.md` owns current trust, activation-audit, and unavailable-control
   boundaries.
+- `07-runbook.md` owns the executable operator lifecycle for installation,
+  initialization, prerequisite diagnosis, pack readiness, workflow start/status,
+  exact plan approval, exact attended review disposition, plan-revision recovery,
+  cancellation, upgrade, and native/standalone CLI parity.
 - `08-hermes-integration.md` owns verified Hermes versions, discovery paths, and installation limitations.
 - `09-pack-adapters.md` owns implemented pack mappings, activation policy, and
   divergences.
 - `10-autonomous-development-use-cases.md` owns user-oriented task selection,
   skill handoffs, steering controls, tutorial ideas, and future use cases.
 - `11-skill-usage-and-user-control.md` owns the design contract for card-scoped
-  candidate loading, persisted activation, cross-stage handoff, and user
-  selection boundaries.
+  candidate loading, persisted activation, cross-stage handoff, attended
+  disposition, revision feedback, and user selection boundaries.
 - `12-market-overview.md` owns source-backed evaluation of candidate workflow
   packs, interoperability standards, optional integrations, and adjacent
   products.
@@ -44,11 +48,11 @@ Own current architecture documentation, the numbered reading set, and executable
 - `evaluation-results/` owns versioned, redacted evaluation definitions and
   observed case records; its child contract prevents unrun behavior from being
   reported as evidence.
-- `plans/` contains self-contained plans for future implementation sessions.
+- `plans/AGENTS.md` owns executable plans, shared family contracts, and their
+  repository-tracked UX design sources and review renders.
 
 ## Local Contracts
 
-- Plans name exact files, verification gates, stop conditions, and unresolved decisions.
 - Describe the current intended design without iteration diaries or stale migration breadcrumbs.
 - Runtime claims must be grounded in Daidala source or current official Hermes documentation.
 - Future numbered documents appear as unlinked support-status entries until their behavior exists.
@@ -63,7 +67,6 @@ Own current architecture documentation, the numbered reading set, and executable
 
 ## Work Guidance
 
-- Update the active plan when a design decision changes before implementation begins.
 - Move stable implemented contracts into normal architecture/operator docs rather than leaving the plan as the only source.
 - Give new operators one user-centric, executable starting path before directing
   them to architecture or reference material. State what starts the workflow,
@@ -85,5 +88,6 @@ python scripts/check_md_links.py .
 | Child | Owns | Read when editing… |
 |---|---|---|
 | [`evaluation-results/AGENTS.md`](evaluation-results/AGENTS.md) | Versioned experiment limits, stable cases, redacted evidence, and result records. | Evaluation definitions, statuses, evidence, or findings. |
+| [`plans/AGENTS.md`](plans/AGENTS.md) | Executable plans, shared plan-family contracts, Pen wireframe sources, and canonical review renders. | Plans, execution contracts, dashboard wireframes, or plan-owned PNG references. |
 
 See [`/AGENTS.md`](../AGENTS.md).

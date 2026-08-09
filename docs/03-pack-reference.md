@@ -85,18 +85,21 @@ The required lifecycle is:
 define -> plan -> implement -> verify -> review -> deliver
 ```
 
-The human gate is metadata between `plan` and `implement`, not a separate
-stage.
+The pack-declared human gate is plan-approval metadata between `plan` and
+`implement`, not a separate stage. The runtime's attended review disposition is
+also ledger-owned and pack-neutral: it occurs after structured `review`, creates
+`deliver` only for exact acceptance, and may instead create a revision-addressed
+Plan card that requires fresh approval.
 
 At graph creation, every executable stage becomes one Hermes Kanban card pinned
 with `daidala:orchestrate` plus the exact skills declared for that stage. All
 declared skills are loaded as candidates. After `kanban_show`, the worker records
 a `daidala.skill-activation/v1` manifest before stage methodology or evidence:
 `required` skills must be applicable or blocked, while `conditional` skills may
-be applicable, deferred, not applicable, or blocked. Approval is ledger-owned
-policy metadata between stages; it has no Kanban card or worker skills. Profiles,
-card links, workspaces, activation decisions, and `daidala.handoff/v1` metadata
-use pack-neutral runtime contracts.
+be applicable, deferred, not applicable, or blocked. Approval and attended
+review disposition are ledger-owned policy metadata between stages; neither has
+a Kanban card or worker skills. Profiles, card links, workspaces, activation
+decisions, and `daidala.handoff/v1` metadata use pack-neutral runtime contracts.
 
 Each stage may declare at most 32 skills, matching the activation tool and
 artifact bounds. Missing or unknown `activation` values fail pack validation;

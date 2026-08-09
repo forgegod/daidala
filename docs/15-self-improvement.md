@@ -69,7 +69,7 @@ flowchart LR
 | Project | One admitted repository with stable `project_id`. | Committed `.daidala/project.yaml`, narrowed by trusted registration. |
 | Registration | Profile-local mapping from project identity to checkout, remote, profile, board, credentials, notification, evaluator, and limits. | Trusted local controller data. |
 | Cycle | One immutable mode and intake/baseline/pack/candidate identity tuple. | Daidala ledger. |
-| Workflow | The selected pack's `define -> plan -> approval -> implement -> verify -> review -> deliver` graph. | Daidala policy facts plus Hermes Kanban operations. |
+| Workflow | The selected pack's `define -> plan -> approval -> implement -> verify -> review -> attended disposition -> deliver` graph, with revision requests returning to a revision-addressed plan and fresh approval. | Daidala policy facts plus Hermes Kanban operations. |
 | Controller | Persistent last-known-good Hermes profile coordinating one project. | Hermes runtime and trusted registration. |
 | Board | Dedicated Hermes Kanban projection for cards, claims, dependencies, retries, comments, and workers. | Hermes Kanban; never mirrored by Daidala. |
 | Evaluator | Fresh home and process loading one baseline or candidate artifact. | Approved local evaluator backend. |
@@ -78,7 +78,8 @@ flowchart LR
 | Adapter | Normalized intake, findings, or notification boundary. | Daidala record schema plus separately configured implementation. |
 | Evidence | Reproducibility data and content-addressed outputs. | Daidala artifact ledger. |
 | Finding | Actionable result synchronized by stable identity. | Local evidence first; external system only after a returned receipt. |
-| Approval | Authorization of one exact current tuple. | Authorized maintainer from trusted registration. |
+| Approval | Authorization of one exact current plan tuple. | Authorized maintainer from trusted registration. |
+| Disposition | Attended acceptance, revision request, or rejection bound to one exact current review tuple. | Authorized maintainer from trusted registration. |
 
 Operational authority remains split exactly as follows:
 

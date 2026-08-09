@@ -56,6 +56,20 @@ class FakeCardStatus:
 
 
 @dataclass
+class FakeReviewPreview:
+    digest: str = "b" * 64
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema": "daidala.review-decision-preview/v1",
+            "review_digest": "a" * 64,
+            "action": "request_revision",
+            "rationale": "Revise the exact plan boundary.",
+            "preview_digest": self.digest,
+        }
+
+
+@dataclass
 class FakeService:
     calls: list[tuple[str, tuple[Any, ...], dict[str, Any]]] = field(default_factory=list)
     fail: bool = False
@@ -80,6 +94,32 @@ class FakeService:
 
     def cancel(self, workflow_id: str, *, reason: str) -> FakeState:
         return self._call("cancel", workflow_id, reason=reason)
+
+    def review_packet(self, workflow_id: str) -> dict[str, object]:
+        self.calls.append(("review_packet", (workflow_id,), {}))
+        if self.fail:
+            raise RuntimeError("service failed")
+        return {
+            "workflow_id": workflow_id,
+            "review_digest": "a" * 64,
+            "allowed_actions": ["request_revision"],
+        }
+
+    def preview_review_decision(self, workflow_id: str, **kwargs: Any) -> FakeReviewPreview:
+        self.calls.append(("preview_review_decision", (workflow_id,), kwargs))
+        if self.fail:
+            raise RuntimeError("service failed")
+        return FakeReviewPreview()
+
+    def apply_review_decision(self, workflow_id: str, **kwargs: Any) -> dict[str, object]:
+        self.calls.append(("apply_review_decision", (workflow_id,), kwargs))
+        if self.fail:
+            raise RuntimeError("service failed")
+        return {
+            "replayed": False,
+            "workflow": {"workflow_id": workflow_id, "plan_revision": 1},
+            "review": {"cards": {"plan": "task-plan-1"}},
+        }
 
     def combined_status(self, workflow_id: str) -> list[FakeCardStatus]:
         self.calls.append(("combined_status", (workflow_id,), {}))
@@ -314,6 +354,154 @@ def test_standalone_and_hermes_surfaces_make_equivalent_service_calls(
         assert json.loads(host_output)["kanban"] == [
             {"stage": "define", "status": "ready"}
         ]
+
+
+def test_review_show_uses_identical_standalone_and_native_dispatch(capsys) -> None:
+    standalone = FakeService()
+    native = FakeService()
+    argv = ["review", "show", "wf-1"]
+
+    standalone_code = cli.main(argv, service_factory=_factory(standalone))
+    standalone_payload = json.loads(capsys.readouterr().out)
+    native_code = cli.run_command(_host_args(argv), service_factory=_factory(native))
+    native_payload = json.loads(capsys.readouterr().out)
+
+    assert standalone_code == native_code == 0
+    assert standalone.calls == native.calls == [("review_packet", ("wf-1",), {})]
+    assert standalone_payload == native_payload
+    assert native_payload["review"]["review_digest"] == "a" * 64
+
+
+@pytest.mark.parametrize(
+    ("cli_action", "service_action"),
+    [
+        ("accept-delivery", "accept_delivery"),
+        ("request-revision", "request_revision"),
+        ("reject-workflow", "reject_workflow"),
+    ],
+)
+def test_review_decision_preview_maps_actions_without_persisting_file_path(
+    tmp_path: Path,
+    capsys,
+    cli_action: str,
+    service_action: str,
+) -> None:
+    rationale = tmp_path / "rationale.txt"
+    rationale.write_text("Revise the exact plan boundary.\n", encoding="utf-8")
+    standalone = FakeService()
+    native = FakeService()
+    argv = [
+        "review",
+        "decide",
+        "wf-1",
+        cli_action,
+        "--rationale-file",
+        str(rationale),
+    ]
+
+    standalone_code = cli.main(argv, service_factory=_factory(standalone))
+    standalone_output = capsys.readouterr().out
+    native_code = cli.run_command(_host_args(argv), service_factory=_factory(native))
+    native_output = capsys.readouterr().out
+
+    assert standalone_code == native_code == 0
+    assert standalone.calls == native.calls
+    assert standalone.calls[0][0] == "preview_review_decision"
+    assert standalone.calls[0][2]["action"] == service_action
+    assert standalone.calls[0][2]["rationale"] == "Revise the exact plan boundary.\n"
+    assert json.loads(standalone_output) == json.loads(native_output)
+    assert json.loads(native_output)["dry_run"] is True
+    assert str(rationale) not in standalone_output
+    assert str(rationale) not in native_output
+
+
+def test_review_decision_apply_requires_and_forwards_exact_digests(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    rationale = tmp_path / "rationale.txt"
+    rationale.write_text("Revise the exact plan boundary.\n", encoding="utf-8")
+    service = FakeService()
+    base = [
+        "review",
+        "decide",
+        "wf-1",
+        "request-revision",
+        "--rationale-file",
+        str(rationale),
+        "--apply",
+    ]
+
+    missing_code = cli.main(base, service_factory=_factory(service))
+    missing_payload = json.loads(capsys.readouterr().out)
+    assert missing_code == 1
+    assert service.calls == []
+    assert "requires --expected-review-digest" in missing_payload["message"]
+
+    standalone = FakeService()
+    native = FakeService()
+    argv = [
+        *base,
+        "--expected-review-digest",
+        "a" * 64,
+        "--expected-preview-digest",
+        "b" * 64,
+    ]
+    standalone_code = cli.main(argv, service_factory=_factory(standalone))
+    standalone_payload = json.loads(capsys.readouterr().out)
+    native_code = cli.run_command(_host_args(argv), service_factory=_factory(native))
+    native_payload = json.loads(capsys.readouterr().out)
+
+    assert standalone_code == native_code == 0
+    assert standalone.calls == native.calls
+    name, positional, keywords = native.calls[0]
+    assert name == "apply_review_decision"
+    assert positional == ("wf-1",)
+    assert keywords["expected_review_digest"] == "a" * 64
+    assert keywords["expected_preview_digest"] == "b" * 64
+    assert keywords["confirm"] is True
+    assert native_payload == standalone_payload
+    assert native_payload["workflow"]["plan_revision"] == 1
+    assert native_payload["review"]["cards"]["plan"] == "task-plan-1"
+    assert str(rationale) not in json.dumps(native_payload)
+
+
+@pytest.mark.parametrize("kind", ["symlink", "oversized"])
+def test_review_decision_rejects_unsafe_rationale_files(
+    tmp_path: Path,
+    capsys,
+    kind: str,
+) -> None:
+    target = tmp_path / "target.txt"
+    target.write_text("Review rationale.\n", encoding="utf-8")
+    rationale = tmp_path / "rationale.txt"
+    if kind == "symlink":
+        rationale.symlink_to(target)
+    else:
+        rationale.write_text("x" * 4097, encoding="utf-8")
+    service = FakeService()
+
+    code = cli.main(
+        [
+            "review",
+            "decide",
+            "wf-1",
+            "request-revision",
+            "--rationale-file",
+            str(rationale),
+        ],
+        service_factory=_factory(service),
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert code == 1
+    assert service.calls == []
+    assert "rationale-file" in payload["message"]
+
+
+def test_review_cli_exposes_no_direct_phase_rewind() -> None:
+    with pytest.raises(SystemExit):
+        _host_args(["review", "move", "wf-1", "plan"])
 
 
 def test_init_is_dry_run_by_default(tmp_path: Path, monkeypatch, capsys) -> None:
@@ -922,6 +1110,34 @@ def test_packs_list_uses_shared_command_tree(capsys) -> None:
     }
 
 
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["packs", "list"],
+        ["packs", "validate", "addyosmani"],
+        ["packs", "validate", "aidlc"],
+    ],
+)
+def test_stateless_pack_commands_do_not_resolve_a_profile_root(
+    argv: list[str], monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    def fail_root_resolution() -> Path:
+        raise AssertionError("stateless pack command must not resolve a profile root")
+
+    monkeypatch.setattr(cli, "resolve_data_root", fail_root_resolution)
+
+    standalone_code = cli.main(argv)
+    standalone = json.loads(capsys.readouterr().out)
+    host_code = cli.run_command(_host_args(argv))
+    host = json.loads(capsys.readouterr().out)
+
+    assert host_code == standalone_code == 0
+    assert host == standalone
+    assert standalone["success"] is True
+    if argv[1] == "validate":
+        assert standalone["name"] == argv[2]
+
+
 def test_service_error_has_same_nonzero_exit_code(capsys) -> None:
     standalone = FakeService(fail=True)
     host = FakeService(fail=True)
@@ -1086,6 +1302,26 @@ def test_cli_kanban_dispatch_translates_public_create_and_show_commands() -> Non
         "t_define",
         "--json",
     )
+
+
+def test_cli_kanban_dispatch_translates_unblock_command() -> None:
+    commands: list[tuple[str, ...]] = []
+
+    result = json.loads(
+        cli._dispatch_kanban_cli(
+            lambda command: (commands.append(command) or 0, ""),
+            "kanban_unblock",
+            {"board": "daidala-test", "task_id": "t_verify", "reason": "evidence recorded"},
+        )
+    )
+
+    assert result == {"ok": True, "task_id": "t_verify", "error": None}
+    assert commands == [
+        (
+            "hermes", "kanban", "--board", "daidala-test", "unblock", "t_verify",
+            "--reason", "evidence recorded",
+        )
+    ]
 
 
 def test_cli_kanban_dispatch_refuses_non_kanban_terminal_command() -> None:

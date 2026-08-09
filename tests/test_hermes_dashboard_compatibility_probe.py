@@ -70,19 +70,10 @@ if args[:1] == ["dashboard"]:
         elif first == "/api/plugins/daidala/health":
             response = b"HTTP/1.1 401 Unauthorized\r\nContent-Length: 0\r\n\r\n"
         elif first == "/api/plugins/daidala/wizard/preview":
-            request = json.loads(request_body)
-            request.update({
-                "pack_name": request["pack"],
-                "constraints_content": request["constraints_content"].strip(),
-                "constraints_skill": None,
-                "constraints_skill_digest": None,
-            })
             preview = json.dumps({
-                "confirmed": False,
-                "request": request,
-                "mutations": [],
+                "detail": "missing required skills: probe-skill"
             }, sort_keys=True).encode()
-            response = (b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n"
+            response = (b"HTTP/1.1 409 Conflict\r\nContent-Type: application/json\r\n"
                         b"Content-Length: " + str(len(preview)).encode()
                         + b"\r\n\r\n" + preview)
         elif first == "/api/plugins/daidala/wizard/start":
@@ -120,6 +111,13 @@ def run_probe(
     hermes = tmp_path / "hermes"
     hermes.write_text(FAKE_HERMES, encoding="utf-8")
     hermes.chmod(0o755)
+    (tmp_path / ".hermes_build_sha").write_text(
+        environment.get(
+            "FAKE_BUILD_REVISION",
+            "3ef6bbd201263d354fd83ec55b3c306ded2eb72a",
+        ),
+        encoding="utf-8",
+    )
     env = os.environ.copy()
     env.update(environment)
     env["TMPDIR"] = str(tmp_path)
@@ -149,7 +147,10 @@ def test_probe_discovers_dashboard_plugin_and_serves_assets(tmp_path: Path) -> N
     assert payload["success"] is True
     assert payload["hermes"]["semver"] == "0.19.0"
     assert payload["hermes"]["build"] == "2026.7.20"
-    assert payload["hermes"]["upstream"] == "3ef6bbd2"
+    assert payload["hermes"]["revision"] == (
+        "3ef6bbd201263d354fd83ec55b3c306ded2eb72a"
+    )
+    assert payload["hermes"]["revision_source"] == "build-metadata"
     assert payload["plugin"]["tab"] == "/daidala"
     assert payload["plugin"]["slot"] == "sessions:top"
     assert payload["plugin"]["assets_served"] is True
@@ -161,7 +162,7 @@ def test_probe_discovers_dashboard_plugin_and_serves_assets(tmp_path: Path) -> N
         "dist/style.css",
     }
     assert payload["setup"] == {
-        "preview_confirmed": False,
+        "preview_readiness_status": 409,
         "unconfirmed_start_status": 400,
         "state_unchanged": True,
     }
@@ -193,17 +194,19 @@ def test_probe_accepts_one_complete_explicit_baseline_identity(tmp_path: Path) -
             "0.18.2",
             "--expected-build",
             "2026.7.7.2",
-            "--expected-upstream",
-            "4281151a",
+            "--expected-revision",
+            "4281151ae859241351ba14d8c7682dc67ff4c126",
         ],
         FAKE_VERSION_MODE="baseline",
+        FAKE_BUILD_REVISION="4281151ae859241351ba14d8c7682dc67ff4c126",
     )
 
     assert result.returncode == 0, result.stderr
     assert json.loads(result.stdout)["hermes"] == {
         "semver": "0.18.2",
         "build": "2026.7.7.2",
-        "upstream": "4281151a",
+        "revision": "4281151ae859241351ba14d8c7682dc67ff4c126",
+        "revision_source": "build-metadata",
     }
 
 
@@ -219,7 +222,7 @@ def test_probe_rejects_missing_host_identity_fields(tmp_path: Path) -> None:
     result = run_probe(tmp_path, FAKE_VERSION_MODE="missing")
 
     assert result.returncode == 1
-    assert "missing semantic, build, or upstream identity" in result.stderr
+    assert "missing semantic or build identity" in result.stderr
     assert not list(tmp_path.glob("daidala-dashboard-compat-*"))
 
 
@@ -234,6 +237,10 @@ def test_probe_rejects_manifest_drift(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     (fake_path / "hermes").chmod(0o755)
+    (fake_path / ".hermes_build_sha").write_text(
+        "3ef6bbd201263d354fd83ec55b3c306ded2eb72a",
+        encoding="utf-8",
+    )
 
     env = os.environ.copy()
     env["TMPDIR"] = str(tmp_path)

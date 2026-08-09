@@ -313,15 +313,18 @@ rules:
 This prevents the workflow from depending on the launcher session retaining
 instructions. A planning worker and a later review worker may be different
 models in different Hermes profiles, but both receive the same worker contract.
-Approval has no card or worker skills: it is a ledger-owned human decision, and
-the plugin approval handler rejects Kanban worker context.
+Plan approval and attended review disposition have no cards or worker skills:
+they are ledger-owned human decisions, and their handlers reject Kanban worker
+context.
 
 ## How packs shape the phases
 
 Daidala has one fixed lifecycle:
 
 ```text
-define -> plan -> approval -> implement -> verify -> review -> deliver
+define -> plan -> approval -> implement -> verify -> review -> disposition
+                                                     |-> deliver
+                                                     `-> plan revision N+1 -> approval
 ```
 
 The pack changes the judgment available inside the executable stages, not the
@@ -334,8 +337,9 @@ workflow mechanics around them.
 | Approval | Bind an attended human decision to the exact current plan and constraint tuple without creating a card. | None; no worker exists. |
 | Implement | Provide the approved detached worktree and capture an immutable diff and path manifest. | How to apply changes, use tests during development, and resolve uncertainty. |
 | Verify | Record exact commands, exit codes, and output references. | Which approved checks to run and how to diagnose failures without inventing success. |
-| Review | Store the review artifact and decision against captured evidence. | Which quality, security, maintainability, and performance concerns to assess. |
-| Deliver | Produce `delivery.json` with reviewed references and no commit or push. | How to report release readiness, documentation, migration, or operational considerations. |
+| Review | Store structured outcome, summary, bounded findings, and an exact digest against captured evidence. | Which quality, security, maintainability, and performance concerns to assess. |
+| Disposition | Bind an attended action to the exact current review and evidence tuple without creating a card. | None; no worker exists. |
+| Deliver | Produce `delivery.json` only after exact attended acceptance, with reviewed references and no commit or push. | How to report release readiness, documentation, migration, or operational considerations. |
 
 The shipped packs demonstrate two valid mapping styles:
 
@@ -351,7 +355,8 @@ The shipped packs demonstrate two valid mapping styles:
   delivery.
 
 Both styles produce the same card graph, approval boundary, worktree behavior,
-and handoff schema. The engine has no `addyosmani` or `aidlc` execution branch.
+review-disposition/revision boundary, and handoff schema. The engine has no
+`addyosmani` or `aidlc` execution branch.
 
 ## How handoff works
 
@@ -467,6 +472,18 @@ The strongest user control is not skill selection; it is withholding
 implementation authority until the plan is acceptable. Approval binds to the
 current plan digest and revision. A changed or stale digest fails closed.
 
+### Decide the exact review
+
+Automated review is evidence, not delivery authority. The user inspects the
+bounded review packet and previews one exact action: accept delivery, request a
+revision, or reject the workflow. Apply requires the unchanged review and preview
+digests. Blocking findings cannot be overridden; a reviewer challenge without
+changed code uses comment/unblock on the same review card. Changed code,
+verification scope, or implementation approach uses `request-revision`, which
+preserves the old evidence, creates one revision-addressed Plan card, and waits
+for a newly recorded plan plus fresh approval. The worker cannot select this
+action, and no direct phase rewind exists.
+
 ### Steer a blocked run
 
 Comments, reassignment, remediation, and unblock let the user influence how the
@@ -498,15 +515,11 @@ These restrictions trade ad hoc flexibility for reproducibility. If a worker
 could silently replace a skill, two runs claiming to use the same pack would no
 longer represent the same methodology or supply-chain input.
 
-## Current design gaps
+## Current design gap
 
-Two gaps directly affect user influence over skill-driven work:
+One gap directly affects user influence over skill-driven work:
 
-1. **No public plan-revision surface.** The runtime can invalidate approval and
-   replace a plan internally, but the registered plugin tools and operator CLI
-   do not expose that operation. If verification or review requires code
-   changes, the safe public path is currently cancel and restart.
-2. **No validated pack overlay.** A user cannot test one alternative stage skill
+1. **No validated pack overlay.** A user cannot test one alternative stage skill
    without authoring or updating a complete pack. A future overlay mechanism
    would need its own digest, provenance, and workflow identity so it does not
    become an invisible override.
@@ -527,6 +540,8 @@ selection inspectable and connects model judgment to deterministic controls:
 - the handoff preserves what each stage produced;
 - the plan digest defines what the human authorized;
 - the captured diff defines what verification and review assessed;
+- the review and disposition digests define what the human accepted, revised, or
+  rejected;
 - the delivery boundary prevents “done” from silently meaning committed,
   pushed, merged, or deployed.
 

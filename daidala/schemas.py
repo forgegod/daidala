@@ -129,15 +129,96 @@ CANCEL = {
 
 SUBMIT_ARTIFACT = {
     "name": "daidala_submit_artifact",
-    "description": "Store and validate a definition, plan, or review artifact.",
+    "description": "Store and validate a definition or plan artifact.",
     "parameters": {
         "type": "object",
         "properties": {
             "workflow_id": {"type": "string"},
-            "stage": {"type": "string", "enum": ["define", "plan", "review"]},
+            "stage": {"type": "string", "enum": ["define", "plan"]},
             "content": {"type": "string"},
+            "approval_summary": {
+                "type": "object",
+                "properties": {
+                    "headline": {"type": "string", "minLength": 1, "maxLength": 200},
+                    "changes": {
+                        "type": "array", "minItems": 1, "maxItems": 12,
+                        "items": {"type": "string", "minLength": 1, "maxLength": 500},
+                    },
+                    "affected_areas": {
+                        "type": "array", "minItems": 0, "maxItems": 12,
+                        "items": {"type": "string", "minLength": 1, "maxLength": 500},
+                    },
+                    "risks": {
+                        "type": "array", "minItems": 0, "maxItems": 12,
+                        "items": {"type": "string", "minLength": 1, "maxLength": 500},
+                    },
+                    "verification": {
+                        "type": "array", "minItems": 1, "maxItems": 12,
+                        "items": {"type": "string", "minLength": 1, "maxLength": 500},
+                    },
+                },
+                "required": [
+                    "headline", "changes", "affected_areas", "risks", "verification",
+                ],
+                "additionalProperties": False,
+            },
         },
         "required": ["workflow_id", "stage", "content"],
+        "additionalProperties": False,
+    },
+}
+
+REVIEW_SUMMARY = SUBMIT_ARTIFACT["parameters"]["properties"]["approval_summary"]
+REVIEW_FINDING = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$"},
+        "severity": {"type": "string", "enum": ["low", "medium", "high", "critical"]},
+        "blocking": {"type": "boolean"},
+        "title": {"type": "string", "minLength": 1, "maxLength": 200},
+        "rationale": {"type": "string", "minLength": 1, "maxLength": 2000},
+        "evidence_digests": {
+            "type": "array", "minItems": 1, "maxItems": 8,
+            "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "uniqueItems": True,
+        },
+    },
+    "required": ["id", "severity", "blocking", "title", "rationale", "evidence_digests"],
+    "additionalProperties": False,
+}
+SUBMIT_REVIEW = {
+    "name": "daidala_submit_review",
+    "description": (
+        "Record structured review evidence bound to current implementation and verification."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "workflow_id": {"type": "string"},
+            "outcome": {"type": "string", "enum": ["accepted", "changes_requested", "rejected"]},
+            "summary": REVIEW_SUMMARY,
+            "findings": {"type": "array", "maxItems": 32, "items": REVIEW_FINDING},
+        },
+        "required": ["workflow_id", "outcome", "summary", "findings"],
+        "additionalProperties": False,
+    },
+}
+REVIEW_DISPOSITION = {
+    "name": "daidala_review_disposition",
+    "description": "Record an attended disposition for the exact current review.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "workflow_id": {"type": "string"},
+            "review_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "action": {
+                "type": "string",
+                "enum": ["accept_delivery", "request_revision", "reject_workflow"],
+            },
+            "actor": {"type": "string", "minLength": 1, "maxLength": 200},
+            "rationale": {"type": "string", "minLength": 1, "maxLength": 2000},
+        },
+        "required": ["workflow_id", "review_digest", "action", "actor", "rationale"],
         "additionalProperties": False,
     },
 }
@@ -260,10 +341,11 @@ DELIVER = {
 LIFECYCLE_TOOLS = (START, STATUS, REPLACE_CONSTRAINTS, APPROVE, CANCEL)
 EXECUTION_TOOLS = (
     SUBMIT_ARTIFACT,
+    SUBMIT_REVIEW,
     PREPARE_IMPLEMENTATION,
     CAPTURE_IMPLEMENTATION,
     RECORD_SKILL_ACTIVATION,
     RECORD_VERIFICATION,
     DELIVER,
 )
-ALL_TOOLS = (PACK_INFO, *LIFECYCLE_TOOLS, *EXECUTION_TOOLS)
+ALL_TOOLS = (PACK_INFO, *LIFECYCLE_TOOLS, REVIEW_DISPOSITION, *EXECUTION_TOOLS)

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Daidala Phase 0 browser probe</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    (function () {
+      "use strict";
+
+      var workflow = {
+        workflow_id: "workflow-browser-probe",
+        board_slug: "daidala-browser-probe",
+        pack_name: "aidlc",
+        policy_revision: 1,
+        plan_revision: 1,
+        approval: null,
+        requested_goal: "Recover the blocked verification card.",
+        current_constraints_digest: "constraints-digest"
+      };
+      var detail = {
+        workflow: workflow,
+        kanban: {
+          available: true,
+          cards: [{
+            task_id: "card-browser-probe",
+            stage: "verify",
+            status: "blocked",
+            block_kind: "verification_failure",
+            block_reason: "The focused verification result is required.",
+            comments: [{ body: "The focused verification result is required." }],
+            runs: [{ summary: "pytest tests/test_dashboard_api.py" }]
+          }]
+        },
+        recommendations: [{
+          action_kind: "record_verification_evidence",
+          card_id: "card-browser-probe",
+          blocker_kind: "verification_failure",
+          rationale: "Attach the focused verification result, then retry."
+        }],
+        constraints: { revision: 1, canonical_content: "global:\nphases:\n" }
+      };
+      var calls = [];
+      window.__phase0BrowserProbeCalls = calls;
+      window.__HERMES_PLUGIN_SDK__ = {
+        React: window.React,
+        fetchJSON: function (url, options) {
+          var method = options && options.method ? options.method : "GET";
+          var body = options && options.body ? JSON.parse(options.body) : null;
+          calls.push({ url: url, method: method, body: body });
+          if (method === "POST" && /\/cancel\/preview$/.test(url)) {
+            return Promise.resolve({
+              preview_digest: "browser-preview-digest",
+              cards: [{ task_id: "card-browser-probe", stage: "verify" }],
+              owned_worktree_release: true
+            });
+          }
+          if (method === "POST") return Promise.resolve({ success: true });
+          if (/\/workflows$/.test(url)) return Promise.resolve({ workflows: [workflow] });
+          if (/\/approval-review$/.test(url) || /\/review-decision$/.test(url)) {
+            return Promise.resolve({ available: false });
+          }
+          if (/\/decisions$/.test(url)) return Promise.resolve({ kanban_available: true, decisions: [] });
+          if (/\/workflows\/workflow-browser-probe$/.test(url)) return Promise.resolve(detail);
+          if (/\/health$/.test(url)) return Promise.resolve({ success: true });
+          if (/\/packs$/.test(url)) return Promise.resolve({ packs: [] });
+          return Promise.resolve({});
+        }
+      };
+      window.__HERMES_PLUGINS__ = {
+        register: function (_name, component) { window.__phase0Page = component; },
+        registerSlot: function () {}
+      };
+    })();
+  </script>
+  <script src="/dashboard/dist/index.js"></script>
+  <script>
+    window.history.replaceState(null, "", "?workflow=workflow-browser-probe");
+    window.ReactDOM.createRoot(document.getElementById("root")).render(
+      window.React.createElement(window.__phase0Page)
+    );
+  </script>
+</body>
+</html>

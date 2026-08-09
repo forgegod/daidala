@@ -2,8 +2,9 @@
 
 Hermes Kanban is the only operational state machine. Daidala persists one
 deterministic policy-ledger record per workflow. Judgment stays in Hermes and
-pack skills; Python owns identity, provenance, plan approval, repository safety,
-artifact integrity, and optimistic concurrency.
+pack skills; Python owns identity, provenance, plan approval, structured review
+validation, attended disposition identity, repository safety, artifact integrity,
+and optimistic concurrency.
 
 The policy and artifact ledger, full approval-gated Kanban graph, combined
 read-only status view, card-scoped worker handoff/recovery contract, and native
@@ -38,6 +39,9 @@ it never mirrors those statuses into its ledger.
 |---|---|
 | Card readiness, running, blocking, completion, retry, and archive state | Hermes Kanban |
 | Current approved plan digest and approval actor/time | Daidala ledger |
+| Source-bound plan `approval_summary` and summary digest | Daidala artifact reference |
+| Current structured review, exact attended disposition, and immutable historical review tuples | Daidala ledger |
+| `revision_request`, `successor_packet` identity, and retry checkpoints | Daidala ledger and artifact store |
 | Current and historical constraint revisions, digests, artifacts, and source provenance | Daidala ledger |
 | Baseline, worktree ownership, and immutable changed-path manifest | Daidala ledger |
 | Worker summaries, comments, run outcomes, and retry history | Hermes Kanban |
@@ -51,13 +55,20 @@ flowchart LR
     P -->|"matching digest approved in ledger"| I["implement"]
     I --> V["verify"]
     V --> R["review"]
-    R --> DL["deliver"]
+    R --> HD["attended disposition"]
+    HD -->|"accept exact review"| DL["deliver"]
+    HD -->|"request revision"| PN["plan revision N+1"]
+    PN -->|"new plan + fresh approval"| I
+    HD -->|"reject workflow"| X["cancelled"]
 ```
 
-Cards use idempotency key `daidala:<workflow-id>:<plan-revision>:<stage>`.
+Cards use idempotency key
+`daidala:<workflow-id>:<plan-revision>:<policy-revision>:<constraint-digest-or-none>:<stage>`.
 The initial `define` and `plan` cards use revision zero. Post-approval cards use
 the approved plan digest's ledger revision, so a changed plan cannot reuse an
-authorized graph. The human gate is a Daidala ledger fact, not a Kanban card.
+authorized graph. Constraint replacement also changes the policy and constraint
+components. The plan-approval and review-disposition gates are Daidala ledger
+facts, not Kanban cards.
 `implement` is linked directly to `plan`; Hermes parent links own readiness
 promotion for executable cards.
 
@@ -70,11 +81,15 @@ promotion for executable cards.
 | Plan becomes runnable or succeeds | `promoted`, `claimed`, then `completed` | Definition digest matches; plan artifact reference and digest validate |
 | Human gate appears | None; no approval card exists | Current plan and nullable constraint tuple is persisted and exposed for attended approval |
 | Approval succeeds | `created` for the post-gate graph only after ledger mutation and worktree creation | Supplied digest matches the current plan and approval binds the current nullable constraint identity before host mutation |
-| Post-gate graph appears | `created` for `implement`, `verify`, `review`, and `deliver` | Approval, baseline, plan revision, profiles, exact skills, and worktree all validate |
+| Post-gate graph appears | `created` for `implement`, `verify`, and `review` | Approval, baseline, plan revision, profiles, exact skills, and worktree all validate |
+| Automated review succeeds | `completed` for an accepted review or `blocked` with `review-required:` otherwise | Structured review binds the exact implementation, passing verification, activation, and current card tuple; blocking findings prohibit accepted outcome |
+| Attended review is accepted | `created` for `deliver` | Exact current review digest and preview digest are fresh; accepted review has no blocking findings; Kanban-worker authority is rejected |
+| Revision is requested | recorded post-gate card IDs are archived; one revision-addressed `plan` card parented to the source review card is created | Canonical revision request and successor packet persist before archive and owned-worktree release; current approval/evidence moves to immutable history |
+| Revisioned plan succeeds | no implementation card yet | `plan-N/plan.md` resolves the request and exposes a new exact approval tuple |
 | Stage succeeds | `completed` | Handoff schema, plan revision, stage artifact, and evidence digest validate |
 | Stage needs intervention | `blocked` or `dependency_wait` | Structured comment names the current workflow, revision, evidence, and required decision |
 | Operator resumes work | `unblocked` | No approval is inferred; later Daidala evidence calls still validate the current revision |
-| Plan is replaced | `archived` on obsolete post-gate cards | Approval is cleared and plan revision increments before any new graph |
+| Plan is replaced or review requests revision | `archived` on obsolete post-gate cards | Approval is cleared and plan revision increments before any new graph; review-driven replacement also preserves the exact disposition and successor packet |
 | Constraints are replaced | `archived` on obsolete cards | Policy revision and immutable constraint artifact become durable before owned-worktree cleanup and fresh define/plan creation |
 | Workflow is cancelled | `archived` on nonterminal cards | Only Daidala-owned worktree and policy references may be cleaned |
 
@@ -89,12 +104,25 @@ exact current digest. A generic Kanban unblock is interaction, not approval, and
 Kanban workers are rejected by the approval tool. Only after Daidala records the
 matching tuple may it create the worktree and post-gate graph. Historical
 approval-card references remain readable ledger evidence but are never completed,
-promoted, or recreated.
+promoted, or recreated. `WorkflowStage.APPROVAL` remains for that serialized
+history; new workflows create no approval `CardReference`.
 
-Replacing a plan clears approval, increments the plan revision, and makes every
-older post-gate card ineligible for Daidala evidence submission. Worktree
-creation rechecks approval, target cleanliness, and the baseline. Repeating graph
-creation reuses the same cards and absolute worktree for that plan revision.
+Structured review is advisory evidence. `accept_delivery`, `request_revision`,
+and `reject_workflow` bind the exact current review, implementation, passing
+verification, plan, policy, and nullable constraint tuple. A stale digest or
+Kanban-worker caller fails before mutation. Blocking findings cannot be accepted;
+the operator challenges judgment through a review-card comment and unblock.
+
+A revision request writes immutable intent and successor packets first, then
+archives only recorded current post-gate cards and releases only the owned
+worktree. Prior plans, implementation, verification, review, disposition, and
+card history remain readable. The new Plan card uses revision N+1; plan recording
+resolves the request, while fresh approval alone authorizes a new worktree and
+`implement → verify → review` graph. Retries use durable archive/worktree markers
+and idempotent card identity instead of rewinding a stage.
+Strict `verification_history`, `review_history`,
+`review_disposition_history`, and `revision_requests` collections retain those
+tuples append-only across plan or constraint revision.
 
 ## Persistence and concurrency
 
@@ -110,7 +138,9 @@ Runtime SQLite files and policy-ledger records are never repository artifacts.
 Dashboard responses are snapshots only. Daidala's ledger owns policy identity,
 Hermes Kanban owns live status, and the browser owns neither. Setup and constraint
 forms must submit an exact typed request; explicit confirmation and current
-digests are revalidated server-side before mutation.
+digests are revalidated server-side before mutation. Dashboard review disposition
+uses the same server-derived exact evidence and preview-confirm authority as the
+CLI; a revision request reopens only the successor plan's exact approval decision.
 
 - Contract: this document
 - Ledger model: `daidala/state.py`

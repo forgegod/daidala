@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import getpass
 import json
 import re
 import shlex
 import subprocess
 from collections.abc import Callable, Mapping
-from importlib import resources
 from pathlib import Path
 from typing import NoReturn, cast
 
@@ -16,7 +16,7 @@ from .cycles import CycleMode
 from .evaluation import EvaluatorIsolationEvidence
 from .kanban import KanbanGraphAdapter
 from .locations import resolve_data_root
-from .packs import PackError, load_pack
+from .pack_service import PackCheck, PackService
 from .prerequisites import DoctorRunner, run_prerequisite_diagnosis
 from .project_cycles import ProjectCycleOperator
 from .reconciliation import ReconciliationPreview, ReconciliationResult
@@ -28,14 +28,9 @@ from .restricted_container import (
     probe_restricted_container,
     run_restricted_container_request,
 )
+from .revision import MAX_REVIEW_FEEDBACK_BYTES
 from .service import WorkflowService
-from .skills import (
-    PackInstallPlan,
-    ProfileSkillContentRegistry,
-    SkillContentRegistry,
-    SkillInventory,
-    plan_pack_install,
-)
+from .skills import ProfileSkillContentRegistry, SkillContentRegistry, SkillInventory
 from .state import WorkflowStage
 from .store import WorkflowStore
 
@@ -206,6 +201,23 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     approve.add_argument("workflow_id")
     approve.add_argument("plan_digest")
 
+    review = sub.add_parser("review", help="Inspect or decide the attended review gate")
+    review_sub = review.add_subparsers(dest="review_command", required=True)
+    review_show = review_sub.add_parser("show", help="Show the bounded current review packet")
+    review_show.add_argument("workflow_id")
+    review_decide = review_sub.add_parser(
+        "decide", help="Preview or apply one exact attended review action"
+    )
+    review_decide.add_argument("workflow_id")
+    review_decide.add_argument(
+        "action",
+        choices=("accept-delivery", "request-revision", "reject-workflow"),
+    )
+    review_decide.add_argument("--rationale-file", required=True, type=Path)
+    review_decide.add_argument("--apply", action="store_true")
+    review_decide.add_argument("--expected-review-digest")
+    review_decide.add_argument("--expected-preview-digest")
+
     cancel = sub.add_parser(
         "cancel", help="Archive workflow cards and clean the Daidala-owned worktree"
     )
@@ -374,7 +386,9 @@ def run_command(
                 project_cycle_factory or ProjectCycleOperator
             )
             return _run_project_cycle(args, selected_project_cycle_factory)
-        if args.command in {"start", "status", "replace-constraints", "approve", "cancel"}:
+        if args.command in {
+            "start", "status", "replace-constraints", "approve", "review", "cancel"
+        }:
             selected_factory = service_factory or (
                 lambda: _default_service(command_runner=command_runner)
             )
@@ -732,10 +746,81 @@ def _run_lifecycle(args: argparse.Namespace, service_factory: ServiceFactory) ->
         )
     elif args.command == "approve":
         state = service.approve(args.workflow_id, plan_digest=args.plan_digest)
+    elif args.command == "review":
+        if args.review_command == "show":
+            _print(
+                {
+                    "success": True,
+                    "operation": "review-show",
+                    "review": service.review_packet(args.workflow_id),
+                }
+            )
+            return 0
+        rationale = _read_review_rationale(args.rationale_file)
+        action = args.action.replace("-", "_")
+        actor = f"cli:{getpass.getuser()}"
+        if not args.apply:
+            preview = service.preview_review_decision(
+                args.workflow_id,
+                action=action,
+                actor=actor,
+                rationale=rationale,
+            )
+            _print(
+                {
+                    "success": True,
+                    "operation": "review-decide",
+                    "dry_run": True,
+                    "preview": preview.to_dict(),
+                }
+            )
+            return 0
+        if args.expected_review_digest is None:
+            raise ValueError("--apply requires --expected-review-digest")
+        if args.expected_preview_digest is None:
+            raise ValueError("--apply requires --expected-preview-digest")
+        result = service.apply_review_decision(
+            args.workflow_id,
+            action=action,
+            actor=actor,
+            rationale=rationale,
+            expected_review_digest=args.expected_review_digest,
+            expected_preview_digest=args.expected_preview_digest,
+            confirm=True,
+        )
+        _print(
+            {
+                "success": True,
+                "operation": "review-decide",
+                "dry_run": False,
+                **result,
+            }
+        )
+        return 0
     else:
         state = service.cancel(args.workflow_id, reason=args.reason)
     _print({"success": True, "operation": args.command, "workflow": state.to_dict()})
     return 0
+
+
+def _read_review_rationale(path: Path) -> str:
+    if not isinstance(path, Path) or path.is_symlink() or not path.is_file():
+        raise ValueError("--rationale-file must name a direct regular file")
+    if path.stat().st_size > MAX_REVIEW_FEEDBACK_BYTES:
+        raise ValueError(
+            f"--rationale-file must be at most {MAX_REVIEW_FEEDBACK_BYTES} bytes"
+        )
+    try:
+        rationale = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as error:
+        raise ValueError("--rationale-file must be UTF-8 text") from error
+    if len(rationale.encode("utf-8")) > MAX_REVIEW_FEEDBACK_BYTES:
+        raise ValueError(
+            f"--rationale-file must be at most {MAX_REVIEW_FEEDBACK_BYTES} bytes"
+        )
+    if not rationale.strip():
+        raise ValueError("--rationale-file must not be empty")
+    return rationale
 
 
 def _parse_stage_profiles(default_profile: str, values: list[str]) -> dict[str, str]:
@@ -768,99 +853,63 @@ def _run_pack_operation(
     operation: str | None = None,
 ) -> int:
     if args.packs_command == "list":
-        names = _bundled_pack_names()
-        _print({"success": True, "operation": "list", "packs": names})
-        return 0
-
-    try:
-        pack = load_pack(args.name)
-    except PackError as exc:
-        _print({"success": False, "error": str(exc)})
-        return 1
-
-    if args.packs_command == "validate":
         _print(
             {
                 "success": True,
-                "pack": pack.name,
-                "source": pack.source,
-                "source_revision": pack.source_revision,
-                "lifecycle": list(pack.lifecycle),
-                "human_gate_after": pack.human_gate_after,
+                "operation": "list",
+                "packs": list(PackService.bundled_names()),
             }
         )
+        return 0
+
+    if args.packs_command == "validate":
+        validation = PackService.validate(args.name).to_dict()
+        _print({"success": True, "operation": "validate", **validation})
         return 0
 
     selected_registry = registry or ProfileSkillContentRegistry(resolve_data_root() / "skills")
     selected_inventory = inventory or cast(SkillInventory, selected_registry)
     resolver = revision_resolver or _resolve_revision
-    version = hermes_version or _resolve_hermes_version()
-    plan = plan_pack_install(
-        pack,
-        selected_inventory,
-        selected_registry,
-        resolved_revision=resolver(pack.source),
-        hermes_version=version,
-        recursive=getattr(args, "recursive", False),
+    runner = command_runner or _run_command
+    service = PackService(
+        inventory=selected_inventory,
+        registry=selected_registry,
+        revision_resolver=lambda pack: resolver(pack.source),
+        hermes_version_resolver=lambda: hermes_version or _resolve_hermes_version(),
+        command_runner=runner,
     )
-
     selected_operation = operation or args.packs_command
+    check = service.check(args.name, recursive=getattr(args, "recursive", False))
     if args.packs_command == "install":
         if not args.apply:
-            _print(
-                _plan_payload(
-                    plan,
-                    operation=selected_operation,
-                    dry_run=True,
-                    success=plan.ready_to_apply,
-                )
+            payload = _check_payload(
+                check,
+                operation=selected_operation,
+                dry_run=True,
+                success=check.installable,
             )
-            return 0 if plan.ready_to_apply else 1
-        if not plan.ready_to_apply:
-            _print(
-                _plan_payload(
-                    plan, operation=selected_operation, dry_run=False, success=False
-                )
-            )
-            return 1
-        runner = command_runner or _run_command
-        executed: list[dict[str, object]] = []
-        for action in plan.actions:
-            code, output = runner(action.command)
-            executed.append(
-                {
-                    "name": action.name,
-                    "command": list(action.command),
-                    "exit_code": code,
-                    "output": output,
-                }
-            )
-            if code != 0:
-                payload = _plan_payload(
-                    plan, operation=selected_operation, dry_run=False, success=False
-                )
-                payload["executed"] = executed
-                _print(payload)
-                return 1
-        verified = plan_pack_install(
-            pack,
-            selected_inventory,
-            selected_registry,
-            resolved_revision=resolver(pack.source),
-            hermes_version=version,
+            _print(payload)
+            return 0 if check.installable else 1
+        result = service.install(
+            args.name,
+            expected_preview_digest=check.preview_digest,
+            confirm=True,
         )
-        success = verified.ready_to_apply and not verified.actions
-        payload = _plan_payload(
-            verified, operation=selected_operation, dry_run=False, success=success
+        payload = _check_payload(
+            result.pack,
+            operation=selected_operation,
+            dry_run=False,
+            success=True,
         )
-        payload["executed"] = executed
+        payload["applied_preview_digest"] = result.applied_preview_digest
+        payload["executed"] = [row.to_dict() for row in result.executed]
         _print(payload)
-        return 0 if success else 1
+        return 0
 
-    success = plan.ready_to_apply and not plan.actions
+    success = check.ready
     _print(
-        _plan_payload(
-            plan,
+        _check_payload(
+            check,
             operation=selected_operation,
             dry_run=True,
             success=True if args.packs_command == "update-plan" else success,
@@ -871,15 +920,6 @@ def _run_pack_operation(
     return 0 if success else 1
 
 
-def _bundled_pack_names() -> list[str]:
-    root = resources.files(__package__).joinpath("packs")
-    return sorted(
-        item.name.removesuffix(".yaml")
-        for item in root.iterdir()
-        if item.name.endswith(".yaml")
-    )
-
-
 def _default_service(*, command_runner: CommandRunner | None = None) -> WorkflowService:
     return build_cli_service(command_runner=command_runner)
 
@@ -888,13 +928,17 @@ def build_cli_service(
     *,
     command_runner: CommandRunner | None = None,
     data_root: Path | None = None,
+    defer_store_initialization: bool = False,
 ) -> WorkflowService:
     """Build a profile-safe service over documented ``hermes kanban`` commands."""
     selected_data_root = data_root or resolve_data_root()
     registry = ProfileSkillContentRegistry(selected_data_root / "skills")
     runner = command_runner or _run_command
     return WorkflowService(
-        WorkflowStore(selected_data_root / "daidala"),
+        WorkflowStore(
+            selected_data_root / "daidala",
+            defer_initialization=defer_store_initialization,
+        ),
         skill_inventory=registry,
         skill_content_registry=registry,
         kanban=KanbanGraphAdapter(
@@ -979,6 +1023,16 @@ def _dispatch_kanban_cli(
             {"ok": code == 0, "task_id": task_id, "error": output if code else None}
         )
 
+    if name == "kanban_unblock":
+        command = [*prefix, "unblock", task_id]
+        reason = args.get("reason")
+        if reason is not None:
+            command.extend(("--reason", str(reason)))
+        code, output = runner(tuple(command))
+        return json.dumps(
+            {"ok": code == 0, "task_id": task_id, "error": output if code else None}
+        )
+
     return json.dumps({"ok": False, "error": f"unsupported Kanban operation: {name}"})
 
 
@@ -992,14 +1046,19 @@ def _parse_cli_json(output: str) -> dict[str, object]:
     return cast(dict[str, object], payload)
 
 
-def _plan_payload(
-    plan: PackInstallPlan, *, operation: str, dry_run: bool, success: bool
+def _check_payload(
+    check: PackCheck, *, operation: str, dry_run: bool, success: bool
 ) -> dict[str, object]:
+    payload = check.to_dict()
     return {
         "success": success,
         "operation": operation,
         "dry_run": dry_run,
-        **plan.to_dict(),
+        "pack": check.validation.name,
+        "source": check.validation.source,
+        "pinned_revision": check.validation.source_revision,
+        **payload,
+        "ready_to_apply": check.installable,
     }
 
 

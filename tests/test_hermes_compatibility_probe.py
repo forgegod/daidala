@@ -20,6 +20,11 @@ state_path = home / "fake-hermes-state.json"
 state = json.loads(state_path.read_text()) if state_path.exists() else {"tasks": {}, "next": 1}
 
 if args == ["--version"]:
+    build_revision = os.environ.get(
+        "FAKE_BUILD_REVISION",
+        "3ef6bbd201263d354fd83ec55b3c306ded2eb72a",
+    )
+    Path(__file__).with_name(".hermes_build_sha").write_text(build_revision)
     mode = os.environ.get("FAKE_VERSION_MODE", "ok")
     if mode == "missing":
         print("Hermes Agent unknown")
@@ -28,7 +33,7 @@ if args == ["--version"]:
     elif mode == "changed":
         print("Hermes Agent v0.19.0 (2026.8.1) · upstream deadbeef")
     else:
-        print("Hermes Agent v0.19.0 (2026.7.20) · upstream 3ef6bbd2")
+        print("Hermes Agent v0.19.0 (2026.7.20) · upstream 8eaaa502")
     raise SystemExit(0)
 
 if args[:2] == ["kanban", "boards"] or args[-1:] == ["init"]:
@@ -93,7 +98,8 @@ def test_probe_parses_supported_host_and_cleans_isolated_home(tmp_path: Path) ->
     assert payload["hermes"] == {
         "semver": "0.19.0",
         "build": "2026.7.20",
-        "upstream": "3ef6bbd2",
+        "revision": "3ef6bbd201263d354fd83ec55b3c306ded2eb72a",
+        "revision_source": "build-metadata",
     }
     assert payload["skill"]["name"] == "policy-probe"
     assert len(payload["skill"]["digest"]) == 64
@@ -117,18 +123,31 @@ def test_probe_accepts_one_complete_explicit_baseline_identity(tmp_path: Path) -
             "0.18.2",
             "--expected-build",
             "2026.7.7.2",
-            "--expected-upstream",
-            "4281151a",
+            "--expected-revision",
+            "4281151ae859241351ba14d8c7682dc67ff4c126",
         ],
         FAKE_VERSION_MODE="baseline",
+        FAKE_BUILD_REVISION="4281151ae859241351ba14d8c7682dc67ff4c126",
     )
 
     assert result.returncode == 0, result.stderr
     assert json.loads(result.stdout)["hermes"] == {
         "semver": "0.18.2",
         "build": "2026.7.7.2",
-        "upstream": "4281151a",
+        "revision": "4281151ae859241351ba14d8c7682dc67ff4c126",
+        "revision_source": "build-metadata",
     }
+
+
+def test_probe_rejects_changed_executable_build_revision(tmp_path: Path) -> None:
+    result = run_probe(
+        tmp_path,
+        FAKE_BUILD_REVISION="deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+    )
+
+    assert result.returncode == 1
+    assert "unsupported Hermes identity" in result.stderr
+    assert "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef" in result.stderr
 
 
 def test_probe_rejects_partial_explicit_candidate_identity(tmp_path: Path) -> None:
@@ -143,7 +162,7 @@ def test_probe_rejects_missing_host_identity_fields(tmp_path: Path) -> None:
     result = run_probe(tmp_path, FAKE_VERSION_MODE="missing")
 
     assert result.returncode == 1
-    assert "missing semantic, build, or upstream identity" in result.stderr
+    assert "missing semantic or build identity" in result.stderr
 
 
 def test_probe_rejects_worker_context_boundary_drift_and_cleans(tmp_path: Path) -> None:

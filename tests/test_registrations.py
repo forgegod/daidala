@@ -9,6 +9,7 @@ from daidala.errors import PolicyViolationError
 from daidala.projects import parse_project_manifest
 from daidala.registrations import (
     ControllerRegistration,
+    list_controller_registrations,
     parse_controller_registration,
     registration_path,
 )
@@ -59,6 +60,16 @@ def test_registration_round_trip_manifest_binding_and_profile_storage_path() -> 
         "/var/lib/hermes/profile/projects/forgegod-daidala/registration.yaml"
     )
     assert len(registration.digest) == 64
+
+
+def test_list_controller_registrations_reads_only_profile_project_records(tmp_path: Path) -> None:
+    project = tmp_path / "projects" / "forgegod-daidala"
+    project.mkdir(parents=True)
+    (project / "registration.yaml").write_text(registration_content(), encoding="utf-8")
+
+    assert list_controller_registrations(tmp_path) == (
+        parse_controller_registration(registration_content()),
+    )
 
 
 @pytest.mark.parametrize(

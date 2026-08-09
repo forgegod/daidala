@@ -336,6 +336,86 @@ class StageProfile:
 
 
 @dataclass(frozen=True)
+class ApprovalSummary:
+    headline: str
+    changes: tuple[str, ...]
+    affected_areas: tuple[str, ...]
+    risks: tuple[str, ...]
+    verification: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        _require_plain_text(self.headline, "approval summary headline", 200)
+        _require_plain_text_items(
+            self.changes, "approval summary changes", minimum=1, maximum=12
+        )
+        _require_plain_text_items(
+            self.affected_areas,
+            "approval summary affected_areas",
+            minimum=0,
+            maximum=12,
+        )
+        _require_plain_text_items(
+            self.risks, "approval summary risks", minimum=0, maximum=12
+        )
+        _require_plain_text_items(
+            self.verification,
+            "approval summary verification",
+            minimum=1,
+            maximum=12,
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "headline": self.headline,
+            "changes": list(self.changes),
+            "affected_areas": list(self.affected_areas),
+            "risks": list(self.risks),
+            "verification": list(self.verification),
+        }
+
+    def canonical_bytes(self) -> bytes:
+        return json.dumps(
+            self.to_dict(),
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> ApprovalSummary:
+        _require_exact_fields(
+            raw,
+            {"headline", "changes", "affected_areas", "risks", "verification"},
+            "approval summary",
+        )
+        try:
+            for field in ("changes", "affected_areas", "risks", "verification"):
+                if not isinstance(raw[field], list):
+                    raise PolicyViolationError(
+                        f"approval summary {field} must be an array"
+                    )
+            return cls(
+                headline=raw["headline"],
+                changes=tuple(raw["changes"]),
+                affected_areas=tuple(raw["affected_areas"]),
+                risks=tuple(raw["risks"]),
+                verification=tuple(raw["verification"]),
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            if isinstance(error, PolicyViolationError):
+                raise
+            raise PolicyViolationError(f"invalid approval summary: {error}") from error
+
+    def digest_for(self, source_digest: str) -> str:
+        _require_text(source_digest, "approval summary source digest")
+        payload = {"source_digest": source_digest, "summary": self.to_dict()}
+        canonical = json.dumps(
+            payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+        return hashlib.sha256(canonical).hexdigest()
+
+
+@dataclass(frozen=True)
 class ArtifactReference:
     stage: WorkflowStage
     plan_revision: int
@@ -343,6 +423,8 @@ class ArtifactReference:
     digest: str
     recorded_at: datetime
     policy_revision: int = 0
+    approval_summary: ApprovalSummary | None = None
+    approval_summary_digest: str | None = None
 
     def __post_init__(self) -> None:
         _require_revision(self.plan_revision)
@@ -350,9 +432,21 @@ class ArtifactReference:
         _require_text(self.path, "artifact path")
         _require_text(self.digest, "artifact digest")
         _require_aware(self.recorded_at, "artifact recorded_at")
+        if (self.approval_summary is None) != (self.approval_summary_digest is None):
+            raise PolicyViolationError(
+                "artifact approval summary and digest must both be present or absent"
+            )
+        if self.approval_summary is not None:
+            if self.stage is not WorkflowStage.PLAN:
+                raise PolicyViolationError("only plan artifacts may carry an approval summary")
+            expected = self.approval_summary.digest_for(self.digest)
+            if self.approval_summary_digest != expected:
+                raise PolicyViolationError(
+                    "artifact approval summary digest does not match the plan digest"
+                )
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload = {
             "stage": self.stage.value,
             "plan_revision": self.plan_revision,
             "path": self.path,
@@ -360,9 +454,21 @@ class ArtifactReference:
             "recorded_at": self.recorded_at.isoformat(),
             "policy_revision": self.policy_revision,
         }
+        if self.approval_summary is not None:
+            payload["approval_summary"] = self.approval_summary.to_dict()
+            payload["approval_summary_digest"] = self.approval_summary_digest
+        return payload
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> ArtifactReference:
+        required = {
+            "stage", "plan_revision", "path", "digest", "recorded_at",
+        }
+        allowed = required | {
+            "policy_revision", "approval_summary", "approval_summary_digest",
+        }
+        if not isinstance(raw, dict) or required - set(raw) or set(raw) - allowed:
+            raise PolicyViolationError("artifact reference fields are invalid")
         return cls(
             stage=WorkflowStage(raw["stage"]),
             plan_revision=raw["plan_revision"],
@@ -370,6 +476,12 @@ class ArtifactReference:
             digest=raw["digest"],
             recorded_at=datetime.fromisoformat(raw["recorded_at"]),
             policy_revision=raw.get("policy_revision", 0),
+            approval_summary=(
+                ApprovalSummary.from_dict(raw["approval_summary"])
+                if raw.get("approval_summary") is not None
+                else None
+            ),
+            approval_summary_digest=raw.get("approval_summary_digest"),
         )
 
 
@@ -624,6 +736,482 @@ class VerificationEvidence:
         )
 
 
+class ReviewOutcome(StrEnum):
+    ACCEPTED = "accepted"
+    CHANGES_REQUESTED = "changes_requested"
+    REJECTED = "rejected"
+
+
+class ReviewDispositionAction(StrEnum):
+    ACCEPT_DELIVERY = "accept_delivery"
+    REQUEST_REVISION = "request_revision"
+    REJECT_WORKFLOW = "reject_workflow"
+
+
+@dataclass(frozen=True)
+class ReviewFinding:
+    finding_id: str
+    severity: str
+    blocking: bool
+    title: str
+    rationale: str
+    evidence_digests: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.finding_id, str) or not re.fullmatch(
+            r"[a-z][a-z0-9-]{0,63}", self.finding_id
+        ):
+            raise PolicyViolationError("review finding ID must be a canonical slug")
+        if self.severity not in {"low", "medium", "high", "critical"}:
+            raise PolicyViolationError("review finding severity is invalid")
+        if not isinstance(self.blocking, bool):
+            raise PolicyViolationError("review finding blocking must be a boolean")
+        _require_bounded_text(self.title, "review finding title", 200)
+        _require_bounded_text(self.rationale, "review finding rationale", 2000)
+        if not isinstance(self.evidence_digests, tuple) or not 1 <= len(self.evidence_digests) <= 8:
+            raise PolicyViolationError("review finding evidence must contain 1-8 digests")
+        for digest in self.evidence_digests:
+            _require_digest(digest, "review finding evidence digest")
+        if tuple(sorted(set(self.evidence_digests))) != self.evidence_digests:
+            raise PolicyViolationError(
+                "review finding evidence digests must be sorted and unique"
+            )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.finding_id,
+            "severity": self.severity,
+            "blocking": self.blocking,
+            "title": self.title,
+            "rationale": self.rationale,
+            "evidence_digests": list(self.evidence_digests),
+        }
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> ReviewFinding:
+        _require_exact_fields(
+            raw,
+            {"id", "severity", "blocking", "title", "rationale", "evidence_digests"},
+            "review finding",
+        )
+        return cls(
+            finding_id=raw["id"],
+            severity=raw["severity"],
+            blocking=raw["blocking"],
+            title=raw["title"],
+            rationale=raw["rationale"],
+            evidence_digests=tuple(raw["evidence_digests"]),
+        )
+
+
+@dataclass(frozen=True)
+class ReviewRecord:
+    workflow_id: str
+    plan_digest: str
+    plan_revision: int
+    policy_revision: int
+    constraints_revision: int | None
+    constraints_digest: str | None
+    implementation_digest: str
+    verification_digests: tuple[str, ...]
+    activation_digest: str
+    outcome: ReviewOutcome
+    summary: ApprovalSummary
+    summary_digest: str
+    findings: tuple[ReviewFinding, ...]
+    recorded_at: datetime
+
+    def __post_init__(self) -> None:
+        _require_text(self.workflow_id, "review workflow ID")
+        _require_digest(self.plan_digest, "review plan digest")
+        _require_revision(self.plan_revision)
+        _require_revision(self.policy_revision)
+        if (self.constraints_revision is None) != (self.constraints_digest is None):
+            raise PolicyViolationError(
+                "review constraint revision and digest must both be present or absent"
+            )
+        if self.constraints_revision is not None:
+            _require_positive_revision(self.constraints_revision, "review constraint revision")
+        if self.constraints_digest is not None:
+            _require_digest(self.constraints_digest, "review constraint digest")
+        _require_digest(self.implementation_digest, "review implementation digest")
+        if not isinstance(self.verification_digests, tuple) or not self.verification_digests:
+            raise PolicyViolationError("review requires passing verification digests")
+        for digest in self.verification_digests:
+            _require_digest(digest, "review verification digest")
+        if tuple(sorted(set(self.verification_digests))) != self.verification_digests:
+            raise PolicyViolationError("review verification digests must be sorted and unique")
+        _require_digest(self.activation_digest, "review activation digest")
+        if not isinstance(self.outcome, ReviewOutcome):
+            raise PolicyViolationError("review outcome is invalid")
+        if not isinstance(self.summary, ApprovalSummary):
+            raise PolicyViolationError("review summary is invalid")
+        _require_digest(self.summary_digest, "review summary digest")
+        if self.summary_digest != self.summary.digest_for(self.implementation_digest):
+            raise PolicyViolationError(
+                "review summary digest does not match the implementation digest"
+            )
+        if not isinstance(self.findings, tuple) or len(self.findings) > 32:
+            raise PolicyViolationError("review findings must contain at most 32 records")
+        if any(not isinstance(finding, ReviewFinding) for finding in self.findings):
+            raise PolicyViolationError("review findings must contain review finding records")
+        finding_ids = [finding.finding_id for finding in self.findings]
+        if finding_ids != sorted(set(finding_ids)):
+            raise PolicyViolationError("review findings must have sorted unique IDs")
+        if self.outcome is ReviewOutcome.ACCEPTED and any(
+            finding.blocking for finding in self.findings
+        ):
+            raise PolicyViolationError("accepted review cannot contain blocking findings")
+        _require_aware(self.recorded_at, "review recorded_at")
+
+    @property
+    def digest(self) -> str:
+        return hashlib.sha256(self.canonical_bytes()).hexdigest()
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "workflow_id": self.workflow_id,
+            "plan_digest": self.plan_digest,
+            "plan_revision": self.plan_revision,
+            "policy_revision": self.policy_revision,
+            "constraints_revision": self.constraints_revision,
+            "constraints_digest": self.constraints_digest,
+            "implementation_digest": self.implementation_digest,
+            "verification_digests": list(self.verification_digests),
+            "activation_digest": self.activation_digest,
+            "outcome": self.outcome.value,
+            "summary": self.summary.to_dict(),
+            "summary_digest": self.summary_digest,
+            "findings": [finding.to_dict() for finding in self.findings],
+            "recorded_at": self.recorded_at.isoformat(),
+        }
+
+    def canonical_bytes(self) -> bytes:
+        return json.dumps(
+            self.to_dict(), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> ReviewRecord:
+        _require_exact_fields(
+            raw,
+            {
+                "workflow_id", "plan_digest", "plan_revision", "policy_revision",
+                "constraints_revision", "constraints_digest", "implementation_digest",
+                "verification_digests", "activation_digest", "outcome", "summary",
+                "summary_digest", "findings", "recorded_at",
+            },
+            "review record",
+        )
+        return cls(
+            workflow_id=raw["workflow_id"],
+            plan_digest=raw["plan_digest"],
+            plan_revision=raw["plan_revision"],
+            policy_revision=raw["policy_revision"],
+            constraints_revision=raw["constraints_revision"],
+            constraints_digest=raw["constraints_digest"],
+            implementation_digest=raw["implementation_digest"],
+            verification_digests=tuple(raw["verification_digests"]),
+            activation_digest=raw["activation_digest"],
+            outcome=ReviewOutcome(raw["outcome"]),
+            summary=ApprovalSummary.from_dict(raw["summary"]),
+            summary_digest=raw["summary_digest"],
+            findings=tuple(ReviewFinding.from_dict(row) for row in raw["findings"]),
+            recorded_at=datetime.fromisoformat(raw["recorded_at"]),
+        )
+
+
+@dataclass(frozen=True)
+class ReviewDisposition:
+    review_digest: str
+    implementation_digest: str
+    verification_digests: tuple[str, ...]
+    plan_digest: str
+    plan_revision: int
+    policy_revision: int
+    constraints_revision: int | None
+    constraints_digest: str | None
+    action: ReviewDispositionAction
+    actor: str
+    rationale: str
+    decided_at: datetime
+
+    def __post_init__(self) -> None:
+        for digest, label in (
+            (self.review_digest, "disposition review digest"),
+            (self.implementation_digest, "disposition implementation digest"),
+            (self.plan_digest, "disposition plan digest"),
+        ):
+            _require_digest(digest, label)
+        if not isinstance(self.verification_digests, tuple) or not self.verification_digests:
+            raise PolicyViolationError("disposition requires verification digests")
+        for digest in self.verification_digests:
+            _require_digest(digest, "disposition verification digest")
+        if tuple(sorted(set(self.verification_digests))) != self.verification_digests:
+            raise PolicyViolationError("disposition verification digests must be sorted and unique")
+        _require_revision(self.plan_revision)
+        _require_revision(self.policy_revision)
+        if (self.constraints_revision is None) != (self.constraints_digest is None):
+            raise PolicyViolationError(
+                "disposition constraint revision and digest must both be present or absent"
+            )
+        if self.constraints_revision is not None:
+            _require_positive_revision(self.constraints_revision, "disposition constraint revision")
+        if self.constraints_digest is not None:
+            _require_digest(self.constraints_digest, "disposition constraint digest")
+        if not isinstance(self.action, ReviewDispositionAction):
+            raise PolicyViolationError("review disposition action is invalid")
+        _require_bounded_text(self.actor, "review disposition actor", 200)
+        _require_bounded_text(self.rationale, "review disposition rationale", 2000)
+        _require_aware(self.decided_at, "review disposition decided_at")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "review_digest": self.review_digest,
+            "implementation_digest": self.implementation_digest,
+            "verification_digests": list(self.verification_digests),
+            "plan_digest": self.plan_digest,
+            "plan_revision": self.plan_revision,
+            "policy_revision": self.policy_revision,
+            "constraints_revision": self.constraints_revision,
+            "constraints_digest": self.constraints_digest,
+            "action": self.action.value,
+            "actor": self.actor,
+            "rationale": self.rationale,
+            "decided_at": self.decided_at.isoformat(),
+        }
+
+    def canonical_bytes(self) -> bytes:
+        return json.dumps(
+            self.to_dict(), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+
+    @property
+    def digest(self) -> str:
+        return hashlib.sha256(self.canonical_bytes()).hexdigest()
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> ReviewDisposition:
+        _require_exact_fields(
+            raw,
+            {
+                "review_digest", "implementation_digest", "verification_digests", "plan_digest",
+                "plan_revision", "policy_revision", "constraints_revision", "constraints_digest",
+                "action", "actor", "rationale", "decided_at",
+            },
+            "review disposition",
+        )
+        return cls(
+            review_digest=raw["review_digest"],
+            implementation_digest=raw["implementation_digest"],
+            verification_digests=tuple(raw["verification_digests"]),
+            plan_digest=raw["plan_digest"],
+            plan_revision=raw["plan_revision"],
+            policy_revision=raw["policy_revision"],
+            constraints_revision=raw["constraints_revision"],
+            constraints_digest=raw["constraints_digest"],
+            action=ReviewDispositionAction(raw["action"]),
+            actor=raw["actor"],
+            rationale=raw["rationale"],
+            decided_at=datetime.fromisoformat(raw["decided_at"]),
+        )
+
+
+@dataclass(frozen=True)
+class PlanRevisionRequestReference:
+    """Durable intent for one review-driven successor Plan revision."""
+
+    workflow_id: str
+    source_review_digest: str
+    source_disposition_digest: str
+    source_plan_digest: str
+    source_plan_revision: int
+    source_policy_revision: int
+    source_constraints_revision: int | None
+    source_constraints_digest: str | None
+    implementation_digest: str
+    verification_digests: tuple[str, ...]
+    target_plan_revision: int
+    preview_digest: str
+    request_path: str
+    request_digest: str
+    successor_packet_path: str
+    successor_packet_digest: str
+    source_review_card_id: str
+    source_card_ids: tuple[str, ...]
+    actor: str
+    normalized_feedback: str
+    requested_at: datetime
+    cards_archived_at: datetime | None = None
+    worktree_released_at: datetime | None = None
+    resolved_at: datetime | None = None
+
+    def __post_init__(self) -> None:
+        _require_text(self.workflow_id, "revision request workflow ID")
+        for digest, label in (
+            (self.source_review_digest, "revision request review digest"),
+            (self.source_disposition_digest, "revision request disposition digest"),
+            (self.source_plan_digest, "revision request plan digest"),
+            (self.implementation_digest, "revision request implementation digest"),
+            (self.preview_digest, "revision request preview digest"),
+            (self.request_digest, "revision request artifact digest"),
+            (self.successor_packet_digest, "successor packet digest"),
+        ):
+            _require_digest(digest, label)
+        _require_revision(self.source_plan_revision)
+        _require_revision(self.source_policy_revision)
+        if self.target_plan_revision != self.source_plan_revision + 1:
+            raise PolicyViolationError("revision request target must follow its source plan")
+        if (self.source_constraints_revision is None) != (
+            self.source_constraints_digest is None
+        ):
+            raise PolicyViolationError(
+                "revision request constraint revision and digest must both be present or absent"
+            )
+        if self.source_constraints_revision is not None:
+            _require_positive_revision(
+                self.source_constraints_revision, "revision request constraint revision"
+            )
+        if self.source_constraints_digest is not None:
+            _require_digest(
+                self.source_constraints_digest, "revision request constraint digest"
+            )
+        if not isinstance(self.verification_digests, tuple) or not self.verification_digests:
+            raise PolicyViolationError("revision request requires verification digests")
+        for digest in self.verification_digests:
+            _require_digest(digest, "revision request verification digest")
+        if tuple(sorted(set(self.verification_digests))) != self.verification_digests:
+            raise PolicyViolationError(
+                "revision request verification digests must be sorted and unique"
+            )
+        _require_absolute_local_path(self.request_path, "revision request artifact path")
+        _require_absolute_local_path(self.successor_packet_path, "successor packet path")
+        if self.request_path == self.successor_packet_path:
+            raise PolicyViolationError("revision request artifacts must use distinct paths")
+        _require_bounded_text(self.source_review_card_id, "source review card ID", 500)
+        if not isinstance(self.source_card_ids, tuple) or not self.source_card_ids:
+            raise PolicyViolationError("revision request requires source card IDs")
+        if len(self.source_card_ids) != len(set(self.source_card_ids)):
+            raise PolicyViolationError("revision request source card IDs must be unique")
+        for task_id in self.source_card_ids:
+            _require_bounded_text(task_id, "revision request source card ID", 500)
+        if self.source_review_card_id not in self.source_card_ids:
+            raise PolicyViolationError("revision request source cards must include the review card")
+        _require_bounded_text(self.actor, "revision request actor", 200)
+        _require_bounded_text(self.normalized_feedback, "revision request feedback", 4096)
+        _require_aware(self.requested_at, "revision request requested_at")
+        for value, label in (
+            (self.cards_archived_at, "revision request cards_archived_at"),
+            (self.worktree_released_at, "revision request worktree_released_at"),
+            (self.resolved_at, "revision request resolved_at"),
+        ):
+            if value is not None:
+                _require_aware(value, label)
+                if value < self.requested_at:
+                    raise PolicyViolationError(f"{label} cannot precede the request")
+        if self.worktree_released_at is not None and self.cards_archived_at is None:
+            raise PolicyViolationError("worktree release requires archived source cards")
+        if (
+            self.worktree_released_at is not None
+            and self.cards_archived_at is not None
+            and self.worktree_released_at < self.cards_archived_at
+        ):
+            raise PolicyViolationError("worktree release cannot precede card archival")
+        if self.resolved_at is not None and self.worktree_released_at is None:
+            raise PolicyViolationError("resolved revision request requires worktree release")
+        if (
+            self.resolved_at is not None
+            and self.worktree_released_at is not None
+            and self.resolved_at < self.worktree_released_at
+        ):
+            raise PolicyViolationError("revision resolution cannot precede worktree release")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "workflow_id": self.workflow_id,
+            "source_review_digest": self.source_review_digest,
+            "source_disposition_digest": self.source_disposition_digest,
+            "source_plan_digest": self.source_plan_digest,
+            "source_plan_revision": self.source_plan_revision,
+            "source_policy_revision": self.source_policy_revision,
+            "source_constraints_revision": self.source_constraints_revision,
+            "source_constraints_digest": self.source_constraints_digest,
+            "implementation_digest": self.implementation_digest,
+            "verification_digests": list(self.verification_digests),
+            "target_plan_revision": self.target_plan_revision,
+            "preview_digest": self.preview_digest,
+            "request_path": self.request_path,
+            "request_digest": self.request_digest,
+            "successor_packet_path": self.successor_packet_path,
+            "successor_packet_digest": self.successor_packet_digest,
+            "source_review_card_id": self.source_review_card_id,
+            "source_card_ids": list(self.source_card_ids),
+            "actor": self.actor,
+            "normalized_feedback": self.normalized_feedback,
+            "requested_at": self.requested_at.isoformat(),
+            "cards_archived_at": (
+                self.cards_archived_at.isoformat() if self.cards_archived_at else None
+            ),
+            "worktree_released_at": (
+                self.worktree_released_at.isoformat() if self.worktree_released_at else None
+            ),
+            "resolved_at": self.resolved_at.isoformat() if self.resolved_at else None,
+        }
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> PlanRevisionRequestReference:
+        _require_exact_fields(
+            raw,
+            {
+                "workflow_id", "source_review_digest", "source_disposition_digest",
+                "source_plan_digest", "source_plan_revision", "source_policy_revision",
+                "source_constraints_revision", "source_constraints_digest",
+                "implementation_digest", "verification_digests", "target_plan_revision",
+                "preview_digest", "request_path", "request_digest", "successor_packet_path",
+                "successor_packet_digest", "source_review_card_id", "requested_at", "resolved_at",
+                "source_card_ids", "actor", "normalized_feedback", "cards_archived_at",
+                "worktree_released_at",
+            },
+            "plan revision request reference",
+        )
+        return cls(
+            workflow_id=raw["workflow_id"],
+            source_review_digest=raw["source_review_digest"],
+            source_disposition_digest=raw["source_disposition_digest"],
+            source_plan_digest=raw["source_plan_digest"],
+            source_plan_revision=raw["source_plan_revision"],
+            source_policy_revision=raw["source_policy_revision"],
+            source_constraints_revision=raw["source_constraints_revision"],
+            source_constraints_digest=raw["source_constraints_digest"],
+            implementation_digest=raw["implementation_digest"],
+            verification_digests=tuple(raw["verification_digests"]),
+            target_plan_revision=raw["target_plan_revision"],
+            preview_digest=raw["preview_digest"],
+            request_path=raw["request_path"],
+            request_digest=raw["request_digest"],
+            successor_packet_path=raw["successor_packet_path"],
+            successor_packet_digest=raw["successor_packet_digest"],
+            source_review_card_id=raw["source_review_card_id"],
+            source_card_ids=tuple(raw["source_card_ids"]),
+            actor=raw["actor"],
+            normalized_feedback=raw["normalized_feedback"],
+            requested_at=datetime.fromisoformat(raw["requested_at"]),
+            cards_archived_at=(
+                datetime.fromisoformat(raw["cards_archived_at"])
+                if raw["cards_archived_at"]
+                else None
+            ),
+            worktree_released_at=(
+                datetime.fromisoformat(raw["worktree_released_at"])
+                if raw["worktree_released_at"]
+                else None
+            ),
+            resolved_at=(
+                datetime.fromisoformat(raw["resolved_at"]) if raw["resolved_at"] else None
+            ),
+        )
+
+
 @dataclass(frozen=True)
 class CardReference:
     stage: WorkflowStage
@@ -698,6 +1286,12 @@ class WorkflowLedger:
     artifacts: tuple[ArtifactReference, ...] = ()
     approval: ApprovalRecord | None = None
     verification_evidence: tuple[VerificationEvidence, ...] = ()
+    review: ReviewRecord | None = None
+    review_disposition: ReviewDisposition | None = None
+    verification_history: tuple[VerificationEvidence, ...] = ()
+    review_history: tuple[ReviewRecord, ...] = ()
+    review_disposition_history: tuple[ReviewDisposition, ...] = ()
+    revision_requests: tuple[PlanRevisionRequestReference, ...] = ()
     activation_manifests: tuple[ActivationManifestReference, ...] = ()
     committed: bool = False
     pushed: bool = False
@@ -805,14 +1399,94 @@ class WorkflowLedger:
                     "verification evidence must match the current plan revision"
                 )
 
+        if self.review is not None:
+            implementation = self.artifact_for(WorkflowStage.IMPLEMENT)
+            plan = self.artifact_for(WorkflowStage.PLAN)
+            activation = self.activation_for(WorkflowStage.REVIEW)
+            passing = tuple(
+                sorted(
+                    {row.output_digest for row in self.verification_evidence if row.exit_code == 0}
+                )
+            )
+            review = self.review
+            if (
+                implementation is None or plan is None or activation is None
+                or review.workflow_id != self.workflow_id
+                or review.plan_digest != plan.digest
+                or review.plan_revision != self.plan_revision
+                or review.policy_revision != self.policy_revision
+                or review.constraints_revision != self.current_constraints_revision
+                or review.constraints_digest != self.current_constraints_digest
+                or review.implementation_digest != implementation.digest
+                or review.verification_digests != passing
+                or review.activation_digest != activation.digest
+            ):
+                raise PolicyViolationError("review must match the current evidence tuple")
+            allowed_evidence = {review.implementation_digest, *review.verification_digests}
+            if any(
+                not set(finding.evidence_digests) <= allowed_evidence
+                for finding in review.findings
+            ):
+                raise PolicyViolationError("review finding evidence is not ledger-bound")
+        if self.review_disposition is not None:
+            review = self.review
+            disposition = self.review_disposition
+            if review is None or (
+                disposition.review_digest != review.digest
+                or disposition.implementation_digest != review.implementation_digest
+                or disposition.verification_digests != review.verification_digests
+                or disposition.plan_digest != review.plan_digest
+                or disposition.plan_revision != review.plan_revision
+                or disposition.policy_revision != review.policy_revision
+                or disposition.constraints_revision != review.constraints_revision
+                or disposition.constraints_digest != review.constraints_digest
+            ):
+                raise PolicyViolationError("review disposition must match the current review tuple")
+
+        historical_reviews = [row.digest for row in self.review_history]
+        if len(historical_reviews) != len(set(historical_reviews)):
+            raise PolicyViolationError("workflow cannot contain duplicate historical reviews")
+        historical_dispositions = [row.digest for row in self.review_disposition_history]
+        if len(historical_dispositions) != len(set(historical_dispositions)):
+            raise PolicyViolationError("workflow cannot contain duplicate historical dispositions")
+        if self.review is not None and self.review.digest in set(historical_reviews):
+            raise PolicyViolationError("current review cannot also be historical")
+        if (
+            self.review_disposition is not None
+            and self.review_disposition.digest in set(historical_dispositions)
+        ):
+            raise PolicyViolationError("current disposition cannot also be historical")
+        known_reviews = {row.digest for row in self.review_history}
+        if self.review is not None:
+            known_reviews.add(self.review.digest)
+        if any(
+            row.review_digest not in known_reviews for row in self.review_disposition_history
+        ):
+            raise PolicyViolationError("historical disposition has no ledger review")
+        verification_keys = [
+            (row.plan_revision, row.output_digest, row.recorded_at)
+            for row in (*self.verification_history, *self.verification_evidence)
+        ]
+        if len(verification_keys) != len(set(verification_keys)):
+            raise PolicyViolationError("workflow cannot contain duplicate verification history")
+        request_targets = [row.target_plan_revision for row in self.revision_requests]
+        if len(request_targets) != len(set(request_targets)):
+            raise PolicyViolationError("workflow cannot contain duplicate plan revision requests")
+        if any(row.workflow_id != self.workflow_id for row in self.revision_requests):
+            raise PolicyViolationError("plan revision request workflow ID does not match")
+        if any(row.target_plan_revision > self.plan_revision + 1 for row in self.revision_requests):
+            raise PolicyViolationError("plan revision request targets an unreachable revision")
+        pending = [row for row in self.revision_requests if row.resolved_at is None]
+        if len(pending) > 1:
+            raise PolicyViolationError("workflow cannot contain multiple pending revision requests")
+
         activation_groups: dict[
             tuple[WorkflowStage, int, int, str | None],
             list[ActivationManifestReference],
         ] = {}
         for reference in self.activation_manifests:
             if reference.plan_revision > self.plan_revision or (
-                reference.stage in {WorkflowStage.DEFINE, WorkflowStage.PLAN}
-                and reference.plan_revision != 0
+                reference.stage is WorkflowStage.DEFINE and reference.plan_revision != 0
             ):
                 raise PolicyViolationError("activation reference has an invalid stage revision")
             activation_groups.setdefault(
@@ -869,7 +1543,7 @@ class WorkflowLedger:
         )
 
     def card_for(self, stage: WorkflowStage) -> CardReference | None:
-        revision = 0 if stage in {WorkflowStage.DEFINE, WorkflowStage.PLAN} else self.plan_revision
+        revision = 0 if stage is WorkflowStage.DEFINE else self.plan_revision
         return next(
             (
                 card
@@ -891,7 +1565,14 @@ class WorkflowLedger:
     def activation_revision_for(self, stage: WorkflowStage) -> int:
         if stage is WorkflowStage.APPROVAL:
             raise PolicyViolationError("approval has no skill activation revision")
-        return 0 if stage in {WorkflowStage.DEFINE, WorkflowStage.PLAN} else self.plan_revision
+        return 0 if stage is WorkflowStage.DEFINE else self.plan_revision
+
+    @property
+    def pending_revision_request(self) -> PlanRevisionRequestReference | None:
+        return next(
+            (row for row in reversed(self.revision_requests) if row.resolved_at is None),
+            None,
+        )
 
     def activation_for(self, stage: WorkflowStage) -> ActivationManifestReference | None:
         revision = self.activation_revision_for(stage)
@@ -933,6 +1614,16 @@ class WorkflowLedger:
             "verification_evidence": [
                 row.to_dict() for row in self.verification_evidence
             ],
+            "review": self.review.to_dict() if self.review else None,
+            "review_disposition": (
+                self.review_disposition.to_dict() if self.review_disposition else None
+            ),
+            "verification_history": [row.to_dict() for row in self.verification_history],
+            "review_history": [row.to_dict() for row in self.review_history],
+            "review_disposition_history": [
+                row.to_dict() for row in self.review_disposition_history
+            ],
+            "revision_requests": [row.to_dict() for row in self.revision_requests],
             "activation_manifests": [
                 row.to_dict() for row in self.activation_manifests
             ],
@@ -964,6 +1655,12 @@ class WorkflowLedger:
                 "artifacts",
                 "approval",
                 "verification_evidence",
+                "review",
+                "review_disposition",
+                "verification_history",
+                "review_history",
+                "review_disposition_history",
+                "revision_requests",
                 "activation_manifests",
                 "committed",
                 "pushed",
@@ -1012,6 +1709,27 @@ class WorkflowLedger:
                     VerificationEvidence.from_dict(row)
                     for row in raw["verification_evidence"]
                 ),
+                review=ReviewRecord.from_dict(raw["review"]) if raw.get("review") else None,
+                review_disposition=(
+                    ReviewDisposition.from_dict(raw["review_disposition"])
+                    if raw.get("review_disposition")
+                    else None
+                ),
+                verification_history=tuple(
+                    VerificationEvidence.from_dict(row)
+                    for row in raw.get("verification_history", [])
+                ),
+                review_history=tuple(
+                    ReviewRecord.from_dict(row) for row in raw.get("review_history", [])
+                ),
+                review_disposition_history=tuple(
+                    ReviewDisposition.from_dict(row)
+                    for row in raw.get("review_disposition_history", [])
+                ),
+                revision_requests=tuple(
+                    PlanRevisionRequestReference.from_dict(row)
+                    for row in raw.get("revision_requests", [])
+                ),
                 activation_manifests=tuple(
                     ActivationManifestReference.from_dict(row)
                     for row in raw["activation_manifests"]
@@ -1043,6 +1761,28 @@ def _require_bounded_strings(values: tuple[str, ...], label: str) -> None:
         raise PolicyViolationError(f"{label} must contain 1-8 strings")
     for value in values:
         _require_bounded_text(value, label, 500)
+
+
+def _require_plain_text(value: str, label: str, maximum_bytes: int) -> None:
+    if not isinstance(value, str) or not value or value != value.strip():
+        raise PolicyViolationError(f"{label} must be trimmed non-empty plain text")
+    if any(ord(character) < 32 or 127 <= ord(character) < 160 for character in value):
+        raise PolicyViolationError(f"{label} must be trimmed non-empty plain text")
+    if len(value.encode("utf-8")) > maximum_bytes:
+        raise PolicyViolationError(f"{label} must be at most {maximum_bytes} UTF-8 bytes")
+
+
+def _require_plain_text_items(
+    values: tuple[str, ...],
+    label: str,
+    *,
+    minimum: int,
+    maximum: int,
+) -> None:
+    if not isinstance(values, tuple) or not minimum <= len(values) <= maximum:
+        raise PolicyViolationError(f"{label} must contain {minimum}-{maximum} items")
+    for value in values:
+        _require_plain_text(value, label, 500)
 
 
 def _require_digest(value: str, label: str) -> None:
