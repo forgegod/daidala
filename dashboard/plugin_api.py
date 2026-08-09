@@ -29,6 +29,16 @@ Supervision endpoints include:
 - ``POST /api/plugins/daidala/workflows/{workflow_id}/cancel/preview``
 - ``POST /api/plugins/daidala/workflows/{workflow_id}/cancel``
 - ``POST /api/plugins/daidala/constraints/preview``
+- ``GET  /api/plugins/daidala/registrations``
+- ``GET  /api/plugins/daidala/github-project-links``
+- ``GET  /api/plugins/daidala/github-project-links/{project_id}``
+- ``POST /api/plugins/daidala/github-project-links/preview``
+- ``POST /api/plugins/daidala/github-project-links/{project_id}/verify``
+- ``PUT  /api/plugins/daidala/github-project-links/{project_id}``
+- ``DELETE /api/plugins/daidala/github-project-links/{project_id}``
+- ``GET  /api/plugins/daidala/checkout-root``
+- ``POST /api/plugins/daidala/checkout-root/preview``
+- ``PUT  /api/plugins/daidala/checkout-root``
 """
 
 from __future__ import annotations
@@ -39,12 +49,19 @@ import math
 import subprocess
 from collections.abc import Callable
 from functools import lru_cache
+from pathlib import Path
 from threading import Lock
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
 from daidala.artifact_access import ArtifactAccessError
+from daidala.checkout_root import (
+    CheckoutConfig,
+    CheckoutRootError,
+    CheckoutRootStore,
+    discover_owned_checkouts,
+)
 from daidala.dashboard_backend import (
     DashboardBackend,
     DashboardBackendError,
@@ -52,6 +69,12 @@ from daidala.dashboard_backend import (
     UnknownWorkflowError,
 )
 from daidala.errors import WorkflowError
+from daidala.github_project_links import (
+    GitHubProjectLink,
+    GitHubProjectLinkError,
+    GitHubProjectLinksStore,
+    GitHubProjectVerifier,
+)
 from daidala.locations import resolve_data_root
 from daidala.pack_service import (
     PackConfirmationError,
@@ -65,6 +88,7 @@ from daidala.packs import PackError
 from daidala.registrations import (
     ControllerRegistration,
     list_controller_registrations,
+    registration_path,
 )
 from daidala.revision import MAX_REVIEW_FEEDBACK_BYTES
 from daidala.service import ServiceError
@@ -123,6 +147,7 @@ def _default_pack_service() -> PackService:
 
 
 pack_service_factory: PackServiceFactory = _default_pack_service
+github_project_verifier_factory: Callable[[], GitHubProjectVerifier] = GitHubProjectVerifier
 
 
 def configure_backend(backend: Any, *, pack_service: PackService | None = None) -> None:
@@ -167,6 +192,283 @@ def prerequisites() -> dict[str, Any]:
 
     backend = DashboardBackend(service_factory=service_factory)
     return backend.prerequisites()
+
+
+def _current_registrations() -> tuple[ControllerRegistration, ...]:
+    try:
+        return list_controller_registrations(resolve_data_root().resolve())
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail="registered projects are invalid") from error
+
+
+def _registered_project(project_id: str) -> ControllerRegistration:
+    registration = next(
+        (row for row in _current_registrations() if row.project_id == project_id), None
+    )
+    if registration is None:
+        raise HTTPException(status_code=404, detail="unknown registered project")
+    return registration
+
+
+def _project_link_store() -> GitHubProjectLinksStore:
+    return GitHubProjectLinksStore(resolve_data_root().resolve())
+
+
+def _link_preview_digest(link: GitHubProjectLink, store_digest: str) -> str:
+    content = json.dumps(
+        {"link": link.to_dict(), "store_digest": store_digest},
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    return hashlib.sha256(content.encode("utf-8")).hexdigest()
+
+
+@router.get("/registrations")
+def registrations() -> dict[str, Any]:
+    """Return the safe, registration-derived selector projection only."""
+
+    rows = _current_registrations()
+    root = CheckoutRootStore(resolve_data_root().resolve()).read().root
+    return {
+        "registrations": [
+            {
+                "project_id": row.project_id,
+                "controller_profile": row.controller_profile,
+                "board": row.board,
+                "repository_canonical": row.repository_canonical,
+                "verified_remote": row.verified_remote,
+                "intake_credential": row.intake_credential,
+                "notification_adapter": row.notification_adapter,
+                "notification_target": row.notification_target,
+                "evaluator_backend": row.evaluator_backend,
+                "evaluator_network": row.evaluator_network,
+                "checkout_match": row.checkout == str(root / row.project_id),
+            }
+            for row in rows
+        ]
+    }
+
+
+@router.get("/github-project-links")
+def github_project_links() -> dict[str, Any]:
+    """List the active profile's local GitHub Projects v2 links."""
+
+    rows = _current_registrations()
+    try:
+        links = _project_link_store().read(rows)
+    except GitHubProjectLinkError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return {"links": [link.to_dict() for link in links]}
+
+
+@router.get("/github-project-links/{project_id}")
+def github_project_link(project_id: str) -> dict[str, Any]:
+    """Read one local link and its delete compare-and-swap identity."""
+
+    _registered_project(project_id)
+    rows = _current_registrations()
+    store = _project_link_store()
+    try:
+        link = next((row for row in store.read(rows) if row.project_id == project_id), None)
+        if link is None:
+            raise HTTPException(status_code=404, detail="GitHub Project link is not configured")
+        return {
+            "link": link.to_dict(),
+            "delete_preview_digest": _link_preview_digest(link, store.digest(rows)),
+        }
+    except GitHubProjectLinkError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+def _preview_link(payload: dict[str, Any]) -> tuple[GitHubProjectLink, dict[str, str], str]:
+    if set(payload) != {"project_id", "owner", "project_number"}:
+        raise HTTPException(
+            status_code=400, detail="exact GitHub Project preview fields are required"
+        )
+    project_id = payload["project_id"]
+    owner = payload["owner"]
+    number = payload["project_number"]
+    if not isinstance(project_id, str) or not isinstance(owner, str) or isinstance(number, bool):
+        raise HTTPException(status_code=400, detail="GitHub Project preview fields are invalid")
+    registration = _registered_project(project_id)
+    try:
+        link, project = github_project_verifier_factory().verify(
+            registration=registration,
+            registration_file=registration_path(resolve_data_root().resolve(), project_id),
+            owner=owner,
+            project_number=number,
+        )
+        digest = _link_preview_digest(
+            link, _project_link_store().digest(_current_registrations())
+        )
+    except (GitHubProjectLinkError, ValueError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return link, project, digest
+
+
+@router.post("/github-project-links/preview")
+def github_project_link_preview(payload: dict[str, Any]) -> dict[str, Any]:
+    """Resolve one bounded live Project read without mutating local state."""
+
+    link, project, digest = _preview_link(payload)
+    return {"link": link.to_dict(), "project": project, "preview_digest": digest}
+
+
+@router.post("/github-project-links/{project_id}/verify")
+def github_project_link_verify(project_id: str) -> dict[str, Any]:
+    """Verify a persisted row and retain no credential or raw command output."""
+
+    try:
+        links = _project_link_store().read(_current_registrations())
+        link = next(row for row in links if row.project_id == project_id)
+    except StopIteration:
+        raise HTTPException(
+            status_code=404, detail="GitHub Project link is not configured"
+        ) from None
+    except GitHubProjectLinkError as error:
+        return {"healthy": False, "reason": str(error)}
+    try:
+        verified, project = github_project_verifier_factory().verify(
+            registration=_registered_project(project_id),
+            registration_file=registration_path(resolve_data_root().resolve(), project_id),
+            owner=link.owner,
+            project_number=link.project_number,
+        )
+    except (GitHubProjectLinkError, ValueError) as error:
+        return {"healthy": False, "reason": str(error)}
+    return {"healthy": verified == link, "link": verified.to_dict(), "project": project}
+
+
+@router.put("/github-project-links/{project_id}")
+def github_project_link_upsert(project_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Replace one link only after a fresh matching live preview."""
+
+    if set(payload) != {"owner", "project_number", "preview_digest", "confirm"}:
+        raise HTTPException(
+            status_code=400, detail="exact GitHub Project apply fields are required"
+        )
+    if payload["confirm"] is not True:
+        raise HTTPException(status_code=400, detail="explicit confirmation is required")
+    link, project, digest = _preview_link(
+        {
+            "project_id": project_id,
+            "owner": payload["owner"],
+            "project_number": payload["project_number"],
+        }
+    )
+    if payload["preview_digest"] != digest:
+        raise HTTPException(status_code=409, detail="GitHub Project preview changed after review")
+    rows = _current_registrations()
+    store = _project_link_store()
+    try:
+        current = tuple(row for row in store.read(rows) if row.project_id != project_id)
+        updated = tuple(sorted((*current, link), key=lambda row: row.project_id))
+        changed = store.replace(updated, rows)
+    except GitHubProjectLinkError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return {"changed": changed, "link": link.to_dict(), "project": project}
+
+
+@router.delete("/github-project-links/{project_id}")
+def github_project_link_delete(project_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Remove one local link with a row-and-store-bound confirmation digest."""
+
+    if set(payload) != {"delete_preview_digest", "confirm"} or payload["confirm"] is not True:
+        raise HTTPException(status_code=400, detail="exact confirmed deletion fields are required")
+    rows = _current_registrations()
+    store = _project_link_store()
+    try:
+        links = store.read(rows)
+        link = next(row for row in links if row.project_id == project_id)
+    except StopIteration:
+        raise HTTPException(
+            status_code=404, detail="GitHub Project link is not configured"
+        ) from None
+    except GitHubProjectLinkError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    if payload["delete_preview_digest"] != _link_preview_digest(link, store.digest(rows)):
+        raise HTTPException(status_code=409, detail="GitHub Project link changed after review")
+    try:
+        changed = store.replace(tuple(row for row in links if row != link), rows)
+    except GitHubProjectLinkError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return {"changed": changed, "project_id": project_id}
+
+
+def _checkout_root_preview(root: object) -> dict[str, Any]:
+    if not isinstance(root, str):
+        raise HTTPException(status_code=400, detail="checkout root must be a string")
+    rows = _current_registrations()
+    store = CheckoutRootStore(resolve_data_root().resolve())
+    current = store.read()
+    try:
+        proposed = CheckoutConfig(root=Path(root), mode=current.mode, ttl_hours=current.ttl_hours)
+        mismatches = store.mismatching_project_ids(proposed, rows)
+        owned = [str(path) for path in discover_owned_checkouts(current.root, rows)]
+    except CheckoutRootError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    identity = json.dumps(
+        {
+            "old": current.to_dict(),
+            "new": proposed.to_dict(),
+            "owned": owned,
+            "mismatches": mismatches,
+        },
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    return {
+        "old": current.to_dict()["checkouts"],
+        "new": proposed.to_dict()["checkouts"],
+        "owned_paths": owned,
+        "mismatching_project_ids": list(mismatches),
+        "blocked": bool(mismatches or (current.root != proposed.root and owned)),
+        "preview_digest": hashlib.sha256(identity.encode("utf-8")).hexdigest(),
+    }
+
+
+@router.get("/checkout-root")
+def checkout_root() -> dict[str, Any]:
+    """Read the full persisted root/policy record and any registration mismatch."""
+
+    store = CheckoutRootStore(resolve_data_root().resolve())
+    config = store.read()
+    return {
+        "checkouts": config.to_dict()["checkouts"],
+        "mismatching_project_ids": list(
+            store.mismatching_project_ids(config, _current_registrations())
+        ),
+    }
+
+
+@router.post("/checkout-root/preview")
+def checkout_root_preview(payload: dict[str, Any]) -> dict[str, Any]:
+    if set(payload) != {"root"}:
+        raise HTTPException(status_code=400, detail="checkout root preview requires only root")
+    return _checkout_root_preview(payload["root"])
+
+
+@router.put("/checkout-root")
+def checkout_root_replace(payload: dict[str, Any]) -> dict[str, Any]:
+    if set(payload) != {"root", "preview_digest", "confirm"} or payload["confirm"] is not True:
+        raise HTTPException(
+            status_code=400, detail="exact confirmed checkout root fields are required"
+        )
+    preview = _checkout_root_preview(payload["root"])
+    if payload["preview_digest"] != preview["preview_digest"] or preview["blocked"]:
+        raise HTTPException(status_code=409, detail="checkout root preview changed or is blocked")
+    store = CheckoutRootStore(resolve_data_root().resolve())
+    current = store.read()
+    try:
+        changed = store.write(
+            CheckoutConfig(
+                root=Path(payload["root"]), mode=current.mode, ttl_hours=current.ttl_hours
+            ),
+            _current_registrations(),
+        )
+    except CheckoutRootError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return {"changed": changed, "checkouts": store.read().to_dict()["checkouts"]}
 
 
 @router.get("/packs")

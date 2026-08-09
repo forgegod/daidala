@@ -26,6 +26,12 @@ class FakeRouter:
     def post(self, _path: str):
         return lambda function: function
 
+    def put(self, _path: str):
+        return lambda function: function
+
+    def delete(self, _path: str):
+        return lambda function: function
+
 
 class FakeHTTPException(Exception):
     def __init__(self, status_code: int, detail: Any) -> None:
@@ -64,6 +70,16 @@ def test_router_exports_all_phase_two_routes() -> None:
     for name in (
         "health",
         "prerequisites",
+        "registrations",
+        "github_project_links",
+        "github_project_link",
+        "github_project_link_preview",
+        "github_project_link_verify",
+        "github_project_link_upsert",
+        "github_project_link_delete",
+        "checkout_root",
+        "checkout_root_preview",
+        "checkout_root_replace",
         "packs",
         "pack_validate",
         "pack_check",
@@ -109,6 +125,10 @@ class APIRouter:
         return lambda function: function
     def post(self, *_args, **_kwargs):
         return lambda function: function
+    def put(self, *_args, **_kwargs):
+        return lambda function: function
+    def delete(self, *_args, **_kwargs):
+        return lambda function: function
 
 fake_fastapi = types.ModuleType("fastapi")
 fake_fastapi.APIRouter = APIRouter
@@ -144,8 +164,9 @@ assert api_module.router is not None
 def test_router_source_exposes_only_closed_mutation_routes() -> None:
     source = MODULE.read_text(encoding="utf-8")
 
-    assert "@router.put" not in source
-    assert "@router.delete" not in source
+    assert '@router.put("/github-project-links/{project_id}")' in source
+    assert '@router.delete("/github-project-links/{project_id}")' in source
+    assert '@router.put("/checkout-root")' in source
     assert '@router.post("/constraints/preview")' in source
     assert "sqlite3" not in source
     assert "kanban.db" not in source

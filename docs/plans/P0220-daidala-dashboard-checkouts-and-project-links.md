@@ -18,7 +18,7 @@
 
 **Produces:** strict profile-local checkout/link stores, verified Projects v2 link UI, collision-safe manual checkout refresh and backup/prune actions, and a report-only cron-compatible status tool
 
-**Status:** pending — blocked until P0100, P0212, P0214, and P0215 complete and human implementation approval is recorded
+**Status:** Phase 0 done (2026-08-09: 542 tests, `ruff`, `lefthook validate`, pack validation, build and release-content checks); Phase 1 pending human approval
 
 ## Goal
 
@@ -39,7 +39,7 @@ Checkout replacement can destroy local work if ownership or Git status is classi
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Add checkout configuration and GitHub Projects v2 link model | pending | Strict mode-`0600` stores enforce collision safety, root-change blocking, registration equality, and verified owner/number/node-ID links; focused model tests pass |
+| 0 | Add checkout configuration and GitHub Projects v2 link model | done (2026-08-09; 542 tests, `ruff`, `lefthook validate`, pack validation, build/release checks) | Strict mode-`0600` stores enforce collision safety, root-change blocking, registration equality, and verified owner/number/node-ID links; focused model tests pass |
 | 1 | Add GitHub Projects v2 link UI | pending | The UI manages one verified link per registered project; mutation requires a fresh bounded GitHub read, matching preview digest, and literal confirmation; token values never cross the boundary |
 | 2 | Add manual checkout refresh, TTL policy, backup pruning, and report-only cron hook | pending | Checkout inventory and confirmed actions validate path, marker, origin, receipt, and Git status; ignored-only files require backup mode; TTL defaults disabled; the cron-compatible tool is read-only |
 
@@ -51,7 +51,7 @@ Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate p
 
 Steps:
 
-1. Read contract Phase 4, the Q1/Q2 decisions, `daidala/AGENTS.md`, and `tests/AGENTS.md`.
+1. Read contract Phase 4; Q1, **Checkout location decision**; Q2, **Stale-checkout policy**; `daidala/AGENTS.md`; and `tests/AGENTS.md`.
 2. Implement the strict stores and services exactly as specified, reusing `_require_slug`, `parse_strict_yaml`, and existing registration facts.
 3. Reject root replacement while owned checkouts exist and reject registration/configuration path mismatches; never rewrite registration state.
 4. Derive the intake alias and capability evidence during link verification without accepting or persisting token values.

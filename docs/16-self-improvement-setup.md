@@ -989,6 +989,15 @@ limits:
 The repository manifest may narrow this registration but cannot grant any of
 its local authority.
 
+### Checkout-root mismatch remediation
+
+The dashboard checkout-root configuration never rewrites trusted registration.
+If a proposed root does not derive every registered checkout as
+`<root>/<project_id>/`, stop the controller, materialize strict registration and
+credential/evidence files for the new checkout using this section, rerun the
+prerequisite checker, and restart only after it passes. Do not edit an existing
+registration or evidence file in place to force a root change.
+
 ## 10. Run the prerequisite checker
 
 Status: **IMPLEMENTED, INSTALLED, AND LIVE-VALIDATED.** The command is diagnostic

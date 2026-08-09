@@ -22,6 +22,9 @@ workflow-pack adapters, and bundled orchestration skills.
 | `constraints.py` | Strict workflow-constraint YAML parsing, canonicalization, bounds, and digest identity. |
 | `projects.py` | Strict committed project-manifest parsing, canonical identity, verification declarations, and mutation policy. |
 | `registrations.py` | Trusted profile-local project registration v2, exact attended-delivery destination, limits, manifest binding, and storage path. |
+| `profile_files.py` | Atomic mode-`0600` profile-local file replacement without symlink traversal. |
+| `checkout_root.py` | Strict checkout-root configuration, derived registration-path validation, and owned-checkout collision safety. |
+| `github_project_links.py` | Strict GitHub Projects v2 link storage and credential-minimal verification derived from trusted registration and prerequisite evidence. |
 | `credentials.py` | Strict alias-to-environment credential bindings with no secret values or resolver inference. |
 | `prerequisites.py` | Stable self-improvement checklist registry, retained capability evidence, bounded probes, terminal-record-aware active ownership, and strict prerequisite reports. |
 | `cycles.py` | Pure self-improvement cycle identity, metric kinds, outcomes, delegation evidence, and lesson-reuse evidence. |

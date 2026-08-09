@@ -1070,22 +1070,48 @@ def _credential_capability(
     ]
     if context.evidence is None:
         return _blocked(definition, "retained credential capability metadata is missing")
-    matches = [row for row in context.evidence.credential_capabilities if row.alias == alias]
+    try:
+        return require_credential_capability(
+            context.evidence,
+            alias=alias,
+            capability=capability,
+            allowed=allowed,
+            current_date=context.current_date,
+        )
+    except PolicyViolationError as error:
+        return _blocked(definition, str(error))
+
+
+def require_credential_capability(
+    evidence: PrerequisiteEvidence,
+    *,
+    alias: str,
+    capability: str,
+    allowed: set[str],
+    current_date: date,
+) -> CredentialCapability:
+    """Return one current exact capability row or fail closed.
+
+    GitHub adapters and dashboard configuration use this shared interpretation;
+    neither maintains a second capability policy.
+    """
+
+    matches = [row for row in evidence.credential_capabilities if row.alias == alias]
     if len(matches) != 1:
-        return _blocked(definition, "credential capability metadata does not match its alias")
+        raise PolicyViolationError("credential capability metadata does not match its alias")
     row = matches[0]
     if row.capability != capability or set(row.allowed) != allowed:
-        return _blocked(definition, "credential allowed capabilities are not exact")
+        raise PolicyViolationError("credential allowed capabilities are not exact")
     if not _REQUIRED_DENIED.issubset(row.denied):
-        return _blocked(definition, "credential denied capabilities are incomplete")
+        raise PolicyViolationError("credential denied capabilities are incomplete")
     try:
         expires_on = date.fromisoformat(row.expires_on)
-    except ValueError:
-        return _blocked(definition, "credential expiration date is invalid")
-    if expires_on < context.current_date:
-        return _blocked(definition, "credential capability evidence is expired")
+    except ValueError as error:
+        raise PolicyViolationError("credential expiration date is invalid") from error
+    if expires_on < current_date:
+        raise PolicyViolationError("credential capability evidence is expired")
     if capability == "github-findings" and row.write_probe_identity is None:
-        return _blocked(definition, "approved controlled findings write probe is missing")
+        raise PolicyViolationError("approved controlled findings write probe is missing")
     return row
 
 

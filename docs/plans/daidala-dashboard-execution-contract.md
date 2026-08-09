@@ -1227,8 +1227,7 @@ or weakening `ControllerRegistration`.
    persists all three fields so Phase 6 does not require a schema
    migration, but only root/path helpers are operational here. Defaults
    are `<resolve_data_root()>/work`, `disabled`, and `0`. Validate root
-   through the same POSIX-path rules as `_require_absolute_checkout`
-   (`daidala/registrations.py:251-257`), derive
+   through `daidala.registrations._require_absolute_checkout`, derive
    `<root>/<project_id>/`, and reject `.`/`..` and symlink components.
    For every existing registration, require that derived path to equal
    its immutable `checkout`; otherwise configuration preview is blocked
