@@ -7,17 +7,19 @@ import json
 import os
 import stat
 import tempfile
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
 
+from .archive_io import ArchiveError, ArchiveMember, inventory_archive, read_archive_member
 from .errors import WorkflowError
 from .state import ApprovalSummary, WorkflowLedger, WorkflowStage
 from .store import StoreError, WorkflowStore
 
 _MAX_ARTIFACT_BYTES = 1024 * 1024
+_MAX_EXPORT_BYTES = 64 * 1024 * 1024
 _ALLOWED_KINDS = frozenset({"stage", "verification", "constraint", "activation"})
 
 
@@ -35,6 +37,7 @@ class ArtifactFailureReason(StrEnum):
     UNSAFE_PATH = "unsafe_path"
     EXPORT_COLLISION = "export_collision"
     EXPORT_FAILED = "export_failed"
+    ARCHIVE_INVALID = "archive_invalid"
 
 
 class ArtifactAccessError(WorkflowError):
@@ -52,6 +55,8 @@ class ArtifactAccessError(WorkflowError):
 
 class ArtifactAvailability(StrEnum):
     ACTIVE = "active"
+    ARCHIVED = "archived"
+    ACTIVE_AND_ARCHIVED = "active-and-archived"
     MISSING = "missing"
 
 
@@ -72,6 +77,30 @@ class ArtifactId:
 
     def __len__(self) -> int:
         return len(self.value)
+
+
+@dataclass(frozen=True)
+class ArchivedArtifactSource:
+    archive_path: Path
+    manifest_path: Path
+    member_path: str
+
+    def __post_init__(self) -> None:
+        if (
+            not isinstance(self.archive_path, Path)
+            or not self.archive_path.is_absolute()
+            or not isinstance(self.manifest_path, Path)
+            or not self.manifest_path.is_absolute()
+            or not isinstance(self.member_path, str)
+            or not self.member_path
+        ):
+            raise ArtifactAccessError(
+                "archived artifact source is malformed",
+                reason=ArtifactFailureReason.ARCHIVE_INVALID,
+            )
+
+
+ArtifactArchiveLookup = Callable[[str, ArtifactId], ArchivedArtifactSource | None]
 
 
 @dataclass(frozen=True)
@@ -166,14 +195,21 @@ class _ArtifactRecord:
     path: str
     evidence_key: str
     approval_summary: ApprovalSummary | None = None
+    archive_source: ArchivedArtifactSource | None = None
 
 
 class ArtifactAccessService:
-    """Resolve active artifact bytes exclusively through immutable ledger facts."""
+    """Resolve active or archived bytes exclusively through immutable ledger facts."""
 
-    def __init__(self, store: WorkflowStore) -> None:
+    def __init__(
+        self,
+        store: WorkflowStore,
+        *,
+        archive_lookup: ArtifactArchiveLookup | None = None,
+    ) -> None:
         self._store = store
         self._data_root = store.data_root.resolve()
+        self._archive_lookup = archive_lookup
 
     def list(
         self,
@@ -203,7 +239,9 @@ class ArtifactAccessService:
     ) -> ArtifactText:
         record = self._resolve_record(workflow_id, artifact_id, ledger=ledger)
         try:
-            content = self._verified_bytes(record).decode("utf-8", errors="strict")
+            content = self._verified_bytes(record, maximum=_MAX_ARTIFACT_BYTES).decode(
+                "utf-8", errors="strict"
+            )
         except UnicodeDecodeError as error:
             raise ArtifactAccessError(
                 "artifact content is binary; use verified export",
@@ -229,7 +267,7 @@ class ArtifactAccessService:
         overwrite: bool = False,
     ) -> ArtifactExport:
         record = self._resolve_record(workflow_id, artifact_id)
-        content = self._verified_bytes(record)
+        content = self._verified_bytes(record, maximum=_MAX_EXPORT_BYTES)
         destination = self._validated_destination(output, overwrite=overwrite)
         temporary: Path | None = None
         try:
@@ -481,7 +519,13 @@ class ArtifactAccessService:
         }
         canonical = json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()
         artifact_id = ArtifactId(hashlib.sha256(canonical).hexdigest())
-        availability, size = self._availability(ledger.workflow_id, path)
+        archive_source = self._archive_source(ledger.workflow_id, artifact_id)
+        availability, size = self._availability(
+            ledger.workflow_id,
+            path,
+            digest=digest,
+            archive_source=archive_source,
+        )
         entry = ArtifactCatalogEntry(
             artifact_id=artifact_id,
             workflow_id=ledger.workflow_id,
@@ -500,21 +544,91 @@ class ArtifactAccessService:
             path=path,
             evidence_key=evidence_key,
             approval_summary=approval_summary,
+            archive_source=archive_source,
         )
 
+    def _archive_source(
+        self, workflow_id: str, artifact_id: ArtifactId
+    ) -> ArchivedArtifactSource | None:
+        if self._archive_lookup is None:
+            return None
+        try:
+            source = self._archive_lookup(workflow_id, artifact_id)
+        except Exception as error:  # noqa: BLE001 - injected profile-state boundary
+            raise ArtifactAccessError(
+                "artifact archive lookup failed",
+                reason=ArtifactFailureReason.ARCHIVE_INVALID,
+            ) from error
+        if source is not None and not isinstance(source, ArchivedArtifactSource):
+            raise ArtifactAccessError(
+                "artifact archive lookup returned an invalid source",
+                reason=ArtifactFailureReason.ARCHIVE_INVALID,
+            )
+        return source
+
     def _availability(
-        self, workflow_id: str, recorded_path: str
+        self,
+        workflow_id: str,
+        recorded_path: str,
+        *,
+        digest: str,
+        archive_source: ArchivedArtifactSource | None,
     ) -> tuple[ArtifactAvailability, int | None]:
+        active_size: int | None = None
         try:
             path = self._validated_source_path(workflow_id, recorded_path)
             details = path.stat(follow_symlinks=False)
         except (ArtifactAccessError, OSError):
-            return ArtifactAvailability.MISSING, None
-        if not stat.S_ISREG(details.st_mode):
-            return ArtifactAvailability.MISSING, None
-        return ArtifactAvailability.ACTIVE, details.st_size
+            pass
+        else:
+            if stat.S_ISREG(details.st_mode):
+                active_size = details.st_size
+        archived_member = self._archived_member(archive_source, digest=digest)
+        if active_size is not None and archived_member is not None:
+            if active_size != archived_member.size:
+                raise ArtifactAccessError(
+                    "active and archived artifact sizes do not match",
+                    reason=ArtifactFailureReason.DIGEST_MISMATCH,
+                )
+            return ArtifactAvailability.ACTIVE_AND_ARCHIVED, active_size
+        if active_size is not None:
+            return ArtifactAvailability.ACTIVE, active_size
+        if archived_member is not None:
+            return ArtifactAvailability.ARCHIVED, archived_member.size
+        return ArtifactAvailability.MISSING, None
 
-    def _verified_bytes(self, record: _ArtifactRecord) -> bytes:
+    def _archived_member(
+        self,
+        source: ArchivedArtifactSource | None,
+        *,
+        digest: str,
+    ) -> ArchiveMember | None:
+        if source is None:
+            return None
+        try:
+            manifest = inventory_archive(source.archive_path, source.manifest_path)
+        except ArchiveError as error:
+            raise ArtifactAccessError(
+                "archived artifact cannot be verified",
+                reason=ArtifactFailureReason.ARCHIVE_INVALID,
+            ) from error
+        member = next(
+            (candidate for candidate in manifest.members if candidate.path == source.member_path),
+            None,
+        )
+        if member is None or member.sha256 != digest:
+            raise ArtifactAccessError(
+                "archived artifact does not match the policy ledger",
+                reason=ArtifactFailureReason.DIGEST_MISMATCH,
+            )
+        return member
+
+    def _verified_bytes(self, record: _ArtifactRecord, *, maximum: int) -> bytes:
+        if record.entry.availability is ArtifactAvailability.ARCHIVED:
+            return self._verified_archived_bytes(record, maximum=maximum)
+        return self._verified_active_bytes(record, maximum=maximum)
+
+    def _verified_active_bytes(self, record: _ArtifactRecord, *, maximum: int) -> bytes:
         path = self._validated_source_path(record.entry.workflow_id, record.path)
         try:
             details = path.stat(follow_symlinks=False)
@@ -522,18 +636,18 @@ class ArtifactAccessService:
             raise ArtifactAccessError("artifact bytes are not available") from error
         if not stat.S_ISREG(details.st_mode):
             raise ArtifactAccessError("artifact reference is not a direct regular file")
-        if details.st_size > _MAX_ARTIFACT_BYTES:
+        if details.st_size > maximum:
             raise ArtifactAccessError(
-                "artifact exceeds the 1 MiB document bound",
+                self._bound_message(maximum),
                 reason=ArtifactFailureReason.OVERSIZED,
             )
         try:
             content = path.read_bytes()
         except OSError as error:
             raise ArtifactAccessError("artifact bytes cannot be read") from error
-        if len(content) > _MAX_ARTIFACT_BYTES:
+        if len(content) > maximum:
             raise ArtifactAccessError(
-                "artifact exceeds the 1 MiB document bound",
+                self._bound_message(maximum),
                 reason=ArtifactFailureReason.OVERSIZED,
             )
         if hashlib.sha256(content).hexdigest() != record.entry.digest:
@@ -542,6 +656,42 @@ class ArtifactAccessService:
                 reason=ArtifactFailureReason.DIGEST_MISMATCH,
             )
         return content
+
+    def _verified_archived_bytes(self, record: _ArtifactRecord, *, maximum: int) -> bytes:
+        source = record.archive_source
+        if source is None:
+            raise ArtifactAccessError("artifact bytes are not available")
+        try:
+            content = read_archive_member(
+                source.archive_path,
+                source.manifest_path,
+                source.member_path,
+                max_bytes=maximum,
+            )
+        except ArchiveError as error:
+            reason = (
+                ArtifactFailureReason.OVERSIZED
+                if str(error).endswith("bounds")
+                else ArtifactFailureReason.ARCHIVE_INVALID
+            )
+            message = (
+                self._bound_message(maximum)
+                if reason is ArtifactFailureReason.OVERSIZED
+                else "archived artifact cannot be verified"
+            )
+            raise ArtifactAccessError(message, reason=reason) from error
+        if hashlib.sha256(content).hexdigest() != record.entry.digest:
+            raise ArtifactAccessError(
+                "archived artifact does not match the policy ledger",
+                reason=ArtifactFailureReason.DIGEST_MISMATCH,
+            )
+        return content
+
+    @staticmethod
+    def _bound_message(maximum: int) -> str:
+        if maximum == _MAX_ARTIFACT_BYTES:
+            return "artifact exceeds the 1 MiB document bound; use verified export"
+        return "artifact exceeds the 64 MiB export bound"
 
     def _validated_source_path(self, workflow_id: str, recorded_path: str) -> Path:
         if not isinstance(recorded_path, str) or not recorded_path:
@@ -645,8 +795,10 @@ class ArtifactAccessService:
 
 
 __all__ = [
+    "ArchivedArtifactSource",
     "ArtifactAccessError",
     "ArtifactAccessService",
+    "ArtifactArchiveLookup",
     "ArtifactAvailability",
     "ArtifactCatalogEntry",
     "ArtifactExport",

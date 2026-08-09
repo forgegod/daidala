@@ -177,14 +177,19 @@ worktree ownership. Approval is therefore not metadata on a runnable card and
 has no card of its own. See [Lifecycle stages and handoffs](05-lifecycle-stages.md)
 for the stage-specific fields added after implementation begins.
 
-Current limitation: neither the Kanban board nor the current Daidala dashboard
-renders the plan artifact body at the approval gate. The dashboard can report a
-pending decision, but that is not enough evidence to approve. Until the planned
-artifact-review surface exists, the operator must run `hermes daidala status
-first-workflow`, find the current `plan` entry in `workflow.artifacts`, and open
-that exact profile-local `path`. Compare its recorded digest with the pending
-approval digest before approving. If the operator cannot read the plan artifact,
-the workflow is not reviewable and must remain unapproved.
+Neither the Kanban board nor the current Daidala dashboard renders the plan
+artifact body at the approval gate. The dashboard can report a pending decision,
+but that is not enough evidence to approve. List the ledger-owned artifacts,
+select the exact plan artifact ID, and read its verified text through Daidala:
+
+```bash
+hermes daidala artifacts list first-workflow --json
+hermes daidala artifacts show first-workflow <plan-artifact-id>
+```
+
+Compare the selected artifact's recorded digest with the pending approval digest
+before approving. If Daidala cannot verify and display the plan artifact, the
+workflow is not reviewable and must remain unapproved.
 
 After planning, Daidala exposes the exact pending approval tuple from its ledger.
 It creates no approval card, implementation worktree, or implementation-capable
@@ -192,11 +197,11 @@ card.
 
 ## 5. Approve the exact plan
 
-Run `hermes daidala status first-workflow` and inspect the current `plan` entry
-under `workflow.artifacts`. Open its exact profile-local path and review the plan
-body; do not approve from the dashboard's pending-decision label or a digest
-alone. Approve only after the plan, risks, scope, and verification criteria are
-visible and acceptable, and the displayed 64-character SHA-256 digest matches:
+Run `hermes daidala artifacts list first-workflow --json`, select the exact plan
+artifact ID, and review it with `hermes daidala artifacts show`. Do not approve
+from the dashboard's pending-decision label or a digest alone. Approve only after
+the plan, risks, scope, and verification criteria are visible and acceptable,
+and the displayed 64-character SHA-256 digest matches:
 
 ```bash
 hermes daidala approve first-workflow <64-character-plan-digest>

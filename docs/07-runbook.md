@@ -87,6 +87,30 @@ hermes daidala status stable-workflow-id
 The gateway's Kanban dispatcher executes ready cards. The start command creates
 the graph; it does not start a second scheduler, daemon, or nested agent.
 
+## Review exact artifacts
+
+List ledger-owned artifacts and select one exact opaque artifact ID. JSON list
+output contains metadata only; it never includes artifact content or labels one
+revision as `latest`:
+
+```bash
+hermes daidala artifacts list <workflow-id> --json
+hermes daidala artifacts show <workflow-id> <artifact-id>
+```
+
+`show` writes only digest-verified UTF-8 text within the 1 MiB document bound.
+For binary or larger artifacts, export verified bytes to a destination whose
+parent directory already exists:
+
+```bash
+hermes daidala artifacts export <workflow-id> <artifact-id> \
+  --output /operator/selected/artifact.bin
+```
+
+Export creates a mode-`0600` regular file atomically and refuses an existing
+destination unless `--overwrite` is present. The destination is never accepted
+as an artifact read source.
+
 ## Approve the exact plan
 
 Approval remains bound to the SHA-256 digest recorded on the current plan
@@ -263,6 +287,12 @@ hermes daidala status <workflow-id>
 daidala status <workflow-id>
 hermes daidala review show <workflow-id>
 daidala review show <workflow-id>
+hermes daidala artifacts list <workflow-id> --json
+daidala artifacts list <workflow-id> --json
+hermes daidala artifacts show <workflow-id> <artifact-id>
+daidala artifacts show <workflow-id> <artifact-id>
+hermes daidala artifacts export <workflow-id> <artifact-id> --output <path>
+daidala artifacts export <workflow-id> <artifact-id> --output <path>
 ```
 
 Replacing the `hermes daidala` prefix with `daidala` in either `review decide`

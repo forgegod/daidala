@@ -56,6 +56,43 @@ class FakeCardStatus:
 
 
 @dataclass
+class FakeArtifactEntry:
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "artifact_id": "a" * 64,
+            "workflow_id": "wf-1",
+            "kind": "stage",
+            "stage": "plan",
+            "policy_revision": 1,
+            "plan_revision": 0,
+            "digest": "b" * 64,
+            "recorded_at": "2026-07-27T08:00:00+00:00",
+            "size": 14,
+            "availability": "active",
+            "approval_summary_digest": None,
+        }
+
+
+@dataclass
+class FakeArtifactText:
+    content: str = "# Exact plan\n"
+
+
+@dataclass
+class FakeArtifactExport:
+    destination: Path
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "artifact_id": "a" * 64,
+            "workflow_id": "wf-1",
+            "digest": "b" * 64,
+            "size": 14,
+            "destination": str(self.destination),
+        }
+
+
+@dataclass
 class FakeReviewPreview:
     digest: str = "b" * 64
 
@@ -85,6 +122,37 @@ class FakeService:
 
     def status(self, workflow_id: str) -> FakeState:
         return self._call("status", workflow_id)
+
+    def list_artifacts(self, workflow_id: str) -> tuple[FakeArtifactEntry, ...]:
+        self.calls.append(("list_artifacts", (workflow_id,), {}))
+        if self.fail:
+            raise RuntimeError("service failed")
+        return (FakeArtifactEntry(),)
+
+    def read_artifact_text(self, workflow_id: str, artifact_id: str) -> FakeArtifactText:
+        self.calls.append(("read_artifact_text", (workflow_id, artifact_id), {}))
+        if self.fail:
+            raise RuntimeError("service failed")
+        return FakeArtifactText()
+
+    def export_artifact(
+        self,
+        workflow_id: str,
+        artifact_id: str,
+        output: Path,
+        *,
+        overwrite: bool = False,
+    ) -> FakeArtifactExport:
+        self.calls.append(
+            (
+                "export_artifact",
+                (workflow_id, artifact_id, output),
+                {"overwrite": overwrite},
+            )
+        )
+        if self.fail:
+            raise RuntimeError("service failed")
+        return FakeArtifactExport(destination=output)
 
     def replace_constraint_input(self, workflow_id: str, **kwargs: Any) -> FakeState:
         return self._call("replace_constraint_input", workflow_id, **kwargs)
@@ -354,6 +422,85 @@ def test_standalone_and_hermes_surfaces_make_equivalent_service_calls(
         assert json.loads(host_output)["kanban"] == [
             {"stage": "define", "status": "ready"}
         ]
+
+
+def test_artifact_list_json_is_byte_identical_across_both_cli_surfaces(capsys) -> None:
+    standalone = FakeService()
+    native = FakeService()
+    argv = ["artifacts", "list", "wf-1", "--json"]
+
+    standalone_code = cli.main(argv, service_factory=_factory(standalone))
+    standalone_output = capsys.readouterr().out
+    native_code = cli.run_command(_host_args(argv), service_factory=_factory(native))
+    native_output = capsys.readouterr().out
+
+    assert standalone_code == native_code == 0
+    assert standalone_output == native_output
+    assert standalone.calls == native.calls == [("list_artifacts", ("wf-1",), {})]
+    payload = json.loads(native_output)
+    assert payload["operation"] == "artifacts-list"
+    assert payload["artifacts"][0]["artifact_id"] == "a" * 64
+    assert "content" not in native_output
+
+
+def test_artifact_list_human_output_contains_metadata_only(capsys) -> None:
+    service = FakeService()
+
+    assert cli.main(["artifacts", "list", "wf-1"], service_factory=_factory(service)) == 0
+    output = capsys.readouterr().out
+
+    assert output.startswith("artifact_id\tkind\tstage\tpolicy_revision")
+    assert "plan" in output
+    assert "# Exact plan" not in output
+
+
+@pytest.mark.parametrize("operation", ("show", "export"))
+def test_artifact_show_and_export_have_native_standalone_parity(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    operation: str,
+) -> None:
+    standalone = FakeService()
+    native = FakeService()
+    argv = ["artifacts", operation, "wf-1", "a" * 64]
+    if operation == "export":
+        argv.extend(["--output", str(tmp_path / "artifact.bin"), "--overwrite"])
+
+    standalone_code = cli.main(argv, service_factory=_factory(standalone))
+    standalone_output = capsys.readouterr().out
+    native_code = cli.run_command(_host_args(argv), service_factory=_factory(native))
+    native_output = capsys.readouterr().out
+
+    assert standalone_code == native_code == 0
+    assert standalone_output == native_output
+    assert standalone.calls == native.calls
+    if operation == "show":
+        assert native_output == "# Exact plan\n"
+        assert native.calls[0][0] == "read_artifact_text"
+    else:
+        assert json.loads(native_output)["operation"] == "artifacts-export"
+        assert native.calls[0][0] == "export_artifact"
+        assert native.calls[0][2] == {"overwrite": True}
+
+
+def test_artifact_errors_are_nonzero_content_free_and_equivalent(capsys) -> None:
+    standalone = FakeService(fail=True)
+    native = FakeService(fail=True)
+    argv = ["artifacts", "show", "wf-1", "a" * 64]
+
+    standalone_code = cli.main(argv, service_factory=_factory(standalone))
+    standalone_output = capsys.readouterr().out
+    native_code = cli.run_command(_host_args(argv), service_factory=_factory(native))
+    native_output = capsys.readouterr().out
+
+    assert standalone_code == native_code == 1
+    assert standalone_output == native_output
+    assert json.loads(native_output) == {
+        "success": False,
+        "error": "RuntimeError",
+        "message": "service failed",
+    }
+    assert "# Exact plan" not in native_output
 
 
 def test_review_show_uses_identical_standalone_and_native_dispatch(capsys) -> None:

@@ -8,9 +8,12 @@ from pathlib import Path
 
 import pytest
 
+from daidala.archive_io import create_archive
 from daidala.artifact_access import (
+    ArchivedArtifactSource,
     ArtifactAccessError,
     ArtifactAccessService,
+    ArtifactAvailability,
     ArtifactFailureReason,
     ArtifactId,
 )
@@ -190,6 +193,61 @@ def artifact_fixture(tmp_path: Path) -> tuple[WorkflowStore, ArtifactAccessServi
     return store, ArtifactAccessService(store), workflow_id
 
 
+def test_archive_lookup_preserves_exact_identity_and_verified_bytes(
+    tmp_path: Path,
+    artifact_fixture: tuple[WorkflowStore, ArtifactAccessService, str],
+) -> None:
+    store, active_service, workflow_id = artifact_fixture
+    active_catalog = active_service.list(workflow_id)
+    plan_entry = next(entry for entry in active_catalog if entry.stage == "plan")
+    artifact_root = store.data_root / "workflows" / workflow_id / "artifacts"
+    plan_member = "policy-0001/plan-0000/plan.md"
+    companion_member = "policy-0001/plan-0000/implementation-paths.json"
+    companion = artifact_root / companion_member
+    companion.write_text('{"paths":[]}\n', encoding="utf-8")
+    archive = (tmp_path / "archive" / "artifacts.tar.gz").resolve()
+    manifest = (tmp_path / "archive" / "artifacts.manifest.json").resolve()
+    create_archive(artifact_root, (plan_member, companion_member), archive, manifest)
+    source = ArchivedArtifactSource(
+        archive_path=archive,
+        manifest_path=manifest,
+        member_path=plan_member,
+    )
+
+    def lookup(selected_workflow: str, artifact_id: ArtifactId) -> ArchivedArtifactSource | None:
+        if selected_workflow == workflow_id and artifact_id == plan_entry.artifact_id:
+            return source
+        return None
+
+    archive_service = ArtifactAccessService(store, archive_lookup=lookup)
+    combined_entry = next(
+        entry for entry in archive_service.list(workflow_id) if entry.stage == "plan"
+    )
+    assert combined_entry.artifact_id == plan_entry.artifact_id
+    assert combined_entry.availability is ArtifactAvailability.ACTIVE_AND_ARCHIVED
+    assert len(archive_service.list(workflow_id)) == len(active_catalog)
+
+    plan_path = artifact_root / plan_member
+    expected = plan_path.read_bytes()
+    plan_path.unlink()
+    archived_entry = next(
+        entry for entry in archive_service.list(workflow_id) if entry.stage == "plan"
+    )
+    assert archived_entry.availability is ArtifactAvailability.ARCHIVED
+    assert archive_service.read_text(workflow_id, archived_entry.artifact_id).content == (
+        expected.decode("utf-8")
+    )
+    exported = tmp_path / "exported-plan.md"
+    result = archive_service.export(workflow_id, archived_entry.artifact_id, exported)
+    assert exported.read_bytes() == expected
+    assert result.digest == archived_entry.digest
+
+    archive.write_bytes(b"tampered")
+    with pytest.raises(ArtifactAccessError) as raised:
+        archive_service.list(workflow_id)
+    assert raised.value.reason is ArtifactFailureReason.ARCHIVE_INVALID
+
+
 def test_summary_is_strict_bounded_and_source_bound() -> None:
     summary = ApprovalSummary.from_dict(SUMMARY_PAYLOAD)
     assert ApprovalSummary.from_dict(summary.to_dict()) == summary
@@ -357,6 +415,10 @@ def test_resolver_rejects_forged_corrupt_binary_oversized_and_cross_workflow_ids
     )
     with pytest.raises(ArtifactAccessError, match="1 MiB"):
         access.read_text(workflow_id, oversized_id)
+    oversized_output = Path(forged.path).parent / "oversized-export.bin"
+    exported = access.export(workflow_id, oversized_id, oversized_output)
+    assert exported.size == 1024 * 1024 + 1
+    assert _digest(oversized_output.read_bytes()) == oversized_digest
 
 
 def test_resolver_rejects_path_escape_and_symlink(

@@ -17,6 +17,7 @@ from daidala.archive_io import (
     ArchiveLimits,
     create_archive,
     inventory_archive,
+    read_archive_member,
     restore_archive,
     verify_archive,
 )
@@ -65,6 +66,22 @@ def test_archive_round_trip_is_deterministic_verified_and_mode_safe(tmp_path: Pa
     ).read_bytes()
     assert (restored / "binary.bin").stat().st_mode & 0o777 == 0o600
     assert (restored / "nested").stat().st_mode & 0o777 == 0o700
+
+
+def test_read_archive_member_revalidates_integrity_mode_and_bounds(tmp_path: Path) -> None:
+    source = make_source(tmp_path)
+    archive, manifest = archive_paths(tmp_path)
+    create_archive(source, source_members(), archive, manifest)
+
+    assert read_archive_member(
+        archive, manifest, "nested/notes.txt", max_bytes=64
+    ) == b"verified\n"
+    with pytest.raises(ArchiveError, match="bounds"):
+        read_archive_member(archive, manifest, "nested/notes.txt", max_bytes=4)
+
+    archive.chmod(0o644)
+    with pytest.raises(ArchiveError, match="unsafe-member"):
+        read_archive_member(archive, manifest, "nested/notes.txt", max_bytes=64)
 
 
 def test_archive_rejects_unsafe_or_duplicate_member_names_without_leaking_them(

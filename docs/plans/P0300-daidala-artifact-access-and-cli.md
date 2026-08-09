@@ -16,7 +16,7 @@
 
 **Produces:** archive-aware exact-ID resolution plus byte-equivalent native and standalone list/show/export commands over the P0205 resolver
 
-**Status:** pending — blocked until P0100, P0205, and P0240 complete and human implementation approval is recorded
+**Status:** complete
 
 ## Goal
 
@@ -38,7 +38,7 @@ Artifact content may contain credentials or private paths. Selection is ledger-b
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Add archive-aware resolution and native/standalone CLI review | pending | `pytest tests/test_cli.py tests/test_artifact_access.py tests/test_archive_io.py -q` exits 0; active/archive bytes match and native/standalone commands return byte-identical JSON with equivalent exit codes |
+| 0 | Add archive-aware resolution and native/standalone CLI review | done (`.venv/bin/python -m pytest tests/test_cli.py tests/test_artifact_access.py tests/test_archive_io.py -q`; full suite, lint, build, release checks, fresh-wheel list/show/export, and isolated native plugin probe pass) | `pytest tests/test_cli.py tests/test_artifact_access.py tests/test_archive_io.py -q` exits 0; active/archive bytes match and native/standalone commands return byte-identical JSON with equivalent exit codes |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
 
@@ -49,9 +49,9 @@ Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate p
 Steps:
 
 1. Read contract Phase 1, P0205 and P0100 completion evidence, and the CLI conventions named there.
-2. Extend the P0205 resolver with verified archive-manifest lookup and read/export through `daidala.archive_io`; do not introduce a second tar implementation or change ledger identity.
+2. Add a bounded verified member-read primitive to `daidala.archive_io`, then extend the P0205 resolver with an injected exact-`artifact_id` archive lookup and read/export through that primitive; do not introduce a second tar implementation, pre-empt P0310's curator-state layout, or change ledger identity.
 3. Add exact selectors and JSON projections for list/show/export without accepting a filesystem path.
-4. Keep stdout machine-readable and diagnostics content-free; write exports atomically at mode `0600` without overwrite by default.
+4. Keep list JSON machine-readable and diagnostics content-free; keep text display at the 1 MiB document bound, permit digest-verified exports up to the shared archive per-file bound, and write exports atomically at mode `0600` without overwrite by default.
 5. Prove active and archived bytes are equivalent and native/standalone commands have byte-identical JSON, equivalent exit codes, and matching error classes.
 6. Update CLI documentation/DOX owned by the changed paths.
 

@@ -230,6 +230,54 @@ def inventory_archive(
         raise ArchiveError("archive inventory: io") from error
 
 
+def read_archive_member(
+    archive_path: Path,
+    manifest_path: Path,
+    member_path: str,
+    *,
+    max_bytes: int,
+    limits: ArchiveLimits = _DEFAULT_LIMITS,
+) -> bytes:
+    """Read one bounded member after revalidating the complete archive."""
+    try:
+        if isinstance(max_bytes, bool) or not isinstance(max_bytes, int) or max_bytes <= 0:
+            raise ArchiveError("archive invalid-input")
+        archive = Path(archive_path)
+        manifest = _verify(archive, Path(manifest_path), limits)
+        selected = _safe_member_path(member_path).as_posix()
+        recorded = next((member for member in manifest.members if member.path == selected), None)
+        if recorded is None:
+            raise ArchiveError("archive integrity")
+        if recorded.size > max_bytes:
+            raise ArchiveError("archive bounds")
+        with _open_tar(archive) as handle:
+            for info in handle:
+                observed = _tar_member(info, limits)
+                if observed.path != selected:
+                    continue
+                if observed.size != recorded.size:
+                    raise ArchiveError("archive integrity")
+                stream = handle.extractfile(info)
+                if stream is None:
+                    raise ArchiveError("archive integrity")
+                try:
+                    content = stream.read(max_bytes + 1)
+                finally:
+                    stream.close()
+                if (
+                    len(content) != recorded.size
+                    or len(content) > max_bytes
+                    or hashlib.sha256(content).hexdigest() != recorded.sha256
+                ):
+                    raise ArchiveError("archive integrity")
+                return content
+        raise ArchiveError("archive integrity")
+    except ArchiveError as error:
+        raise _operation_error("read", error) from error
+    except (OSError, EOFError, tarfile.TarError) as error:
+        raise ArchiveError("archive read: io") from error
+
+
 def restore_archive(
     archive_path: Path,
     manifest_path: Path,
@@ -505,6 +553,7 @@ def _digest_file(path: Path, maximum: int) -> tuple[str, int]:
             stat.S_ISLNK(metadata.st_mode)
             or not stat.S_ISREG(metadata.st_mode)
             or metadata.st_nlink != 1
+            or stat.S_IMODE(metadata.st_mode) != 0o600
         ):
             raise ArchiveError("archive unsafe-member")
         if metadata.st_size > maximum:
@@ -516,6 +565,7 @@ def _digest_file(path: Path, maximum: int) -> tuple[str, int]:
                 not stat.S_ISREG(opened.st_mode)
                 or opened.st_nlink != 1
                 or opened.st_size != metadata.st_size
+                or stat.S_IMODE(opened.st_mode) != 0o600
             ):
                 raise ArchiveError("archive unsafe-member")
             digest = hashlib.sha256()
@@ -541,6 +591,7 @@ def _read_regular_file(path: Path, maximum: int) -> bytes:
             stat.S_ISLNK(metadata.st_mode)
             or not stat.S_ISREG(metadata.st_mode)
             or metadata.st_nlink != 1
+            or stat.S_IMODE(metadata.st_mode) != 0o600
         ):
             raise ArchiveError("archive unsafe-member")
         if metadata.st_size > maximum:
@@ -552,6 +603,7 @@ def _read_regular_file(path: Path, maximum: int) -> bytes:
                 not stat.S_ISREG(opened.st_mode)
                 or opened.st_nlink != 1
                 or opened.st_size != metadata.st_size
+                or stat.S_IMODE(opened.st_mode) != 0o600
             ):
                 raise ArchiveError("archive unsafe-member")
             content = stream.read(maximum + 1)
@@ -570,7 +622,11 @@ def _open_tar(path: Path) -> Iterator[tarfile.TarFile]:
         descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
         with os.fdopen(descriptor, "rb") as stream:
             metadata = os.fstat(stream.fileno())
-            if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:
+            if (
+                not stat.S_ISREG(metadata.st_mode)
+                or metadata.st_nlink != 1
+                or stat.S_IMODE(metadata.st_mode) != 0o600
+            ):
                 raise ArchiveError("archive unsafe-member")
             with tarfile.open(fileobj=stream, mode="r:gz") as archive:
                 yield archive
@@ -608,7 +664,14 @@ def _inspect_tar(handle: tarfile.TarFile, limits: ArchiveLimits) -> tuple[Archiv
 
 
 def _tar_member(info: tarfile.TarInfo, limits: ArchiveLimits) -> ArchiveMember:
-    if not info.isreg() or info.issym() or info.islnk() or info.isdev() or info.isfifo():
+    if (
+        not info.isreg()
+        or info.issym()
+        or info.islnk()
+        or info.isdev()
+        or info.isfifo()
+        or info.mode & 0o777 != 0o600
+    ):
         raise ArchiveError("archive unsafe-member")
     path = _safe_member_path(info.name).as_posix()
     if info.size < 0 or info.size > limits.max_file_bytes:

@@ -16,10 +16,13 @@ completeness without touching a real Hermes profile.
 - Reconciliation tests use fake inventories and command boundaries to prove
   stable issue ordering, no-candidate convergence, bounded claim recovery,
   immutable tick replay, and fail-closed inventory or notification errors.
-- Shared CLI tests prove standalone/native reconciliation and attended-review
-  argument parity, dry-run default behavior, exact preview-digest apply gates,
-  bounded direct rationale input and output, and nonzero stale or missing-identity
-  exits without live profile mutation.
+- Shared CLI tests prove standalone/native artifact, reconciliation, and
+  attended-review parity, dry-run default behavior, exact preview-digest apply
+  gates, bounded direct rationale input and output, and nonzero stale or
+  missing-identity exits without live profile mutation.
+- Artifact/archive tests prove exact-ID archive lookup, active/archive byte
+  equivalence, supplemental-member exclusion, private-mode revalidation,
+  bounded member reads, digest failure, and atomic mode-`0600` export.
 - Project-cycle admission tests prove standalone/native mode and candidate
   parity, comparison-mode candidate requirements, improve-mode rejection, and
   exact dry-run/apply forwarding before adapter mutation.

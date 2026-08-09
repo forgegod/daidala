@@ -80,7 +80,7 @@ Workflow artifacts and verification output may contain credentials, private path
 
 **Steps:**
 
-1. Extend the Phase 0 resolver with archive availability states `archived` and `active-and-archived`. Resolve archived files only through a verified archive manifest keyed by exact `artifact_id`; reopen the tar, revalidate mode, manifest digest, member type, size, and content digest on every read/export, and use only P0100's `daidala.archive_io` mechanics.
+1. Add a bounded verified member-read primitive to `daidala.archive_io`, then extend the Phase 0 resolver with archive availability states `archived` and `active-and-archived`. Resolve archived files only through an injected archive lookup keyed by exact `artifact_id`; reopen the tar, revalidate mode, manifest digest, member type, size, and content digest on every read/export, and use only P0100's `daidala.archive_io` mechanics. P0310 owns the persistent curator-state layout that implements the lookup.
 2. Treat archived files lacking ledger references as supplemental restore bytes, never review evidence; preserve this distinction for companion files such as `implementation-paths.json`.
 3. Extend the shared parser/dispatcher in `daidala/cli.py` so both entry points expose the same commands:
    - `hermes daidala artifacts list <workflow-id> [--json]`;
@@ -88,7 +88,7 @@ Workflow artifacts and verification output may contain credentials, private path
    - `hermes daidala artifacts export <workflow-id> <artifact-id> --output <path> [--overwrite]`;
    - equivalent standalone `daidala artifacts ...` forms.
 4. `list` prints artifact ID, kind/stage, policy and plan revisions, recorded digest, recorded time, size when known, and availability. It never prints artifact content or treats one revision as `latest`.
-5. `show` writes only verified bounded text to stdout. Binary or oversized evidence exits nonzero and directs the operator to `export`; errors never include artifact bytes.
+5. `show` writes only verified text within the 1 MiB document bound to stdout. Binary or oversized evidence exits nonzero and directs the operator to `export`; export remains finite at the shared archive per-file bound, and errors never include artifact bytes.
 6. `export` accepts an operator-selected destination but never uses that path as a read source. It creates parent directories only when explicitly requested, refuses special-file/symlink destinations, writes through a same-directory temporary file, verifies the digest, and atomically replaces only with `--overwrite`.
 7. Add archive-equivalence, parser, fake-service, output-bound, native/standalone parity, collision, and nonzero-error tests in `tests/test_cli.py`, `tests/test_artifact_access.py`, and `tests/test_archive_io.py`.
 8. Exercise the installed help and commands in an isolated `HERMES_HOME`; document only syntax proven by that probe.

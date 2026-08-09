@@ -196,6 +196,26 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     )
     status.add_argument("workflow_id")
 
+    artifacts = sub.add_parser(
+        "artifacts", help="Review exact ledger-owned workflow artifacts"
+    )
+    artifacts_sub = artifacts.add_subparsers(dest="artifacts_command", required=True)
+    artifacts_list = artifacts_sub.add_parser("list", help="List exact artifact metadata")
+    artifacts_list.add_argument("workflow_id")
+    artifacts_list.add_argument("--json", action="store_true", dest="as_json")
+    artifacts_show = artifacts_sub.add_parser(
+        "show", help="Write one verified text artifact"
+    )
+    artifacts_show.add_argument("workflow_id")
+    artifacts_show.add_argument("artifact_id")
+    artifacts_export = artifacts_sub.add_parser(
+        "export", help="Export one verified artifact"
+    )
+    artifacts_export.add_argument("workflow_id")
+    artifacts_export.add_argument("artifact_id")
+    artifacts_export.add_argument("--output", required=True, type=Path)
+    artifacts_export.add_argument("--overwrite", action="store_true")
+
     replace_constraints = sub.add_parser(
         "replace-constraints",
         help="Replace workflow constraints from a file or exact installed policy skill",
@@ -394,7 +414,13 @@ def run_command(
             )
             return _run_project_cycle(args, selected_project_cycle_factory)
         if args.command in {
-            "start", "status", "replace-constraints", "approve", "review", "cancel"
+            "start",
+            "status",
+            "artifacts",
+            "replace-constraints",
+            "approve",
+            "review",
+            "cancel",
         }:
             selected_factory = service_factory or (
                 lambda: _default_service(command_runner=command_runner)
@@ -728,6 +754,8 @@ def _run_init(args: argparse.Namespace) -> int:
 
 def _run_lifecycle(args: argparse.Namespace, service_factory: ServiceFactory) -> int:
     service = service_factory()
+    if args.command == "artifacts":
+        return _run_artifact_operation(args, service)
     if args.command == "start":
         state = service.start(
             board_slug=args.board_slug,
@@ -818,6 +846,60 @@ def _run_lifecycle(args: argparse.Namespace, service_factory: ServiceFactory) ->
         state = service.cancel(args.workflow_id, reason=args.reason)
     _print({"success": True, "operation": args.command, "workflow": state.to_dict()})
     return 0
+
+
+def _run_artifact_operation(args: argparse.Namespace, service: WorkflowService) -> int:
+    if args.artifacts_command == "list":
+        rows = [entry.to_dict() for entry in service.list_artifacts(args.workflow_id)]
+        if args.as_json:
+            _print(
+                {
+                    "success": True,
+                    "operation": "artifacts-list",
+                    "artifacts": rows,
+                }
+            )
+        else:
+            columns = (
+                "artifact_id",
+                "kind",
+                "stage",
+                "policy_revision",
+                "plan_revision",
+                "digest",
+                "recorded_at",
+                "size",
+                "availability",
+            )
+            print("\t".join(columns))
+            for row in rows:
+                print(
+                    "\t".join(
+                        "-" if row[column] is None else str(row[column])
+                        for column in columns
+                    )
+                )
+        return 0
+    if args.artifacts_command == "show":
+        artifact = service.read_artifact_text(args.workflow_id, args.artifact_id)
+        print(artifact.content, end="")
+        return 0
+    if args.artifacts_command == "export":
+        exported = service.export_artifact(
+            args.workflow_id,
+            args.artifact_id,
+            args.output,
+            overwrite=args.overwrite,
+        )
+        _print(
+            {
+                "success": True,
+                "operation": "artifacts-export",
+                "artifact": exported.to_dict(),
+            }
+        )
+        return 0
+    raise ValueError(f"unsupported artifacts command: {args.artifacts_command}")
 
 
 def _read_review_rationale(path: Path) -> str:

@@ -13,6 +13,7 @@ from uuid import uuid4
 
 from .artifact_access import (
     ArtifactAccessService,
+    ArtifactArchiveLookup,
     ArtifactCatalogEntry,
     ArtifactExport,
     ArtifactId,
@@ -113,6 +114,7 @@ class WorkflowService:
         skill_inventory: SkillInventory | None = None,
         skill_content_registry: SkillContentRegistry | None = None,
         kanban: KanbanGraphAdapter | None = None,
+        artifact_archive_lookup: ArtifactArchiveLookup | None = None,
     ) -> None:
         self.store = store
         self._clock = clock or (lambda: datetime.now(UTC))
@@ -122,7 +124,9 @@ class WorkflowService:
             store.data_root.parent / "skills"
         )
         self._workspace = ExecutionWorkspace(store.data_root)
-        self._artifact_access = ArtifactAccessService(store)
+        self._artifact_access = ArtifactAccessService(
+            store, archive_lookup=artifact_archive_lookup
+        )
         self._kanban = kanban
 
     def start(
