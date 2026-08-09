@@ -43,6 +43,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `execution.py` | Immutable revision-addressed profile-local artifacts, detached worktrees, and diff capture. |
 | `artifact_access.py` | Opaque ledger-bound artifact identity, active/archive availability, injected exact-ID archive lookup, bounded digest-verified text reads and private exports, exact current-plan evidence, and caller-captured snapshot validation. |
 | `archive_io.py` | Policy-neutral deterministic tar/gzip creation, private-mode manifest verification, inventory, bounded verified member reads, and safe restore for caller-authorized roots. |
+| `artifact_curator.py` | Strict profile-local lifecycle policy and compare-and-swap state, live-ledger/Kanban terminal classification, pinned age transitions, verified archive publication, crash-convergent cleanup, exact-ID archive lookup, and safe recovery-root restore. |
 | `kanban.py` | Public host-boundary adapter for the idempotent, approval-gated and revision-addressed Hermes card graph. |
 | `schemas.py` | Tool schemas exposed to the model. |
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
@@ -81,6 +82,16 @@ workflow-pack adapters, and bundled orchestration skills.
 - Artifact commands select only opaque ledger-derived IDs. Archive reads use an
   injected profile-state lookup and `archive_io` verification; artifact access
   never infers curator layout or accepts a filesystem path as a read selector.
+- Artifact curation is disabled by default and remains dry-run first. Apply
+  requires a fresh preview digest, one global curator lock and one workflow
+  operation lock. Delivered workflows require current delivery evidence;
+  abandoned workflows require every persisted card reference to be live and
+  terminal. Owned worktrees, unavailable host state, or ledger drift fail closed.
+- Archive state is published only after the deterministic archive, integrity
+  manifest, and strict curator sidecar verify. Source cleanup then removes only
+  matching verified members; retries converge from archive-only, dual-copy, or
+  partial-cleanup states. Restore targets only the profile-local recovery root,
+  preserves historical ledger paths, and leaves the workflow pinned active.
 - `review show` exposes the bounded current evidence/disposition packet. `review
   decide` is preview-only by default and applies only a freshly recomputed exact
   review/preview digest pair with literal confirmation and bounded direct UTF-8

@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from .constraints import WorkflowConstraints
 from .packs import WorkflowPack
-from .state import WorkflowLedger, WorkflowStage
+from .state import CardReference, WorkflowLedger, WorkflowStage
 
 
 class KanbanError(RuntimeError):
@@ -135,6 +135,16 @@ class KanbanGraphAdapter:
         card = ledger.card_for(stage)
         if card is None:
             raise KanbanError(f"workflow has no {stage.value} card")
+        return self._show_reference(ledger, card)
+
+    def all_statuses(self, ledger: WorkflowLedger) -> tuple[KanbanCardStatus, ...]:
+        """Read every persisted card reference, including historical revisions."""
+
+        return tuple(self._show_reference(ledger, card) for card in ledger.card_references)
+
+    def _show_reference(
+        self, ledger: WorkflowLedger, card: CardReference
+    ) -> KanbanCardStatus:
         payload = self._tool_json(
             "kanban_show",
             {"task_id": card.task_id, "board": ledger.board_slug},
@@ -151,7 +161,7 @@ class KanbanGraphAdapter:
             raise KanbanError("kanban_show returned invalid status")
         if not isinstance(assignee, str) or not assignee:
             raise KanbanError("kanban_show returned invalid assignee")
-        return KanbanCardStatus(stage, card.task_id, status, assignee)
+        return KanbanCardStatus(card.stage, card.task_id, status, assignee)
 
     def combined_status(self, ledger: WorkflowLedger) -> tuple[KanbanCardStatus, ...]:
         return tuple(

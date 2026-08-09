@@ -20,6 +20,13 @@ from .artifact_access import (
     ArtifactText,
     CurrentPlanEvidence,
 )
+from .artifact_curator import (
+    ArtifactCurator,
+    CuratorPolicy,
+    CuratorPreview,
+    CuratorResult,
+    CuratorStatus,
+)
 from .constraints import (
     WorkflowConstraints,
     extract_policy_skill_constraints,
@@ -124,10 +131,20 @@ class WorkflowService:
             store.data_root.parent / "skills"
         )
         self._workspace = ExecutionWorkspace(store.data_root)
-        self._artifact_access = ArtifactAccessService(
-            store, archive_lookup=artifact_archive_lookup
-        )
         self._kanban = kanban
+        self._curator = ArtifactCurator(
+            store,
+            clock=self._clock,
+            status_provider=lambda ledger: self._require_kanban().all_statuses(ledger),
+        )
+        self._artifact_access = ArtifactAccessService(
+            store,
+            archive_lookup=(
+                artifact_archive_lookup
+                if artifact_archive_lookup is not None
+                else self._curator.archive_lookup
+            ),
+        )
 
     def start(
         self,
@@ -254,6 +271,76 @@ class WorkflowService:
     def status(self, workflow_id: str) -> WorkflowLedger:
         """Return Daidala policy facts without reading or copying Kanban status."""
         return self.store.get(workflow_id)
+
+    def curator_status(self) -> CuratorStatus:
+        return self._curator.status()
+
+    def configure_curator(
+        self,
+        *,
+        enabled: bool,
+        stale_after_days: int,
+        archive_after_days: int,
+        expected_state_digest: str,
+    ) -> CuratorStatus:
+        return self._curator.configure(
+            CuratorPolicy(enabled, stale_after_days, archive_after_days),
+            expected_state_digest=expected_state_digest,
+        )
+
+    def preview_curator_run(self) -> CuratorPreview:
+        return self._curator.preview_run()
+
+    def apply_curator_run(self, *, expected_preview_digest: str) -> CuratorResult:
+        return self._curator.apply_run(expected_preview_digest=expected_preview_digest)
+
+    def preview_curator_pin(self, workflow_id: str, *, pinned: bool) -> CuratorPreview:
+        return self._curator.preview_pin(workflow_id, pinned=pinned)
+
+    def apply_curator_pin(
+        self,
+        workflow_id: str,
+        *,
+        pinned: bool,
+        expected_preview_digest: str,
+    ) -> CuratorResult:
+        return self._curator.apply_pin(
+            workflow_id,
+            pinned=pinned,
+            expected_preview_digest=expected_preview_digest,
+        )
+
+    def preview_curator_archive(self, workflow_id: str) -> CuratorPreview:
+        return self._curator.preview_archive(workflow_id)
+
+    def apply_curator_archive(
+        self, workflow_id: str, *, expected_preview_digest: str
+    ) -> CuratorResult:
+        return self._curator.apply_archive(
+            workflow_id,
+            expected_preview_digest=expected_preview_digest,
+        )
+
+    def list_curator_archives(self) -> tuple[dict[str, object], ...]:
+        return self._curator.list_archived()
+
+    def preview_curator_restore(
+        self, workflow_id: str, archive_id: str
+    ) -> CuratorPreview:
+        return self._curator.preview_restore(workflow_id, archive_id)
+
+    def apply_curator_restore(
+        self,
+        workflow_id: str,
+        archive_id: str,
+        *,
+        expected_preview_digest: str,
+    ) -> CuratorResult:
+        return self._curator.apply_restore(
+            workflow_id,
+            archive_id,
+            expected_preview_digest=expected_preview_digest,
+        )
 
     def _resolve_constraint_input(
         self,

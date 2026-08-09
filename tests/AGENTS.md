@@ -23,6 +23,11 @@ completeness without touching a real Hermes profile.
 - Artifact/archive tests prove exact-ID archive lookup, active/archive byte
   equivalence, supplemental-member exclusion, private-mode revalidation,
   bounded member reads, digest failure, and atomic mode-`0600` export.
+- Artifact-curator tests prove terminal classification, deterministic age and
+  pin transitions, compare-and-swap private state, preview-gated CLI parity,
+  lock contention, verified archive-before-cleanup ordering, interruption
+  convergence, tamper/collision rejection, safe restore, exact access wiring,
+  and cross-profile isolation without a live Hermes profile.
 - Project-cycle admission tests prove standalone/native mode and candidate
   parity, comparison-mode candidate requirements, improve-mode rejection, and
   exact dry-run/apply forwarding before adapter mutation.

@@ -107,6 +107,22 @@ class FakeReviewPreview:
 
 
 @dataclass
+class FakeCuratorPayload:
+    operation: str
+    digest: str = "d" * 64
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "operation": self.operation,
+            "state_digest": "c" * 64,
+            "preview_digest": self.digest,
+            "workflow_id": "wf-1",
+            "archive_id": "e" * 64,
+            "actions": [],
+        }
+
+
+@dataclass
 class FakeService:
     calls: list[tuple[str, tuple[Any, ...], dict[str, Any]]] = field(default_factory=list)
     fail: bool = False
@@ -192,6 +208,86 @@ class FakeService:
     def combined_status(self, workflow_id: str) -> list[FakeCardStatus]:
         self.calls.append(("combined_status", (workflow_id,), {}))
         return [FakeCardStatus()]
+
+    def curator_status(self) -> FakeCuratorPayload:
+        self.calls.append(("curator_status", (), {}))
+        return FakeCuratorPayload("status")
+
+    def preview_curator_run(self) -> FakeCuratorPayload:
+        self.calls.append(("preview_curator_run", (), {}))
+        return FakeCuratorPayload("run")
+
+    def apply_curator_run(self, *, expected_preview_digest: str) -> FakeCuratorPayload:
+        return self._curator_call(
+            "apply_curator_run", "run", expected_preview_digest=expected_preview_digest
+        )
+
+    def preview_curator_pin(self, workflow_id: str, *, pinned: bool) -> FakeCuratorPayload:
+        return self._curator_call(
+            "preview_curator_pin", "pin" if pinned else "unpin", workflow_id, pinned=pinned
+        )
+
+    def apply_curator_pin(
+        self, workflow_id: str, *, pinned: bool, expected_preview_digest: str
+    ) -> FakeCuratorPayload:
+        return self._curator_call(
+            "apply_curator_pin",
+            "pin" if pinned else "unpin",
+            workflow_id,
+            pinned=pinned,
+            expected_preview_digest=expected_preview_digest,
+        )
+
+    def preview_curator_archive(self, workflow_id: str) -> FakeCuratorPayload:
+        return self._curator_call("preview_curator_archive", "archive", workflow_id)
+
+    def apply_curator_archive(
+        self, workflow_id: str, *, expected_preview_digest: str
+    ) -> FakeCuratorPayload:
+        return self._curator_call(
+            "apply_curator_archive",
+            "archive",
+            workflow_id,
+            expected_preview_digest=expected_preview_digest,
+        )
+
+    def list_curator_archives(self) -> tuple[dict[str, object], ...]:
+        self.calls.append(("list_curator_archives", (), {}))
+        return ({"workflow_id": "wf-1", "archive_id": "e" * 64, "member_count": 3},)
+
+    def preview_curator_restore(
+        self, workflow_id: str, archive_id: str
+    ) -> FakeCuratorPayload:
+        return self._curator_call(
+            "preview_curator_restore", "restore", workflow_id, archive_id
+        )
+
+    def apply_curator_restore(
+        self,
+        workflow_id: str,
+        archive_id: str,
+        *,
+        expected_preview_digest: str,
+    ) -> FakeCuratorPayload:
+        return self._curator_call(
+            "apply_curator_restore",
+            "restore",
+            workflow_id,
+            archive_id,
+            expected_preview_digest=expected_preview_digest,
+        )
+
+    def _curator_call(
+        self,
+        name: str,
+        operation: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> FakeCuratorPayload:
+        self.calls.append((name, args, kwargs))
+        if self.fail:
+            raise RuntimeError("service failed")
+        return FakeCuratorPayload(operation)
 
 
 @dataclass
@@ -501,6 +597,73 @@ def test_artifact_errors_are_nonzero_content_free_and_equivalent(capsys) -> None
         "message": "service failed",
     }
     assert "# Exact plan" not in native_output
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["curator", "status"],
+        ["curator", "run"],
+        ["curator", "pin", "wf-1"],
+        ["curator", "unpin", "wf-1"],
+        ["curator", "archive", "wf-1"],
+        ["curator", "list-archived"],
+        ["curator", "restore", "wf-1", "e" * 64],
+    ],
+)
+def test_curator_commands_are_dry_run_first_and_have_native_standalone_parity(
+    argv: list[str], capsys
+) -> None:
+    standalone = FakeService()
+    native = FakeService()
+
+    standalone_code = cli.main(argv, service_factory=_factory(standalone))
+    standalone_output = capsys.readouterr().out
+    native_code = cli.run_command(_host_args(argv), service_factory=_factory(native))
+    native_output = capsys.readouterr().out
+
+    assert standalone_code == native_code == 0
+    assert standalone.calls == native.calls
+    assert json.loads(standalone_output) == json.loads(native_output)
+    payload = json.loads(native_output)
+    if argv[1] not in {"status", "list-archived"}:
+        assert payload["dry_run"] is True
+
+
+@pytest.mark.parametrize(
+    ("argv", "service_method"),
+    [
+        (["curator", "run"], "apply_curator_run"),
+        (["curator", "pin", "wf-1"], "apply_curator_pin"),
+        (["curator", "unpin", "wf-1"], "apply_curator_pin"),
+        (["curator", "archive", "wf-1"], "apply_curator_archive"),
+        (
+            ["curator", "restore", "wf-1", "e" * 64],
+            "apply_curator_restore",
+        ),
+    ],
+)
+def test_curator_apply_requires_and_forwards_exact_preview_digest(
+    argv: list[str], service_method: str, capsys
+) -> None:
+    missing = FakeService()
+    assert cli.main([*argv, "--apply"], service_factory=_factory(missing)) == 1
+    assert "--expected-preview-digest" in capsys.readouterr().out
+    assert missing.calls == []
+
+    service = FakeService()
+    digest = "d" * 64
+    assert (
+        cli.main(
+            [*argv, "--apply", "--expected-preview-digest", digest],
+            service_factory=_factory(service),
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["dry_run"] is False
+    assert service.calls[0][0] == service_method
+    assert service.calls[0][2]["expected_preview_digest"] == digest
 
 
 def test_review_show_uses_identical_standalone_and_native_dispatch(capsys) -> None:

@@ -178,6 +178,49 @@ def with_activation(ledger, stage: WorkflowStage):
     )
 
 
+def test_all_statuses_reads_historical_card_references_not_only_current_stage() -> None:
+    host = FakeHost()
+    adapter = KanbanGraphAdapter(host.dispatch)
+    cards = (
+        CardReference(
+            stage=WorkflowStage.PLAN,
+            plan_revision=0,
+            task_id="task-plan-0",
+            idempotency_key="key-plan-0",
+            board_slug="daidala-test",
+            policy_revision=0,
+        ),
+        CardReference(
+            stage=WorkflowStage.PLAN,
+            plan_revision=1,
+            task_id="task-plan-1",
+            idempotency_key="key-plan-1",
+            board_slug="daidala-test",
+            policy_revision=0,
+        ),
+    )
+    ledger = replace(make_ledger(), plan_revision=1, card_references=cards)
+    host.cards = {
+        "task-plan-0": {
+            "id": "task-plan-0",
+            "status": "archived",
+            "assignee": "architect",
+        },
+        "task-plan-1": {
+            "id": "task-plan-1",
+            "status": "done",
+            "assignee": "architect",
+        },
+    }
+
+    statuses = adapter.all_statuses(ledger)
+
+    assert [(row.task_id, row.status) for row in statuses] == [
+        ("task-plan-0", "archived"),
+        ("task-plan-1", "done"),
+    ]
+
+
 def make_approved_worktree():
     ledger = with_activation(make_ledger(), WorkflowStage.DEFINE)
     ledger = record_artifact(

@@ -100,6 +100,15 @@ class ArchivedArtifactSource:
             )
 
 
+@dataclass(frozen=True)
+class ArtifactArchiveBinding:
+    """Trusted curator-only binding from opaque identity to a workflow member."""
+
+    artifact_id: ArtifactId
+    member_path: str
+    digest: str
+
+
 ArtifactArchiveLookup = Callable[[str, ArtifactId], ArchivedArtifactSource | None]
 
 
@@ -210,6 +219,31 @@ class ArtifactAccessService:
         self._store = store
         self._data_root = store.data_root.resolve()
         self._archive_lookup = archive_lookup
+
+    def archive_bindings(
+        self, workflow_id: str, *, ledger: WorkflowLedger
+    ) -> tuple[ArtifactArchiveBinding, ...]:
+        """Return exact ledger identities and normalized members for trusted curation."""
+
+        root = self._data_root / "workflows" / workflow_id / "artifacts"
+        bindings = []
+        for record in self._records(workflow_id, _ALLOWED_KINDS, ledger=ledger):
+            source = self._validated_source_path(workflow_id, record.path)
+            try:
+                member = source.relative_to(root).as_posix()
+            except ValueError as error:
+                raise ArtifactAccessError(
+                    "artifact reference is outside its workflow artifact root",
+                    reason=ArtifactFailureReason.UNSAFE_PATH,
+                ) from error
+            bindings.append(
+                ArtifactArchiveBinding(
+                    artifact_id=record.entry.artifact_id,
+                    member_path=member,
+                    digest=record.entry.digest,
+                )
+            )
+        return tuple(bindings)
 
     def list(
         self,
@@ -798,6 +832,7 @@ __all__ = [
     "ArchivedArtifactSource",
     "ArtifactAccessError",
     "ArtifactAccessService",
+    "ArtifactArchiveBinding",
     "ArtifactArchiveLookup",
     "ArtifactAvailability",
     "ArtifactCatalogEntry",

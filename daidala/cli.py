@@ -216,6 +216,36 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     artifacts_export.add_argument("--output", required=True, type=Path)
     artifacts_export.add_argument("--overwrite", action="store_true")
 
+    curator = sub.add_parser(
+        "curator", help="Preview or apply profile-local artifact lifecycle operations"
+    )
+    curator_sub = curator.add_subparsers(dest="curator_command", required=True)
+    curator_sub.add_parser("status", help="Show policy and classified curator state")
+    curator_run = curator_sub.add_parser("run", help="Preview or run eligible transitions")
+    curator_pin = curator_sub.add_parser("pin", help="Preview or pin one workflow")
+    curator_pin.add_argument("workflow_id")
+    curator_unpin = curator_sub.add_parser("unpin", help="Preview or unpin one workflow")
+    curator_unpin.add_argument("workflow_id")
+    curator_archive = curator_sub.add_parser(
+        "archive", help="Preview or archive one safely terminal workflow"
+    )
+    curator_archive.add_argument("workflow_id")
+    curator_sub.add_parser("list-archived", help="List path-free archive metadata")
+    curator_restore = curator_sub.add_parser(
+        "restore", help="Preview or restore one archive into its safe recovery root"
+    )
+    curator_restore.add_argument("workflow_id")
+    curator_restore.add_argument("archive_id")
+    for mutation in (
+        curator_run,
+        curator_pin,
+        curator_unpin,
+        curator_archive,
+        curator_restore,
+    ):
+        mutation.add_argument("--apply", action="store_true")
+        mutation.add_argument("--expected-preview-digest")
+
     replace_constraints = sub.add_parser(
         "replace-constraints",
         help="Replace workflow constraints from a file or exact installed policy skill",
@@ -417,6 +447,7 @@ def run_command(
             "start",
             "status",
             "artifacts",
+            "curator",
             "replace-constraints",
             "approve",
             "review",
@@ -756,6 +787,8 @@ def _run_lifecycle(args: argparse.Namespace, service_factory: ServiceFactory) ->
     service = service_factory()
     if args.command == "artifacts":
         return _run_artifact_operation(args, service)
+    if args.command == "curator":
+        return _run_curator_operation(args, service)
     if args.command == "start":
         state = service.start(
             board_slug=args.board_slug,
@@ -900,6 +933,80 @@ def _run_artifact_operation(args: argparse.Namespace, service: WorkflowService) 
         )
         return 0
     raise ValueError(f"unsupported artifacts command: {args.artifacts_command}")
+
+
+def _run_curator_operation(args: argparse.Namespace, service: WorkflowService) -> int:
+    command = args.curator_command
+    operation = f"curator-{command}"
+    if command == "status":
+        _print(
+            {
+                "success": True,
+                "operation": operation,
+                "curator": service.curator_status().to_dict(),
+            }
+        )
+        return 0
+    if command == "list-archived":
+        _print(
+            {
+                "success": True,
+                "operation": operation,
+                "archives": list(service.list_curator_archives()),
+            }
+        )
+        return 0
+    if args.apply and args.expected_preview_digest is None:
+        raise ValueError("--apply requires --expected-preview-digest")
+    if command == "run":
+        value = (
+            service.apply_curator_run(
+                expected_preview_digest=args.expected_preview_digest
+            )
+            if args.apply
+            else service.preview_curator_run()
+        )
+    elif command in {"pin", "unpin"}:
+        pinned = command == "pin"
+        value = (
+            service.apply_curator_pin(
+                args.workflow_id,
+                pinned=pinned,
+                expected_preview_digest=args.expected_preview_digest,
+            )
+            if args.apply
+            else service.preview_curator_pin(args.workflow_id, pinned=pinned)
+        )
+    elif command == "archive":
+        value = (
+            service.apply_curator_archive(
+                args.workflow_id,
+                expected_preview_digest=args.expected_preview_digest,
+            )
+            if args.apply
+            else service.preview_curator_archive(args.workflow_id)
+        )
+    elif command == "restore":
+        value = (
+            service.apply_curator_restore(
+                args.workflow_id,
+                args.archive_id,
+                expected_preview_digest=args.expected_preview_digest,
+            )
+            if args.apply
+            else service.preview_curator_restore(args.workflow_id, args.archive_id)
+        )
+    else:
+        raise ValueError(f"unsupported curator command: {command}")
+    _print(
+        {
+            "success": True,
+            "operation": operation,
+            "dry_run": not args.apply,
+            "curator": value.to_dict(),
+        }
+    )
+    return 0
 
 
 def _read_review_rationale(path: Path) -> str:
