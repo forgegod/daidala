@@ -107,12 +107,17 @@
     var workflowId = query.get("workflow");
     var decision = query.get("decision");
     var planRevision = query.get("plan_revision");
+    var section = query.get("section");
     return {
       workflowId: workflowId && workflowId.length <= 512 && workflowId.indexOf("\0") === -1
         ? workflowId
         : null,
       decision: decision === "plan-approval" ? decision : null,
-      planRevision: planRevision && /^\d+$/.test(planRevision) ? planRevision : null
+      planRevision: planRevision && /^\d+$/.test(planRevision) ? planRevision : null,
+      section: ["packs", "github-projects", "checkouts", "constraints"].indexOf(section) >= 0
+        ? section
+        : null,
+      returnToStart: query.get("return") === "start-workflow"
     };
   }
 
@@ -241,6 +246,20 @@
       .catch(function () {
         return null;
       });
+  }
+
+  function buildConstraintSources() {
+    return fetchJson(API_BASE + "/constraints/sources").then(function (payload) {
+      return payload && Array.isArray(payload.sources) ? payload.sources : [];
+    });
+  }
+
+  function buildConstraintSource(name) {
+    return fetchJson(API_BASE + "/constraints/sources/" + encodeURIComponent(name));
+  }
+
+  function buildConstraintPrerequisites() {
+    return fetchJson(API_BASE + "/prerequisites");
   }
 
   function buildWorkflowDetail(workflowId) {
@@ -1162,20 +1181,18 @@
             onCancelled: onApproved
           })
         : null,
-      detail && detail.workflow
-        ? createElement(ConstraintEditor, {
-            workflow: detail.workflow,
-            constraints: detail.constraints
-          })
-        : null
+      null
     );
   }
 
   function ConstraintEditor(props) {
-    var initial = props.constraints ? props.constraints.canonical_content : "global:\nphases:\n";
+    var initial = props.constraints ? props.constraints.canonical_content : "";
     var contentState = useState(initial);
     var content = contentState[0];
     var setContent = contentState[1];
+    var inputModeState = useState("draft");
+    var inputMode = inputModeState[0];
+    var setInputMode = inputModeState[1];
     var previewState = useState(null);
     var preview = previewState[0];
     var setPreview = previewState[1];
@@ -1185,13 +1202,31 @@
     var messageState = useState("");
     var message = messageState[0];
     var setMessage = messageState[1];
+    var currentDigest = props.workflow.current_constraints_digest || null;
+    var isCreate = currentDigest === null;
+    var source = props.source && props.source.available ? props.source : null;
+    var sourceIdentity = source ? source.source : null;
+    var template = props.template && props.template.content ? props.template.content : "";
+    var limits = props.schemaLimits || {};
+
+    function invalidate() {
+      setPreview(null);
+      setConfirmed(false);
+      setMessage("");
+    }
 
     function payload() {
-      return {
+      var request = {
         workflow_id: props.workflow.workflow_id,
-        expected_current_digest: props.workflow.current_constraints_digest,
-        constraints_content: content
+        expected_current_digest: currentDigest
       };
+      if (inputMode === "reference" && sourceIdentity) {
+        request.constraints_skill = sourceIdentity.name;
+        request.constraints_skill_digest = sourceIdentity.digest;
+      } else {
+        request.constraints_content = content;
+      }
+      return request;
     }
 
     function previewChange() {
@@ -1203,26 +1238,60 @@
     }
 
     function replaceConstraints() {
+      if (!preview || !preview.valid || preview.current_digest !== currentDigest || !confirmed) return;
       postJson(API_BASE + "/constraints/replace", Object.assign({}, payload(), { confirm: true }))
-        .then(function () { setMessage("Constraints replaced. Fresh approval is required."); })
+        .then(function () {
+          setMessage((isCreate ? "Constraints created." : "Constraints replaced.") + " Fresh approval is required.");
+          setPreview(null);
+          setConfirmed(false);
+          if (props.onApplied) props.onApplied();
+        })
         .catch(function (error) { setMessage(error.message); });
     }
 
     return createElement("section", { className: "daidala-constraints", "data-testid": "daidala-constraints" },
-      createElement("h4", null, "Workflow constraints"),
+      createElement("h3", null, isCreate ? "New workflow constraints" : "Edit workflow constraints"),
       createElement("p", { className: "daidala-workflow-meta" },
-        "Revision " + (props.constraints ? props.constraints.revision : "none") +
-        " · digest " + (props.workflow.current_constraints_digest || "none") +
-        " · maximum 4096 canonical UTF-8 bytes"
+        "Authority: " + (isCreate ? "create with null current digest" : "replace displayed current digest") +
+        " · revision " + (props.constraints ? props.constraints.revision : "none") +
+        " · digest " + (currentDigest || "none")
       ),
+      createElement("p", { className: "daidala-workflow-meta" },
+        "Limits: global " + (limits.global_max || "?") + " · phase " + (limits.phase_max || "?") +
+        " · item " + (limits.constraint_bytes || "?") + " bytes · canonical " +
+        (limits.canonical_bytes || "?") + " bytes · worker card body 8192 characters"
+      ),
+      createElement("div", { className: "daidala-config-actions" },
+        createElement("button", { type: "button", onClick: function () { setContent(template); setInputMode("draft"); invalidate(); } }, "Insert schema skeleton"),
+        source ? createElement("button", { type: "button", onClick: function () { setContent(source.canonical_content); setInputMode("draft"); invalidate(); } }, "Copy selected template into draft") : null,
+        source ? createElement("button", { type: "button", onClick: function () { setInputMode("reference"); invalidate(); } }, "Use as reference skill") : null
+      ),
+      sourceIdentity ? createElement("p", { className: "daidala-workflow-meta" },
+        "Selected source " + sourceIdentity.name + " · digest " + sourceIdentity.digest + " · mode " + inputMode
+      ) : null,
       createElement("textarea", {
         value: content,
-        onChange: function (event) { setContent(event.target.value); setPreview(null); setConfirmed(false); },
+        disabled: inputMode === "reference",
+        onChange: function (event) { setContent(event.target.value); setInputMode("draft"); invalidate(); },
         rows: 10,
         "aria-label": "Complete workflow constraints YAML"
       }),
       createElement("button", { type: "button", onClick: previewChange }, "Preview constraint change"),
-      preview ? createElement("pre", null, JSON.stringify(preview, null, 2)) : null,
+      preview && preview.errors && preview.errors.length
+        ? createElement("p", { className: "daidala-banner daidala-banner-error" }, preview.errors.join("; "))
+        : null,
+      preview && preview.canonical_content
+        ? createElement("pre", { className: "daidala-constraint-canonical" }, preview.canonical_content)
+        : null,
+      preview && preview.valid
+        ? createElement("p", { className: "daidala-workflow-meta" },
+            "Preview digest " + preview.new_digest + " · canonical bytes " +
+            String(new TextEncoder().encode(preview.canonical_content || "").length) + " · " +
+            (preview.impact.graph_recreated
+              ? "semantic change: approval, worktree, evidence, and current cards will be invalidated"
+              : "no semantic change")
+          )
+        : null,
       preview && preview.valid && !preview.impact.graph_recreated
         ? createElement("p", null, "No semantic change; replacement is unnecessary.")
         : null,
@@ -1233,7 +1302,7 @@
           )
         : null,
       preview && preview.valid && preview.impact.graph_recreated
-        ? createElement("button", { type: "button", disabled: !confirmed, onClick: replaceConstraints }, "Replace constraints")
+        ? createElement("button", { type: "button", disabled: !confirmed, onClick: replaceConstraints }, isCreate ? "Create constraints" : "Apply replacement")
         : null,
       message ? createElement("p", { role: "status" }, message) : null
     );
@@ -1332,10 +1401,14 @@
     };
   }
 
-  function ConfigurationPanel() {
-    var tabState = useState("packs");
+  function ConfigurationPanel(props) {
+    var tabState = useState(props.section || "packs");
     var tab = tabState[0];
     var setTab = tabState[1];
+
+    useEffect(function () {
+      if (props.section) setTab(props.section);
+    }, [props.section]);
 
     return createElement(
       "section",
@@ -1365,13 +1438,146 @@
           type: "button", role: "tab", "aria-selected": tab === "checkouts",
           className: tab === "checkouts" ? "is-selected" : "",
           onClick: function () { setTab("checkouts"); }
-        }, "Checkouts")
+        }, "Checkouts"),
+        createElement("button", {
+          type: "button", role: "tab", "aria-selected": tab === "constraints",
+          className: tab === "constraints" ? "is-selected" : "",
+          onClick: function () { setTab("constraints"); }
+        }, "Constraints")
       ),
       tab === "packs"
         ? createElement(PackBrowser)
         : tab === "github-projects"
           ? createElement(GitHubProjectLinksPanel)
-          : createElement(CheckoutManagerPanel)
+          : tab === "checkouts"
+            ? createElement(CheckoutManagerPanel)
+            : createElement(ConstraintAuthoringPanel, {
+                returnToStart: props.returnToStart,
+                onReturnSource: props.onReturnSource
+              })
+    );
+  }
+
+  function ConstraintAuthoringPanel(props) {
+    var workflowsState = useState(undefined);
+    var workflows = workflowsState[0];
+    var setWorkflows = workflowsState[1];
+    var prerequisitesState = useState(undefined);
+    var prerequisites = prerequisitesState[0];
+    var setPrerequisites = prerequisitesState[1];
+    var sourcesState = useState(undefined);
+    var sources = sourcesState[0];
+    var setSources = sourcesState[1];
+    var selectedWorkflowState = useState(null);
+    var selectedWorkflow = selectedWorkflowState[0];
+    var setSelectedWorkflow = selectedWorkflowState[1];
+    var selectedSourceState = useState(null);
+    var selectedSource = selectedSourceState[0];
+    var setSelectedSource = selectedSourceState[1];
+    var errorState = useState("");
+    var error = errorState[0];
+    var setError = errorState[1];
+
+    function refresh() {
+      setError("");
+      return Promise.all([buildWorkflows(), buildConstraintPrerequisites(), buildConstraintSources()])
+        .then(function (values) {
+          setWorkflows(values[0] === null ? [] : values[0]);
+          setPrerequisites(values[1]);
+          setSources(values[2]);
+        })
+        .catch(function (caught) {
+          setError(errorText(caught));
+          setWorkflows([]);
+          setPrerequisites(null);
+          setSources([]);
+          throw caught;
+        });
+    }
+
+    useEffect(function () { refresh().catch(function () {}); }, []);
+
+    function selectWorkflow(workflow) {
+      setError("");
+      buildWorkflowDetail(workflow.workflow_id).then(function (detail) {
+        if (!detail || !detail.workflow) {
+          setError("Workflow details are unavailable.");
+          return;
+        }
+        setSelectedWorkflow({ workflow: detail.workflow, constraints: detail.constraints });
+      }).catch(function (caught) { setError(errorText(caught)); });
+    }
+
+    function selectSource(source) {
+      setError("");
+      buildConstraintSource(source.name).then(function (detail) {
+        setSelectedSource(detail);
+      }).catch(function (caught) { setSelectedSource(null); setError(errorText(caught)); });
+    }
+
+    return createElement("section", { className: "daidala-config", "data-testid": "daidala-constraint-authoring" },
+      createElement("header", { className: "daidala-config-header" },
+        createElement("div", null,
+          createElement("h2", null, "Constraints"),
+          createElement("p", { className: "daidala-workflow-meta" },
+            "Reusable sources are read-only. Workflow changes use preview, displayed digest, and explicit confirmation."
+          )
+        ),
+        createElement("button", { type: "button", onClick: function () { refresh().catch(function () {}); } }, "Refresh constraints")
+      ),
+      error ? createElement("p", { className: "daidala-banner daidala-banner-error" }, error) : null,
+      workflows === undefined || sources === undefined || prerequisites === undefined
+        ? createElement("p", { className: "daidala-state daidala-state-loading" }, "Loading constraint inventory")
+        : createElement(React.Fragment, null,
+            createElement("section", { className: "daidala-constraint-source-browser" },
+              createElement("h3", null, "Reusable policy sources"),
+              sources.length
+                ? createElement("div", { className: "daidala-config-actions" }, sources.map(function (source) {
+                    return createElement("button", { key: source.name, type: "button", onClick: function () { selectSource(source); } }, source.name);
+                  }))
+                : createElement("p", { className: "daidala-workflow-meta" }, "No reusable policy sources are installed."),
+              selectedSource ? selectedSource.available
+                ? createElement("article", { className: "daidala-skill-document", "data-testid": "daidala-constraint-source" },
+                    createElement("h4", null, selectedSource.source.name + " · reusable policy source"),
+                    createElement("p", { className: "daidala-skill-digest" }, "Verified digest " + selectedSource.source.digest),
+                    createElement("pre", null, selectedSource.skill_markdown),
+                    props.returnToStart && props.onReturnSource
+                      ? createElement("button", { type: "button", onClick: function () { props.onReturnSource(selectedSource.source); } }, "Use selected source in Start draft")
+                      : null
+                  )
+                : createElement("p", { className: "daidala-banner daidala-banner-error" }, selectedSource.reason || "Selected source is unavailable.")
+                : null
+            ),
+            createElement("section", { className: "daidala-constraint-workflow-selector" },
+              createElement("h3", null, "Workflow policy maintenance"),
+              workflows.length
+                ? workflows.map(function (workflow) {
+                    var isNew = !workflow.current_constraints_digest;
+                    return createElement("article", { className: "daidala-github-project-card", key: workflow.workflow_id },
+                      createElement("h4", null, workflow.workflow_id),
+                      createElement("p", { className: "daidala-workflow-meta" },
+                        isNew ? "No current constraint identity." : "Current digest " + workflow.current_constraints_digest
+                      ),
+                      createElement("button", { type: "button", onClick: function () { selectWorkflow(workflow); } }, isNew ? "New workflow constraints" : "Edit constraints")
+                    );
+                  })
+                : createElement("p", { className: "daidala-workflow-meta" }, "No existing workflows. Start workflow owns authoring before creation."),
+              selectedWorkflow
+                ? createElement(ConstraintEditor, {
+                    key: selectedWorkflow.workflow.workflow_id + ":" + (selectedWorkflow.workflow.current_constraints_digest || "new"),
+                    workflow: selectedWorkflow.workflow,
+                    constraints: selectedWorkflow.constraints,
+                    source: selectedSource,
+                    template: prerequisites.constraint_template,
+                    schemaLimits: prerequisites.schema_limits,
+                    onApplied: function () {
+                      setSelectedWorkflow(null);
+                      refresh().catch(function () {});
+                    }
+                  })
+                : null
+            )
+          )
     );
   }
 
@@ -2317,6 +2523,20 @@
       return function () { window.removeEventListener("popstate", refreshReturnedInventory); };
     }, []);
 
+    useEffect(function () {
+      if (!props.returnedSource) return;
+      setForm(function (current) {
+        return Object.assign({}, current, {
+          constraint_kind: "skill",
+          constraints_skill: props.returnedSource.name,
+          constraints_skill_digest: props.returnedSource.digest
+        });
+      });
+      setReadiness(null); setPreview(null); setConfirmed(false); setError("");
+      setMessage("Selected policy source returned to this browser-only Start draft. Review and preview it before starting.");
+      props.onSourceApplied();
+    }, [props.returnedSource]);
+
     function change(field, value) {
       setForm(function (current) {
         return Object.assign({}, current, (function () { var patch = {}; patch[field] = value; return patch; })());
@@ -2553,6 +2773,7 @@
     var _b = useState(initialRoute.workflowId), openWorkflowId = _b[0], setOpenWorkflowId = _b[1];
     var _c = useState(""), startNotice = _c[0], setStartNotice = _c[1];
     var _d = useState(initialRoute), route = _d[0], setRoute = _d[1];
+    var returnedSourceState = useState(null), returnedSource = returnedSourceState[0], setReturnedSource = returnedSourceState[1];
 
     useEffect(function () {
       function syncRoute() {
@@ -2577,6 +2798,12 @@
     function refreshAll() {
       health.refresh();
       workflowsState.refresh();
+    }
+
+    function returnSourceToStart(source) {
+      setReturnedSource(source);
+      window.history.pushState({}, "", "/daidala?return=start-workflow");
+      window.dispatchEvent(new PopStateEvent("popstate"));
     }
 
     var detailStates = {};
@@ -2633,21 +2860,30 @@
           : null
       ),
       starting
-        ? createElement(StartWorkflow, {
-            onClose: function () { setStarting(false); },
-            onStarted: function (workflowId) {
-              setOpenWorkflowId(workflowId);
-              setStartNotice("Workflow started. Keep the gateway running and watch define, then plan.");
-              setStarting(false);
-              workflowsState.refresh();
-            },
-            onExisting: function (workflowId) {
-              setOpenWorkflowId(workflowId);
-              setStartNotice("Workflow already existed. Opened it without creating a second workflow.");
-              setStarting(false);
-              workflowsState.refresh();
-            }
-          })
+        ? createElement(React.Fragment, null,
+            route.section ? createElement(ConfigurationPanel, {
+              section: route.section,
+              returnToStart: route.returnToStart,
+              onReturnSource: returnSourceToStart
+            }) : null,
+            createElement(StartWorkflow, {
+              onClose: function () { setStarting(false); },
+              returnedSource: returnedSource,
+              onSourceApplied: function () { setReturnedSource(null); },
+              onStarted: function (workflowId) {
+                setOpenWorkflowId(workflowId);
+                setStartNotice("Workflow started. Keep the gateway running and watch define, then plan.");
+                setStarting(false);
+                workflowsState.refresh();
+              },
+              onExisting: function (workflowId) {
+                setOpenWorkflowId(workflowId);
+                setStartNotice("Workflow already existed. Opened it without creating a second workflow.");
+                setStarting(false);
+                workflowsState.refresh();
+              }
+            })
+          )
         : createElement(React.Fragment, null,
       openWorkflowId
         ? createElement("section", { className: "daidala-workflows", "data-testid": "daidala-opened-workflow" },
@@ -2660,7 +2896,7 @@
             })
           )
         : null,
-      createElement(ConfigurationPanel),
+      createElement(ConfigurationPanel, { section: route.section }),
       firstLoad
         ? createElement(
             "p",

@@ -19,7 +19,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `service.py` | Repository preflight, approval-gated graph, artifact and changed-path evidence reads, structured-review, attended-disposition, retryable plan-revision, worktree, and ledger coordination. |
 | `skills.py` | Exact installed-skill inventory, content-digest verification, and mutation-free install planning. |
 | `pack_service.py` | Typed pack validation, readiness, bounded declared-skill content, preview-digest, and confirmed external-skill installation service shared by CLI and dashboard adapters. |
-| `constraints.py` | Strict workflow-constraint YAML parsing, canonicalization, bounds, and digest identity. |
+| `constraints.py` | Strict workflow-constraint YAML parsing, canonicalization, bounds, digest identity, and the runtime starter template. |
 | `projects.py` | Strict committed project-manifest parsing, canonical identity, verification declarations, and mutation policy. |
 | `registrations.py` | Trusted profile-local project registration v2, exact attended-delivery destination, limits, manifest binding, and storage path. |
 | `profile_files.py` | Atomic mode-`0600` profile-local file replacement without symlink traversal. |
@@ -47,7 +47,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
 | `packs.py` | Pack loading and deterministic validation. |
 | `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle and attended-review dispatch, pack operations, dry-run-first project-cycle operations, exact preview-digest apply gates, bounded inspection output, and subprocess mutation boundary. |
-| `dashboard_backend.py` | Profile-safe dashboard read model, live Kanban snapshots, single-ledger exact plan/review evidence projections, constraint previews, and typed compare-and-swap replacement adapter. |
+| `dashboard_backend.py` | Profile-safe dashboard read model, live Kanban snapshots, single-ledger exact plan/review evidence projections, runtime constraint-template and limit projection, constraint previews, and typed compare-and-swap replacement adapter. |
 | `recommendations.py` | Pure finite pending-decision and next-action derivation from ledger facts and live Kanban snapshots. |
 | `setup_wizard.py` | Typed setup preview, confirmation gate, and documented Hermes board/profile inventory commands with bounded long-name table parsing. |
 | `packs/` | Skill-set-specific lifecycle mappings. |

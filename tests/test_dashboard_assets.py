@@ -121,9 +121,43 @@ def test_bundle_exposes_manual_refresh() -> None:
     assert '"Preview mutations"' not in source
     assert '"Start workflow"' in source
     assert '"Preview constraint change"' in source
-    assert '"Replace constraints"' in source
+    assert '"Apply replacement"' in source
     assert '"No semantic change; replacement is unnecessary."' in source
     assert "expected_current_digest" in source
+
+
+def test_bundle_exposes_schema_aware_constraint_authoring_and_source_selection() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    required_strings = (
+        'API_BASE + "/constraints/sources"',
+        '"/constraints/sources/" + encodeURIComponent(name)',
+        "Constraints",
+        "Reusable policy sources",
+        "Workflow policy maintenance",
+        "New workflow constraints",
+        "Edit constraints",
+        "create with null current digest",
+        "Insert schema skeleton",
+        "Copy selected template into draft",
+        "Use as reference skill",
+        "Create constraints",
+        "Apply replacement",
+        "Use selected source in Start draft",
+        "canonical_content",
+        "Preview digest ",
+        "worker card body 8192 characters",
+        "expected_current_digest: currentDigest",
+        "constraint_template",
+        "schemaLimits",
+    )
+    for text in required_strings:
+        assert text in source, f"missing constraint authoring contract text: {text}"
+
+    assert 'data-testid": "daidala-constraint-authoring"' in source
+    assert 'data-testid": "daidala-constraint-source"' in source
+    assert "innerHTML" not in source
+    assert "constraints/sources/{path}" not in source
 
 
 def test_bundle_exposes_pack_inventory_readiness_content_and_confirmed_install() -> None:

@@ -109,6 +109,8 @@ def test_router_exports_all_phase_two_routes() -> None:
         "recommendations",
         "constraint_preview",
         "constraint_replace",
+        "constraint_sources",
+        "constraint_source_detail",
         "wizard_inventory",
         "wizard_board_preview",
         "wizard_create_board",
@@ -968,7 +970,10 @@ def test_wizard_inventory_exposes_profile_policy_sources_and_only_mounted_regist
     skills = tmp_path / "skills"
     (skills / "policy-source").mkdir(parents=True)
     (skills / "policy-source" / "SKILL.md").write_text(
-        "---\nname: policy-source\n---\n",
+        "---\nname: policy-source\n---\n```yaml\n"
+        "schema: daidala.workflow-constraints/v1\n"
+        "global: [Preserve approved scope.]\n"
+        "```\n",
         encoding="utf-8",
     )
     api.__dict__["resolve_data_root"] = lambda: tmp_path
@@ -988,6 +993,64 @@ def test_wizard_inventory_exposes_profile_policy_sources_and_only_mounted_regist
         {"name": "policy-source", "digest": payload["policy_sources"][0]["digest"]}
     ]
     assert len(payload["policy_sources"][0]["digest"]) == 64
+
+
+def test_constraint_source_routes_expose_only_valid_bounded_policy_skills(
+    tmp_path: Path,
+) -> None:
+    api = load_api()
+    skills = tmp_path / "skills"
+    policy = skills / "policy-source"
+    policy.mkdir(parents=True)
+    markdown = (
+        "---\nname: policy-source\n---\n```yaml\n"
+        "schema: daidala.workflow-constraints/v1\n"
+        "global: [Preserve approved scope.]\n"
+        "```\n"
+    )
+    (policy / "SKILL.md").write_text(markdown, encoding="utf-8")
+    non_policy = skills / "non-policy"
+    non_policy.mkdir()
+    (non_policy / "SKILL.md").write_text("---\nname: non-policy\n---\n", encoding="utf-8")
+    api.__dict__["resolve_data_root"] = lambda: tmp_path
+
+    listed = api.constraint_sources()
+    detail = api.constraint_source_detail("policy-source")
+
+    assert listed["sources"] == [{"name": "policy-source", "digest": detail["source"]["digest"]}]
+    assert detail == {
+        "available": True,
+        "source": listed["sources"][0],
+        "skill_markdown": markdown,
+        "canonical_content": (
+            '{"global":["Preserve approved scope."],'
+            '"schema":"daidala.workflow-constraints/v1"}'
+        ),
+    }
+    with pytest.raises(FakeHTTPException) as raised:
+        api.constraint_source_detail("non-policy")
+    assert raised.value.status_code == 404
+
+
+def test_oversized_constraint_source_detail_is_sanitized(tmp_path: Path) -> None:
+    api = load_api()
+    source = tmp_path / "skills" / "oversized-policy"
+    source.mkdir(parents=True)
+    source.joinpath("SKILL.md").write_text(
+        "---\n" + ("x" * api.MAX_SKILL_DOCUMENT_BYTES) + "\n---\n```yaml\n"
+        "schema: daidala.workflow-constraints/v1\n"
+        "global: [Preserve approved scope.]\n"
+        "```\n",
+        encoding="utf-8",
+    )
+    api.__dict__["resolve_data_root"] = lambda: tmp_path
+
+    detail = api.constraint_source_detail("oversized-policy")
+
+    assert detail["available"] is False
+    assert detail["source"]["name"] == "oversized-policy"
+    assert detail["reason"] == "policy source document exceeds the 1 MiB response bound"
+    assert "skill_markdown" not in detail
 
 
 def test_board_creation_requires_explicit_slug_and_display_name() -> None:

@@ -23,6 +23,7 @@ from typing import Any, cast
 
 from .constraints import (
     CONSTRAINTS_SCHEMA,
+    DEFAULT_CONSTRAINT_TEMPLATE,
     MAX_CANONICAL_BYTES,
     MAX_CONSTRAINT_BYTES,
     MAX_CONSTRAINTS_PER_SCOPE,
@@ -171,6 +172,11 @@ class DashboardBackend:
                 "constraint_bytes": MAX_CONSTRAINT_BYTES,
                 "canonical_bytes": MAX_CANONICAL_BYTES,
                 "schema": CONSTRAINTS_SCHEMA,
+            },
+            "constraint_template": {
+                "kind": "yaml-template",
+                "source": "docs/14-workflow-constraints.md#starter-template",
+                "content": DEFAULT_CONSTRAINT_TEMPLATE,
             },
         }
 

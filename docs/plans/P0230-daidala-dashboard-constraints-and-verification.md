@@ -18,7 +18,7 @@
 
 **Produces:** schema-aware maintenance and creation of workflow constraint revisions, with exact reusable templates copied into mutable drafts, a read-only configuration verification panel, and synchronized phase-local DOX and route inventories
 
-**Status:** pending — blocked until P0220 completes and human implementation approval is recorded
+**Status:** in-progress — Phase 0 complete on `feat/dashboard-constraint-authoring`; Phase 1 remains pending
 
 ## Goal
 
@@ -35,7 +35,7 @@ Add bounded constraint authoring and read-only configuration verification withou
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Add constraint authoring UI | pending | The UI edits an existing workflow revision by its displayed digest or creates a null-digest revision for a workflow with no current identity; a reusable template may prefill a mutable draft without mutation; preview/confirm compare-and-swap semantics remain unchanged |
+| 0 | Add constraint authoring UI | done (`python -m pytest`: 573 passed; `lefthook validate`; `ruff check .`; `python -m build`; `twine check`; release-content check) | The UI edits an existing workflow revision by its displayed digest or creates a null-digest revision for a workflow with no current identity; a reusable template may prefill a mutable draft without mutation; preview/confirm compare-and-swap semantics remain unchanged |
 | 1 | Add configuration verification panel | pending | The panel remains read-only and verifies persisted root, TTL, registration, checkout, and Projects-link state without exposing secrets/private destinations or supervising a workflow |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.

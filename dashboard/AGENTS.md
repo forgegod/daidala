@@ -12,12 +12,14 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   exact attended review preview/apply routes, workflow-owned card comment/unblock,
   cancellation preview/apply routes, registration projections, checkout-root and
   checkout lifecycle preview/apply, and GitHub Projects v2 link read/verify/
-  preview/apply routes.
+  preview/apply routes, and read-only reusable constraint-source list/detail
+  routes.
 - `dist/index.js` renders workflow progress, the inventory-backed Start workflow
-  wizard, Config → Packs readiness/content, GitHub Projects v2 links, and confirmed
-  checkout refresh/adoption/backup-pruning/policy controls; decision-first
-  supervision; exact-plan approval; literal source-bound review evidence/
-  disposition; blocked-card remediation; and previewed cancellation.
+  wizard, Config → Packs readiness/content, GitHub Projects v2 links,
+  constraint source selection and schema-aware authoring, and confirmed checkout
+  refresh/adoption/backup-pruning/policy controls; decision-first supervision;
+  exact-plan approval; literal source-bound review evidence/disposition;
+  blocked-card remediation; and previewed cancellation.
 - `dist/style.css` adapts the extension to host themes and narrow layouts.
 
 ## Local Contracts
@@ -80,6 +82,11 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   checkout, credential, or filesystem path.
 - Constraint preview is non-mutating; replacement requires the displayed current
   digest and explicit invalidation confirmation.
+- Constraint-source list/detail routes accept only exact inventory names. They
+  expose only installed skills with a complete valid reusable-policy document;
+  details render literal `SKILL.md` content only up to 1 MiB and otherwise return
+  a sanitized unavailable state. Source selection copies only into a browser draft
+  or explicit Start return context and cannot mutate a source.
 - Poll no faster than every five seconds while visible, stop while hidden, and retain manual refresh.
 - Treat API responses as snapshots; never authorize workflow operations from client state.
 - After setup or exact-ID reopen, render the selected workflow from its fresh

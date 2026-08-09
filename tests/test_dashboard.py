@@ -6,6 +6,7 @@ import json
 from types import SimpleNamespace
 from typing import Any, cast
 
+from daidala.constraints import DEFAULT_CONSTRAINT_TEMPLATE
 from daidala.dashboard_backend import (
     DashboardBackend,
     _approval_review_packet,
@@ -145,6 +146,21 @@ def test_timeline_inserts_distinct_non_kanban_approval_gate() -> None:
     assert rows[plan_index]["card_id"] == "t_plan"
 
 
+def test_prerequisites_project_the_exact_runtime_constraint_template() -> None:
+    class Store:
+        def list_all(self) -> list[object]:
+            return []
+
+    service = SimpleNamespace(store=Store())
+    backend = DashboardBackend(service_factory=cast(Any, lambda: service))
+
+    payload = backend.prerequisites()
+
+    assert payload["constraint_template"] == {
+        "kind": "yaml-template",
+        "source": "docs/14-workflow-constraints.md#starter-template",
+        "content": DEFAULT_CONSTRAINT_TEMPLATE,
+    }
 def test_timeline_inserts_distinct_non_kanban_review_gate() -> None:
     rows = _workflow_timeline(
         _ledger(review=SimpleNamespace(digest="a" * 64)),
