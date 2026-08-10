@@ -17,7 +17,8 @@ Repeating the confirmed request reuses the same workflow and Kanban graph.
 
 ## 1. Check the prerequisites
 
-Use exact Hermes Agent v0.18.2 or v0.19.0 within `>=0.18.2,<0.20.0`. The target
+Use exact Hermes Agent v0.18.2, v0.19.0, or v0.20.0 within
+`>=0.18.2,<0.21.0`. The target
 must be a clean local Git repository. Run these commands in the Hermes profile
 that will own the workflow:
 

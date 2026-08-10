@@ -9,10 +9,10 @@ workflow:
   allowed_packs:
     - name: addyosmani
       source_revision: 7ce442de03ddc1b72480c3b48d55c62880ea2a90
-      content_digest: b9658b5e35ff295b45ab757505893c8244cf8606067d78148a85f41425727c95
+      content_digest: 915da76417dbd9ddaee76a4da08ca46e96e72165d99949bbab3937c5dbca2551
     - name: aidlc
       source_revision: e49341dbeb8af82758dd85e96ed7fe9bcf38a447
-      content_digest: 74c58cda627597b5fad3f42508a1e140f4505d4e07b69a8c8e6e7f220c30dd17
+      content_digest: 70b678f522c3d19fe3a5455ceb5435fa7aff3613e0aff4ad90347dcf3ab626a8
   default_pack: addyosmani
   default_constraints:
     source: .daidala/constraints.yaml

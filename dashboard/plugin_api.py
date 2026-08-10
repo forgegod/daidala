@@ -188,7 +188,7 @@ ServiceFactory = Callable[[], Any]
 PackServiceFactory = Callable[[], PackService]
 _default_service_lock = Lock()
 _DASHBOARD_REVIEW_ACTOR = "dashboard:attended-operator"
-_SUPPORTED_HERMES_RANGE = ">=0.18.2,<0.20.0"
+_SUPPORTED_HERMES_RANGE = ">=0.18.2,<0.21.0"
 
 
 @lru_cache(maxsize=1)

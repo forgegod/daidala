@@ -141,10 +141,11 @@ as normalized JSON and computes SHA-256 over the canonical UTF-8 bytes. List
 order and the parsed scalar content are meaningful; scalar style, indentation,
 and mapping order are not.
 
-The exact supported Hermes v0.18.2 and v0.19.0 hosts store the complete Kanban
-task body but preserve only the first 8,192 Python characters in worker context,
-with visible truncation for larger bodies. This is a worker-context visibility
-limit, not a card-storage rejection. Although the upstream constant is named in
+The exact supported Hermes v0.18.2, v0.19.0, and v0.20.0 hosts store the
+complete Kanban task body but preserve only the first 8,192 Python characters in
+worker context, with visible truncation for larger bodies. This is a
+worker-context visibility limit, not a card-storage rejection. Although the
+upstream constant is named in
 bytes, the host applies it with Python string length and slicing. Daidala
 therefore rejects any fully rendered card body over 8,192 characters. The
 smaller canonical-content limit leaves room for workflow identity, goal, pack,

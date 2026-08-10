@@ -184,9 +184,10 @@ declaring a second operational status.
 ## Release host compatibility
 
 Hermes stores Kanban task bodies independently of their worker-context
-projection. The exact supported v0.18.2 and v0.19.0 hosts preserve a task body
-through 8,192 Python characters in worker context and visibly truncate larger
-bodies. This is a worker-context visibility limit, not a card-storage rejection.
+projection. The exact supported v0.18.2, v0.19.0, and v0.20.0 hosts preserve a
+task body through 8,192 Python characters in worker context and visibly truncate
+larger bodies. This is a worker-context visibility limit, not a card-storage
+rejection.
 Although the upstream constant is named in bytes, the host implementation uses
 Python string length and slicing, so the observed boundary is characters.
 Daidala therefore limits canonical constraints to 4,096 UTF-8 bytes and rejects

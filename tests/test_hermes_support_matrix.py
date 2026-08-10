@@ -209,14 +209,28 @@ def test_matrix_accepts_directory_discovery_without_duplicate_admission() -> Non
     module._validate_probe("probe_hermes_plugin_compatibility.py", payload)
 
 
-def test_matrix_rejects_missing_literal_confirmation() -> None:
+def test_matrix_accepts_dashboard_literal_confirmation_evidence() -> None:
+    module = load_matrix()
+    payload = {
+        "success": True,
+        "setup": {
+            "preview_readiness_status": 409,
+            "unconfirmed_start_status": 400,
+            "state_unchanged": True,
+        },
+    }
+
+    module._validate_probe("probe_hermes_dashboard_compatibility.py", payload)
+
+
+def test_matrix_rejects_stale_dashboard_confirmation_evidence() -> None:
     module = load_matrix()
     payload = {
         "success": True,
         "setup": {
             "preview_confirmed": False,
-            "unconfirmed_start_status": 200,
-            "state_unchanged": False,
+            "unconfirmed_start_status": 400,
+            "state_unchanged": True,
         },
     }
 
@@ -338,7 +352,7 @@ def test_matrix_runs_entrypoint_and_directory_probes_twice_per_host(
                 {
                     "success": True,
                     "setup": {
-                        "preview_confirmed": False,
+                        "preview_readiness_status": 409,
                         "unconfirmed_start_status": 400,
                         "state_unchanged": True,
                     },

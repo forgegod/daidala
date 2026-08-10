@@ -22,7 +22,7 @@ state = json.loads(state_path.read_text()) if state_path.exists() else {"tasks":
 if args == ["--version"]:
     build_revision = os.environ.get(
         "FAKE_BUILD_REVISION",
-        "3ef6bbd201263d354fd83ec55b3c306ded2eb72a",
+        "3c27eb6234bf91b8ceee9e9071591b31e9b148cb",
     )
     Path(__file__).with_name(".hermes_build_sha").write_text(build_revision)
     mode = os.environ.get("FAKE_VERSION_MODE", "ok")
@@ -31,9 +31,9 @@ if args == ["--version"]:
     elif mode == "baseline":
         print("Hermes Agent v0.18.2 (2026.7.7.2) · upstream 4281151a")
     elif mode == "changed":
-        print("Hermes Agent v0.19.0 (2026.8.1) · upstream deadbeef")
+        print("Hermes Agent v0.20.0 (2026.8.4) · upstream deadbeef")
     else:
-        print("Hermes Agent v0.19.0 (2026.7.20) · upstream 8eaaa502")
+        print("Hermes Agent v0.20.0 (2026.8.3) · upstream 8eaaa502")
     raise SystemExit(0)
 
 if args[:2] == ["kanban", "boards"] or args[-1:] == ["init"]:
@@ -96,9 +96,9 @@ def test_probe_parses_supported_host_and_cleans_isolated_home(tmp_path: Path) ->
     payload = json.loads(result.stdout)
     assert payload["success"] is True
     assert payload["hermes"] == {
-        "semver": "0.19.0",
-        "build": "2026.7.20",
-        "revision": "3ef6bbd201263d354fd83ec55b3c306ded2eb72a",
+        "semver": "0.20.0",
+        "build": "2026.8.3",
+        "revision": "3c27eb6234bf91b8ceee9e9071591b31e9b148cb",
         "revision_source": "build-metadata",
     }
     assert payload["skill"]["name"] == "policy-probe"
@@ -112,7 +112,7 @@ def test_probe_rejects_changed_supported_host_identity(tmp_path: Path) -> None:
 
     assert result.returncode == 1
     assert "unsupported Hermes identity" in result.stderr
-    assert "0.19.0" in result.stderr
+    assert "0.20.0" in result.stderr
 
 
 def test_probe_accepts_one_complete_explicit_baseline_identity(tmp_path: Path) -> None:

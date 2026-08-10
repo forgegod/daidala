@@ -19,7 +19,7 @@ if args == ["--version"]:
     if os.environ.get("FAKE_VERSION_MODE") == "baseline":
         print("Hermes Agent v0.18.2 (2026.7.7.2) · upstream 4281151a")
     else:
-        print("Hermes Agent v0.19.0 (2026.7.20) · upstream 3ef6bbd2")
+        print("Hermes Agent v0.20.0 (2026.8.3) · upstream 3c27eb62")
     raise SystemExit(0)
 
 if args == ["plugins", "list", "--enabled", "--json"]:
@@ -161,7 +161,7 @@ def run_probe(
     (tmp_path / ".hermes_build_sha").write_text(
         environment.get(
             "FAKE_BUILD_REVISION",
-            "3ef6bbd201263d354fd83ec55b3c306ded2eb72a",
+            "3c27eb6234bf91b8ceee9e9071591b31e9b148cb",
         ),
         encoding="utf-8",
     )
@@ -194,9 +194,9 @@ def test_probe_loads_plugin_and_compares_native_standalone_packs(tmp_path: Path)
     payload = json.loads(result.stdout)
     assert payload["success"] is True
     assert payload["hermes"] == {
-        "semver": "0.19.0",
-        "build": "2026.7.20",
-        "revision": "3ef6bbd201263d354fd83ec55b3c306ded2eb72a",
+        "semver": "0.20.0",
+        "build": "2026.8.3",
+        "revision": "3c27eb6234bf91b8ceee9e9071591b31e9b148cb",
         "revision_source": "build-metadata",
     }
     assert payload["plugin"] == {

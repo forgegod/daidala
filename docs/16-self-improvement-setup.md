@@ -11,8 +11,8 @@ This document does not authorize a cycle, implementation, retention, commit,
 push, publication, release, or runtime promotion. Those remain separate gates
 in the [self-improvement flow](15-self-improvement.md).
 
-Daidala supports exact Hermes v0.18.2 and v0.19.0 hosts within
-`>=0.18.2,<0.20.0`. Commands and identities later in this guide remain observed
+Daidala supports exact Hermes v0.18.2, v0.19.0, and v0.20.0 hosts within
+`>=0.18.2,<0.21.0`. Commands and identities later in this guide remain observed
 controller prerequisites; support policy does not imply that controller was
 upgraded or promoted.
 

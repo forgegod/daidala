@@ -83,7 +83,7 @@ flowchart LR
 
 Prerequisites:
 
-- Hermes Agent v0.18.2 or v0.19.0 within `>=0.18.2,<0.20.0`;
+- exact Hermes Agent v0.18.2, v0.19.0, or v0.20.0 within `>=0.18.2,<0.21.0`;
 - Daidala installed and enabled in the profile that owns the workflow;
 - an existing named Kanban board;
 - the selected pack's exact skills installed in every assigned worker profile;
@@ -165,8 +165,8 @@ instead of asking Hermes goal decomposition to choose an orchestrator profile.
 
 ## Support and limits
 
-- Supported hosts: exact Hermes Agent v0.18.2 and v0.19.0 on Python 3.11,
-  bounded by `>=0.18.2,<0.20.0` for local/single-host installations.
+- Supported hosts: exact Hermes Agent v0.18.2, v0.19.0, and v0.20.0 on Python
+  3.11, bounded by `>=0.18.2,<0.21.0` for local/single-host installations.
 - Public installation: `hermes plugins install forgegod/daidala --enable` is
   verified from merged remote `main` on a fresh Hermes v0.19.0 profile.
 - Supported entry points: native `hermes daidala`, standalone diagnostics,
@@ -186,7 +186,7 @@ compatibility evidence are recorded in the
 [Hermes integration guide](docs/08-hermes-integration.md); development commands
 and repository verification live in [AGENTS.md](AGENTS.md).
 Release maintainers run the compatibility matrix in `scripts/`; the release
-workflow verifies one exact wheel twice on both supported Hermes hosts for
+workflow verifies one exact wheel twice on all three supported Hermes hosts for
 version tags and explicit manual dispatches.
 
 ```bash

@@ -10,7 +10,7 @@ def test_live_probe_runs_only_for_tags_and_manual_dispatch() -> None:
     assert "if: github.event_name == 'workflow_dispatch' || startsWith(" in job
     assert "github.ref, 'refs/tags/v'" in job
     assert "needs: [test, package]" in job
-    assert 'node-version: "22"' in job
+    assert 'node-version: "26"' in job
     assert (
         "git -C /tmp/hermes-v0182-source checkout "
         "4281151ae859241351ba14d8c7682dc67ff4c126"
@@ -35,7 +35,19 @@ def test_live_probe_runs_only_for_tags_and_manual_dispatch() -> None:
         "git -C /tmp/hermes-v0190-source remote set-url origin "
         "file:///tmp/hermes-v0190-pinned-origin"
     ) in job
-    assert job.count("npm ci --workspace web && npm run build -w web") == 2
+    assert (
+        "git -C /tmp/hermes-v0200-source checkout "
+        "3c27eb6234bf91b8ceee9e9071591b31e9b148cb"
+    ) in job
+    assert (
+        "git -C /tmp/hermes-v0200-source update-ref refs/remotes/origin/main "
+        "3c27eb6234bf91b8ceee9e9071591b31e9b148cb"
+    ) in job
+    assert (
+        "git -C /tmp/hermes-v0200-source remote set-url origin "
+        "file:///tmp/hermes-v0200-pinned-origin"
+    ) in job
+    assert job.count("npm ci --workspace web && npm run build -w web") == 3
     assert "python scripts/run_hermes_support_matrix.py" in job
     assert (
         "--host supported-v0182 0.18.2 2026.7.7.2 "
@@ -45,8 +57,13 @@ def test_live_probe_runs_only_for_tags_and_manual_dispatch() -> None:
         "--host supported-v0190 0.19.0 2026.7.20 "
         "3ef6bbd201263d354fd83ec55b3c306ded2eb72a"
     ) in job
+    assert (
+        "--host supported-v0200 0.20.0 2026.8.3 "
+        "3c27eb6234bf91b8ceee9e9071591b31e9b148cb"
+    ) in job
     assert "/tmp/hermes-v0182/bin/pip install /tmp/hermes-v0182-source" in job
     assert "/tmp/hermes-v0190/bin/pip install /tmp/hermes-v0190-source" in job
+    assert "/tmp/hermes-v0200/bin/pip install -e /tmp/hermes-v0200-source" in job
     assert 'v0182_purelib="$(/tmp/hermes-v0182/bin/python -c' in job
     assert (
         "4281151ae859241351ba14d8c7682dc67ff4c126 > "
@@ -57,7 +74,11 @@ def test_live_probe_runs_only_for_tags_and_manual_dispatch() -> None:
         "3ef6bbd201263d354fd83ec55b3c306ded2eb72a > "
         '"$v0190_purelib/.hermes_build_sha"'
     ) in job
-    assert "pip install -e /tmp/hermes" not in job
+    assert 'v0200_purelib="$(/tmp/hermes-v0200/bin/python -c' in job
+    assert (
+        "3c27eb6234bf91b8ceee9e9071591b31e9b148cb > "
+        '"$v0200_purelib/.hermes_build_sha"'
+    ) in job
     assert "python -m pip install -e ." not in job
     assert "github.event_name == 'push'" not in job
     assert "github.event_name == 'pull_request'" not in job

@@ -1,10 +1,10 @@
 # Hermes integration
 
 Daidala 0.2.0 is supported on exact Hermes Agent v0.18.2 (`2026.7.7.2`,
-upstream `4281151a`) and v0.19.0 (`2026.7.20`, upstream `3ef6bbd2`) on Python
-3.11.15. Both hosts are inside the bounded pack range `>=0.18.2,<0.20.0`. The
-proofs used one exact Daidala wheel and fresh `HERMES_HOME` directories without
-modifying the active Hermes profile.
+upstream `4281151a`), v0.19.0 (`2026.7.20`, upstream `3ef6bbd2`), and v0.20.0
+(`2026.8.3`, upstream `3c27eb62`) on Python 3.11.15. All three hosts are inside
+the bounded pack range `>=0.18.2,<0.21.0`. The proofs used exact Daidala wheels
+and fresh `HERMES_HOME` directories without modifying the active Hermes profile.
 
 This document records observed behavior. The current Hermes
 [plugin documentation](https://hermes-agent.nousresearch.com/docs/developer-guide/plugins)
@@ -192,20 +192,22 @@ All three probes accept `--expected-semver`, `--expected-build`, and
 `--expected-revision` only as one complete identity override. The revision is
 resolved from the executable's local Git `HEAD` or its `.hermes_build_sha` build
 metadata; the mutable `origin/main` value in the version banner is not identity
-evidence. Omitting all three retains the last-known-good v0.19.0 defaults. An
+evidence. Omitting all three uses the last-known-good v0.20.0 defaults. An
 entry point omitted from v0.18.2's public plugin inventory is retained as
 `reported: false`; native command loading must still pass. A reported plugin
 error or any native/standalone mismatch fails.
 
 `.github/workflows/release.yml` installs Hermes at full revisions
-`4281151ae859241351ba14d8c7682dc67ff4c126` and
-`3ef6bbd201263d354fd83ec55b3c306ded2eb72a`, then runs one exact-wheel matrix
+`4281151ae859241351ba14d8c7682dc67ff4c126`,
+`3ef6bbd201263d354fd83ec55b3c306ded2eb72a`, and
+`3c27eb6234bf91b8ceee9e9071591b31e9b148cb`, then runs one exact-wheel matrix
 only for `v*` tags or explicit `workflow_dispatch`, after normal test and package
 jobs pass. Ordinary branch pushes and pull requests do not pay the live-host
 cost. The release job pins each temporary checkout's local `origin/main`
 tracking ref and replaces its origin with an unavailable local URL so background
-update checks cannot change identity evidence. It builds both pinned hosts'
-`web` workspaces with Node 22 before dashboard probes use `--skip-build`.
+update checks cannot change identity evidence. It installs v0.20.0 editable
+because that source tree rejects wheel builds, and builds all three pinned hosts'
+`web` workspaces with Node 26 before dashboard probes use `--skip-build`.
 
 ## Operator CLI registration
 
@@ -300,19 +302,24 @@ clone on the pinned host.
 |---|---|---|---|---|---|---|
 | v0.18.2 (`2026.7.7.2`, `4281151a`) | Passed | Passed | Passed | Passed | Passed | Supported through public Git installation |
 | v0.19.0 (`2026.7.20`, `3ef6bbd2`) | Passed | Passed | Passed | Passed | Passed | Supported through public Git installation |
+| v0.20.0 (`2026.8.3`, `3c27eb62`) | Passed | Passed | Pending post-integration smoke | Passed | Passed | Supported through exact-wheel matrix |
 | Other versions | Not probed | Not probed | Not probed | Not probed | Not probed | Unsupported |
 
 - Hermes v0.18.2 and v0.19.0 passed repeated exact-wheel version, plugin, CLI,
   policy/Kanban/context, packaged-dashboard, setup/admission preview, cleanup,
   and controller-isolation probes. Comparison `c202459b…` is `compatible`.
-- Directory, entry-point, and public remote Git installation are verified.
+- Hermes v0.20.0 passed the same four-probe matrix twice at full source revision
+  `3c27eb6234bf91b8ceee9e9071591b31e9b148cb` with Daidala wheel SHA-256
+  `7b1ed90f928e4cdb4c369f6ceab6f682a4081dfceb233d9e8d72598e6b5a477f`.
+  Both repetitions were byte-identical. Its public remote Git installation
+  remains a post-integration release smoke because these changes are unpublished.
 - Plugin registration, approval-gated Kanban graph mapping, policy-ledger persistence,
   exact-skill and pinned-content gates, fresh worktrees, artifact capture,
   verification evidence, review, uncommitted delivery, shared native/standalone
   operator commands, dry-run/apply/check/update planning, and approval-gated
   idempotent Kanban graph dispatch, operator CLI graph creation, and worker
   recovery are implemented. Target commit/push remains unavailable.
-- Both bundled packs declare `>=0.18.2,<0.20.0`. Compatibility with another
+- Both bundled packs declare `>=0.18.2,<0.21.0`. Compatibility with another
   Hermes minor line must pass the complete matrix before widening that range.
 
 Daidala does not declare Hermes as a Python package dependency. Hermes is the

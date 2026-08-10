@@ -28,9 +28,9 @@ if args == ["--version"]:
     elif mode == "baseline":
         print("Hermes Agent v0.18.2 (2026.7.7.2) · upstream 4281151a")
     elif mode == "changed":
-        print("Hermes Agent v0.19.0 (2026.8.1) · upstream deadbeef")
+        print("Hermes Agent v0.20.0 (2026.8.4) · upstream deadbeef")
     else:
-        print("Hermes Agent v0.19.0 (2026.7.20) · upstream 3ef6bbd2")
+        print("Hermes Agent v0.20.0 (2026.8.3) · upstream 3c27eb62")
     raise SystemExit(0)
 
 if args[:1] == ["dashboard"]:
@@ -114,7 +114,7 @@ def run_probe(
     (tmp_path / ".hermes_build_sha").write_text(
         environment.get(
             "FAKE_BUILD_REVISION",
-            "3ef6bbd201263d354fd83ec55b3c306ded2eb72a",
+            "3c27eb6234bf91b8ceee9e9071591b31e9b148cb",
         ),
         encoding="utf-8",
     )
@@ -145,10 +145,10 @@ def test_probe_discovers_dashboard_plugin_and_serves_assets(tmp_path: Path) -> N
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
     assert payload["success"] is True
-    assert payload["hermes"]["semver"] == "0.19.0"
-    assert payload["hermes"]["build"] == "2026.7.20"
+    assert payload["hermes"]["semver"] == "0.20.0"
+    assert payload["hermes"]["build"] == "2026.8.3"
     assert payload["hermes"]["revision"] == (
-        "3ef6bbd201263d354fd83ec55b3c306ded2eb72a"
+        "3c27eb6234bf91b8ceee9e9071591b31e9b148cb"
     )
     assert payload["hermes"]["revision_source"] == "build-metadata"
     assert payload["plugin"]["tab"] == "/daidala"
@@ -182,7 +182,7 @@ def test_probe_rejects_changed_supported_host_identity(tmp_path: Path) -> None:
 
     assert result.returncode == 1
     assert "unsupported Hermes identity" in result.stderr
-    assert "0.19.0" in result.stderr
+    assert "0.20.0" in result.stderr
     assert not list(tmp_path.glob("daidala-dashboard-compat-*"))
 
 
@@ -238,7 +238,7 @@ def test_probe_rejects_manifest_drift(tmp_path: Path) -> None:
     )
     (fake_path / "hermes").chmod(0o755)
     (fake_path / ".hermes_build_sha").write_text(
-        "3ef6bbd201263d354fd83ec55b3c306ded2eb72a",
+        "3c27eb6234bf91b8ceee9e9071591b31e9b148cb",
         encoding="utf-8",
     )
 

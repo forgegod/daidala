@@ -181,7 +181,7 @@ def _validate_probe(probe: str, payload: Any) -> None:
         if not isinstance(setup, dict):
             raise MatrixError("dashboard probe omitted setup evidence")
         if setup != {
-            "preview_confirmed": False,
+            "preview_readiness_status": 409,
             "unconfirmed_start_status": 400,
             "state_unchanged": True,
         }:

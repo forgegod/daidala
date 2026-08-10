@@ -246,7 +246,7 @@ def test_dashboard_identity_sanitizes_missing_or_observed_host_metadata(
         "daidala_version": "0.2.0",
         "install_source": "unavailable",
         "hermes_version": "0.19.0",
-        "supported_hermes_range": ">=0.18.2,<0.20.0",
+        "supported_hermes_range": ">=0.18.2,<0.21.0",
     }
 
 
