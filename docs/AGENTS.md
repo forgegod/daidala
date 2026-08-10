@@ -2,7 +2,8 @@
 
 ## Purpose
 
-Own current architecture documentation, the numbered reading set, and executable implementation plans.
+Own current architecture documentation, the numbered reading set, product and
+change records, and historical implementation plans.
 
 ## Ownership
 
@@ -50,8 +51,11 @@ Own current architecture documentation, the numbered reading set, and executable
 - `evaluation-results/` owns versioned, redacted evaluation definitions and
   observed case records; its child contract prevents unrun behavior from being
   reported as evidence.
-- `plans/AGENTS.md` owns executable plans, shared family contracts, and their
-  repository-tracked UX design sources and review renders.
+- `product/AGENTS.md` owns current capability records and CAP-linked static
+  wireframes.
+- `changes/AGENTS.md` owns active material-change progress and archived receipts.
+- `plans/AGENTS.md` owns immutable historical plans, shared family contracts,
+  and their legacy UX design sources and review renders.
 
 ## Local Contracts
 
@@ -65,11 +69,17 @@ Own current architecture documentation, the numbered reading set, and executable
 - `16-self-improvement-setup.md` remains the single complete reproduction guide
   for controller setup, credentials, GitHub projection, gateway, evaluator,
   trusted evidence, and the ready-to-admit gate. Do not split required operator
-  steps into session history or implementation plans alone.
+  steps into session history or change records alone.
+- Capability records state current falsifiable behavior and link runtime source,
+  tests, and detailed documentation owners. Change records are the sole
+  repository-tracked progress authority for future material work.
+- Existing `plans/` content is historical. Do not add plans or rewrite their
+  recorded status to represent current work.
 
 ## Work Guidance
 
-- Move stable implemented contracts into normal architecture/operator docs rather than leaving the plan as the only source.
+- Move stable implemented contracts into normal architecture/operator docs and
+  summarize observable outcomes in the affected capability record.
 - Give new operators one user-centric, executable starting path before directing
   them to architecture or reference material. State what starts the workflow,
   what must remain running, what the user observes, and which action comes next.
@@ -79,6 +89,7 @@ Own current architecture documentation, the numbered reading set, and executable
 ## Verification
 
 ```bash
+python scripts/check_records.py .
 python scripts/check_md_links.py .
 ```
 
@@ -89,7 +100,9 @@ python scripts/check_md_links.py .
 
 | Child | Owns | Read when editing… |
 |---|---|---|
+| [`changes/AGENTS.md`](changes/AGENTS.md) | Active CHG progress and archived implementation receipts. | Material-change scope, sequencing, decisions, evidence, or closeout. |
 | [`evaluation-results/AGENTS.md`](evaluation-results/AGENTS.md) | Versioned experiment limits, stable cases, redacted evidence, and result records. | Evaluation definitions, statuses, evidence, or findings. |
-| [`plans/AGENTS.md`](plans/AGENTS.md) | Executable plans, shared plan-family contracts, Pen wireframe sources, and canonical review renders. | Plans, execution contracts, dashboard wireframes, or plan-owned PNG references. |
+| [`plans/AGENTS.md`](plans/AGENTS.md) | Historical plans, shared plan-family contracts, Pen wireframe sources, and review renders. | Historical provenance, execution contracts, or legacy plan-owned design assets. |
+| [`product/AGENTS.md`](product/AGENTS.md) | Current CAP behavior and CAP-linked static wireframes. | Capability outcomes, source/test evidence, or current screen references. |
 
 See [`/AGENTS.md`](../AGENTS.md).

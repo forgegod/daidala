@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "screens": [
+    {
+      "capability": "CAP-0003",
+      "slug": "CAP-0003-operator-dashboard",
+      "title": "Operator dashboard",
+      "html": "html/CAP-0003-operator-dashboard.html",
+      "png": "exports/CAP-0003-operator-dashboard.png",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      }
+    }
+  ]
+}

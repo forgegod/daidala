@@ -26,7 +26,10 @@
 
 Do not rely on memory. Re-read the applicable DOX chain in the current session before editing.
 
-Read the implementation plan under `docs/plans/` when changing architecture or scope.
+Read the affected capability under `docs/product/capabilities/` and the sole
+active change record under `docs/changes/active/` before changing material
+behavior, architecture, or scope. Files under `docs/plans/` are historical
+provenance, not mutable progress authority.
 
 ## Update After Editing
 
@@ -85,6 +88,7 @@ Default section order:
 Project verification:
 
 ```bash
+python scripts/check_records.py .
 lefthook validate
 pytest
 ruff check .
@@ -100,6 +104,10 @@ python scripts/check_release_contents.py . --wheel dist/*.whl
 When the user requests a durable behavior change, record it here or in the relevant child AGENTS.md.
 
 Project-wide durable preferences (style, workflow, conventions) live in user memory; this section is reserved for contract-level rules that bind every child doc.
+
+- Preserve existing `docs/plans/` files unchanged as historical information.
+  Future material work uses CAP records for current behavior and one active CHG
+  record for implementation progress.
 
 ## Architectural decisions
 
@@ -170,7 +178,8 @@ ALWAYS prefer MCP graph tools over grep/glob/file-search for code discovery.
 |---|---|---|
 | [`assets/AGENTS.md`](assets/AGENTS.md) | Brand source, generated visual assets, and bundled font licensing. | Logos, social cards, asset generation, or brand narrative. |
 | [`dashboard/AGENTS.md`](dashboard/AGENTS.md) | Optional Hermes dashboard manifest, backend router, browser assets, and UI contracts. | Dashboard routes, registration, JavaScript, CSS, or browser verification. |
-| [`docs/AGENTS.md`](docs/AGENTS.md) | Architecture and implementation plans. | Plans, decisions, roadmap, or operator documentation. |
+| [`docs/AGENTS.md`](docs/AGENTS.md) | Architecture, capability/change records, operator docs, and historical plans. | Product records, changes, historical plans, decisions, or operator documentation. |
 | [`scripts/AGENTS.md`](scripts/AGENTS.md) | Dependency-free development and repository verification utilities. | Verification scripts or durable development automation. |
+| [`skills/AGENTS.md`](skills/AGENTS.md) | Repository-owned application-record adoption skills. | Local skill contracts or migration methodology. |
 | [`tests/AGENTS.md`](tests/AGENTS.md) | Unit, package, and plugin-contract verification. | Tests or fixtures. |
 | [`daidala/AGENTS.md`](daidala/AGENTS.md) | Plugin registration, deterministic engine, pack resources, and bundled skills. | Runtime Python, tool schemas or handlers, packs, or bundled skills. |

@@ -1,0 +1,40 @@
+# Product capabilities
+
+Capability records describe material behavior that is implemented now. They are concise, falsifiable indexes into runtime source, executable tests, and detailed architecture or operator contracts; they are not implementation plans.
+
+## Current capabilities
+
+| Capability | Status | Primary surface |
+|---|---|---|
+| [CAP-0001 — Approval-gated workflow execution](capabilities/CAP-0001-approval-gated-workflow-execution.md) | implemented | none; presented by CAP-0003 |
+| [CAP-0002 — Git-pinned phased-plan admission](capabilities/CAP-0002-git-pinned-phased-plan-admission.md) | implemented | none; CLI and CAP-0003 adapters |
+| [CAP-0003 — Operator dashboard](capabilities/CAP-0003-operator-dashboard.md) | implemented | [wireframe index](wireframes/index.html) |
+
+## Capability contract
+
+- Use stable `CAP-NNNN` identities. Never reuse an ID.
+- State only present-tense, user- or operator-observable behavior.
+- Every implemented capability links runtime source and executable tests.
+- Link detailed architecture, security, and runbook owners instead of copying their contracts.
+- A primary human-facing screen or interaction links matching HTML and PNG artifacts under `wireframes/`.
+- Update a CAP only when material behavior changes. Internal refactors do not churn capability records.
+- Create or resume one active change record before implementing a material behavior change.
+
+## Canonical shape
+
+Each file under `capabilities/` contains:
+
+1. `# CAP-NNNN: <title>`
+2. `**Status:** implemented` or `deprecated`
+3. `**Primary surface:** <surface>` or `none`
+4. `## Outcome`
+5. `## Behavior`
+6. `## Evidence` with `### Runtime` and `### Tests`
+7. `## Contracts`
+8. `## Links`
+
+Run the repository record check after changing any capability:
+
+```bash
+python scripts/check_records.py .
+```

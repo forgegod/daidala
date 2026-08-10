@@ -137,6 +137,9 @@ completeness without touching a real Hermes profile.
   and leave activation-gated structured handoff history across all executable
   cards.
 - Subprocess tests for dependency-free repository verification scripts.
+- `test_check_records.py` validates accepted CAP/CHG records, lifecycle and
+  capability-reference failures, exact wireframe inventory, PNG dimensions, and
+  malformed manifest handling.
 - `test_hermes_compatibility_probe.py` validates host-output parsing, boundary
   drift failures, complete explicit candidate identities, and isolated-home
   cleanup through subprocesses.

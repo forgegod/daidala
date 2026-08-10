@@ -7,6 +7,8 @@ Own dependency-free development and repository verification utilities.
 ## Ownership
 
 - `check_md_links.py` validates local Markdown file links and heading anchors.
+- `check_records.py` validates CAP/CHG shape, lifecycle placement, source/test
+  evidence, capability indexing, and CAP-linked HTML/PNG wireframe inventory.
 - `check_release_contents.py` rejects runtime state and high-confidence secret
   signatures from tracked source and wheel payloads.
 - `probe_hermes_compatibility.py` creates an isolated `HERMES_HOME` and verifies
@@ -29,8 +31,8 @@ Own dependency-free development and repository verification utilities.
 ## Local Contracts
 
 - Scripts must run on Python 3.11 or newer with no project-runtime side effects.
-- Verification scripts return zero on success and non-zero with actionable file
-  and line diagnostics on failure.
+- Verification scripts return zero on success and non-zero with actionable,
+  file-scoped diagnostics on failure; include line numbers where available.
 - Release-content verification rejects the superseded project identity in
   tracked paths, decodable tracked content, wheel paths, and decodable wheel
   content without retaining that identity in the checker source.
@@ -52,6 +54,7 @@ Own dependency-free development and repository verification utilities.
 ## Verification
 
 ```bash
+python scripts/check_records.py .
 python scripts/check_md_links.py .
 python scripts/check_release_contents.py .
 python scripts/probe_hermes_compatibility.py

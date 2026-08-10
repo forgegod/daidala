@@ -8,6 +8,11 @@ owns only its policy and artifact integrity boundary.
 New operators should start with [Getting started](00-getting-started.md), not the
 architecture references.
 
+Contributors changing material behavior start with the affected
+[capability record](product/README.md) and one
+[active change record](changes/README.md). Existing files under
+[`plans/`](plans/AGENTS.md) remain historical provenance.
+
 ## Support status
 
 | Document or surface | Status | Grounded by |
@@ -29,6 +34,8 @@ architecture references.
 | [Workflow constraints](14-workflow-constraints.md) | Implemented; workflow-scoped policy invariants, approval binding, replacement, and exact skill-backed reusable sources | `daidala/constraints.py`, `daidala/service.py`, and constraint regressions |
 | [Autonomous self-improvement flow](15-self-improvement.md) | Phases 1-4 implemented and repository-tested, including prerequisite diagnosis, admission coordination, evaluator/comparison evidence, and increment reconciliation; project onboarding, live adapters, attended cycle, retention, and publication remain blocked | Pure and fake-boundary tests, local evaluator fixtures, versioned result, and both implementation plans |
 | [Self-improvement environment prerequisites](16-self-improvement-setup.md) | Complete reproducible setup/configuration and remediation guide with stable check IDs; revision, profile, Docker, credentials, gateway, and Project 1 exist, while plugin/board/bindings/Project fields/labels/receipts remain blocked | CLI parity and fail-closed tests, current non-secret host inventory, both implementation plans, and official Hermes, GitHub CLI, and Docker documentation |
+| [Product capabilities](product/README.md) | Three source-and-test-backed baseline capabilities implemented | Runtime modules, executable tests, and CAP-linked dashboard wireframe |
+| [Change records](changes/README.md) | Adopted as the sole future material-progress authority | Record checker and archived implementation receipts |
 | Target commit/push | Not part of Daidala runtime | Delivery records both flags as false |
 
 “Implemented” means present in this repository. Compatibility claims are limited
@@ -80,6 +87,9 @@ carry that manifest's digest and active skill names.
 
 ## Reading order
 
+For product work, read [Product capabilities](product/README.md), the affected
+CAP, and the sole active CHG before the detailed contracts below.
+
 1. [Getting started](00-getting-started.md) — run the first workflow.
 2. [Operator runbook](07-runbook.md) — operate, recover, cancel, and upgrade.
 3. [Architecture](01-architecture.md) — understand the authority and process boundaries.
@@ -106,6 +116,8 @@ carry that manifest's digest and active skill names.
 
 | Question or symptom | Read |
 |---|---|
+| What material behavior exists now? | [Product capabilities](product/README.md) |
+| Where is current material implementation progress recorded? | [Change records](changes/README.md) |
 | How do I start and approve the first workflow? | [Getting started](00-getting-started.md) |
 | What does a Daidala Kanban card contain, and where is completion metadata stored? | [Getting started: What a Daidala card contains](00-getting-started.md#what-a-daidala-card-contains) |
 | Is Daidala a separate service or scheduler? | [Architecture](01-architecture.md#process-boundary) |
@@ -130,6 +142,7 @@ carry that manifest's digest and active skill names.
 ## Verification
 
 ```bash
+python scripts/check_records.py .
 python scripts/check_md_links.py .
 ```
 

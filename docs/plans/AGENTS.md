@@ -2,36 +2,41 @@
 
 ## Purpose
 
-Own executable plans, shared plan-family contracts, and repository-tracked UX design sources and review renders.
+Preserve historical plans, shared plan-family contracts, and their
+repository-tracked UX design sources and review renders.
 
 ## Ownership
 
-- `Pnnnn-<slug>.md` files are active executable plans.
-- `*-execution-contract.md` files own shared invariants consumed by multiple active plans; they carry no execution state or approval authority.
-- `hermes-dashboard-ux-live.pen` is the editable Daidala dashboard wireframe source.
-- `dashboard-ux-*.png` files are canonical review renders exported from that
+- `Pnnnn-<slug>.md` files are immutable historical implementation records.
+- `*-execution-contract.md` files preserve shared invariants used by the
+  historical plan families; they carry no current execution state or approval
+  authority.
+- `hermes-dashboard-ux-live.pen` is the historical editable Daidala dashboard
+  wireframe source.
+- `dashboard-ux-*.png` files are historical review renders exported from that
   source, including workflow inventory/detail and attended lifecycle decision
   states, collapsed/expanded start, Artifacts, and each Config subtab state
   (Constraints covers source selection, template-to-draft creation, and
   maintenance of existing workflow constraint revisions).
-- Date-prefixed plans and JSON scope/evaluation records remain historical or bounded planning material; active execution must identify its exact source explicitly.
+- Date-prefixed plans and JSON scope/evaluation records remain historical or
+  bounded planning material.
 
 ## Local Contracts
 
-### Plan structure
+### Historical integrity
 
-- Plans name exact files, verification gates, stop conditions, and unresolved decisions.
-- Active executable plans use `Pnnnn-<slug>.md` with matching `Plan ID`, `Execution slot`, `Created`, `Depends on`, and `Status` headers. Creation dates are provenance only; dependency-ready plans execute by ascending slot.
-- Reordering changes the slot prefix and header together and updates inbound links. Split plans use distinct stable IDs and explicit dependencies so moved phases appear in exactly one active file.
-- Active plans normally carry one to three context-local phases and name exact `Context sources`, an `Entry checkpoint`, and a concrete `Produces` checkpoint. A fresh session reads only those sources and direct-dependency evidence, not completed predecessor plans in full.
-- Plans above 500 lines or 40 KiB require a split or an explicit atomicity rationale. Shared execution contracts may own pinned family invariants, but have no execution slot, status table, findings ledger, or approval authority.
-- Repository-tracked content references only repository-tracked plans. Never depend on profile-private plans, `/tmp`, or another ephemeral location.
-- During phase execution, adopt actionable findings into the tracked active plan before changing implementation scope. Do not persist plan fragments, findings, evidence notes, or diff snapshots in temporary directories.
-- Describe the current intended design without iteration diaries or stale migration breadcrumbs.
+- Do not create new plan files or change recorded plan IDs, slots, dependencies,
+  phase status, checkpoints, findings, evidence, or links to represent new work.
+- Preserve historical provenance in place. Correct broken references only through
+  an explicitly scoped CHG that records why the historical repair is necessary.
+- Use `docs/product/capabilities/` for current observable behavior and
+  `docs/changes/active/` for future material implementation progress.
 
-### Dashboard wireframe composition
+### Historical dashboard wireframe composition
 
-Every full-page Daidala wireframe follows one invariant composition:
+These rules document the accepted legacy Pen source and renders. Current
+capability wireframes live under `docs/product/wireframes/`. Every historical
+full-page Daidala wireframe follows one invariant composition:
 
 1. **Hermes workspace shell** — preserve the profile-scope banner, full Hermes sidebar, active profile, complete global navigation, Plugins group with Daidala selected, system status, version, geometry, and host theme treatment.
 2. **Daidala navigation** — preserve the three primary views in workflow-result order: Workflows, Artifacts, Config. Exactly one is active and it matches the use case.
@@ -69,17 +74,18 @@ Additional UI contracts:
 
 ## Work Guidance
 
-- Before editing a plan, read only its declared context sources and applicable parent contracts; do not load the whole planning archive by default.
-- Update the active plan before implementation proceeds when a design decision or actionable finding changes scope, ordering, dependencies, or verification.
-- Before editing a `.pen` source, load the `creative/pen-dev` skill and inspect the current Pen schema.
-- For a new wireframe use case, copy an accepted complete screen and replace only its `Page content` subtree. Change the active Daidala tab only when the use-case map requires it.
-- Preserve the `.pen` source as canonical. Regenerate the matching PNG from a fresh headless Pen load; do not treat a screenshot cache as approval evidence.
-- Promote accepted timestamped review iterations to stable repository filenames and copy the canonical render beside the source as the final task step; timestamps are cache-workaround metadata only. Verify both files, then open the canonical render for user review before closeout.
-- Keep implementation behavior in active plans and shared contracts. Keep visual composition rules here and detailed screen behavior in `P0250-daidala-dashboard-ux-concept.md`.
+- Consult only the historical plan needed for provenance; do not load the archive
+  as current requirements.
+- Do not edit plans or legacy design assets during normal feature work.
+- If an explicitly approved provenance repair touches the `.pen` source, load
+  `creative/pen-dev`, preserve the established composition, regenerate the
+  matching PNG, and verify it before closeout.
+- Keep current screen references and generated HTML/PNG pairs under
+  `docs/product/wireframes/`.
 
 ## Verification
 
-For plan and cross-reference changes:
+For explicitly approved historical plan or cross-reference repairs:
 
 ```bash
 python scripts/check_md_links.py .
