@@ -15,12 +15,14 @@ Attended manual cycles and controlled reconciliation, cancellation, approval,
 and artifact probes exercised admission, approval, evaluation, delivery, replay,
 recovery, and terminal completion. The shared dry-run-first CLI exposes
 deterministic reconciliation with exact preview-digest apply gates. Exact
-detached revision `3ce1bfc` is installed in the persistent controller; native
-and standalone live diagnosis pass 11/11, and the matching no-agent
-reconciliation cron is paused. Issues #4 through #7 are terminal, no cycle or
-owned worktree is active, and retained delivery evidence records commit and push
-as false. The exact Hermes v0.18.2/v0.19.0 comparison and v0.20.0 matrix are
-compatible, and the bounded host support policy is `>=0.18.2,<0.21.0`.
+detached revision `3ce1bfc` remains installed in the persistent controller, but
+after the host moved to v0.20.0 release tag `v2026.8.3`, the profile reports
+Daidala as `not enabled`; native live diagnosis is therefore blocked. The
+matching no-agent reconciliation cron remains paused, issues #4 through #7 are
+terminal, no cycle or owned worktree is active, and retained delivery evidence
+records commit and push as false. Matrix evidence for all three exact supported
+hosts is compatible, and the bounded host support policy is
+`>=0.18.2,<0.21.0`.
 
 Authoritative implementation sources are `daidala/projects.py`,
 `daidala/registrations.py`, `daidala/cycles.py`, `daidala/increments.py`,
@@ -683,7 +685,7 @@ model routes, dashboard compatibility, packaging, and install probes run. A
 support-range change and controller promotion require separate approved work.
 Failure preserves the baseline and creates at most one deduplicated finding.
 Rollback means discarding the candidate evaluator or reverting an unretained
-owned worktree; candidate code never replaces the currently loaded plugin.
+owned worktree; candidate code never replaces the approved controller plugin.
 
 Cases: `TC-F03-01`, `TC-F03-02`, `TC-F04-01`, `TC-F11-01`, `TC-F12-01`,
 `TC-F14-01`, and `TC-F15-01`. Exact Hermes v0.18.2, v0.19.0, and v0.20.0

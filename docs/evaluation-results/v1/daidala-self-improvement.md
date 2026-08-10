@@ -2,19 +2,25 @@
 
 ## Record status
 
+This is a versioned observation record. Its v0.18.2/v0.19.0 range and controller
+diagnosis describe retained evidence at record closeout; they do not define the
+current host policy or controller state. See [Hermes integration](../../08-hermes-integration.md)
+and [environment prerequisites](../../16-self-improvement-setup.md) for those.
+
 Phases 1 through 7 are complete. Phase 5C retained published finding
 [#5](https://github.com/forgegod/daidala/issues/5), and Phase 5C-R remediated and
 closed published control findings
 [#6](https://github.com/forgegod/daidala/issues/6) and
-[#7](https://github.com/forgegod/daidala/issues/7) as completed. Detached
-controller revision `3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8` is installed;
-native and standalone diagnosis pass 11/11, the reconciliation cron remains
-paused, and no active cycle or owned worktree exists. Phase 5D packet v3
+[#7](https://github.com/forgegod/daidala/issues/7) as completed. At record
+closeout, detached controller revision
+`3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8` was installed; native and standalone
+diagnosis passed 11/11, the reconciliation cron was paused, and no active cycle
+or owned worktree existed. Phase 5D packet v3
 `7139cf3e` is frozen. Addyosmani control issue #12 is completed with terminal
 digest `a7a668ca`; Aidlc candidate issue #10 is completed with terminal digest
 `a3722356`. The prior Phase 6 comparison `5482aeb4` remains retained as `incomparable`.
-Support-upgrade Phase 2 closes both missing boundaries and records exact Hermes
-v0.18.2/v0.19.0 compatibility. Both packs now declare the bounded range
+Support-upgrade Phase 2 closed both missing boundaries and recorded exact Hermes
+v0.18.2/v0.19.0 compatibility. Both packs then declared the bounded range
 `>=0.18.2,<0.20.0`. Push, release, and promotion remain unapproved.
 
 Each Phase 5A workflow independently changed only `calculator.py` and

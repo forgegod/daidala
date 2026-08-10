@@ -132,8 +132,9 @@ names, verifies complete-directory digests, and prints every intended
 plan and post-verifies disk state. Revision or digest mismatch blocks workflow
 start and requires `update-plan`; active workflows are never silently updated.
 
-Hermes v0.18.2 has no recursive installation flag. `--recursive` is therefore a
-refused capability, not a local glob expansion.
+The supported pack-installation contract accepts only the required pinned
+subset. `--recursive` is therefore a refused capability, not a local glob
+expansion.
 
 ## Implemented pack
 

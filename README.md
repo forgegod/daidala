@@ -168,7 +168,10 @@ instead of asking Hermes goal decomposition to choose an orchestrator profile.
 - Supported hosts: exact Hermes Agent v0.18.2, v0.19.0, and v0.20.0 on Python
   3.11, bounded by `>=0.18.2,<0.21.0` for local/single-host installations.
 - Public installation: `hermes plugins install forgegod/daidala --enable` is
-  verified from merged remote `main` on a fresh Hermes v0.19.0 profile.
+  verified from merged remote `main` on a fresh exact Hermes v0.20.0
+  (`v2026.8.3`) host.
+  v0.18.2 and v0.19.0 remain supported matrix hosts; neither is a prerequisite
+  or preferred host for a v0.20.0 installation.
 - Supported entry points: native `hermes daidala`, standalone diagnostics,
   12 agent-facing plugin tools, three qualified bundled skills, and the
   optional authenticated Hermes dashboard extension.

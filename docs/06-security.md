@@ -145,10 +145,10 @@ adapter skill and its upstream license. It does not install the rules into a
 target repository, import the v2 preview runtime, or delegate lifecycle state
 and approval to an upstream state machine.
 
-Hermes v0.18.2 cannot install a repository recursively, so Daidala refuses
-that request instead of expanding an unreviewed glob. Treat pinned external
-skills as untrusted instructions until reviewed; hashes prove equality, not
-suitability or publisher identity.
+Daidala's supported pack-installation contract accepts only the required pinned
+subset, so it refuses `--recursive` instead of expanding an unreviewed glob.
+Treat pinned external skills as untrusted instructions until reviewed; hashes
+prove equality, not suitability or publisher identity.
 
 ## Secrets and generated state
 

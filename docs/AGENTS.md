@@ -84,7 +84,8 @@ change records, and historical implementation plans.
   them to architecture or reference material. State what starts the workflow,
   what must remain running, what the user observes, and which action comes next.
 - Keep deterministic behavior distinct from skill or model judgment.
-- Do not publish operator commands until they have been exercised against the supported Hermes version.
+- Do not publish operator commands until they have been exercised against the
+  exact supported Hermes host matrix.
 
 ## Verification
 

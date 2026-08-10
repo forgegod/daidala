@@ -129,8 +129,8 @@ synthetic plan card, so its `implement` card has no parent while `verify` and
 | Workflow is cancelled | `archived` on nonterminal cards | Only Daidala-owned worktree and policy references may be cleaned |
 
 `created`, `promoted`, `claimed`, `completed`, `blocked`, `dependency_wait`,
-`unblocked`, and `archived` are Hermes v0.18.2 event kinds. Daidala does not
-invent parallel transition names.
+`unblocked`, and `archived` are event kinds observed across the exact supported
+Hermes host matrix. Daidala does not invent parallel transition names.
 
 ## Approval integrity
 

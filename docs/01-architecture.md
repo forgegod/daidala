@@ -195,7 +195,7 @@ a fully rendered card body over 8,192 characters; it never silently truncates
 policy content.
 
 `scripts/probe_hermes_compatibility.py` makes this a release contract rather than
-a one-time observation. It checks exact Hermes semantic, build, and upstream
+a one-time observation. It checks exact Hermes semantic, build, and host revision
 identity, exact policy-skill hashing, public Kanban lifecycle operations, and
 both sides of the worker-context boundary in an isolated `HERMES_HOME`. Ordinary
 pushes and pull requests use fast regressions; version tags and explicit release
@@ -218,7 +218,8 @@ support-status table remains authoritative for later capabilities.
 
 ## Plugin and package entry points
 
-The repository supports two discovery shapes verified against Hermes v0.18.2:
+The repository supports two discovery shapes verified across the exact v0.18.2,
+v0.19.0, and v0.20.0 host matrix:
 
 - the root `plugin.yaml` and root `__init__.py` form the Git-directory plugin
   entry point;
@@ -259,4 +260,4 @@ that capability generically.
 | Addy Osmani mapping | `daidala/packs/addyosmani.yaml` | Pack load and CLI validation |
 | AI-DLC mapping | `daidala/packs/aidlc.yaml`, `daidala/skills/aidlc-adapter/` | Pack, fixture-workflow, registration, and wheel tests |
 | Bundled procedures | `daidala/skills/*/SKILL.md` | Registration and packaging tests |
-| Hermes extension behavior | [official plugin guide](https://hermes-agent.nousresearch.com/docs/developer-guide/plugins) | Upstream documentation plus the v0.18.2 compatibility probe |
+| Hermes extension behavior | [official plugin guide](https://hermes-agent.nousresearch.com/docs/developer-guide/plugins) | Upstream documentation plus the exact three-host compatibility matrix |

@@ -1,10 +1,17 @@
 # Hermes integration
 
-Daidala 0.2.0 is supported on exact Hermes Agent v0.18.2 (`2026.7.7.2`,
-upstream `4281151a`), v0.19.0 (`2026.7.20`, upstream `3ef6bbd2`), and v0.20.0
-(`2026.8.3`, upstream `3c27eb62`) on Python 3.11.15. All three hosts are inside
-the bounded pack range `>=0.18.2,<0.21.0`. The proofs used exact Daidala wheels
-and fresh `HERMES_HOME` directories without modifying the active Hermes profile.
+Daidala 0.2.0 is supported on exact Hermes Agent v0.18.2 (build `2026.7.7.2`,
+probed host revision `4281151a`), v0.19.0 (release tag `v2026.7.20`, revision
+`3ef6bbd2`), and v0.20.0 (release tag `v2026.8.3`, revision `3c27eb62`) on
+Python 3.11.15. All three hosts are inside the bounded pack range
+`>=0.18.2,<0.21.0`. The proofs used exact Daidala wheels and fresh
+`HERMES_HOME` directories without modifying the active Hermes profile.
+
+The three-version list defines retained host support. A version named alone in
+an evidence paragraph identifies the host that produced that observation; it is
+not a minimum, preferred host, or operator prerequisite. v0.19.0 remains in the
+matrix because it is still supported; the v0.20.0 row separately includes the
+newer public-install proof.
 
 This document records observed behavior. The current Hermes
 [plugin documentation](https://hermes-agent.nousresearch.com/docs/developer-guide/plugins)
@@ -17,9 +24,9 @@ releases:
 
 | Source | Hermes source label | Result |
 |---|---|---|
-| Directory containing `plugin.yaml` and root `__init__.py` | `user` (`git` in `hermes plugins list`) | Explicit enablement, tool registration, and bundled skill loading passed |
+| Directory containing `plugin.yaml` and root `__init__.py` | `git` (user plugin directory) | Explicit enablement, tool registration, and bundled skill loading passed |
 | Python distribution entry point in `hermes_agent.plugins` | `entrypoint` | Explicit enablement, tool registration, and bundled skill loading passed |
-| Public Git repository `forgegod/daidala` | `user` (`git` in `hermes plugins list`) | Fresh v0.19.0 installation from merged remote `main` passed |
+| Public Git repository `forgegod/daidala` | `git` (user plugin directory) | Fresh v0.20.0 installation from merged remote `main` passed |
 
 The verified directory and entry-point discovery paths register exactly:
 
@@ -39,7 +46,8 @@ package and profile root as the native plugin; they do not register agent tools,
 import Hermes internals, or add a scheduler.
 
 The optional dashboard package registers `/daidala`, the `sessions:top` slot,
-authenticated backend routes, and SDK `1.1.0` assets. Hermes v0.18.2 exposes no
+authenticated backend routes, and SDK `1.1.0` assets. Daidala retains
+`sessions:top` compatibility because the supported v0.18.2 host exposes no
 `kanban:top` extension slot. Workflow polling is read-only; setup and constraint
 writes are narrowly typed and confirmation-gated. Python entry points do not
 materialize dashboard assets, so installation must retain the packaged
@@ -143,18 +151,27 @@ would violate the documented `HERMES_HOME`-scoped contract.
 
 ## Public Git verification
 
-Phase 6 installed `forgegod/daidala` into a fresh mode-`0700` `HERMES_HOME`
-using exact Hermes v0.19.0 build `2026.7.20`, upstream `3ef6bbd2`. The host had
-no preinstalled Daidala distribution. Public remote `main` and the installed
-plugin both resolved to merge commit `dfce6ad3ad8285755ff773acd295b56b70939dff`.
+A fresh isolated `HERMES_HOME` on exact Hermes v0.20.0 release tag
+`v2026.8.3`, revision `3c27eb6234bf91b8ceee9e9071591b31e9b148cb`, installed
+`forgegod/daidala` with explicit enablement. The host had no preinstalled
+Daidala distribution. Public remote `main` and the installed plugin both
+resolved to merge commit `4dd50d6545af998a2a5ff8dba6fe4cd021ba4134`.
 
-A fresh process reported the plugin enabled with source `user`, registered the
+A fresh process reported the plugin enabled with source `git`, registered the
 12 tools and three qualified skills listed above, exposed `hermes daidala`, and
-validated both packs. The dashboard discovered the manifest, served exact asset
-bytes, mounted the authenticated router, returned an unconfirmed setup preview,
-and rejected start without literal confirmation. No Daidala policy ledger,
-Kanban state, or new profile-root path was created. This verification did not
-tag or publish a GitHub, TestPyPI, or PyPI release.
+validated the bundled packs. Plugin and dashboard compatibility probes executed
+from the untouched public clone both passed. The dashboard discovered the
+manifest, served exact asset bytes, mounted the authenticated router, returned
+an unconfirmed setup preview, and rejected start without literal confirmation.
+No active profile was modified. This verification did not tag or publish a
+GitHub, TestPyPI, or PyPI release.
+
+The persistent `daidala-self-improvement` controller is separate from this
+isolated install proof. Its exact detached Daidala checkout remains installed,
+but Hermes v0.20.0 currently reports it as `not enabled`, so the native command
+is absent. That is a profile enablement blocker, not a host compatibility
+failure; the controller must be explicitly enabled and pass fresh live diagnosis
+before another cycle is admitted.
 
 ## Repeatable isolated verification
 
@@ -223,10 +240,11 @@ Plan ID, execution slot, phase, source/baseline revision, plan digest, and packe
 digest. It neither exposes source bytes or paths nor creates a checkpoint commit
 or push; a later phase must be admitted from a separately created checkpoint.
 
-Hermes v0.18.2 invokes plugin command callbacks but discards their integer
-return values. The native callback therefore raises `SystemExit` with the
-shared dispatcher's code. This narrow host-compatibility boundary keeps success
-and failure process codes equivalent across native and standalone invocations.
+To retain v0.18.2 compatibility, the native callback raises `SystemExit` with
+the shared dispatcher's code because that host invokes plugin command callbacks
+but discards their integer return values. This narrow host-compatibility boundary
+keeps success and failure process codes equivalent across native and standalone
+invocations.
 Directory-loaded plugins run under a host-generated module namespace, so
 package resources resolve through the current `__package__`, not a hard-coded
 top-level `daidala` import.
@@ -241,8 +259,8 @@ Daidala never imports Hermes Kanban modules or accesses its SQLite database.
 
 ## Kanban-native workflow boundary
 
-Hermes v0.18.2 exposes the required public operations for the complete graph,
-and Daidala's graph adapter uses these surfaces:
+The exact v0.18.2, v0.19.0, and v0.20.0 matrix exposes the required public
+operations for the complete graph. Daidala's graph adapter uses these surfaces:
 
 | Capability | Verified surface |
 |---|---|
@@ -281,28 +299,28 @@ operator installation method.
 
 ## Installation CLI boundary
 
-On Hermes v0.18.2, `hermes plugins install` accepts a Git URL or `owner/repo`
-identifier. It does not accept a local directory or wheel. The verified public
-installation command is:
+On the exact supported hosts, `hermes plugins install` accepts a Git URL or
+`owner/repo` identifier. It does not accept a local directory or wheel. The
+verified public installation command is:
 
 ```bash
 hermes plugins install forgegod/daidala --enable
 ```
 
-Phase 7 exercised this exact command in a fresh `HERMES_HOME`, then used a
-separate Hermes process to confirm that the plugin is enabled without errors,
-registers all 12 tools, loads all three bundled skills, exposes the native CLI
-and dashboard manifest, validates both packs, and creates only the Daidala
-runtime root. A desktop and narrow browser pass exercised the untouched public
-clone on the pinned host.
+The v0.20.0 `v2026.8.3` public-install smoke exercised this exact command in a
+fresh `HERMES_HOME`, then used a separate Hermes process to confirm that the
+plugin is enabled without errors, registers all 12 tools, loads all three
+bundled skills, exposes the native CLI and dashboard manifest, and validates
+both packs. Plugin and dashboard probes exercised the untouched public clone on
+the tagged host.
 
 ## Compatibility limits
 
 | Hermes host | Directory plugin | Python entry point | Public Git install | Native CLI | Kanban restart/idempotency | Status |
 |---|---|---|---|---|---|---|
-| v0.18.2 (`2026.7.7.2`, `4281151a`) | Passed | Passed | Passed | Passed | Passed | Supported through public Git installation |
-| v0.19.0 (`2026.7.20`, `3ef6bbd2`) | Passed | Passed | Passed | Passed | Passed | Supported through public Git installation |
-| v0.20.0 (`2026.8.3`, `3c27eb62`) | Passed | Passed | Pending post-integration smoke | Passed | Passed | Supported through exact-wheel matrix |
+| v0.18.2 (build `2026.7.7.2`, probe `4281151a`) | Passed | Passed | Passed | Passed | Passed | Supported through public Git installation |
+| v0.19.0 (`v2026.7.20`, `3ef6bbd2`) | Passed | Passed | Passed | Passed | Passed | Supported through public Git installation |
+| v0.20.0 (`v2026.8.3`, `3c27eb62`) | Passed | Passed | Passed | Passed | Passed | Supported through public Git installation |
 | Other versions | Not probed | Not probed | Not probed | Not probed | Not probed | Unsupported |
 
 - Hermes v0.18.2 and v0.19.0 passed repeated exact-wheel version, plugin, CLI,
@@ -311,8 +329,9 @@ clone on the pinned host.
 - Hermes v0.20.0 passed the same four-probe matrix twice at full source revision
   `3c27eb6234bf91b8ceee9e9071591b31e9b148cb` with Daidala wheel SHA-256
   `7b1ed90f928e4cdb4c369f6ceab6f682a4081dfceb233d9e8d72598e6b5a477f`.
-  Both repetitions were byte-identical. Its public remote Git installation
-  remains a post-integration release smoke because these changes are unpublished.
+  Both repetitions were byte-identical. A later public Git smoke installed
+  remote `main` at `4dd50d6545af998a2a5ff8dba6fe4cd021ba4134` on the same exact
+  host and passed plugin and dashboard probes from that clone.
 - Plugin registration, approval-gated Kanban graph mapping, policy-ledger persistence,
   exact-skill and pinned-content gates, fresh worktrees, artifact capture,
   verification evidence, review, uncommitted delivery, shared native/standalone

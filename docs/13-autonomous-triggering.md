@@ -78,11 +78,10 @@ Before enabling an unattended trigger:
    Use `sudo hermes gateway install --system` on a server that must start at
    boot, or `hermes gateway` for a foreground process.
 
-The cron and webhook commands below were observed on the installed Hermes
-v0.18.2 CLI. No live unattended trigger was created for this documentation-only
-change; run the end-to-end probe below before relying on it operationally.
-Daidala's tested compatibility boundary remains Hermes v0.18.2; re-run the
-integration probes before claiming support for another host version.
+The command forms below are grounded in current official Hermes documentation
+and the exact v0.18.2, v0.19.0, and v0.20.0 support matrix. That matrix proves
+the host surfaces, not a live unattended trigger. Run the end-to-end procedure
+below before relying on this composition operationally.
 
 ## Admission contract
 

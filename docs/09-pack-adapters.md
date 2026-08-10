@@ -87,8 +87,8 @@ The same temporary-repository fixture executes both packs through
 ## Current limitations
 
 - Publisher signatures are not available; integrity is commit and content-hash based.
-- Hermes v0.18.2 cannot recursively install a repository, so Daidala refuses
-  `--recursive` and installs only the required subset.
+- The supported pack-installation contract refuses `--recursive` and installs
+  only the required pinned subset.
 - Updates are plans only when installed content differs; Daidala never
   silently replaces a skill during an active workflow.
 - Stable AI-DLC rules are adapted, not copied wholesale; upstream methodology
