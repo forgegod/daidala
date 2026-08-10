@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import subprocess
 from collections.abc import Callable, Mapping
@@ -11,7 +12,15 @@ from datetime import date
 from pathlib import Path, PurePosixPath
 
 from .errors import PolicyViolationError
-from .state import PlanSourceReference
+from .execution import ExecutionError, ExecutionWorkspace
+from .state import (
+    PlanSourcePacket,
+    PlanSourceReference,
+    ReviewDispositionAction,
+    WorkflowLedger,
+    WorkflowStage,
+)
+from .store import WorkflowStore
 from .workflow import new_plan_source_packet
 
 MAX_PLAN_DOCUMENT_BYTES = 1_048_576
@@ -229,6 +238,248 @@ def select_pending_phase(plan: ParsedPlan, phase_number: int) -> ParsedPlanPhase
     if any(phase.status != "pending" for phase in plan.phases[phase_number + 1 :]):
         raise PolicyViolationError("following plan phases must remain pending")
     return selected
+
+
+def validate_plan_checkpoint(
+    *,
+    packet: PlanSourcePacket,
+    store: WorkflowStore,
+    workspace: ExecutionWorkspace,
+    git_runner: GitRunner | None = None,
+) -> WorkflowLedger | None:
+    """Validate one read-only direct-parent source checkpoint or phase-zero origin."""
+    if not isinstance(packet, PlanSourcePacket):
+        raise PolicyViolationError("checkpoint packet must be a plan source packet")
+    ledgers = store.list_all()
+    if packet.phase_number == 0:
+        if packet.predecessor_workflow_id is not None:
+            raise PolicyViolationError("phase zero checkpoint cannot name a predecessor workflow")
+        if any(
+            ledger.plan_source_packet is not None
+            and ledger.plan_source_packet.reference.repository == packet.reference.repository
+            and ledger.plan_source_packet.plan_id == packet.plan_id
+            and ledger.plan_source_packet.phase_number == 0
+            for ledger in ledgers
+        ):
+            raise PolicyViolationError(
+                "phase zero checkpoint cannot supersede an existing phase-zero source"
+            )
+        return None
+    if packet.predecessor_workflow_id is None:
+        raise PolicyViolationError("checkpoint source must name its predecessor workflow")
+
+    predecessors = [
+        ledger
+        for ledger in ledgers
+        if ledger.plan_source_packet is not None
+        and ledger.plan_source_packet.plan_id == packet.plan_id
+        and ledger.plan_source_packet.reference.repository == packet.reference.repository
+        and ledger.plan_source_packet.phase_number == packet.phase_number - 1
+    ]
+    if len(predecessors) != 1:
+        raise PolicyViolationError("checkpoint source must have one unambiguous predecessor")
+    predecessor = predecessors[0]
+    if predecessor.workflow_id != packet.predecessor_workflow_id:
+        raise PolicyViolationError("checkpoint predecessor workflow ID does not match")
+    previous = predecessor.plan_source_packet
+    assert previous is not None
+    if previous.reference.plan_path != packet.reference.plan_path:
+        raise PolicyViolationError("checkpoint source must retain the reserved plan path")
+    if previous.reference.repository != packet.reference.repository:
+        raise PolicyViolationError("checkpoint source repository identity does not match")
+    if predecessor.review_disposition is None or (
+        predecessor.review_disposition.action is not ReviewDispositionAction.ACCEPT_DELIVERY
+    ):
+        raise PolicyViolationError("checkpoint predecessor lacks accepted review evidence")
+    implementation = predecessor.artifact_for(WorkflowStage.IMPLEMENT)
+    delivery = predecessor.artifact_for(WorkflowStage.DELIVER)
+    if implementation is None or delivery is None:
+        raise PolicyViolationError("checkpoint predecessor lacks immutable delivery evidence")
+
+    delivery_payload = _read_delivery_evidence(
+        workspace,
+        predecessor,
+        delivery.path,
+        delivery.digest,
+    )
+    delivery_paths = _validate_delivery_payload(delivery_payload, predecessor, previous)
+    implementation_diff = _read_immutable_artifact(
+        workspace,
+        predecessor.workflow_id,
+        implementation.path,
+        implementation.digest,
+        "implementation",
+    )
+
+    repository = _require_repository_root(Path(packet.reference.repository))
+    runner = git_runner or _run_git
+    _require_checkpoint_parent(runner, repository, packet, previous)
+    previous_bytes = _read_packet_blob(runner, repository, previous)
+    current_bytes = _read_packet_blob(runner, repository, packet)
+    expected = _project_checkpoint_status(previous_bytes, previous, predecessor, delivery.digest)
+    if current_bytes != expected:
+        raise PolicyViolationError("checkpoint plan differs beyond its allowed status projection")
+
+    changed_paths = _git(
+        runner,
+        repository,
+        "diff",
+        "--name-only",
+        "-z",
+        previous.reference.source_revision,
+        packet.reference.source_revision,
+    )
+    try:
+        actual_paths = tuple(
+            path.decode("utf-8") for path in changed_paths.split(b"\0") if path
+        )
+    except UnicodeDecodeError as error:
+        raise PolicyViolationError("checkpoint delta paths are not UTF-8") from error
+    expected_paths = tuple(sorted((*delivery_paths, packet.reference.plan_path)))
+    if actual_paths != expected_paths:
+        raise PolicyViolationError("checkpoint delta has unexpected paths")
+    actual_diff = _git(
+        runner,
+        repository,
+        "diff",
+        "--binary",
+        "--no-ext-diff",
+        previous.reference.source_revision,
+        packet.reference.source_revision,
+        "--",
+        ".",
+        f":(exclude){packet.reference.plan_path}",
+    )
+    if actual_diff != implementation_diff:
+        raise PolicyViolationError("checkpoint non-plan delta does not match delivered evidence")
+    return predecessor
+
+
+def _read_packet_blob(runner: GitRunner, repository: Path, packet: PlanSourcePacket) -> bytes:
+    reference = packet.reference
+    blob_id, content = _read_regular_blob(
+        runner,
+        repository,
+        reference.source_revision,
+        reference.plan_path,
+    )
+    if (
+        blob_id != reference.plan_blob_id
+        or len(content) != reference.byte_size
+        or hashlib.sha256(content).hexdigest() != reference.plan_digest
+    ):
+        raise PolicyViolationError("checkpoint plan source packet does not match its Git blob")
+    return content
+
+
+def _require_checkpoint_parent(
+    runner: GitRunner,
+    repository: Path,
+    packet: PlanSourcePacket,
+    previous: PlanSourcePacket,
+) -> None:
+    parents = _git_text(
+        runner,
+        repository,
+        "rev-list",
+        "--parents",
+        "-n",
+        "1",
+        packet.reference.source_revision,
+    ).split()
+    if parents != [packet.reference.source_revision, previous.reference.source_revision]:
+        raise PolicyViolationError("checkpoint source must be a direct child of its predecessor")
+
+
+def _project_checkpoint_status(
+    previous_bytes: bytes,
+    previous: PlanSourcePacket,
+    predecessor: WorkflowLedger,
+    delivery_digest: str,
+) -> bytes:
+    previous_text = _decode_plan(previous_bytes, previous.reference.plan_path)
+    status = f"done (daidala:{predecessor.workflow_id}:{delivery_digest})"
+    pattern = re.compile(
+        rf"^(\|[ \t]*{previous.phase_number}[ \t]*\|[ \t]*"
+        rf"{re.escape(previous.phase_title)}[ \t]*\|[ \t]*)pending"
+        rf"([ \t]*\|[ \t]*{re.escape(previous.verification_gate)}[ \t]*\|[ \t]*)(\r?\n|$)",
+        re.MULTILINE,
+    )
+    projected, replacements = pattern.subn(rf"\g<1>{status}\g<2>\g<3>", previous_text)
+    if replacements != 1:
+        raise PolicyViolationError("checkpoint predecessor has no unique pending phase projection")
+    return projected.encode("utf-8")
+
+
+def _read_delivery_evidence(
+    workspace: ExecutionWorkspace,
+    predecessor: WorkflowLedger,
+    path: str,
+    digest: str,
+) -> dict:
+    raw = _read_immutable_artifact(
+        workspace,
+        predecessor.workflow_id,
+        path,
+        digest,
+        "delivery",
+    )
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise PolicyViolationError("checkpoint delivery evidence is not canonical JSON") from error
+    if not isinstance(payload, dict):
+        raise PolicyViolationError("checkpoint delivery evidence must be an object")
+    return payload
+
+
+def _read_immutable_artifact(
+    workspace: ExecutionWorkspace,
+    workflow_id: str,
+    path: str,
+    digest: str,
+    label: str,
+) -> bytes:
+    try:
+        return workspace.read_artifact_bytes(
+            workflow_id,
+            path,
+            expected_digest=digest,
+        )
+    except ExecutionError as error:
+        raise PolicyViolationError(f"checkpoint {label} evidence is unavailable") from error
+
+
+def _validate_delivery_payload(
+    payload: dict,
+    predecessor: WorkflowLedger,
+    previous: PlanSourcePacket,
+) -> tuple[str, ...]:
+    required = {
+        "workflow_id",
+        "baseline_commit",
+        "changed_paths",
+        "verification",
+        "committed",
+        "pushed",
+    }
+    if set(payload) != required:
+        raise PolicyViolationError("checkpoint delivery evidence fields are invalid")
+    changed_paths = payload["changed_paths"]
+    if (
+        payload["workflow_id"] != predecessor.workflow_id
+        or payload["baseline_commit"] != previous.reference.source_revision
+        or payload["committed"] is not False
+        or payload["pushed"] is not False
+        or payload["verification"]
+        != [evidence.to_dict() for evidence in predecessor.verification_evidence]
+        or not isinstance(changed_paths, list)
+        or not all(isinstance(path, str) and path for path in changed_paths)
+        or changed_paths != sorted(set(changed_paths))
+        or previous.reference.plan_path in changed_paths
+    ):
+        raise PolicyViolationError("checkpoint delivery evidence does not match its ledger")
+    return tuple(changed_paths)
 
 
 def _parse_dependencies(value: str) -> tuple[str, ...]:

@@ -87,6 +87,32 @@ def new_plan_source_packet(
     )
 
 
+def record_plan_source(
+    ledger: WorkflowLedger,
+    *,
+    packet: PlanSourcePacket,
+    recorded_at: datetime,
+) -> WorkflowLedger:
+    """Bind one Git-pinned plan packet to an otherwise compatible workflow ledger."""
+    if not isinstance(packet, PlanSourcePacket):
+        raise PolicyViolationError("plan source packet must be a plan source packet")
+    if packet.reference.repository != ledger.target_repository:
+        raise PolicyViolationError(
+            "plan source repository must match the workflow target repository"
+        )
+    if packet.reference.baseline_commit != ledger.baseline_commit:
+        raise PolicyViolationError(
+            "plan source baseline must match the workflow baseline commit"
+        )
+    existing = ledger.plan_source_packet
+    if existing == packet:
+        return ledger
+    if existing is not None:
+        raise PolicyViolationError("workflow already has a different plan source packet")
+    _require_not_before(ledger, recorded_at)
+    return replace(ledger, plan_source_packet=packet, updated_at=recorded_at)
+
+
 def record_constraints(
     ledger: WorkflowLedger,
     *,

@@ -16,7 +16,7 @@
 
 **Produces:** immutable stored plan-source evidence and a read-only validator for the single direct-parent checkpoint that authorizes the next committed phase source
 
-**Status:** pending
+**Status:** done — Phase 0 evidence persistence and checkpoint validation verified
 
 ## Goal
 
@@ -30,7 +30,7 @@ A checkpoint with a wrong parent, unrelated delta, tampered status token, missin
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Persist plan-source evidence and validate checkpoint chains | pending | `pytest -q tests/test_plan_admission.py tests/test_execution.py tests/test_store.py` exits 0 and proves create-or-verify source artifacts, direct-parent checkpoint validation, exact delivery/status projection, predecessor identity, and fail-closed wrong parent, extra path, missing evidence, or tampered checkpoint cases |
+| 0 | Persist plan-source evidence and validate checkpoint chains | done (670 pytest; ruff; lefthook; link; pack gates) | `pytest -q tests/test_plan_admission.py tests/test_execution.py tests/test_store.py` exits 0 and proves create-or-verify source artifacts, direct-parent checkpoint validation, exact delivery/status projection, predecessor identity, and fail-closed wrong parent, extra path, missing evidence, or tampered checkpoint cases |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
 

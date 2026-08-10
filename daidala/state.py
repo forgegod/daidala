@@ -1478,6 +1478,7 @@ class WorkflowLedger:
     worktree_path: str | None = None
     worktree_owned: bool = False
     artifacts: tuple[ArtifactReference, ...] = ()
+    plan_source_packet: PlanSourcePacket | None = None
     approval: ApprovalRecord | None = None
     verification_evidence: tuple[VerificationEvidence, ...] = ()
     review: ReviewRecord | None = None
@@ -1509,6 +1510,18 @@ class WorkflowLedger:
             raise PolicyViolationError("updated_at cannot be before created_at")
         if self.committed or self.pushed:
             raise PolicyViolationError("Daidala delivery cannot commit or push")
+        if self.plan_source_packet is not None:
+            if not isinstance(self.plan_source_packet, PlanSourcePacket):
+                raise PolicyViolationError("plan source packet must be a plan source packet")
+            reference = self.plan_source_packet.reference
+            if reference.repository != self.target_repository:
+                raise PolicyViolationError(
+                    "plan source repository must match the workflow target repository"
+                )
+            if reference.baseline_commit != self.baseline_commit:
+                raise PolicyViolationError(
+                    "plan source baseline must match the workflow baseline commit"
+                )
 
         if self.constraint_references:
             expected_revisions = list(range(1, len(self.constraint_references) + 1))
@@ -1783,7 +1796,7 @@ class WorkflowLedger:
         return references[-1]
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload = {
             "workflow_id": self.workflow_id,
             "board_slug": self.board_slug,
             "target_repository": self.target_repository,
@@ -1824,6 +1837,9 @@ class WorkflowLedger:
             "committed": self.committed,
             "pushed": self.pushed,
         }
+        if self.plan_source_packet is not None:
+            payload["plan_source_packet"] = self.plan_source_packet.to_dict()
+        return payload
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> WorkflowLedger:
@@ -1847,6 +1863,7 @@ class WorkflowLedger:
                 "worktree_path",
                 "worktree_owned",
                 "artifacts",
+                "plan_source_packet",
                 "approval",
                 "verification_evidence",
                 "review",
@@ -1893,6 +1910,11 @@ class WorkflowLedger:
                 worktree_owned=raw["worktree_owned"],
                 artifacts=tuple(
                     ArtifactReference.from_dict(row) for row in raw["artifacts"]
+                ),
+                plan_source_packet=(
+                    PlanSourcePacket.from_dict(raw["plan_source_packet"])
+                    if raw.get("plan_source_packet")
+                    else None
                 ),
                 approval=(
                     ApprovalRecord.from_dict(raw["approval"])

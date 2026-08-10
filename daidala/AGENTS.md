@@ -11,9 +11,9 @@ workflow-pack adapters, and bundled orchestration skills.
 |---|---|
 | `__init__.py` | Hermes tool, skill, and operator CLI registration. |
 | `errors.py` | Policy-ledger, persistence, and host-boundary error hierarchy. |
-| `state.py` | Immutable policy ledger, current and historical review/disposition/verification evidence, revision-request progress, Kanban identifiers, skill activation manifests, Git plan-source references/packets, and strict serialization. |
-| `workflow.py` | Deterministic policy checks, immutable plan-source packet construction, and ledger updates, including exact review/disposition binding and review-driven plan-revision transitions; no operational status transitions. |
-| `plan_admission.py` | Injectable Git-object boundary and strict parser for one clean, committed, pending repository plan phase and its active-plan dependency graph. |
+| `state.py` | Immutable policy ledger, current and historical review/disposition/verification evidence, revision-request progress, Kanban identifiers, skill activation manifests, optional Git plan-source packets, and strict serialization. |
+| `workflow.py` | Deterministic policy checks, immutable plan-source packet construction/binding, and ledger updates, including exact review/disposition binding and review-driven plan-revision transitions; no operational status transitions. |
+| `plan_admission.py` | Injectable Git-object boundary and strict parser for one clean, committed, pending repository plan phase, plus read-only direct-parent checkpoint validation against durable delivery evidence. |
 | `revision.py` | Bounded review packets, normalized attended feedback, and canonical mutation-free review-decision/revision previews. |
 | `locations.py` | Profile-aware data-root resolution; never hard-codes `~/.hermes`. |
 | `store.py` | SQLite-backed policy-ledger persistence with optimistic concurrency and explicit read-only opening for mutation-free previews. |
@@ -41,7 +41,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `controller.py` | Mutation-free admission preview, replay-safe cycle admission, manifest snapshots, deterministic workflow binding, immutable cycle storage, and receipt validation. |
 | `project_cycles.py` | Dry-run-first production project-cycle admission/completion/cancellation/reconciliation, prerequisite enforcement, stable one-item selection, exact identity confirmation, and profile-local runtime wiring. |
 | `reconciliation.py` | Two-authority claim recovery evidence, strict reconciliation previews/results, mode-`0600` content-addressed tick records, and local pending-to-published finding synchronization. |
-| `execution.py` | Immutable revision-addressed profile-local artifacts, detached worktrees, and diff capture. |
+| `execution.py` | Immutable revision-addressed profile-local artifacts, including Git-pinned plan-source Markdown/packets, detached worktrees, and diff capture. |
 | `artifact_access.py` | Opaque ledger-bound artifact identity, active/archive availability, injected exact-ID archive lookup, bounded digest-verified text and download reads, private exports, exact current-plan evidence, and caller-captured snapshot validation. |
 | `archive_io.py` | Policy-neutral deterministic tar/gzip creation, private-mode manifest verification, inventory, bounded verified member reads, and safe restore for caller-authorized roots. |
 | `artifact_curator.py` | Strict profile-local lifecycle policy and compare-and-swap state, live-ledger/Kanban terminal classification, pinned age transitions, verified archive publication, crash-convergent cleanup, exact-ID archive lookup, and safe recovery-root restore. |
@@ -180,6 +180,11 @@ workflow-pack adapters, and bundled orchestration skills.
   supply approval authority. The resulting packet has canonical digest identity
   over repository, blob, document digest, selected pending phase, gate, and
   direct dependencies.
+- A successor imported-plan checkpoint is read-only: it requires exactly one
+  packet-bound preceding workflow with accepted review and digest-verified
+  implementation/delivery artifacts, a one-parent Git child, the exact
+  delivered non-plan diff, and the sole allowed source-plan status projection.
+  Missing, tampered, ambiguous, renamed, or extra evidence fails closed.
 - Project, registration, cycle, and increment schemas reject unknown fields,
   unbounded content, non-canonical identity, and stale or ambiguous provenance.
 - Evaluation comparison produces `improved`, `equivalent`, `regressed`, or
@@ -348,6 +353,9 @@ fails locally rather than in production.
 - Keep plan-source parsing and Git inspection read-only and injectable. Reject
   malformed Markdown, graph ambiguity, dirty repositories, and non-blob paths;
   never repair source text or inspect a mutable plan path for its contents.
+- Keep checkpoint validation read-only. Compare Git-object bytes and source
+  deltas only with ledger-bound, digest-verified artifact evidence; never infer
+  a predecessor from queue order, a mutable checkout, or an artifact alias.
 - Register bundled skills with `ctx.register_skill`; do not copy them into the user's mutable skill store.
 - `daidala:setup` remains dashboard-independent, previews the exact
   `schemas.py::START` request, and requires explicit confirmation before any

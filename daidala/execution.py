@@ -13,7 +13,12 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from .errors import WorkflowError
-from .state import ActivationManifest, WorkflowConstraintsArtifact, WorkflowStage
+from .state import (
+    ActivationManifest,
+    PlanSourcePacket,
+    WorkflowConstraintsArtifact,
+    WorkflowStage,
+)
 
 _WORKFLOW_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 _ARTIFACT_RELATIVE_PATH_MAX = 512
@@ -27,6 +32,14 @@ class ExecutionError(WorkflowError):
 class StoredArtifact:
     path: str
     digest: str
+
+
+@dataclass(frozen=True)
+class StoredPlanSource:
+    """Immutable committed Markdown and canonical packet sidecar paths."""
+
+    plan: StoredArtifact
+    packet: StoredArtifact
 
 
 class ExecutionWorkspace:
@@ -88,6 +101,49 @@ class ExecutionWorkspace:
     ) -> StoredArtifact:
         content = json.dumps(payload, indent=2, sort_keys=True) + "\n"
         return self.write_artifact(workflow_id, relative_path, content)
+
+    def write_plan_source(
+        self,
+        workflow_id: str,
+        *,
+        packet: PlanSourcePacket,
+        plan_markdown: str,
+        policy_revision: int,
+        plan_revision: int,
+    ) -> StoredPlanSource:
+        """Create-or-verify the exact Git plan blob and its canonical packet."""
+        if not isinstance(packet, PlanSourcePacket):
+            raise ExecutionError("plan source packet must be a plan source packet")
+        if not isinstance(plan_markdown, str):
+            raise ExecutionError("plan source Markdown must be text")
+        encoded_plan = plan_markdown.encode("utf-8")
+        reference = packet.reference
+        if (
+            len(encoded_plan) != reference.byte_size
+            or hashlib.sha256(encoded_plan).hexdigest() != reference.plan_digest
+        ):
+            raise ExecutionError("plan source Markdown does not match the admitted Git blob")
+        plan_path = self.stage_artifact_relative_path(
+            stage=WorkflowStage.PLAN,
+            policy_revision=policy_revision,
+            plan_revision=plan_revision,
+            filename="plan.md",
+        )
+        packet_path = self.stage_artifact_relative_path(
+            stage=WorkflowStage.PLAN,
+            policy_revision=policy_revision,
+            plan_revision=plan_revision,
+            filename="plan-source.json",
+        )
+        plan = self.write_artifact(workflow_id, plan_path, plan_markdown)
+        source_packet = self.write_artifact(
+            workflow_id,
+            packet_path,
+            packet.canonical_bytes().decode("utf-8"),
+        )
+        if plan.digest != reference.plan_digest or source_packet.digest != packet.digest:
+            raise ExecutionError("stored plan source does not match its immutable identity")
+        return StoredPlanSource(plan=plan, packet=source_packet)
 
     def stage_artifact_relative_path(
         self,
@@ -228,6 +284,27 @@ class ExecutionWorkspace:
         if not isinstance(payload, dict):
             raise ExecutionError(f"workflow artifact {path!r} must be an object")
         return payload
+
+    def read_artifact_bytes(
+        self,
+        workflow_id: str,
+        path: str,
+        *,
+        expected_digest: str,
+    ) -> bytes:
+        """Read one immutable artifact after path and digest verification."""
+        if not isinstance(expected_digest, str) or not re.fullmatch(
+            r"[0-9a-f]{64}", expected_digest
+        ):
+            raise ExecutionError("workflow artifact digest is invalid")
+        artifact_path = self._referenced_artifact_path(workflow_id, path)
+        try:
+            content = artifact_path.read_bytes()
+        except OSError as error:
+            raise ExecutionError(f"cannot read workflow artifact {path!r}") from error
+        if hashlib.sha256(content).hexdigest() != expected_digest:
+            raise ExecutionError(f"workflow artifact digest does not match: {path!r}")
+        return content
 
     def create_worktree(
         self,

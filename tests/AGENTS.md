@@ -51,8 +51,9 @@ completeness without touching a real Hermes profile.
 - Temporary-repository tests for policy services and JSON tool handlers.
 - Plan-admission tests use disposable Git repositories to prove exact-blob
   parsing, canonical packet round trips, pending-phase ordering, dependency
-  graph rejection, and dirty/path/symlink/binary fail-closed behavior without
-  mutating the operator checkout.
+  graph rejection, immutable source-artifact replay, direct-parent checkpoint
+  binding, and dirty/path/symlink/binary/tampered-evidence fail-closed behavior
+  without mutating the operator checkout.
 - Fake-inventory tests for exact external-skill prerequisites and host errors.
 - Fake command/registry tests for dry-run installation, pinned revisions, content digests, post-apply verification, and refused recursive installation.
 - Pack-service and dashboard-route tests prove declared-skill-only bounded
@@ -176,6 +177,10 @@ completeness without touching a real Hermes profile.
 - Plan-source tests must cover canonical packet serialization plus malformed
   headers/status evidence, duplicate or cyclic dependencies, source revision,
   tree entry, path, encoding, and working-tree drift rejection.
+- Checkpoint tests must use temporary Git history and prove the exact predecessor
+  identity, one-parent source revision, delivered non-plan diff, reserved plan
+  path/status projection, and digest-verified review/delivery evidence; never
+  substitute mutable checkout state or inferred artifact paths.
 - Pure schema phases require round-trip, canonical digest, unknown-field,
   duplicate/collision, bound, and stale-identity tests without live services.
 - Skill activation coverage must prove strict serialization, exact pack-stage
