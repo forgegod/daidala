@@ -111,6 +111,24 @@ Export creates a mode-`0600` regular file atomically and refuses an existing
 destination unless `--overwrite` is present. The destination is never accepted
 as an artifact read source.
 
+Preview and apply a manual terminal-workflow archive, then inspect or restore
+one exact archive ID:
+
+```bash
+hermes daidala curator archive <workflow-id>
+hermes daidala curator archive <workflow-id> --apply \
+  --expected-preview-digest <archive-preview-digest>
+hermes daidala curator list-archived
+hermes daidala curator restore <workflow-id> <archive-id>
+hermes daidala curator restore <workflow-id> <archive-id> --apply \
+  --expected-preview-digest <restore-preview-digest>
+```
+
+Archive apply verifies every member before removing matching active sources.
+Artifact list/show/export continue to resolve the unchanged ledger identities
+from that archive. Restore writes only below the derived profile-local recovery
+root, does not rewrite the ledger path, and leaves the verified archive intact.
+
 ## Schedule artifact curation
 
 Policy and scheduling are disabled until an operator previews and confirms
@@ -158,7 +176,7 @@ hermes daidala approve <workflow-id> <64-character-plan-digest>
 
 Do not copy a digest from an older plan revision. A mismatch fails without
 authorizing work. Generic `hermes kanban unblock` is not approval. Successful
-approval completes the blocked gate and creates
+approval records the ledger gate and creates
 `implement → verify → review` in one persistent worktree. Automated review does
 not create `deliver`.
 

@@ -351,6 +351,11 @@ layout is a filter/summary bar above a two-pane browser:
 - **Actions:** Download is read-only. Pin/unpin/archive/restore use the common
   preview-digest/literal-confirm envelope over P0310 services. Error surfaces are
   metadata-only.
+- **Storage ownership:** `daidala/archive_io.py` is the shared policy-neutral
+  verified archive primitive. Workflow artifact archives remain below the
+  profile-local Daidala data root and restore only below its recovery root.
+  Checkout lifecycle backups remain below `<checkouts.root>/_backups/`; the
+  dashboard never merges, moves, or presents those stores as one inventory.
 - **Entry from workflow detail:** `View all` carries only the exact workflow ID and lands
   on the filtered artifact list; the server resolves ledger identities. The
   detail page's expanded browser uses the same list/detail semantics but remains

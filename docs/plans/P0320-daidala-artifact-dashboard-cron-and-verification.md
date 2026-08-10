@@ -18,7 +18,7 @@
 
 **Produces:** authenticated bounded artifact review/curator controls, opt-in profile-local cron curation, synchronized operator documentation and DOX, and installed-wheel end-to-end evidence
 
-**Status:** in progress — Phases 0 and 1 verified; Phase 2 pending
+**Status:** completed — Phases 0, 1, and 2 verified
 
 ## Goal
 
@@ -43,7 +43,7 @@ Dashboard requests may expose sensitive artifact content or trigger reversible s
 |---|---|---|---|
 | 0 | Add authenticated dashboard review and curator controls | done (focused and full tests; isolated Chromium fixture) | Focused dashboard/access/curator tests pass and isolated-browser verification inspects an archived diff without an arbitrary-path parameter |
 | 1 | Add opt-in Hermes Cron scheduling | done (focused/full tests; isolated public Hermes no-agent Cron lifecycle) | Focused cron-boundary tests pass; one isolated tick archives an eligible fixture, replay converges, and disabled policy performs no mutation |
-| 2 | Reconcile operator docs, DOX, package contents, and full verification | pending | The contract's repository gates pass and a fresh installed wheel lists, shows, exports, archives, and reads one fixture artifact |
+| 2 | Reconcile operator docs, DOX, package contents, and full verification | done (full gates; fresh-wheel archive/restore; isolated browser and Cron probes) | The contract's repository gates pass and a fresh installed wheel lists, shows, exports, archives, and reads one fixture artifact |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
 
@@ -110,6 +110,13 @@ Phase 1 evidence:
 
 **Goal:** Make review and curation discoverable and prove the installed distribution preserves security, profile, archive, dashboard, and Cron boundaries.
 
+Entry prerequisite: the repository-owned
+`python scripts/check_md_links.py .` check passes all 65 Markdown files. The
+seven earlier diagnostics came from running a separate checker against only
+`docs/`: four valid links escaped that restricted scan root, two reported
+targets exist, and one inline regex was misclassified as a reference link. No
+document correction is required for those false positives.
+
 Steps:
 
 1. Read contract Phase 5 and re-check every changed path against its AGENTS chain.
@@ -119,6 +126,34 @@ Steps:
 5. Exercise authenticated browser review and an opt-in isolated Cron tick, then verify no unintended repository or profile state remains.
 
 Verification gate: Every Phase 2 table predicate and detailed contract gate passes.
+
+Phase 2 evidence:
+
+- `lefthook validate`, the full `pytest` suite, `ruff check .`, both pack
+  validations, package build, Twine, release-content validation, the
+  repository Markdown-link check, and `git diff --check` pass in contract
+  order. The wheel contains the artifact access, curator, Cron, dashboard,
+  pack, and bundled-skill resources; runtime archives and schedule state are
+  absent.
+- A clean temporary environment installs the freshly built wheel, lists two
+  ledger artifacts by opaque ID, shows and exports exact active bytes, archives
+  both files after an injected-clock transition, converges on replay, reads and
+  exports the archived bytes with matching ledger and manifest digests, and
+  restores both files with matching SHA-256 values. Exported bytes use mode
+  `0600`.
+- Authenticated dashboard route tests pass. Isolated Chromium opens the
+  archived implementation artifact, displays the embedded `<script>` sequence
+  as non-executable literal text, and previews restore using only the workflow
+  ID, opaque archive ID, operation, and server-issued preview digest; no
+  arbitrary path is sent.
+- A disposable `HERMES_HOME` enables policy through the digest-confirmed CLI,
+  creates exactly one public Hermes script-only/no-agent job for `daidala
+  curator tick`, runs that exact job successfully, removes it by recorded ID,
+  and finishes with no schedule record or matching Cron inventory entry. No
+  real Hermes profile is modified.
+- The owning root, runtime, dashboard, docs, runbook, setup, security, package,
+  support-status, and UX contracts now describe the same active/archive,
+  recovery, authenticated review, and explicitly opt-in scheduling behavior.
 
 ## Out of scope
 

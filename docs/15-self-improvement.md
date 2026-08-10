@@ -122,6 +122,25 @@ Every controller, worker, and evaluator reads DOX and architecture from its own
 assigned checkout. Reading candidate policy from the persistent controller
 checkout is a blocking identity error.
 
+## Workflow artifact archives and recovery
+
+Self-improvement workflows use the same profile-local artifact boundary as all
+other Daidala workflows. Immutable ledger references retain their original
+paths and digests while access resolves verified bytes from either the
+active workflow artifact directory or an exact archive below
+`artifact-archives/<workflow-id>/` in the controller's resolved Daidala data
+root. Archive manifests and every member digest verify before active sources are
+removed.
+
+An operator may restore an exact archive only below
+`artifact-restores/<workflow-id>/<archive-id>/`. This is a recovery copy: it does
+not rewrite the ledger, delete the archive, authorize retention, reopen a cycle,
+or mutate Hermes card status. Checkout backups remain separate under the
+configured checkout root's `_backups/` directory and are never artifact archives.
+Curator state, schedule state, archives, restores, and checkout backups are
+profile/runtime data and must not enter repository increments or evaluation
+evidence.
+
 ## Project manifest and trusted registration
 
 The repository manifest is strict, bounded YAML. Duplicate keys, aliases,

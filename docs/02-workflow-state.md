@@ -47,6 +47,27 @@ it never mirrors those statuses into its ledger.
 | Worker summaries, comments, run outcomes, and retry history | Hermes Kanban |
 | Artifact bytes, digests, and exact verification evidence | Daidala artifact store and ledger |
 
+## Artifact identity and availability
+
+An artifact reference in the workflow ledger is immutable: its opaque selector,
+kind, revision, recorded path, size, media type, and SHA-256 digest do
+not change when storage availability changes. Artifact access resolves that
+identity as either `active` bytes at the recorded workflow path or `archived`
+bytes in one exact verified workflow archive. It never rewrites the ledger path,
+accepts an operator filesystem path as a selector, or labels one revision as
+latest.
+
+The profile-local curator state records active, stale, pinned, and archived
+availability separately from the policy ledger. A published archive lives below
+`artifact-archives/<workflow-id>/` in the resolved Daidala data root and carries
+both the policy-neutral integrity manifest and curator manifest. Publication and
+all member digests verify before matching active source files are removed.
+
+Restore verifies the same archive and copies its members only below
+`artifact-restores/<workflow-id>/<archive-id>/`. That recovery copy does not
+rewrite historical ledger paths or delete the archive. Hermes Kanban status and
+the workflow's delivered/cancelled outcome are unchanged by curation.
+
 ## Card graph
 
 ```mermaid
@@ -147,5 +168,8 @@ CLI; a revision request reopens only the successor plan's exact approval decisio
 - Policy operations: `daidala/workflow.py`
 - Persistence: `daidala/store.py`
 - Coordination: `daidala/service.py`
+- Artifact resolution: `daidala/artifact_access.py`
+- Archive transport and curation: `daidala/archive_io.py`,
+  `daidala/artifact_curator.py`
 - Verification: `tests/test_workflow.py`, `tests/test_store.py`,
   `tests/test_execution.py`

@@ -102,6 +102,11 @@ workflow-pack adapters, and bundled orchestration skills.
   matching verified members; retries converge from archive-only, dual-copy, or
   partial-cleanup states. Restore targets only the profile-local recovery root,
   preserves historical ledger paths, and leaves the workflow pinned active.
+- `archive_io.py` is policy-neutral transport shared by artifact curation and
+  checkout lifecycle. Workflow archives/restores remain below the Daidala data
+  root; checkout backups remain below `<checkouts.root>/_backups/`. Neither
+  subsystem may enumerate, restore, prune, or infer authority from the other's
+  store.
 - `review show` exposes the bounded current evidence/disposition packet. `review
   decide` is preview-only by default and applies only a freshly recomputed exact
   review/preview digest pair with literal confirmation and bounded direct UTF-8

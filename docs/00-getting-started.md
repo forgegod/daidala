@@ -177,10 +177,9 @@ worktree ownership. Approval is therefore not metadata on a runnable card and
 has no card of its own. See [Lifecycle stages and handoffs](05-lifecycle-stages.md)
 for the stage-specific fields added after implementation begins.
 
-Neither the Kanban board nor the current Daidala dashboard renders the plan
-artifact body at the approval gate. The dashboard can report a pending decision,
-but that is not enough evidence to approve. List the ledger-owned artifacts,
-select the exact plan artifact ID, and read its verified text through Daidala:
+The Kanban board does not render the plan artifact body at the approval gate.
+Use the authenticated dashboard artifact browser or the CLI to select the exact
+ledger-owned plan artifact ID and read its digest-verified literal text:
 
 ```bash
 hermes daidala artifacts list first-workflow --json
@@ -198,10 +197,11 @@ card.
 ## 5. Approve the exact plan
 
 Run `hermes daidala artifacts list first-workflow --json`, select the exact plan
-artifact ID, and review it with `hermes daidala artifacts show`. Do not approve
-from the dashboard's pending-decision label or a digest alone. Approve only after
-the plan, risks, scope, and verification criteria are visible and acceptable,
-and the displayed 64-character SHA-256 digest matches:
+artifact ID, and review it with `hermes daidala artifacts show`, or inspect the
+same verified literal artifact in the authenticated dashboard. Do not approve
+from a pending-decision label or digest alone. Approve only after the plan,
+risks, scope, and verification criteria are visible and acceptable, and the
+displayed 64-character SHA-256 digest matches:
 
 ```bash
 hermes daidala approve first-workflow <64-character-plan-digest>
@@ -298,8 +298,9 @@ To reject the entire workflow instead, preview and apply `reject-workflow` using
 the same rationale and exact digest arguments. The generic `hermes daidala
 cancel` remains the explicit cancellation path outside a current review gate.
 
-These service and CLI operations are current. The optional dashboard can report
-pending decisions but does not yet render review disposition or revision controls.
+These service and CLI operations are current. The optional authenticated
+dashboard renders the same source-bound review evidence and preview-confirm
+accept-delivery, request-revision, and reject-workflow controls.
 
 ## 7. Recover or cancel
 

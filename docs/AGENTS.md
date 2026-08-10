@@ -9,17 +9,19 @@ Own current architecture documentation, the numbered reading set, and executable
 - `README.md` is the only reading-order, support-status, and symptom-routing index.
 - `00-getting-started.md` owns the executable first-run operator walkthrough.
 - `01-architecture.md` owns process and component boundaries.
-- `02-workflow-state.md` owns the Daidala policy ledger, Hermes Kanban state
-  authority, and transition-ownership contract.
+- `02-workflow-state.md` owns the Daidala policy ledger, immutable artifact
+  identity versus active/archive availability, Hermes Kanban state authority,
+  and transition-ownership contract.
 - `03-pack-reference.md` owns the workflow-pack schema and activation modes.
 - `04-authoring-packs.md` owns pack-neutral adapter and activation authoring.
 - `05-lifecycle-stages.md` owns executable stage inputs, activation, outputs,
-  and gates.
-- `06-security.md` owns current trust, activation-audit, and unavailable-control
-  boundaries.
+  gates, and terminal artifact-curation eligibility.
+- `06-security.md` owns current trust, activation-audit, artifact archive/recovery,
+  Cron, and unavailable-control boundaries.
 - `07-runbook.md` owns the executable operator lifecycle for installation,
   initialization, prerequisite diagnosis, pack readiness, workflow start/status,
   exact plan approval, exact attended review disposition, plan-revision recovery,
+  exact artifact list/show/export/archive/restore, curator scheduling,
   cancellation, upgrade, and native/standalone CLI parity.
 - `08-hermes-integration.md` owns verified Hermes versions, discovery paths, and installation limitations.
 - `09-pack-adapters.md` owns implemented pack mappings, activation policy, and

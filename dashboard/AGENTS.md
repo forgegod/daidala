@@ -69,6 +69,10 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   Curator preview/apply accepts only the closed pin, unpin, archive, and restore
   operations. Restore additionally carries one opaque archive ID; apply requires
   the exact preview digest and `confirm: true`. No route accepts a filesystem path.
+- Artifact archive/restore delegates to the profile-local curator through the
+  policy-neutral `daidala/archive_io.py` primitive. Workflow archives and recovery
+  copies remain below the resolved Daidala data root; checkout backups remain
+  below `<checkouts.root>/_backups/`. The browser never combines those stores.
 - Card comment accepts only `{comment, confirm: true}` and unblock accepts only
   `{reason, confirm: true}` after the server validates the card against the current
   workflow ledger and derives its board. Cancellation preview accepts only

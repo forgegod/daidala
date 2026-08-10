@@ -59,6 +59,23 @@ at `define` before renewed tuple approval.
 data. Cancellation cleans Daidala-owned resources and uses documented Kanban
 operations; card lifecycle remains visible on the board.
 
+## Terminal artifact eligibility
+
+Artifact curation never decides workflow completion. A delivered workflow is
+eligible only when its current delivery evidence verifies and no Daidala-owned
+worktree remains. An abandoned workflow is eligible only when every recorded
+Kanban card can be read and is terminal (`done` or `archived`). Missing host
+state, ledger drift, a nonterminal card, an owned worktree, or unverifiable
+artifact bytes blocks the transition.
+
+The first verified terminal observation starts the deterministic age clock.
+Configured stale and archive thresholds may advance unpinned workflows, while a
+pin prevents automatic archive. Archive publication verifies the manifest and
+all artifact digests before source cleanup; retries converge from active-only,
+dual-copy, archive-only, or partial-cleanup states. Curation changes storage
+availability only—it does not mutate the immutable ledger artifact identity or
+Hermes card lifecycle.
+
 ## Skill activation before evidence
 
 Every executable worker follows the same ordering:

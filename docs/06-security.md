@@ -3,9 +3,11 @@
 This document covers the plugin, policy ledger, Kanban graph contract,
 executable worktree, worker handoff recovery, and pinned external-skill
 installation boundary. Daidala provides no scheduler and no commit or push
-surface. Hermes cron and webhooks may admit work through the composition
-documented in [Autonomous triggering](13-autonomous-triggering.md), which is
-not yet verified end to end and does not weaken Daidala's approval gate.
+surface. Hermes Cron and webhooks may admit work through the composition
+documented in [Autonomous triggering](13-autonomous-triggering.md) without
+weakening Daidala's approval gate. A separate opt-in public-CLI boundary may
+register one script-only/no-agent Hermes Cron job for deterministic artifact
+curation; policy and scheduling are both disabled by default.
 
 ## Current trust boundaries
 
@@ -69,6 +71,10 @@ verification in the Daidala-owned detached worktree.
   regular-file members. It bounds archive size, rejects traversal and links,
   verifies a strict manifest and every SHA-256 digest before publication or
   restore, and exposes only operation/cause classes on failure.
+- Artifact access selects only opaque ledger identities and returns path-free
+  failures. Curator archive state is profile-local, mode `0600`, digest-bound,
+  and separate from checkout backups. Restore targets only the derived recovery
+  root; neither browser nor Cron payloads carry artifact content or private paths.
 
 These controls establish configured source and local-content integrity. They do
 not provide publisher signatures or prove that upstream instructions are safe

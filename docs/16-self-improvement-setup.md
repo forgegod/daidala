@@ -691,6 +691,23 @@ both pack validations must return success. Record the revision as setup evidence
 A candidate Daidala build must never replace this loaded controller installation;
 candidates run only in fresh evaluators.
 
+### 5.4 Preserve profile-local artifact archive separation
+
+The installed controller resolves Daidala state below its own profile data root.
+Workflow archives live below `daidala/artifact-archives/<workflow-id>/`, and
+verified recovery copies live below
+`daidala/artifact-restores/<workflow-id>/<archive-id>/`. The immutable workflow
+ledger keeps the original artifact path and digest; restore never rewrites it.
+
+These roots are not the checkout backup store. Checkout lifecycle backups remain
+below `<checkouts.root>/_backups/` and must not be moved into the controller's
+workflow archive tree. Do not copy curator state, schedule state, archives,
+restores, checkout backups, ledgers, or generated exports into the repository,
+candidate worktree, increment manifest, or setup evidence. Use the native
+`artifacts list`, `artifacts show`, and `artifacts export` commands plus the
+preview-confirm `curator archive`, `curator list-archived`, and `curator restore`
+commands from the operator runbook rather than reading private paths.
+
 ## 6. Create the dedicated board
 
 Hermes Kanban boards are installation-global and shared across every profile.

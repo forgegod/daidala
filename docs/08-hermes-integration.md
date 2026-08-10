@@ -32,6 +32,12 @@ The verified directory and entry-point discovery paths register exactly:
 - skills `daidala:aidlc-adapter`, `daidala:orchestrate`, and `daidala:setup`;
 - operator command family `hermes daidala`.
 
+The operator family includes ledger-bound artifact list/show/export,
+preview-confirm archive/restore, dry-run-first curator policy, and explicit
+script-only/no-agent Cron setup/removal. Those commands use the same installed
+package and profile root as the native plugin; they do not register agent tools,
+import Hermes internals, or add a scheduler.
+
 The optional dashboard package registers `/daidala`, the `sessions:top` slot,
 authenticated backend routes, and SDK `1.1.0` assets. Hermes v0.18.2 exposes no
 `kanban:top` extension slot. Workflow polling is read-only; setup and constraint

@@ -38,6 +38,9 @@ that runtime:
   Daidala-owned detached worktree.
 - **Evidence** retains definitions, plans, immutable diffs, changed paths,
   verification output, and review artifacts.
+- **Artifact review and recovery** provides ledger-bound list/show/export,
+  authenticated literal dashboard review, verified workflow archives, and safe
+  restore into a profile-local recovery root.
 - **Conservative delivery** reports a reviewed diff with `committed: false` and
   `pushed: false`.
 - **Pack neutrality** keeps pack-specific skill mappings in YAML rather than
@@ -126,17 +129,33 @@ daidala status first-workflow` for combined policy facts and live card status;
 use normal Kanban comments, reassignment, and unblock for worker recovery.
 
 See [Getting started](docs/00-getting-started.md) for the complete walkthrough,
-including pack setup, optional stage-specific profiles, recovery, and delivery.
-The current dashboard reports workflow state but does not yet render review
-disposition or revision controls.
+including pack setup, optional stage-specific profiles, artifact review,
+attended revision/rejection controls, recovery, and delivery. The authenticated
+dashboard and native/standalone CLI expose the same ledger-bound artifact and
+preview-confirm review authority.
+
+Review or export one exact artifact without accepting a filesystem source path:
+
+```bash
+hermes daidala artifacts list first-workflow --json
+hermes daidala artifacts show first-workflow <artifact-id>
+hermes daidala artifacts export first-workflow <artifact-id> \
+  --output /operator/selected/artifact.bin
+```
+
+Artifact curation remains disabled by default. An operator may explicitly
+preview and confirm policy, archive, restore, and one profile-local
+script-only/no-agent Hermes Cron registration; see the
+[operator runbook](docs/07-runbook.md#schedule-artifact-curation).
 
 ## Trigger and routing model
 
 A workflow starts only through an explicit Daidala start action: the verified
-operator CLI above or an agent calling `daidala_start`. Cron is not required
-and is not part of Daidala's runtime. It may send a future prompt that asks an
-agent to perform the same explicit start, but Daidala owns no cron job, daemon,
-or polling loop.
+operator CLI above or an agent calling `daidala_start`. Daidala does not schedule
+workflow admission and adds no daemon or polling loop. Hermes Cron or webhooks
+may invoke the same bounded admission path. Independently, an operator may
+register one recorded Hermes-owned no-agent job for deterministic artifact
+curation; Daidala does not implement the scheduler.
 
 The global Hermes `kanban.orchestrator_profile` limitation tracked in
 [NousResearch/hermes-agent#34977](https://github.com/NousResearch/hermes-agent/issues/34977)
