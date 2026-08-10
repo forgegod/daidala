@@ -12,6 +12,7 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import NoReturn, cast
 
+from .artifact_curator import CuratorPolicy
 from .cycles import CycleMode
 from .evaluation import EvaluatorIsolationEvidence
 from .initialization import apply_initialization, preview_initialization
@@ -221,7 +222,40 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     )
     curator_sub = curator.add_subparsers(dest="curator_command", required=True)
     curator_sub.add_parser("status", help="Show policy and classified curator state")
+    curator_configure = curator_sub.add_parser(
+        "configure", help="Preview or apply the profile-local curator policy"
+    )
+    enabled = curator_configure.add_mutually_exclusive_group(required=True)
+    enabled.add_argument("--enabled", action="store_true", dest="curator_enabled")
+    enabled.add_argument("--disabled", action="store_false", dest="curator_enabled")
+    curator_configure.add_argument("--stale-after-days", required=True, type=int)
+    curator_configure.add_argument("--archive-after-days", required=True, type=int)
+    curator_configure.add_argument("--apply", action="store_true")
+    curator_configure.add_argument("--expected-state-digest")
+    curator_configure.add_argument("--confirm-policy-digest")
     curator_run = curator_sub.add_parser("run", help="Preview or run eligible transitions")
+    curator_sub.add_parser(
+        "tick",
+        help="Run the registered script-only Cron tick and stay silent when no work is due",
+    )
+    curator_schedule = curator_sub.add_parser(
+        "schedule", help="Preview or apply the profile-local Hermes Cron registration"
+    )
+    curator_schedule_sub = curator_schedule.add_subparsers(
+        dest="curator_schedule_command", required=True
+    )
+    curator_schedule_sub.add_parser("status", help="Show the recorded exact Cron job")
+    curator_schedule_setup = curator_schedule_sub.add_parser(
+        "setup", help="Preview or create/update one script-only Cron job"
+    )
+    curator_schedule_setup.add_argument("interval")
+    curator_schedule_remove = curator_schedule_sub.add_parser(
+        "remove", help="Preview or remove the recorded exact Cron job"
+    )
+    for mutation in (curator_schedule_setup, curator_schedule_remove):
+        mutation.add_argument("--apply", action="store_true")
+        mutation.add_argument("--expected-preview-digest")
+        mutation.add_argument("--confirm-controller-profile")
     curator_pin = curator_sub.add_parser("pin", help="Preview or pin one workflow")
     curator_pin.add_argument("workflow_id")
     curator_unpin = curator_sub.add_parser("unpin", help="Preview or unpin one workflow")
@@ -947,6 +981,21 @@ def _run_curator_operation(args: argparse.Namespace, service: WorkflowService) -
             }
         )
         return 0
+    if command == "tick":
+        result = service.run_curator_cron_tick()
+        if result is not None:
+            _print(
+                {
+                    "success": True,
+                    "operation": operation,
+                    "curator": result.to_dict(),
+                }
+            )
+        return 0
+    if command == "configure":
+        return _run_curator_configure(args, service)
+    if command == "schedule":
+        return _run_curator_schedule(args, service)
     if command == "list-archived":
         _print(
             {
@@ -1004,6 +1053,98 @@ def _run_curator_operation(args: argparse.Namespace, service: WorkflowService) -
             "operation": operation,
             "dry_run": not args.apply,
             "curator": value.to_dict(),
+        }
+    )
+    return 0
+
+
+def _run_curator_configure(args: argparse.Namespace, service: WorkflowService) -> int:
+    policy = CuratorPolicy(
+        enabled=args.curator_enabled,
+        stale_after_days=args.stale_after_days,
+        archive_after_days=args.archive_after_days,
+    )
+    current = service.curator_status()
+    if not args.apply:
+        _print(
+            {
+                "success": True,
+                "operation": "curator-configure",
+                "dry_run": True,
+                "state_digest": current.state_digest,
+                "policy_digest": policy.digest,
+                "policy": policy.to_dict(),
+            }
+        )
+        return 0
+    if args.expected_state_digest is None:
+        raise ValueError("--apply requires --expected-state-digest")
+    if args.confirm_policy_digest is None:
+        raise ValueError("--apply requires --confirm-policy-digest")
+    if args.confirm_policy_digest != policy.digest:
+        raise ValueError("--confirm-policy-digest does not match the requested policy")
+    updated = service.configure_curator(
+        enabled=policy.enabled,
+        stale_after_days=policy.stale_after_days,
+        archive_after_days=policy.archive_after_days,
+        expected_state_digest=args.expected_state_digest,
+    )
+    _print(
+        {
+            "success": True,
+            "operation": "curator-configure",
+            "dry_run": False,
+            "curator": updated.to_dict(),
+        }
+    )
+    return 0
+
+
+def _run_curator_schedule(args: argparse.Namespace, service: WorkflowService) -> int:
+    command = args.curator_schedule_command
+    operation = f"curator-schedule-{command}"
+    if command == "status":
+        document = service.curator_cron_status()
+        _print(
+            {
+                "success": True,
+                "operation": operation,
+                "state_digest": document.digest,
+                "schedule": document.to_dict(),
+            }
+        )
+        return 0
+    if args.apply and args.expected_preview_digest is None:
+        raise ValueError("--apply requires --expected-preview-digest")
+    if args.apply and args.confirm_controller_profile is None:
+        raise ValueError("--apply requires --confirm-controller-profile")
+    if command == "setup":
+        value = (
+            service.apply_curator_cron_setup(
+                args.interval,
+                expected_preview_digest=args.expected_preview_digest,
+                confirmed_controller_profile=args.confirm_controller_profile,
+            )
+            if args.apply
+            else service.preview_curator_cron_setup(args.interval)
+        )
+    elif command == "remove":
+        value = (
+            service.apply_curator_cron_remove(
+                expected_preview_digest=args.expected_preview_digest,
+                confirmed_controller_profile=args.confirm_controller_profile,
+            )
+            if args.apply
+            else service.preview_curator_cron_remove()
+        )
+    else:
+        raise ValueError(f"unsupported curator schedule command: {command}")
+    _print(
+        {
+            "success": True,
+            "operation": operation,
+            "dry_run": not args.apply,
+            "schedule": value.to_dict(),
         }
     )
     return 0
@@ -1150,6 +1291,7 @@ def build_cli_service(
         kanban=KanbanGraphAdapter(
             lambda name, args: _dispatch_kanban_cli(runner, name, args)
         ),
+        cron_command_runner=runner,
     )
 
 

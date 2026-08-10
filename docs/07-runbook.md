@@ -111,6 +111,42 @@ Export creates a mode-`0600` regular file atomically and refuses an existing
 destination unless `--overwrite` is present. The destination is never accepted
 as an artifact read source.
 
+## Schedule artifact curation
+
+Policy and scheduling are disabled until an operator previews and confirms
+their exact identities. Configure the curator policy, then register one
+controller profile:
+
+```bash
+hermes daidala curator configure --enabled \
+  --stale-after-days 30 --archive-after-days 90
+hermes daidala curator configure --enabled \
+  --stale-after-days 30 --archive-after-days 90 --apply \
+  --expected-state-digest <state-digest> \
+  --confirm-policy-digest <policy-digest>
+hermes daidala curator schedule setup "every 1d"
+hermes daidala curator schedule setup "every 1d" --apply \
+  --expected-preview-digest <preview-digest> \
+  --confirm-controller-profile <controller-profile>
+```
+
+The preview binds the interval, curator policy digest, and exact installed Bash
+launcher. Setup creates or updates one profile-local script-only/no-agent Hermes
+Cron job and records the returned job ID. Repeating unchanged setup reuses that
+job. Policy or script changes require a new preview. Inspect and remove only the
+recorded job with:
+
+```bash
+hermes daidala curator schedule status
+hermes daidala curator schedule remove
+hermes daidala curator schedule remove --apply \
+  --expected-preview-digest <remove-preview-digest> \
+  --confirm-controller-profile <controller-profile>
+```
+
+The gateway scheduler must be running. An idle or disabled-policy tick is
+silent and performs no curator mutation; failures remain classified Cron runs.
+
 ## Approve the exact plan
 
 Approval remains bound to the SHA-256 digest recorded on the current plan

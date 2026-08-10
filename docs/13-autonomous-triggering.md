@@ -1,7 +1,7 @@
 # 13 — Autonomous triggering
 
-Daidala does not schedule or monitor work. Autonomous triggering is composed
-from existing Hermes facilities: cron or webhooks select an external item, then
+Daidala does not schedule or monitor workflow admission. Autonomous triggering
+is composed from existing Hermes facilities: cron or webhooks select an external item, then
 either a fresh Hermes agent session invokes `daidala_start` or a deterministic
 `--no-agent` script invokes the shared Daidala CLI. The gateway's Kanban
 dispatcher runs the resulting cards.
@@ -40,6 +40,10 @@ flowchart LR
 There is no Daidala scheduler, webhook listener, polling loop, or nested
 `hermes chat` process. The trigger layer is replaceable; all accepted events
 converge on the same Daidala workflow and policy boundary.
+
+Artifact curation is a narrow maintenance exception. Its explicit schedule
+setup command registers one job in Hermes' existing Cron facility; Daidala does
+not run a scheduler or daemon itself.
 
 ## Prerequisites
 
@@ -166,6 +170,46 @@ does not bundle them. Scripts must live under the active profile's
 Empty stdout means a silent tick; a nonzero exit produces an error alert. The
 script should use structured provider output, an allowlist, and `subprocess.run`
 with an argument list—never interpolate ticket text into a shell command.
+
+### Scheduled artifact curation
+
+Artifact curation has a bundled dry-run-first policy and schedule lifecycle.
+Preview and apply the policy before previewing an interval:
+
+```bash
+hermes daidala curator configure --enabled \
+  --stale-after-days 30 --archive-after-days 90
+hermes daidala curator configure --enabled \
+  --stale-after-days 30 --archive-after-days 90 --apply \
+  --expected-state-digest <state-digest> \
+  --confirm-policy-digest <policy-digest>
+hermes daidala curator schedule setup "every 1d"
+```
+
+The JSON preview names the controller profile, interval, policy digest, and the
+exact `daidala-artifact-curator.sh` script identity. Apply only that preview and
+repeat the profile name literally:
+
+```bash
+hermes daidala curator schedule setup "every 1d" --apply \
+  --expected-preview-digest <preview-digest> \
+  --confirm-controller-profile <controller-profile>
+```
+
+Setup writes the mode-`0600` script under `$HERMES_HOME/scripts/` and invokes
+public `hermes cron create` or `hermes cron edit` with `--no-agent`. The script
+contains only `exec daidala curator tick`; Hermes sanitizes its subprocess
+environment. A successful idle or disabled-policy tick prints nothing. A policy
+or script identity change fails closed until setup is previewed and applied
+again. Inspect or remove only the recorded exact job:
+
+```bash
+hermes daidala curator schedule status
+hermes daidala curator schedule remove
+hermes daidala curator schedule remove --apply \
+  --expected-preview-digest <remove-preview-digest> \
+  --confirm-controller-profile <controller-profile>
+```
 
 A poller follows this algorithm:
 

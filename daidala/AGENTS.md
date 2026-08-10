@@ -44,11 +44,12 @@ workflow-pack adapters, and bundled orchestration skills.
 | `artifact_access.py` | Opaque ledger-bound artifact identity, active/archive availability, injected exact-ID archive lookup, bounded digest-verified text and download reads, private exports, exact current-plan evidence, and caller-captured snapshot validation. |
 | `archive_io.py` | Policy-neutral deterministic tar/gzip creation, private-mode manifest verification, inventory, bounded verified member reads, and safe restore for caller-authorized roots. |
 | `artifact_curator.py` | Strict profile-local lifecycle policy and compare-and-swap state, live-ledger/Kanban terminal classification, pinned age transitions, verified archive publication, crash-convergent cleanup, exact-ID archive lookup, and safe recovery-root restore. |
+| `curator_cron.py` | Dry-run-first profile-local Hermes Cron setup/removal, exact job/script/policy identity, private compare-and-swap schedule state, and the public `hermes cron` subprocess boundary. |
 | `kanban.py` | Public host-boundary adapter for the idempotent, approval-gated and revision-addressed Hermes card graph. |
 | `schemas.py` | Tool schemas exposed to the model. |
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
 | `packs.py` | Pack loading and deterministic validation. |
-| `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle, exact artifact list/show/export, and attended-review dispatch, pack operations, dry-run-first initialization/project-cycle operations, exact preview-digest apply gates, bounded inspection output, and subprocess mutation boundary. |
+| `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle, exact artifact list/show/export, attended-review dispatch, dry-run-first curator policy/Cron operations, pack operations, exact preview-digest apply gates, bounded inspection output, and subprocess mutation boundary. |
 | `dashboard_backend.py` | Profile-safe dashboard read model, including persisted configuration, live Kanban, single-ledger exact plan/review evidence, path-free artifact catalog/text/download, curator status/action projections, runtime constraint-template and limit projection, constraint previews, and typed compare-and-swap replacement adapters. |
 | `recommendations.py` | Pure finite pending-decision and next-action derivation from ledger facts and live Kanban snapshots. |
 | `setup_wizard.py` | Typed setup preview, confirmation gate, and documented Hermes board/profile inventory commands with bounded long-name table parsing. |
@@ -87,6 +88,15 @@ workflow-pack adapters, and bundled orchestration skills.
   operation lock. Delivered workflows require current delivery evidence;
   abandoned workflows require every persisted card reference to be live and
   terminal. Owned worktrees, unavailable host state, or ledger drift fail closed.
+- Curator scheduling is independently opt-in and uses one profile-local
+  script-only/no-agent Hermes Cron job. Setup and removal require a fresh preview
+  digest plus the literal controller profile, persist the exact returned job ID,
+  and mutate Cron only through public `hermes cron` commands. The installed
+  mode-`0600` Bash launcher executes `daidala curator tick` without credentials;
+  ticks reject changed policy or script identity before curator mutation.
+- Curator policy configuration is dry-run first. Apply requires the current
+  curator state digest and literal desired policy digest before enabling or
+  changing age thresholds.
 - Archive state is published only after the deterministic archive, integrity
   manifest, and strict curator sidecar verify. Source cleanup then removes only
   matching verified members; retries converge from archive-only, dual-copy, or

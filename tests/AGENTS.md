@@ -28,6 +28,11 @@ completeness without touching a real Hermes profile.
   lock contention, verified archive-before-cleanup ordering, interruption
   convergence, tamper/collision rejection, safe restore, exact access wiring,
   and cross-profile isolation without a live Hermes profile.
+- Curator-Cron tests use fake public CLI boundaries and disposable profile roots
+  to prove exact script/job/policy identity, private schedule state, dry-run and
+  literal-confirm apply gates, setup replay, exact-ID update/removal, silent
+  disabled ticks, one-time archive convergence, and fail-closed policy/script
+  drift without touching a live Hermes profile.
 - Project-cycle admission tests prove standalone/native mode and candidate
   parity, comparison-mode candidate requirements, improve-mode rejection, and
   exact dry-run/apply forwarding before adapter mutation.

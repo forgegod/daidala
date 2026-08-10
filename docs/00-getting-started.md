@@ -328,10 +328,13 @@ worktree. The policy and artifact ledger remains available for diagnostics.
 
 ## Trigger and runtime boundary
 
-Daidala does not create cron jobs. A workflow starts through an explicit
-`hermes daidala start` command or an agent call to `daidala_start`. Cron may
-optionally prompt an agent to perform that same action, but it is external to
-Daidala and does not replace the gateway dispatcher.
+Daidala does not schedule workflow admission. A workflow starts through an
+explicit `hermes daidala start` command or an agent call to `daidala_start`;
+external Cron may optionally initiate that same action. Artifact curation is the
+narrow exception: `hermes daidala curator schedule setup` can explicitly create
+one profile-local script-only/no-agent Hermes Cron job after preview and literal
+controller-profile confirmation. Daidala still adds no scheduler or daemon and
+does not replace the gateway dispatcher.
 
 Hermes issue
 [#34977](https://github.com/NousResearch/hermes-agent/issues/34977) concerns the

@@ -18,7 +18,7 @@
 
 **Produces:** authenticated bounded artifact review/curator controls, opt-in profile-local cron curation, synchronized operator documentation and DOX, and installed-wheel end-to-end evidence
 
-**Status:** in progress — Phase 0 verified; Phase 1 pending
+**Status:** in progress — Phases 0 and 1 verified; Phase 2 pending
 
 ## Goal
 
@@ -42,7 +42,7 @@ Dashboard requests may expose sensitive artifact content or trigger reversible s
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
 | 0 | Add authenticated dashboard review and curator controls | done (focused and full tests; isolated Chromium fixture) | Focused dashboard/access/curator tests pass and isolated-browser verification inspects an archived diff without an arbitrary-path parameter |
-| 1 | Add opt-in Hermes Cron scheduling | pending | Focused cron-boundary tests pass; one isolated tick archives an eligible fixture, replay converges, and disabled policy performs no mutation |
+| 1 | Add opt-in Hermes Cron scheduling | done (focused/full tests; isolated public Hermes no-agent Cron lifecycle) | Focused cron-boundary tests pass; one isolated tick archives an eligible fixture, replay converges, and disabled policy performs no mutation |
 | 2 | Reconcile operator docs, DOX, package contents, and full verification | pending | The contract's repository gates pass and a fresh installed wheel lists, shows, exports, archives, and reads one fixture artifact |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
@@ -74,12 +74,37 @@ Phase 0 evidence:
 Steps:
 
 1. Read contract Phase 4 and current official Hermes Cron documentation before editing.
-2. Add the bounded deterministic entry point and explicit operator installation/configuration path; do not add a Daidala daemon or nested `hermes chat`.
+2. Add the bounded `daidala curator tick` entry point, dry-run-first `curator configure`, and `curator schedule setup|status|remove` lifecycle. Policy configuration requires the current state digest and literal desired policy digest. Setup installs the exact `$HERMES_HOME/scripts/daidala-artifact-curator.sh` Bash launcher and creates or updates only the recorded public Hermes script-only/no-agent Cron job; do not add a Daidala daemon or nested `hermes chat`.
 3. Keep network and model use absent, output metadata-only, and policy disabled by default.
 4. Exercise one isolated profile tick, replay, disabled policy, lock/concurrency, and failure recovery.
 5. Update operator docs and owning DOX with the supported Cron lifecycle.
 
 Verification gate: The Phase 1 table predicate passes with convergent replay and no disabled-policy mutation.
+
+Required Phase 1 finding: Hermes executes non-shell Cron scripts with its host
+Python interpreter, which is not the installed Daidala CLI identity. The
+profile-local launcher is therefore a Bash script that executes `daidala
+curator tick` from `PATH`; setup binds its exact name, digest, and entry point in
+the preview and persisted schedule identity.
+
+Required Phase 1 finding: curator policy state was service-only, so an operator
+could register only a permanently disabled tick. The supported CLI lifecycle
+must expose dry-run-first policy configuration before schedule setup; otherwise
+the phase cannot produce operational age-based curation without direct state
+edits.
+
+Phase 1 evidence:
+
+- Focused Cron, curator, and shared CLI tests pass; the full `pytest` suite,
+  `ruff check .`, `lefthook validate`, both pack validations, build, Twine, and
+  release-content checks pass.
+- A disposable `HERMES_HOME` public-CLI probe confirms policy preview/apply,
+  one script-only/no-agent job, successful direct execution, unchanged-setup
+  replay to the same job, exact recorded-ID removal, and an empty final Cron
+  inventory.
+- An isolated eligible fixture transitions to observed, archives two verified
+  source artifacts after the configured age, and produces no additional
+  transition on replay; disabled-policy ticks remain silent and mutation-free.
 
 ## Phase 2 — Reconcile docs, package, and full verification
 

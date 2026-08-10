@@ -33,6 +33,13 @@ from .constraints import (
     extract_policy_skill_constraints,
     parse_workflow_constraints,
 )
+from .curator_cron import (
+    CronCommandRunner,
+    CuratorCronDocument,
+    CuratorCronManager,
+    CuratorCronPreview,
+    CuratorCronResult,
+)
 from .errors import WorkflowError
 from .execution import ExecutionError, ExecutionWorkspace
 from .kanban import KanbanCardStatus, KanbanGraphAdapter
@@ -123,6 +130,7 @@ class WorkflowService:
         skill_content_registry: SkillContentRegistry | None = None,
         kanban: KanbanGraphAdapter | None = None,
         artifact_archive_lookup: ArtifactArchiveLookup | None = None,
+        cron_command_runner: CronCommandRunner | None = None,
     ) -> None:
         self.store = store
         self._clock = clock or (lambda: datetime.now(UTC))
@@ -137,6 +145,10 @@ class WorkflowService:
             store,
             clock=self._clock,
             status_provider=lambda ledger: self._require_kanban().all_statuses(ledger),
+        )
+        self._curator_cron = CuratorCronManager(
+            store.data_root,
+            command_runner=cron_command_runner,
         )
         self._artifact_access = ArtifactAccessService(
             store,
@@ -294,6 +306,49 @@ class WorkflowService:
 
     def apply_curator_run(self, *, expected_preview_digest: str) -> CuratorResult:
         return self._curator.apply_run(expected_preview_digest=expected_preview_digest)
+
+    def curator_cron_status(self) -> CuratorCronDocument:
+        return self._curator_cron.status()
+
+    def preview_curator_cron_setup(self, interval: str) -> CuratorCronPreview:
+        return self._curator_cron.preview_setup(interval, self._curator.status().policy)
+
+    def apply_curator_cron_setup(
+        self,
+        interval: str,
+        *,
+        expected_preview_digest: str,
+        confirmed_controller_profile: str,
+    ) -> CuratorCronResult:
+        return self._curator_cron.apply_setup(
+            interval,
+            self._curator.status().policy,
+            expected_preview_digest=expected_preview_digest,
+            confirmed_controller_profile=confirmed_controller_profile,
+        )
+
+    def preview_curator_cron_remove(self) -> CuratorCronPreview:
+        return self._curator_cron.preview_remove(self._curator.status().policy)
+
+    def apply_curator_cron_remove(
+        self,
+        *,
+        expected_preview_digest: str,
+        confirmed_controller_profile: str,
+    ) -> CuratorCronResult:
+        return self._curator_cron.apply_remove(
+            self._curator.status().policy,
+            expected_preview_digest=expected_preview_digest,
+            confirmed_controller_profile=confirmed_controller_profile,
+        )
+
+    def run_curator_cron_tick(self) -> CuratorResult | None:
+        policy = self._curator.status().policy
+        self._curator_cron.require_current_policy(policy)
+        preview = self._curator.preview_run()
+        if not preview.actions:
+            return None
+        return self._curator.apply_run(expected_preview_digest=preview.digest)
 
     def preview_curator_pin(self, workflow_id: str, *, pinned: bool) -> CuratorPreview:
         return self._curator.preview_pin(workflow_id, pinned=pinned)

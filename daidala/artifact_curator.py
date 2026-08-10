@@ -77,6 +77,10 @@ class CuratorPolicy:
             "archive_after_days": self.archive_after_days,
         }
 
+    @property
+    def digest(self) -> str:
+        return hashlib.sha256(_canonical(self.to_dict())).hexdigest()
+
     @classmethod
     def from_dict(cls, raw: object) -> CuratorPolicy:
         if not isinstance(raw, dict) or set(raw) != {
