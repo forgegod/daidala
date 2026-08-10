@@ -50,6 +50,9 @@ at `define` before renewed tuple approval.
    `implement` is parented directly from `plan`; every post-gate card uses its
    resolved profile, bundled worker contract, exact stage skills, real parent
    links, and the same absolute Daidala-owned worktree.
+   A Git-pinned imported plan starts from the same approval gate but creates no
+   synthetic `define` or `plan` card; its unparented `implement` card remains
+   bound to the persisted packet digest and immutable copied plan artifact.
 7. Automated review records evidence but creates no delivery card. An attended
    exact-digest `accept-delivery` decision creates `deliver`; `request-revision`
    preserves the source tuple and creates one revision-addressed Plan card;
@@ -106,9 +109,11 @@ evidence submission.
 ## Human gate
 
 No worktree or post-gate card is created before approval. Approval binds the
-entire current plan artifact, not a task subset. Changing the plan invalidates
-approval, increments the graph revision, and prevents evidence submission from
-the previous graph.
+entire current plan artifact, not a task subset. Imported-plan approval also
+binds the exact Git source-packet digest; only fresh preview/apply admission may
+create that source, and local plan replacement is rejected. Changing a generated
+plan invalidates approval, increments the graph revision, and prevents evidence
+submission from the previous graph.
 
 Automated review is not delivery authority. Attended disposition binds the exact
 current review and all evidence identities. `accept_delivery` requires an

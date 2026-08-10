@@ -246,11 +246,16 @@ def validate_plan_checkpoint(
     store: WorkflowStore,
     workspace: ExecutionWorkspace,
     git_runner: GitRunner | None = None,
+    excluding_workflow_id: str | None = None,
 ) -> WorkflowLedger | None:
     """Validate one read-only direct-parent source checkpoint or phase-zero origin."""
     if not isinstance(packet, PlanSourcePacket):
         raise PolicyViolationError("checkpoint packet must be a plan source packet")
-    ledgers = store.list_all()
+    ledgers = tuple(
+        ledger
+        for ledger in store.list_all()
+        if ledger.workflow_id != excluding_workflow_id
+    )
     if packet.phase_number == 0:
         if packet.predecessor_workflow_id is not None:
             raise PolicyViolationError("phase zero checkpoint cannot name a predecessor workflow")
@@ -353,6 +358,17 @@ def validate_plan_checkpoint(
     if actual_diff != implementation_diff:
         raise PolicyViolationError("checkpoint non-plan delta does not match delivered evidence")
     return predecessor
+
+
+def read_plan_source_markdown(
+    packet: PlanSourcePacket, *, git_runner: GitRunner | None = None
+) -> str:
+    """Read and verify the exact committed Markdown object named by an admitted packet."""
+    if not isinstance(packet, PlanSourcePacket):
+        raise PolicyViolationError("plan source packet must be a plan source packet")
+    repository = _require_repository_root(Path(packet.reference.repository))
+    content = _read_packet_blob(git_runner or _run_git, repository, packet)
+    return _decode_plan(content, packet.reference.plan_path)
 
 
 def _read_packet_blob(runner: GitRunner, repository: Path, packet: PlanSourcePacket) -> bytes:

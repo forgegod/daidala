@@ -26,7 +26,11 @@ A workflow records:
 
 `daidala_start` validates every exact pack skill, every resolved profile, the
 named board, and the clean baseline before creating the linked `define` and
-`plan` cards. Failed policy validation creates no graph.
+`plan` cards. `WorkflowService.preview_start_from_plan` instead validates one
+Git-pinned pending source packet and creates no ledger or cards; its confirmed
+apply re-runs every identity check, persists that packet and copied plan bytes,
+and exposes an approval gate without fabricated `define` or `plan` history.
+Failed policy validation creates no graph.
 
 ## Operational status
 
@@ -90,8 +94,10 @@ the approved plan digest's ledger revision, so a changed plan cannot reuse an
 authorized graph. Constraint replacement also changes the policy and constraint
 components. The plan-approval and review-disposition gates are Daidala ledger
 facts, not Kanban cards.
-`implement` is linked directly to `plan`; Hermes parent links own readiness
-promotion for executable cards.
+Generated-plan `implement` is linked directly to `plan`; Hermes parent links
+own readiness promotion for executable cards. An imported Git-pinned plan has no
+synthetic plan card, so its `implement` card has no parent while `verify` and
+`review` retain their normal executable predecessors.
 
 ## Transition ownership
 
@@ -121,7 +127,10 @@ invent parallel transition names.
 ## Approval integrity
 
 The plan artifact has a SHA-256 digest. `daidala_approve` accepts only that
-exact current digest. A generic Kanban unblock is interaction, not approval, and
+exact current digest. Imported plans additionally bind the admitted source-packet
+digest, whose source revision equals the workflow baseline; profile-local plan
+replacement is rejected and a later phase requires a new Git checkpoint and
+fresh admission. A generic Kanban unblock is interaction, not approval, and
 Kanban workers are rejected by the approval tool. Only after Daidala records the
 matching tuple may it create the worktree and post-gate graph. Historical
 approval-card references remain readable ledger evidence but are never completed,

@@ -16,7 +16,7 @@
 
 **Produces:** an internal dry-run/apply service that admits exactly one committed pending phase, preserves exact attended approval, and creates an imported-plan `implement → verify → review` graph without fabricated define/plan history
 
-**Status:** pending
+**Status:** complete
 
 ## Goal
 
@@ -30,13 +30,18 @@ A stale preview, changed pack/profile/board/constraint/baseline, inherited appro
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Add preplanned internal service, approval, and graph lifecycle | pending | `pytest -q tests/test_plan_admission.py tests/test_execution.py tests/test_kanban.py tests/test_workflow.py` exits 0 and proves dry-run/apply identity, restart convergence, exact approval binding, imported-plan `implement → verify → review` graph, generated-plan regression coverage, and delivery only after exact attended review acceptance |
+| 0 | Add preplanned internal service, approval, and graph lifecycle | done (uv-run-pytest-phase-gate) | `pytest -q tests/test_plan_admission.py tests/test_execution.py tests/test_kanban.py tests/test_workflow.py` exits 0 and proves dry-run/apply identity, restart convergence, exact approval binding, imported-plan `implement → verify → review` graph, generated-plan regression coverage, and delivery only after exact attended review acceptance |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
 
 ## Phase 0 — Add preplanned internal service, approval, and graph lifecycle
 
 **Goal:** Admit a validated committed phase internally without model-generated definition/planning work and dispatch only after fresh exact approval.
+
+**Atomicity rationale:** This vertical slice spans ledger identity, source artifact
+recording, approval, graph construction, regression coverage, and their owned
+contracts. Splitting it would expose either imported bytes without an approval
+binding or an approval path without its required graph and recovery invariants.
 
 Steps:
 

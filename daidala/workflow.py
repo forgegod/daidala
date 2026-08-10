@@ -113,6 +113,41 @@ def record_plan_source(
     return replace(ledger, plan_source_packet=packet, updated_at=recorded_at)
 
 
+def record_imported_plan(
+    ledger: WorkflowLedger,
+    *,
+    path: str,
+    digest: str,
+    approval_summary: ApprovalSummary,
+    recorded_at: datetime,
+) -> WorkflowLedger:
+    """Record the immutable Git-pinned plan without authoring-stage artifacts."""
+    packet = ledger.plan_source_packet
+    if packet is None:
+        raise PolicyViolationError("imported plan requires a plan source packet")
+    if ledger.plan_revision != 0 or ledger.card_for(WorkflowStage.DEFINE) is not None:
+        raise PolicyViolationError("imported plan must begin at the initial revision")
+    if digest != packet.reference.plan_digest:
+        raise PolicyViolationError("imported plan digest must match the plan source packet")
+    candidate = ArtifactReference(
+        stage=WorkflowStage.PLAN,
+        plan_revision=ledger.plan_revision,
+        path=path,
+        digest=digest,
+        recorded_at=recorded_at,
+        policy_revision=ledger.policy_revision,
+        approval_summary=approval_summary,
+        approval_summary_digest=approval_summary.digest_for(digest),
+    )
+    existing = ledger.artifact_for(WorkflowStage.PLAN)
+    if existing == candidate:
+        return ledger
+    if existing is not None:
+        raise PolicyViolationError("workflow already has a different imported plan artifact")
+    _require_not_before(ledger, recorded_at)
+    return replace(ledger, artifacts=(*ledger.artifacts, candidate), updated_at=recorded_at)
+
+
 def record_constraints(
     ledger: WorkflowLedger,
     *,
@@ -345,6 +380,7 @@ def approve_plan(
     *,
     plan_digest: str,
     decided_at: datetime,
+    plan_source_packet_digest: str | None = None,
 ) -> WorkflowLedger:
     """Bind approval to the exact current plan revision and digest."""
     candidate = ApprovalRecord(
@@ -353,6 +389,7 @@ def approve_plan(
         decided_at=decided_at,
         constraints_revision=ledger.current_constraints_revision,
         constraints_digest=ledger.current_constraints_digest,
+        plan_source_packet_digest=plan_source_packet_digest,
     )
     if (
         ledger.approval is not None
@@ -360,6 +397,7 @@ def approve_plan(
         and ledger.approval.plan_revision == ledger.plan_revision
         and ledger.approval.constraints_revision == ledger.current_constraints_revision
         and ledger.approval.constraints_digest == ledger.current_constraints_digest
+        and ledger.approval.plan_source_packet_digest == plan_source_packet_digest
     ):
         return ledger
     plan = ledger.artifact_for(WorkflowStage.PLAN)
@@ -367,6 +405,11 @@ def approve_plan(
         raise PolicyViolationError("approval must match the current plan digest")
     if plan.approval_summary is None or plan.approval_summary_digest is None:
         raise PolicyViolationError("approval requires a bound plan summary")
+    packet = ledger.plan_source_packet
+    if packet is not None and plan_source_packet_digest != packet.digest:
+        raise PolicyViolationError("approval must match the admitted plan source packet")
+    if packet is None and plan_source_packet_digest is not None:
+        raise PolicyViolationError("generated plan approval cannot name a plan source packet")
     if ledger.approval is not None:
         raise PolicyViolationError("current plan revision already has a different approval")
     _require_not_before(ledger, decided_at)
@@ -528,6 +571,8 @@ def replace_plan(
     replaced_at: datetime,
 ) -> WorkflowLedger:
     """Create a fresh plan revision and invalidate approval and post-gate facts."""
+    if ledger.plan_source_packet is not None:
+        raise PolicyViolationError("imported plan sources cannot be replaced locally")
     current = ledger.artifact_for(WorkflowStage.PLAN)
     if current is None:
         raise PolicyViolationError("plan replacement requires a plan artifact")

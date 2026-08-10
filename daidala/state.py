@@ -854,6 +854,7 @@ class ApprovalRecord:
     decided_at: datetime
     constraints_revision: int | None = None
     constraints_digest: str | None = None
+    plan_source_packet_digest: str | None = None
 
     def __post_init__(self) -> None:
         _require_text(self.plan_digest, "approved plan digest")
@@ -868,6 +869,10 @@ class ApprovalRecord:
             )
         if self.constraints_digest is not None:
             _require_digest(self.constraints_digest, "approved constraint digest")
+        if self.plan_source_packet_digest is not None:
+            _require_digest(
+                self.plan_source_packet_digest, "approved plan source packet digest"
+            )
         _require_aware(self.decided_at, "approval decided_at")
 
     def to_dict(self) -> dict[str, Any]:
@@ -877,6 +882,7 @@ class ApprovalRecord:
             "decided_at": self.decided_at.isoformat(),
             "constraints_revision": self.constraints_revision,
             "constraints_digest": self.constraints_digest,
+            "plan_source_packet_digest": self.plan_source_packet_digest,
         }
 
     @classmethod
@@ -887,6 +893,7 @@ class ApprovalRecord:
             decided_at=datetime.fromisoformat(raw["decided_at"]),
             constraints_revision=raw.get("constraints_revision"),
             constraints_digest=raw.get("constraints_digest"),
+            plan_source_packet_digest=raw.get("plan_source_packet_digest"),
         )
 
 
@@ -1522,6 +1529,12 @@ class WorkflowLedger:
                 raise PolicyViolationError(
                     "plan source baseline must match the workflow baseline commit"
                 )
+            if self.card_for(WorkflowStage.DEFINE) is not None or self.card_for(
+                WorkflowStage.PLAN
+            ) is not None:
+                raise PolicyViolationError(
+                    "imported plan workflows cannot create define or plan cards"
+                )
 
         if self.constraint_references:
             expected_revisions = list(range(1, len(self.constraint_references) + 1))
@@ -1598,6 +1611,19 @@ class WorkflowLedger:
             ):
                 raise PolicyViolationError(
                     "approval must match the current plan revision and digest"
+                )
+            if self.plan_source_packet is not None and (
+                self.approval.plan_source_packet_digest != self.plan_source_packet.digest
+            ):
+                raise PolicyViolationError(
+                    "imported plan approval must match the admitted plan source packet"
+                )
+            if (
+                self.plan_source_packet is None
+                and self.approval.plan_source_packet_digest is not None
+            ):
+                raise PolicyViolationError(
+                    "generated plan approval cannot name a plan source packet"
                 )
 
         for evidence in self.verification_evidence:

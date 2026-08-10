@@ -4,6 +4,7 @@ import hashlib
 import json
 import subprocess
 import sys
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from daidala.errors import PolicyViolationError
 from daidala.execution import ExecutionError, ExecutionWorkspace
 from daidala.kanban import KanbanError, KanbanGraphAdapter
 from daidala.packs import SkillActivationMode, load_pack
+from daidala.plan_admission import admit_plan_source
 from daidala.recommendations import KanbanSnapshot, derive_recommendations
 from daidala.service import ServiceError, WorkflowService
 from daidala.skills import (
@@ -376,6 +378,155 @@ def run_fixture_tests(worktree: Path) -> subprocess.CompletedProcess[str]:
 def artifact_relative_path(service: WorkflowService, workflow_id: str, path: str) -> str:
     root = service.store.data_root / "workflows" / workflow_id
     return Path(path).relative_to(root).as_posix()
+
+
+def test_imported_plan_preview_and_apply_skip_authoring_cards(
+    service: FixtureWorkflowService,
+    target_repository: Path,
+    fake_kanban_host,
+) -> None:
+    plan_path = target_repository / "docs" / "plans" / "P0200-imported.md"
+    plan_path.parent.mkdir(parents=True)
+    plan_path.write_text(
+        "\n".join(
+            (
+                "# Imported fixture",
+                "",
+                "**Plan ID:** imported-fixture",
+                "",
+                "**Execution slot:** P0200",
+                "",
+                "**Created:** 2026-08-10",
+                "",
+                "**Depends on:** none",
+                "",
+                "**Status:** pending",
+                "",
+                "## Phase table",
+                "",
+                "| # | Phase | Status | Verification gate |",
+                "|---|---|---|---|",
+                "| 0 | Fix calculator | pending | `python -m pytest -q` exits 0 |",
+                "",
+                "## Phase 0 — Fix calculator",
+                "",
+                "Verification gate: `python -m pytest -q` exits 0",
+                "",
+            )
+        ),
+        encoding="utf-8",
+    )
+    subprocess.run(["git", "-C", str(target_repository), "add", "docs/plans"], check=True)
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(target_repository),
+            "-c",
+            "user.name=Daidala Tests",
+            "-c",
+            "user.email=daidala@example.invalid",
+            "commit",
+            "-qm",
+            "add imported plan",
+        ],
+        check=True,
+    )
+    revision = subprocess.run(
+        ["git", "-C", str(target_repository), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    packet = admit_plan_source(
+        repository=target_repository,
+        plan_path="docs/plans/P0200-imported.md",
+        source_revision=revision,
+        baseline_commit=revision,
+        phase_number=0,
+    )
+
+    preview = service.preview_start_from_plan(
+        packet=packet,
+        board_slug="daidala-test",
+        stage_profiles=STAGE_PROFILES,
+        pack_name=service.fixture_pack_name,
+        workflow_id="workflow-imported",
+    )
+
+    assert service.store.list_all() == ()
+    assert not fake_kanban_host.cards
+    with pytest.raises(ServiceError, match="stale"):
+        service.preview_start_from_plan(
+            packet=replace(packet, phase_title="Stale phase title"),
+            board_slug="daidala-test",
+            stage_profiles=STAGE_PROFILES,
+            pack_name=service.fixture_pack_name,
+            workflow_id="workflow-stale",
+        )
+    assert service.store.list_all() == ()
+    with pytest.raises(ServiceError, match="changed after preview"):
+        service.start_from_plan(
+            packet=packet,
+            board_slug="daidala-test",
+            stage_profiles=STAGE_PROFILES,
+            pack_name=service.fixture_pack_name,
+            workflow_id="workflow-imported",
+            expected_preview_digest="0" * 64,
+        )
+
+    started = service.start_from_plan(
+        packet=packet,
+        board_slug="daidala-test",
+        stage_profiles=STAGE_PROFILES,
+        pack_name=service.fixture_pack_name,
+        workflow_id="workflow-imported",
+        expected_preview_digest=preview.digest,
+    )
+
+    plan = started.artifact_for(WorkflowStage.PLAN)
+    assert plan is not None
+    assert started.plan_source_packet == packet
+    assert started.card_for(WorkflowStage.DEFINE) is None
+    assert started.card_for(WorkflowStage.PLAN) is None
+    assert Path(plan.path).read_bytes() == plan_path.read_bytes()
+    assert not fake_kanban_host.cards
+    restarted_preview = service.preview_start_from_plan(
+        packet=packet,
+        board_slug="daidala-test",
+        stage_profiles=STAGE_PROFILES,
+        pack_name=service.fixture_pack_name,
+        workflow_id="workflow-imported",
+    )
+    assert service.start_from_plan(
+        packet=packet,
+        board_slug="daidala-test",
+        stage_profiles=STAGE_PROFILES,
+        pack_name=service.fixture_pack_name,
+        workflow_id="workflow-imported",
+        expected_preview_digest=restarted_preview.digest,
+    ) == started
+    with pytest.raises(PolicyViolationError, match="plan source packet"):
+        service.approve(started.workflow_id, plan.digest)
+
+    approved = service.approve(
+        started.workflow_id,
+        plan.digest,
+        plan_source_packet_digest=packet.digest,
+    )
+
+    implement = approved.card_for(WorkflowStage.IMPLEMENT)
+    assert implement is not None
+    assert approved.card_for(WorkflowStage.VERIFY) is not None
+    assert approved.card_for(WorkflowStage.REVIEW) is not None
+    assert fake_kanban_host.cards[implement.task_id]["args"]["parents"] == []
+    with pytest.raises(ServiceError, match="cannot be replaced"):
+        service.replace_plan(
+            started.workflow_id,
+            path=plan.path,
+            digest=plan.digest,
+            approval_summary=PLAN_SUMMARY,
+        )
 
 
 def test_thin_workflow_delivers_verified_uncommitted_diff(

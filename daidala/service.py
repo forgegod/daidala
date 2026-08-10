@@ -44,6 +44,11 @@ from .errors import WorkflowError
 from .execution import ExecutionError, ExecutionWorkspace
 from .kanban import KanbanCardStatus, KanbanGraphAdapter
 from .packs import WorkflowPack, load_pack
+from .plan_admission import (
+    admit_plan_source,
+    read_plan_source_markdown,
+    validate_plan_checkpoint,
+)
 from .revision import (
     ReviewDecisionPreview,
     build_review_decision_preview,
@@ -68,6 +73,7 @@ from .state import (
     ApprovalSummary,
     ConstraintSourceProvenance,
     PlanRevisionRequestReference,
+    PlanSourcePacket,
     ReviewDisposition,
     ReviewDispositionAction,
     ReviewFinding,
@@ -90,7 +96,9 @@ from .workflow import (
     record_artifact,
     record_card,
     record_constraints,
+    record_imported_plan,
     record_plan_revision_request,
+    record_plan_source,
     record_review,
     record_review_disposition,
     record_skill_activation,
@@ -109,12 +117,42 @@ class ServiceError(WorkflowError):
 class StartPreflight:
     """Mutation-free facts shared by dashboard preview and workflow start."""
 
+    board_slug: str
     pack: WorkflowPack
     constraint_input: tuple[WorkflowConstraints, ConstraintSourceProvenance | None] | None
     kanban: KanbanGraphAdapter
     target: Path
     baseline_commit: str
     stage_profiles: tuple[StageProfile, ...]
+
+
+@dataclass(frozen=True)
+class PlanStartPreview:
+    """Read-only, exact-input admission result required before imported-plan apply."""
+
+    workflow_id: str
+    packet: PlanSourcePacket
+    preflight: StartPreflight
+    predecessor_workflow_id: str | None
+
+    @property
+    def digest(self) -> str:
+        constraints, source = self.preflight.constraint_input or (None, None)
+        payload = {
+            "workflow_id": self.workflow_id,
+            "packet_digest": self.packet.digest,
+            "board_slug": self.preflight.board_slug,
+            "pack": self.preflight.pack.name,
+            "pack_source_revision": self.preflight.pack.source_revision,
+            "baseline_commit": self.preflight.baseline_commit,
+            "profiles": [(row.stage.value, row.profile) for row in self.preflight.stage_profiles],
+            "constraint_digest": constraints.digest if constraints else None,
+            "constraint_source": source.to_dict() if source else None,
+            "predecessor_workflow_id": self.predecessor_workflow_id,
+        }
+        return hashlib.sha256(
+            json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
 
 
 class WorkflowService:
@@ -273,6 +311,7 @@ class WorkflowService:
         if expected_baseline_commit is not None and baseline != expected_baseline_commit:
             raise ServiceError("repository baseline does not match expected baseline")
         return StartPreflight(
+            board_slug=board_slug,
             pack=pack,
             constraint_input=constraint_input,
             kanban=kanban,
@@ -280,6 +319,155 @@ class WorkflowService:
             baseline_commit=baseline,
             stage_profiles=profiles,
         )
+
+    def preview_start_from_plan(
+        self,
+        *,
+        packet: PlanSourcePacket,
+        board_slug: str,
+        stage_profiles: dict[str, str],
+        pack_name: str,
+        workflow_id: str,
+        predecessor_workflow_id: str | None = None,
+        constraints_content: str | None = None,
+        constraints_skill: str | None = None,
+        constraints_skill_digest: str | None = None,
+    ) -> PlanStartPreview:
+        """Revalidate one committed pending phase without creating ledger or cards."""
+        if not isinstance(packet, PlanSourcePacket):
+            raise ServiceError("plan start requires a plan source packet")
+        if predecessor_workflow_id != packet.predecessor_workflow_id:
+            raise ServiceError("requested predecessor does not match the plan source packet")
+        preflight = self.validate_start_preflight(
+            board_slug=board_slug,
+            target_repository=packet.reference.repository,
+            stage_profiles=stage_profiles,
+            pack_name=pack_name,
+            workflow_id=workflow_id,
+            constraints_content=constraints_content,
+            constraints_skill=constraints_skill,
+            constraints_skill_digest=constraints_skill_digest,
+            expected_baseline_commit=packet.reference.baseline_commit,
+        )
+        admitted = admit_plan_source(
+            repository=preflight.target,
+            plan_path=packet.reference.plan_path,
+            source_revision=packet.reference.source_revision,
+            baseline_commit=preflight.baseline_commit,
+            phase_number=packet.phase_number,
+            predecessor_workflow_id=predecessor_workflow_id,
+        )
+        if admitted != packet:
+            raise ServiceError("plan source packet is stale or does not match committed input")
+        validate_plan_checkpoint(
+            packet=packet,
+            store=self.store,
+            workspace=self._workspace,
+            excluding_workflow_id=workflow_id,
+        )
+        return PlanStartPreview(
+            workflow_id=workflow_id,
+            packet=packet,
+            preflight=preflight,
+            predecessor_workflow_id=predecessor_workflow_id,
+        )
+
+    def start_from_plan(
+        self,
+        *,
+        packet: PlanSourcePacket,
+        board_slug: str,
+        stage_profiles: dict[str, str],
+        pack_name: str,
+        workflow_id: str,
+        expected_preview_digest: str,
+        predecessor_workflow_id: str | None = None,
+        constraints_content: str | None = None,
+        constraints_skill: str | None = None,
+        constraints_skill_digest: str | None = None,
+    ) -> WorkflowLedger:
+        """Persist a freshly previewed imported plan; approval remains an attended gate."""
+        preview = self.preview_start_from_plan(
+            packet=packet,
+            board_slug=board_slug,
+            stage_profiles=stage_profiles,
+            pack_name=pack_name,
+            workflow_id=workflow_id,
+            predecessor_workflow_id=predecessor_workflow_id,
+            constraints_content=constraints_content,
+            constraints_skill=constraints_skill,
+            constraints_skill_digest=constraints_skill_digest,
+        )
+        if expected_preview_digest != preview.digest:
+            raise ServiceError("plan start inputs changed after preview")
+        try:
+            existing = self.store.get(workflow_id)
+        except StoreError as error:
+            if not str(error).startswith("unknown workflow:"):
+                raise
+        else:
+            _require_restart_match(
+                existing,
+                board_slug=board_slug,
+                target_repository=packet.reference.repository,
+                goal=_imported_plan_goal(packet),
+                pack_name=preview.preflight.pack.name,
+                stage_profiles=preview.preflight.stage_profiles,
+            )
+            if existing.plan_source_packet != packet:
+                raise ServiceError("existing workflow does not match the imported plan source")
+            _require_restart_constraints(existing, preview.preflight.constraint_input)
+            plan = existing.artifact_for(WorkflowStage.PLAN)
+            if plan is None or plan.digest != packet.reference.plan_digest:
+                raise ServiceError("existing workflow lacks the imported plan artifact")
+            return (
+                self._ensure_post_gate_graph(existing, preview.preflight.pack)
+                if existing.approval is not None
+                else existing
+            )
+
+        skills = tuple(
+            SkillDigest(name=name, digest=digest)
+            for name, digest in pack_skill_digests(preview.preflight.pack)
+        )
+        ledger = new_workflow(
+            workflow_id=workflow_id,
+            board_slug=board_slug,
+            target_repository=str(preview.preflight.target),
+            baseline_commit=preview.preflight.baseline_commit,
+            requested_goal=_imported_plan_goal(packet),
+            pack_name=preview.preflight.pack.name,
+            pack_source_revision=preview.preflight.pack.source_revision,
+            skill_digests=skills,
+            stage_profiles=preview.preflight.stage_profiles,
+            created_at=self._clock(),
+        )
+        ledger = record_plan_source(ledger, packet=packet, recorded_at=ledger.updated_at)
+        self.store.create(ledger)
+        if preview.preflight.constraint_input is not None:
+            constraints, source = preview.preflight.constraint_input
+            ledger = self.replace_constraints(
+                workflow_id,
+                content=constraints.canonical_bytes().decode("utf-8"),
+                expected_current_digest=None,
+                source=source,
+            )
+        stored = self._workspace.write_plan_source(
+            workflow_id,
+            packet=packet,
+            plan_markdown=read_plan_source_markdown(packet),
+            policy_revision=ledger.policy_revision,
+            plan_revision=ledger.plan_revision,
+        )
+        observed = self.store.get_with_token(workflow_id)
+        updated = record_imported_plan(
+            observed.ledger,
+            path=stored.plan.path,
+            digest=stored.plan.digest,
+            approval_summary=_imported_plan_summary(packet),
+            recorded_at=self._clock(),
+        )
+        return self.store.update(updated, expected_updated_at=observed.updated_at)
 
     def status(self, workflow_id: str) -> WorkflowLedger:
         """Return Daidala policy facts without reading or copying Kanban status."""
@@ -428,13 +616,20 @@ class WorkflowService:
         """Read live card status without persisting it in Daidala."""
         return self._require_kanban().combined_status(self.store.get(workflow_id))
 
-    def approve(self, workflow_id: str, plan_digest: str) -> WorkflowLedger:
+    def approve(
+        self,
+        workflow_id: str,
+        plan_digest: str,
+        *,
+        plan_source_packet_digest: str | None = None,
+    ) -> WorkflowLedger:
         """Approve exactly the current durable plan revision and digest."""
         observed = self.store.get_with_token(workflow_id)
         updated = approve_plan(
             observed.ledger,
             plan_digest=plan_digest,
             decided_at=self._clock(),
+            plan_source_packet_digest=plan_source_packet_digest,
         )
         if updated is not observed.ledger:
             updated = self.store.update(updated, expected_updated_at=observed.updated_at)
@@ -452,6 +647,8 @@ class WorkflowService:
         """Record a new plan revision and invalidate approval."""
         observed = self.store.get_with_token(workflow_id)
         previous = observed.ledger
+        if previous.plan_source_packet is not None:
+            raise ServiceError("imported plan sources cannot be replaced locally")
         expected_relative_path = self._workspace.stage_artifact_relative_path(
             stage=WorkflowStage.PLAN,
             policy_revision=previous.policy_revision,
@@ -518,6 +715,13 @@ class WorkflowService:
             raise ServiceError("expected current constraint digest does not match")
 
         if (
+            ledger.plan_source_packet is not None
+            and ledger.artifact_for(WorkflowStage.PLAN) is not None
+            and constraints.digest != current_digest
+        ):
+            raise ServiceError("imported plan constraints require a new plan admission")
+
+        if (
             constraints.digest == current_digest
             and not ledger.worktree_owned
             and all(
@@ -575,6 +779,8 @@ class WorkflowService:
             observed = self.store.get_with_token(workflow_id)
             ledger = release_worktree(observed.ledger, released_at=self._clock())
             ledger = self.store.update(ledger, expected_updated_at=observed.updated_at)
+        if ledger.plan_source_packet is not None:
+            return ledger
         return self._ensure_initial_graph(ledger, load_pack(ledger.pack_name))
 
     def replace_constraint_input(
@@ -1439,8 +1645,10 @@ class WorkflowService:
 
     def _ensure_post_gate_graph(self, ledger: WorkflowLedger, pack) -> WorkflowLedger:
         parent = ledger.card_for(WorkflowStage.PLAN)
-        if parent is None or ledger.artifact_for(WorkflowStage.PLAN) is None:
-            raise ServiceError("post-gate graph requires the current plan card and artifact")
+        if ledger.artifact_for(WorkflowStage.PLAN) is None:
+            raise ServiceError("post-gate graph requires the current plan artifact")
+        if ledger.plan_source_packet is None and parent is None:
+            raise ServiceError("generated post-gate graph requires the current plan card")
         if ledger.approval is None:
             raise ServiceError("post-gate graph requires exact ledger approval")
         for stage in (
@@ -1452,7 +1660,7 @@ class WorkflowService:
                 ledger,
                 pack,
                 stage,
-                parents=(parent.task_id,),
+                parents=(parent.task_id,) if parent is not None else (),
             )
             parent = ledger.card_for(stage)
             assert parent is not None
@@ -1617,6 +1825,38 @@ def _stage_profiles(values: dict[str, str]) -> tuple[StageProfile, ...]:
         for stage in WorkflowStage
         if stage is not WorkflowStage.APPROVAL
     )
+
+
+def _imported_plan_goal(packet: PlanSourcePacket) -> str:
+    return (
+        f"Implement committed plan {packet.plan_id} phase {packet.phase_number}: "
+        f"{packet.phase_title}"
+    )
+
+
+def _imported_plan_summary(packet: PlanSourcePacket) -> ApprovalSummary:
+    return ApprovalSummary(
+        headline=f"Approve committed plan phase: {packet.phase_title}",
+        changes=(packet.phase_title,),
+        affected_areas=(packet.reference.plan_path,),
+        risks=(),
+        verification=(packet.verification_gate,),
+    )
+
+
+def _require_restart_constraints(
+    ledger: WorkflowLedger,
+    constraint_input: tuple[WorkflowConstraints, ConstraintSourceProvenance | None] | None,
+) -> None:
+    if constraint_input is None:
+        if ledger.current_constraints is not None:
+            raise ServiceError("restart constraint content does not match")
+        return
+    constraints, source = constraint_input
+    if ledger.current_constraints_digest != constraints.digest:
+        raise ServiceError("restart constraint content does not match")
+    if not ledger.constraint_references or ledger.constraint_references[-1].source != source:
+        raise ServiceError("restart constraint source does not match")
 
 
 def _require_restart_match(
