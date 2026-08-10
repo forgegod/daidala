@@ -3,14 +3,13 @@
  *
  * The plugin renders two components through the Hermes dashboard plugin SDK:
  *
- *   - the /daidala tab (Page) lists workflows, links live Kanban snapshots
- *     to Daidala policy identity, and surfaces pending decisions;
+ *   - the /daidala tab (Page) provides Workflows, Artifacts, and Config views;
  *   - the sessions:top slot (Slot) renders a compact pending-decision count.
  *
  * Live state is polled on a fixed >= 5 second cadence while the page is visible;
  * the timer is paused when the tab is hidden. Mutations are limited to the named
- * pack, board, setup, constraint, GitHub Project link, exact-plan, and review
- * preview-confirm routes.
+ * pack, board, setup, constraint, GitHub Project link, exact-plan, review, and
+ * artifact-curator preview-confirm routes.
  *
  * The Hermes dashboard host invokes this bundle once per session after
  * authenticating and discovering the manifest. The SDK exposes React and
@@ -108,6 +107,7 @@
     var decision = query.get("decision");
     var planRevision = query.get("plan_revision");
     var section = query.get("section");
+    var requestedView = query.get("view");
     return {
       workflowId: workflowId && workflowId.length <= 512 && workflowId.indexOf("\0") === -1
         ? workflowId
@@ -117,6 +117,9 @@
       section: ["packs", "github-projects", "checkouts", "constraints", "verification", "runbook"].indexOf(section) >= 0
         ? section
         : null,
+      view: section ? "config" : ["workflows", "artifacts", "config"].indexOf(requestedView) >= 0
+        ? requestedView
+        : "workflows",
       returnToStart: query.get("return") === "start-workflow"
     };
   }
@@ -141,6 +144,63 @@
 
   function buildConfiguration() {
     return fetchJson(API_BASE + "/configuration");
+  }
+
+  function buildArtifacts(workflowId) {
+    var query = workflowId ? "?workflow_id=" + encodeURIComponent(workflowId) : "";
+    return fetchJson(API_BASE + "/artifacts" + query).then(function (payload) {
+      return payload && Array.isArray(payload.artifacts) ? payload.artifacts : [];
+    });
+  }
+
+  function buildArtifactText(workflowId, artifactId) {
+    return fetchJson(
+      API_BASE + "/artifacts/" + encodeURIComponent(workflowId) + "/" +
+      encodeURIComponent(artifactId) + "/text"
+    );
+  }
+
+  function buildCuratorStatus() {
+    return fetchJson(API_BASE + "/artifact-curator");
+  }
+
+  function previewCurator(workflowId, operation, archiveId) {
+    var payload = { operation: operation };
+    if (archiveId) payload.archive_id = archiveId;
+    return postJson(
+      API_BASE + "/artifact-curator/" + encodeURIComponent(workflowId) + "/preview",
+      payload
+    );
+  }
+
+  function applyCurator(workflowId, preview) {
+    var payload = {
+      operation: preview.operation,
+      preview_digest: preview.preview_digest,
+      confirm: true
+    };
+    if (preview.archive_id) payload.archive_id = preview.archive_id;
+    return postJson(
+      API_BASE + "/artifact-curator/" + encodeURIComponent(workflowId), payload
+    );
+  }
+
+  function downloadArtifact(entry) {
+    var url = API_BASE + "/artifacts/" + encodeURIComponent(entry.workflow_id) + "/" +
+      encodeURIComponent(entry.artifact_id) + "/download";
+    return SDK.authedFetch(url, { method: "GET" }).then(function (response) {
+      if (!response.ok) throw new Error("download failed with status " + response.status);
+      var observedDigest = response.headers.get("X-Daidala-Artifact-SHA256");
+      if (observedDigest !== entry.digest) throw new Error("download digest identity changed");
+      return response.blob();
+    }).then(function (blob) {
+      var objectUrl = URL.createObjectURL(blob);
+      var link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = "artifact-" + entry.artifact_id + ".bin";
+      link.click();
+      URL.revokeObjectURL(objectUrl);
+    });
   }
 
   function buildInitialization() {
@@ -3003,6 +3063,196 @@
     );
   }
 
+  function ArtifactsPanel() {
+    var artifactsState = useVisiblePolling(POLL_MS, function () { return buildArtifacts(null); });
+    var curatorState = useVisiblePolling(POLL_MS, buildCuratorStatus);
+    var selectedState = useState(null), selectedId = selectedState[0], setSelectedId = selectedState[1];
+    var textState = useState(null), text = textState[0], setText = textState[1];
+    var textErrorState = useState(""), textError = textErrorState[0], setTextError = textErrorState[1];
+    var filterState = useState({ workflow: "", kind: "", stage: "", availability: "", after: "", search: "" });
+    var filters = filterState[0], setFilters = filterState[1];
+    var previewState = useState(null), curatorPreview = previewState[0], setCuratorPreview = previewState[1];
+    var confirmedState = useState(false), curatorConfirmed = confirmedState[0], setCuratorConfirmed = confirmedState[1];
+    var busyState = useState(false), busy = busyState[0], setBusy = busyState[1];
+    var messageState = useState(""), message = messageState[0], setMessage = messageState[1];
+    var errorState = useState(""), error = errorState[0], setError = errorState[1];
+    var artifacts = Array.isArray(artifactsState.snapshot) ? artifactsState.snapshot : [];
+    var curator = curatorState.snapshot || null;
+
+    function changeFilter(name, value) {
+      setFilters(function (current) {
+        var next = Object.assign({}, current);
+        next[name] = value;
+        return next;
+      });
+    }
+
+    var workflows = Array.from(new Set(artifacts.map(function (row) { return row.workflow_id; }))).sort();
+    var kinds = Array.from(new Set(artifacts.map(function (row) { return row.kind; }))).sort();
+    var stages = Array.from(new Set(artifacts.map(function (row) { return row.stage; }).filter(Boolean))).sort();
+    var filtered = artifacts.filter(function (row) {
+      var haystack = [row.workflow_id, row.kind, row.stage, row.artifact_id, row.digest]
+        .filter(Boolean).join(" ").toLowerCase();
+      return (!filters.workflow || row.workflow_id === filters.workflow) &&
+        (!filters.kind || row.kind === filters.kind) &&
+        (!filters.stage || row.stage === filters.stage) &&
+        (!filters.availability || row.availability === filters.availability) &&
+        (!filters.after || (row.recorded_at && row.recorded_at.slice(0, 10) >= filters.after)) &&
+        (!filters.search || haystack.indexOf(filters.search.toLowerCase()) >= 0);
+    });
+    var selected = artifacts.find(function (row) { return row.artifact_id === selectedId; }) || null;
+    var curatorRows = curator && Array.isArray(curator.rows) ? curator.rows : [];
+    var curatorRow = selected
+      ? curatorRows.find(function (row) { return row.workflow_id === selected.workflow_id; }) || null
+      : null;
+    var archiveIds = curatorRow && Array.isArray(curatorRow.archive_ids) ? curatorRow.archive_ids : [];
+    var latestArchiveId = archiveIds.length ? archiveIds[archiveIds.length - 1] : null;
+
+    useEffect(function () {
+      setText(null);
+      setTextError("");
+      setCuratorPreview(null);
+      setCuratorConfirmed(false);
+      if (!selected) return;
+      buildArtifactText(selected.workflow_id, selected.artifact_id)
+        .then(setText)
+        .catch(function (reason) { setTextError(errorText(reason)); });
+    }, [selectedId]);
+
+    function refresh() {
+      artifactsState.refresh();
+      curatorState.refresh();
+    }
+
+    function runDownload() {
+      if (!selected) return;
+      setBusy(true); setError(""); setMessage("");
+      downloadArtifact(selected)
+        .then(function () { setMessage("Verified artifact download started."); })
+        .catch(function (reason) { setError("Artifact download failed: " + errorText(reason)); })
+        .finally(function () { setBusy(false); });
+    }
+
+    function runCuratorPreview(operation, archiveId) {
+      if (!selected) return;
+      setBusy(true); setError(""); setMessage(""); setCuratorConfirmed(false);
+      previewCurator(selected.workflow_id, operation, archiveId)
+        .then(setCuratorPreview)
+        .catch(function (reason) { setError("Curator preview failed: " + errorText(reason)); })
+        .finally(function () { setBusy(false); });
+    }
+
+    function runCuratorApply() {
+      if (!selected || !curatorPreview || !curatorConfirmed) return;
+      setBusy(true); setError(""); setMessage("");
+      applyCurator(selected.workflow_id, curatorPreview)
+        .then(function (result) {
+          setMessage("Curator operation applied: " + result.operation + ".");
+          setCuratorPreview(null); setCuratorConfirmed(false); refresh();
+        })
+        .catch(function (reason) { setError("Curator operation failed: " + errorText(reason)); })
+        .finally(function () { setBusy(false); });
+    }
+
+    function selector(label, name, values) {
+      return createElement("label", { className: "daidala-artifact-filter" },
+        createElement("span", null, label),
+        createElement("select", { value: filters[name], onChange: function (event) { changeFilter(name, event.target.value); } },
+          createElement("option", { value: "" }, "All"),
+          values.map(function (value) { return createElement("option", { key: value, value: value }, value); })
+        )
+      );
+    }
+
+    var counts = curator && curator.counts ? curator.counts : { active: 0, stale: 0, archived: 0 };
+    return createElement("section", { className: "daidala-artifacts", "data-testid": "daidala-artifacts" },
+      createElement("header", { className: "daidala-artifact-heading" },
+        createElement("div", null,
+          createElement("h2", null, "Artifacts"),
+          createElement("p", { className: "daidala-workflow-meta" }, "Ledger-bound metadata, literal preview, verified download, and curator state.")
+        ),
+        createElement("button", { type: "button", className: "daidala-refresh", onClick: refresh }, "Refresh artifacts")
+      ),
+      createElement("section", { className: "daidala-curator-summary", "data-testid": "daidala-curator-summary" },
+        createElement("strong", null, "Curator " + (curator && curator.policy && curator.policy.enabled ? "enabled" : "disabled")),
+        createElement("span", null, "Active " + (counts.active || 0)),
+        createElement("span", null, "Stale " + (counts.stale || 0)),
+        createElement("span", null, "Archived " + (counts.archived || 0)),
+        createElement("span", null, "Pinned " + (curator && curator.pinned || 0))
+      ),
+      createElement("div", { className: "daidala-artifact-filters" },
+        selector("Workflow", "workflow", workflows),
+        selector("Kind", "kind", kinds),
+        selector("Stage", "stage", stages),
+        selector("Availability", "availability", ["active", "archived", "active-and-archived", "missing"]),
+        createElement("label", { className: "daidala-artifact-filter" }, createElement("span", null, "Recorded after"),
+          createElement("input", { type: "date", value: filters.after, onChange: function (event) { changeFilter("after", event.target.value); } })
+        ),
+        createElement("label", { className: "daidala-artifact-filter" }, createElement("span", null, "Search"),
+          createElement("input", { type: "search", value: filters.search, onChange: function (event) { changeFilter("search", event.target.value); } })
+        )
+      ),
+      artifactsState.loading && !artifacts.length
+        ? createElement("p", { className: "daidala-state daidala-state-loading" }, "Loading artifacts")
+        : artifactsState.snapshot === null
+          ? createElement("p", { className: "daidala-state daidala-state-unavailable" }, "Artifact catalog unavailable")
+          : createElement("div", { className: "daidala-artifact-layout" },
+              createElement("div", { className: "daidala-artifact-list", role: "list" },
+                filtered.length ? filtered.map(function (row) {
+                  return createElement("div", { key: row.artifact_id, role: "listitem" },
+                    createElement("button", {
+                      type: "button",
+                      className: "daidala-artifact-row" + (selectedId === row.artifact_id ? " is-selected" : ""),
+                      onClick: function () { setSelectedId(row.artifact_id); }
+                    },
+                      createElement("strong", null, (row.stage || row.kind) + " · r" + row.plan_revision),
+                      createElement("span", null, row.workflow_id),
+                      createElement("span", null, row.availability + " · " + (row.size === null ? "size unavailable" : row.size + " bytes")),
+                      createElement("code", null, row.digest.slice(0, 16) + "…")
+                    )
+                  );
+                }) : createElement("p", { className: "daidala-state daidala-state-empty" }, "No artifacts match these filters")
+              ),
+              createElement("article", { className: "daidala-artifact-detail", "data-testid": "daidala-artifact-detail" },
+                !selected ? createElement("p", { className: "daidala-state daidala-state-empty" }, "Select an artifact to review it") : createElement(React.Fragment, null,
+                  createElement("h3", null, (selected.stage || selected.kind) + " artifact"),
+                  createElement("dl", { className: "daidala-artifact-identity" },
+                    createElement("dt", null, "Workflow"), createElement("dd", null, selected.workflow_id),
+                    createElement("dt", null, "Artifact ID"), createElement("dd", null, selected.artifact_id),
+                    createElement("dt", null, "SHA-256"), createElement("dd", null, selected.digest),
+                    createElement("dt", null, "Recorded"), createElement("dd", null, selected.recorded_at || "Unavailable"),
+                    createElement("dt", null, "State"), createElement("dd", null, selected.availability)
+                  ),
+                  createElement("div", { className: "daidala-artifact-actions" },
+                    createElement("button", { type: "button", disabled: busy, onClick: runDownload }, "Download verified bytes"),
+                    createElement("button", { type: "button", disabled: busy, onClick: function () { runCuratorPreview(curatorRow && curatorRow.pinned ? "unpin" : "pin", null); } }, curatorRow && curatorRow.pinned ? "Preview unpin" : "Preview pin"),
+                    createElement("button", { type: "button", disabled: busy || selected.availability === "archived", onClick: function () { runCuratorPreview("archive", null); } }, "Preview archive"),
+                    createElement("button", { type: "button", disabled: busy || !latestArchiveId, onClick: function () { runCuratorPreview("restore", latestArchiveId); } }, "Preview restore")
+                  ),
+                  curatorRow ? createElement("p", { className: "daidala-workflow-meta" },
+                    "Curator state " + curatorRow.state + (curatorRow.pinned ? " · pinned" : "") +
+                    (curatorRow.next_transition_at ? " · next transition " + curatorRow.next_transition_at : "")
+                  ) : null,
+                  curatorPreview ? createElement("section", { className: "daidala-artifact-curator-preview", "data-testid": "daidala-curator-preview" },
+                    createElement("h4", null, "Curator preview · " + curatorPreview.operation),
+                    createElement("p", null, (curatorPreview.actions || []).length + " transition(s) · digest " + curatorPreview.preview_digest),
+                    createElement("label", null, createElement("input", { type: "checkbox", checked: curatorConfirmed, onChange: function (event) { setCuratorConfirmed(event.target.checked); } }), " I confirm applying this exact curator preview"),
+                    createElement("button", { type: "button", disabled: busy || !curatorConfirmed, onClick: runCuratorApply }, "Apply curator operation")
+                  ) : null,
+                  createElement("section", { className: "daidala-artifact-preview", "data-testid": "daidala-artifact-literal-preview" },
+                    createElement("h4", null, "Literal text preview"),
+                    text ? createElement("pre", null, text.content) : textError
+                      ? createElement("p", { className: "daidala-banner daidala-banner-warning" }, "Literal preview unavailable. Use verified download. " + textError)
+                      : createElement("p", { className: "daidala-state daidala-state-loading" }, "Loading literal preview")
+                  )
+                )
+              )
+            ),
+      message ? createElement("p", { role: "status", className: "daidala-banner" }, message) : null,
+      error ? createElement("p", { role: "status", className: "daidala-banner daidala-banner-error" }, error) : null
+    );
+  }
+
   function Page() {
     var health = useVisiblePolling(POLL_MS, buildHealth);
     var workflowsState = useVisiblePolling(POLL_MS, buildWorkflows);
@@ -3082,7 +3332,25 @@
           { className: "daidala-root-subtitle" },
           "Operator view over the active Daidala profile."
         ),
-        createElement(
+        createElement("nav", { className: "daidala-primary-nav", "aria-label": "Daidala views" },
+          [
+            { value: "workflows", label: "Workflows" },
+            { value: "artifacts", label: "Artifacts" },
+            { value: "config", label: "Config" }
+          ].map(function (view) {
+            return createElement("button", {
+              key: view.value,
+              type: "button",
+              className: route.view === view.value ? "is-selected" : "",
+              "aria-current": route.view === view.value ? "page" : null,
+              onClick: function () {
+                window.history.pushState({}, "", "/daidala?view=" + view.value);
+                window.dispatchEvent(new PopStateEvent("popstate"));
+              }
+            }, view.label);
+          })
+        ),
+        route.view === "workflows" ? createElement(
           "button",
           {
             type: "button",
@@ -3091,12 +3359,12 @@
             onClick: refreshAll
           },
           "Refresh"
-        ),
-        createElement("button", {
+        ) : null,
+        route.view === "workflows" ? createElement("button", {
           type: "button",
           className: "daidala-refresh",
           onClick: function () { setStarting(true); }
-        }, "Start workflow"),
+        }, "Start workflow") : null,
         healthDown
           ? createElement(
               "p",
@@ -3132,7 +3400,15 @@
               }
             })
           )
-        : createElement(React.Fragment, null,
+        : route.view === "artifacts"
+          ? createElement(ArtifactsPanel)
+          : route.view === "config"
+            ? createElement(ConfigurationPanel, {
+                section: route.section,
+                health: health.snapshot,
+                onResume: resumeExistingWorkflow
+              })
+            : createElement(React.Fragment, null,
       openWorkflowId
         ? createElement("section", { className: "daidala-workflows", "data-testid": "daidala-opened-workflow" },
             startNotice ? createElement("p", { role: "status", className: "daidala-banner" }, startNotice) : null,
@@ -3144,11 +3420,6 @@
             })
           )
         : null,
-      createElement(ConfigurationPanel, {
-        section: route.section,
-        health: health.snapshot,
-        onResume: resumeExistingWorkflow
-      }),
       firstLoad
         ? createElement(
             "p",

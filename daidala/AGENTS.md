@@ -41,7 +41,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `project_cycles.py` | Dry-run-first production project-cycle admission/completion/cancellation/reconciliation, prerequisite enforcement, stable one-item selection, exact identity confirmation, and profile-local runtime wiring. |
 | `reconciliation.py` | Two-authority claim recovery evidence, strict reconciliation previews/results, mode-`0600` content-addressed tick records, and local pending-to-published finding synchronization. |
 | `execution.py` | Immutable revision-addressed profile-local artifacts, detached worktrees, and diff capture. |
-| `artifact_access.py` | Opaque ledger-bound artifact identity, active/archive availability, injected exact-ID archive lookup, bounded digest-verified text reads and private exports, exact current-plan evidence, and caller-captured snapshot validation. |
+| `artifact_access.py` | Opaque ledger-bound artifact identity, active/archive availability, injected exact-ID archive lookup, bounded digest-verified text and download reads, private exports, exact current-plan evidence, and caller-captured snapshot validation. |
 | `archive_io.py` | Policy-neutral deterministic tar/gzip creation, private-mode manifest verification, inventory, bounded verified member reads, and safe restore for caller-authorized roots. |
 | `artifact_curator.py` | Strict profile-local lifecycle policy and compare-and-swap state, live-ledger/Kanban terminal classification, pinned age transitions, verified archive publication, crash-convergent cleanup, exact-ID archive lookup, and safe recovery-root restore. |
 | `kanban.py` | Public host-boundary adapter for the idempotent, approval-gated and revision-addressed Hermes card graph. |
@@ -49,7 +49,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
 | `packs.py` | Pack loading and deterministic validation. |
 | `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle, exact artifact list/show/export, and attended-review dispatch, pack operations, dry-run-first initialization/project-cycle operations, exact preview-digest apply gates, bounded inspection output, and subprocess mutation boundary. |
-| `dashboard_backend.py` | Profile-safe dashboard read model, including injected persisted-configuration projections, live Kanban snapshots, single-ledger exact plan/review evidence projections, runtime constraint-template and limit projection, constraint previews, and typed compare-and-swap replacement adapter. |
+| `dashboard_backend.py` | Profile-safe dashboard read model, including persisted configuration, live Kanban, single-ledger exact plan/review evidence, path-free artifact catalog/text/download, curator status/action projections, runtime constraint-template and limit projection, constraint previews, and typed compare-and-swap replacement adapters. |
 | `recommendations.py` | Pure finite pending-decision and next-action derivation from ledger facts and live Kanban snapshots. |
 | `setup_wizard.py` | Typed setup preview, confirmation gate, and documented Hermes board/profile inventory commands with bounded long-name table parsing. |
 | `packs/` | Skill-set-specific lifecycle mappings. |

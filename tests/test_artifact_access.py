@@ -384,6 +384,9 @@ def test_resolver_rejects_forged_corrupt_binary_oversized_and_cross_workflow_ids
     )
     with pytest.raises(ArtifactAccessError, match="binary"):
         access.read_text(workflow_id, binary_id)
+    binary_download = access.download(workflow_id, binary_id)
+    assert binary_download.content == b"binary\x00content"
+    assert binary_download.entry.digest == _digest(binary_download.content)
 
     Path(forged.path).write_bytes(b"x" * (1024 * 1024 + 1))
     oversized_ledger = store.get(workflow_id)
@@ -415,6 +418,9 @@ def test_resolver_rejects_forged_corrupt_binary_oversized_and_cross_workflow_ids
     )
     with pytest.raises(ArtifactAccessError, match="1 MiB"):
         access.read_text(workflow_id, oversized_id)
+    oversized_download = access.download(workflow_id, oversized_id)
+    assert oversized_download.size == 1024 * 1024 + 1
+    assert _digest(oversized_download.content) == oversized_digest
     oversized_output = Path(forged.path).parent / "oversized-export.bin"
     exported = access.export(workflow_id, oversized_id, oversized_output)
     assert exported.size == 1024 * 1024 + 1

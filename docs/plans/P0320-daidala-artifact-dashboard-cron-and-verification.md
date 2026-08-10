@@ -18,7 +18,7 @@
 
 **Produces:** authenticated bounded artifact review/curator controls, opt-in profile-local cron curation, synchronized operator documentation and DOX, and installed-wheel end-to-end evidence
 
-**Status:** pending — blocked until P0310 completes and human implementation approval is recorded
+**Status:** in progress — Phase 0 verified; Phase 1 pending
 
 ## Goal
 
@@ -27,7 +27,9 @@ Expose verified artifact review and reversible curator controls through the auth
 ## Current state
 
 - P0205 provides exact-ID resolution, P0300 provides CLI review/export, and P0310 provides deterministic curation.
-- P0210 and P0212 expose focused current plan and review evidence only where required for attended decisions; the dashboard still lacks a general historical artifact browser and curator actions.
+- The authenticated dashboard exposes focused decision evidence plus a general
+  path-free artifact browser with literal preview, verified download, and
+  preview-confirm curator controls.
 - Hermes Cron is the supported scheduler; Daidala must not add a daemon, nested agent, or model judgment.
 - The shared contract pins authentication, bounded text/download behavior, confirmation, cron idempotency, documentation, package, and full verification requirements.
 
@@ -39,7 +41,7 @@ Dashboard requests may expose sensitive artifact content or trigger reversible s
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Add authenticated dashboard review and curator controls | pending | Focused dashboard/access/curator tests pass and isolated-browser verification inspects an archived diff without an arbitrary-path parameter |
+| 0 | Add authenticated dashboard review and curator controls | done (focused and full tests; isolated Chromium fixture) | Focused dashboard/access/curator tests pass and isolated-browser verification inspects an archived diff without an arbitrary-path parameter |
 | 1 | Add opt-in Hermes Cron scheduling | pending | Focused cron-boundary tests pass; one isolated tick archives an eligible fixture, replay converges, and disabled policy performs no mutation |
 | 2 | Reconcile operator docs, DOX, package contents, and full verification | pending | The contract's repository gates pass and a fresh installed wheel lists, shows, exports, archives, and reads one fixture artifact |
 
@@ -58,6 +60,12 @@ Steps:
 5. Run the focused API/assets/access/curator tests and isolated-browser archived-diff journey from the contract.
 
 Verification gate: The Phase 0 table predicate passes and no protected content enters logs or errors.
+
+Phase 0 evidence:
+
+- `pytest tests/test_dashboard_api.py tests/test_dashboard_assets.py tests/test_artifact_access.py tests/test_artifact_curator.py tests/test_dashboard.py` and the full `pytest` suite pass.
+- `ruff check .`, `lefthook validate`, both pack validations, build, Twine, and release-content checks pass.
+- Isolated Chromium loads `tests/fixtures/dashboard_phase0_browser_probe.html`, lists the archived implementation diff, renders `<script>` content as non-executable literal text, downloads bytes with SHA-256 `27772ec853c0c2b28a60a8c32cebdf405c49bec4f01bedde071e401a5f231005`, and submits restore with only operation, opaque archive ID, exact preview digest, and `confirm: true`.
 
 ## Phase 1 — Add opt-in Hermes Cron scheduling
 

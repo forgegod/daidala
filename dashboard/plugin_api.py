@@ -18,8 +18,10 @@ Supervision endpoints include:
 - ``POST /api/plugins/daidala/initialization``
 - ``POST /api/plugins/daidala/diagnostics/prerequisites``
 - ``GET  /api/plugins/daidala/prerequisites``
-- ``GET  /api/plugins/daidala/workflows``
-- ``GET  /api/plugins/daidala/workflows/{workflow_id}``
+- ``GET /api/plugins/daidala/workflows``
+- ``GET /api/plugins/daidala/workflows/{workflow_id}``
+- ``GET /api/plugins/daidala/artifacts`` and exact artifact text/download
+- ``GET/POST /api/plugins/daidala/artifact-curator[...]``
 - ``GET  /api/plugins/daidala/workflows/{workflow_id}/approval-review``
 - ``GET  /api/plugins/daidala/workflows/{workflow_id}/review-decision``
 - ``GET  /api/plugins/daidala/workflows/{workflow_id}/decisions``
@@ -68,11 +70,12 @@ from functools import lru_cache
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from threading import Lock
-from typing import Any
+from typing import Any, NoReturn
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 
-from daidala.artifact_access import ArtifactAccessError
+from daidala.artifact_access import ArtifactAccessError, ArtifactFailureReason
+from daidala.artifact_curator import CuratorError
 from daidala.checkout_root import (
     CheckoutConfig,
     CheckoutRootError,
@@ -135,6 +138,50 @@ from daidala.state import ReviewDispositionAction
 from daidala.store import StoreError
 
 router = APIRouter()
+
+
+def _raise_artifact_error(error: ArtifactAccessError) -> NoReturn:
+    status = (
+        404
+        if error.reason
+        in {
+            ArtifactFailureReason.ARTIFACT_NOT_FOUND,
+            ArtifactFailureReason.WORKFLOW_UNAVAILABLE,
+        }
+        else 413
+        if error.reason is ArtifactFailureReason.OVERSIZED
+        else 409
+    )
+    raise HTTPException(
+        status_code=status,
+        detail={"message": "Artifact unavailable", "reason": error.reason.value},
+    ) from error
+
+
+def _curator_request(
+    payload: dict[str, object], *, apply: bool
+) -> tuple[str, str | None, str | None]:
+    operation = payload.get("operation")
+    if operation not in {"pin", "unpin", "archive", "restore"}:
+        raise HTTPException(status_code=400, detail="Curator operation is invalid")
+    expected = {"operation", "archive_id"} if operation == "restore" else {"operation"}
+    if apply:
+        expected |= {"preview_digest", "confirm"}
+    if set(payload) != expected or (apply and payload.get("confirm") is not True):
+        raise HTTPException(status_code=400, detail="Curator request is malformed")
+    archive_id = payload.get("archive_id")
+    preview_digest = payload.get("preview_digest")
+    for value, label in ((archive_id, "archive ID"), (preview_digest, "preview digest")):
+        if value is not None and (
+            not isinstance(value, str)
+            or len(value) != 64
+            or any(character not in "0123456789abcdef" for character in value)
+        ):
+            raise HTTPException(status_code=400, detail=f"{label} is invalid")
+    assert isinstance(operation, str)
+    assert archive_id is None or isinstance(archive_id, str)
+    assert preview_digest is None or isinstance(preview_digest, str)
+    return operation, archive_id, preview_digest
 
 
 ServiceFactory = Callable[[], Any]
@@ -211,6 +258,7 @@ def health() -> dict[str, Any]:
             "workflow_approve",
             "review_disposition_preview",
             "review_disposition",
+            "artifact_curator",
         ],
     }
 
@@ -331,6 +379,96 @@ def configuration() -> dict[str, Any]:
         return DashboardBackend(service_factory=service_factory).configuration()
     except DashboardBackendError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@router.get("/artifacts")
+def artifacts(workflow_id: str | None = None) -> dict[str, object]:
+    """Return path-free artifact metadata for all or one exact workflow."""
+    try:
+        return DashboardBackend(service_factory=service_factory).artifacts(workflow_id)
+    except StoreError as error:
+        raise HTTPException(status_code=404, detail="Workflow unavailable") from error
+    except ArtifactAccessError as error:
+        _raise_artifact_error(error)
+
+
+@router.get("/artifacts/{workflow_id}/{artifact_id}/text")
+def artifact_text(workflow_id: str, artifact_id: str) -> dict[str, object]:
+    """Return one verified bounded literal-text projection."""
+    try:
+        return DashboardBackend(service_factory=service_factory).artifact_text(
+            workflow_id, artifact_id
+        )
+    except StoreError as error:
+        raise HTTPException(status_code=404, detail="Workflow unavailable") from error
+    except ArtifactAccessError as error:
+        _raise_artifact_error(error)
+
+
+@router.get("/artifacts/{workflow_id}/{artifact_id}/download")
+def artifact_download(workflow_id: str, artifact_id: str) -> Response:
+    """Return verified bytes through the authenticated plugin transport."""
+    try:
+        download = DashboardBackend(service_factory=service_factory).artifact_download(
+            workflow_id, artifact_id
+        )
+    except StoreError as error:
+        raise HTTPException(status_code=404, detail="Workflow unavailable") from error
+    except ArtifactAccessError as error:
+        _raise_artifact_error(error)
+    opaque_id = download.entry.artifact_id
+    return Response(
+        content=download.content,
+        media_type="application/octet-stream",
+        headers={
+            "Cache-Control": "no-store",
+            "Content-Disposition": f'attachment; filename="artifact-{opaque_id}.bin"',
+            "X-Content-Type-Options": "nosniff",
+            "X-Daidala-Artifact-SHA256": download.entry.digest,
+        },
+    )
+
+
+@router.get("/artifact-curator")
+def artifact_curator_status() -> dict[str, object]:
+    """Return curator policy, state counts, pins, and transition times."""
+    try:
+        return DashboardBackend(service_factory=service_factory).curator_status()
+    except (CuratorError, StoreError) as error:
+        raise HTTPException(status_code=409, detail="Curator status unavailable") from error
+
+
+@router.post("/artifact-curator/{workflow_id}/preview")
+def artifact_curator_preview(
+    workflow_id: str, payload: dict[str, object]
+) -> dict[str, object]:
+    """Preview one closed curator operation without mutation."""
+    operation, archive_id, _ = _curator_request(payload, apply=False)
+    try:
+        return DashboardBackend(service_factory=service_factory).curator_preview(
+            workflow_id, operation, archive_id
+        )
+    except StoreError as error:
+        raise HTTPException(status_code=404, detail="Workflow unavailable") from error
+    except CuratorError as error:
+        raise HTTPException(status_code=409, detail="Curator preview unavailable") from error
+
+
+@router.post("/artifact-curator/{workflow_id}")
+def artifact_curator_apply(
+    workflow_id: str, payload: dict[str, object]
+) -> dict[str, object]:
+    """Apply one exact preview-confirmed curator operation."""
+    operation, archive_id, preview_digest = _curator_request(payload, apply=True)
+    assert preview_digest is not None
+    try:
+        return DashboardBackend(service_factory=service_factory).curator_apply(
+            workflow_id, operation, preview_digest, archive_id
+        )
+    except StoreError as error:
+        raise HTTPException(status_code=404, detail="Workflow unavailable") from error
+    except CuratorError as error:
+        raise HTTPException(status_code=409, detail="Curator operation unavailable") from error
 
 
 def _link_preview_digest(link: GitHubProjectLink, store_digest: str) -> str:

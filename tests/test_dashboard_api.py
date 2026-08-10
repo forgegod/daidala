@@ -43,11 +43,25 @@ class FakeRequest:
     pass
 
 
+class FakeResponse:
+    def __init__(
+        self,
+        content: bytes,
+        *,
+        media_type: str,
+        headers: dict[str, str],
+    ) -> None:
+        self.body = content
+        self.media_type = media_type
+        self.headers = headers
+
+
 def load_api():
     fake = types.ModuleType("fastapi")
     fake.__dict__["APIRouter"] = FakeRouter
     fake.__dict__["HTTPException"] = FakeHTTPException
     fake.__dict__["Request"] = FakeRequest
+    fake.__dict__["Response"] = FakeResponse
     original = sys.modules.get("fastapi")
     sys.modules["fastapi"] = fake
     try:
@@ -74,6 +88,12 @@ def test_router_exports_all_phase_two_routes() -> None:
         "prerequisite_diagnosis",
         "prerequisites",
         "configuration",
+        "artifacts",
+        "artifact_text",
+        "artifact_download",
+        "artifact_curator_status",
+        "artifact_curator_preview",
+        "artifact_curator_apply",
         "registrations",
         "github_project_links",
         "github_project_link",
@@ -147,6 +167,7 @@ class APIRouter:
 fake_fastapi = types.ModuleType("fastapi")
 fake_fastapi.APIRouter = APIRouter
 fake_fastapi.HTTPException = type("HTTPException", (Exception,), {{}})
+fake_fastapi.Response = type("Response", (), {{}})
 sys.modules["fastapi"] = fake_fastapi
 
 root_spec = importlib.util.spec_from_file_location(
@@ -1353,3 +1374,114 @@ def test_project_link_verify_returns_only_sanitized_session_result(tmp_path: Pat
         },
     }
     assert "token" not in json.dumps(payload).lower()
+
+
+def test_artifact_routes_project_metadata_text_and_digest_verified_download() -> None:
+    api = load_api()
+    artifact_id = "a" * 64
+    digest = "b" * 64
+    entry = types.SimpleNamespace(artifact_id=artifact_id, digest=digest)
+
+    class Backend:
+        def __init__(self, *, service_factory: object) -> None:
+            self.service_factory = service_factory
+
+        def artifacts(self, workflow_id: str | None) -> dict[str, object]:
+            return {"workflow_id": workflow_id, "artifacts": [{"artifact_id": artifact_id}]}
+
+        def artifact_text(self, workflow_id: str, selected: str) -> dict[str, object]:
+            return {"workflow_id": workflow_id, "artifact_id": selected, "content": "<literal>"}
+
+        def artifact_download(self, workflow_id: str, selected: str) -> object:
+            assert (workflow_id, selected) == ("workflow-1", artifact_id)
+            return types.SimpleNamespace(entry=entry, content=b"exact-bytes")
+
+    api.__dict__["DashboardBackend"] = Backend
+
+    assert api.artifacts("workflow-1")["artifacts"] == [{"artifact_id": artifact_id}]
+    assert api.artifact_text("workflow-1", artifact_id)["content"] == "<literal>"
+    response = api.artifact_download("workflow-1", artifact_id)
+    assert response.body == b"exact-bytes"
+    assert response.media_type == "application/octet-stream"
+    assert response.headers["X-Daidala-Artifact-SHA256"] == digest
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert artifact_id in response.headers["Content-Disposition"]
+
+
+def test_artifact_route_errors_are_typed_and_path_free() -> None:
+    api = load_api()
+    private_path = "/profile/private/artifact.md"
+
+    class Backend:
+        def __init__(self, *, service_factory: object) -> None:
+            self.service_factory = service_factory
+
+        def artifact_text(self, _workflow_id: str, _artifact_id: str) -> object:
+            raise api.ArtifactAccessError(
+                f"digest mismatch at {private_path}",
+                reason=api.ArtifactFailureReason.DIGEST_MISMATCH,
+            )
+
+    api.__dict__["DashboardBackend"] = Backend
+    with pytest.raises(FakeHTTPException) as raised:
+        api.artifact_text("workflow-1", "a" * 64)
+
+    assert raised.value.status_code == 409
+    assert raised.value.detail == {
+        "message": "Artifact unavailable",
+        "reason": "digest_mismatch",
+    }
+    assert private_path not in json.dumps(raised.value.detail)
+
+
+def test_curator_routes_require_exact_preview_confirmation() -> None:
+    api = load_api()
+    calls: list[tuple[object, ...]] = []
+
+    class Backend:
+        def __init__(self, *, service_factory: object) -> None:
+            self.service_factory = service_factory
+
+        def curator_status(self) -> dict[str, object]:
+            return {"counts": {"active": 1, "stale": 0, "archived": 0}}
+
+        def curator_preview(
+            self, workflow_id: str, operation: str, archive_id: str | None
+        ) -> dict[str, object]:
+            calls.append(("preview", workflow_id, operation, archive_id))
+            return {"operation": operation, "preview_digest": "c" * 64}
+
+        def curator_apply(
+            self,
+            workflow_id: str,
+            operation: str,
+            preview_digest: str,
+            archive_id: str | None,
+        ) -> dict[str, object]:
+            calls.append(("apply", workflow_id, operation, preview_digest, archive_id))
+            return {"operation": operation, "transitioned": 1}
+
+    api.__dict__["DashboardBackend"] = Backend
+    assert api.artifact_curator_status()["counts"]["active"] == 1
+    preview = api.artifact_curator_preview("workflow-1", {"operation": "archive"})
+    result = api.artifact_curator_apply(
+        "workflow-1",
+        {"operation": "archive", "preview_digest": preview["preview_digest"], "confirm": True},
+    )
+    assert result == {"operation": "archive", "transitioned": 1}
+    assert calls == [
+        ("preview", "workflow-1", "archive", None),
+        ("apply", "workflow-1", "archive", "c" * 64, None),
+    ]
+
+    with pytest.raises(FakeHTTPException) as malformed:
+        api.artifact_curator_apply(
+            "workflow-1",
+            {
+                "operation": "archive",
+                "preview_digest": "c" * 64,
+                "confirm": True,
+                "path": "/tmp/private",
+            },
+        )
+    assert malformed.value.status_code == 400

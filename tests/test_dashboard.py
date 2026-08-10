@@ -289,3 +289,85 @@ def test_timeline_inserts_distinct_non_kanban_review_gate() -> None:
         "review_digest": "a" * 64,
         "disposition": None,
     }
+
+
+def test_artifact_catalog_uses_captured_ledgers_and_exposes_no_paths() -> None:
+    ledger = SimpleNamespace(workflow_id="workflow-1")
+    captured: list[object] = []
+    entry = SimpleNamespace(
+        to_dict=lambda: {
+            "artifact_id": "a" * 64,
+            "workflow_id": "workflow-1",
+            "kind": "stage",
+            "recorded_at": "2026-08-10T10:00:00+00:00",
+        }
+    )
+
+    class Store:
+        def list_all(self) -> tuple[object, ...]:
+            return (ledger,)
+
+    class Service:
+        store = Store()
+
+        def list_artifacts(self, workflow_id: str, *, ledger: object) -> tuple[object, ...]:
+            assert workflow_id == "workflow-1"
+            captured.append(ledger)
+            return (entry,)
+
+    payload = DashboardBackend(service_factory=cast(Any, Service)).artifacts()
+
+    assert captured == [ledger]
+    assert payload["artifacts"] == [entry.to_dict()]
+    assert "path" not in json.dumps(payload)
+
+
+def test_curator_status_projects_next_transition_times_and_apply_dispatch() -> None:
+    calls: list[tuple[object, ...]] = []
+    status = SimpleNamespace(
+        to_dict=lambda: {
+            "policy": {"enabled": True, "stale_after_days": 30, "archive_after_days": 90},
+            "state_digest": "a" * 64,
+            "counts": {"active": 1, "stale": 0, "archived": 0},
+            "pinned": 0,
+            "rows": [
+                {
+                    "workflow_id": "workflow-1",
+                    "state": "active",
+                    "first_terminal_observed_at": "2026-08-01T00:00:00+00:00",
+                    "last_transition_at": "2026-08-01T00:00:00+00:00",
+                    "pinned": False,
+                    "archive_ids": [],
+                }
+            ],
+        }
+    )
+
+    class Service:
+        def curator_status(self) -> object:
+            return status
+
+        def preview_curator_archive(self, workflow_id: str) -> object:
+            calls.append(("preview", workflow_id))
+            return SimpleNamespace(to_dict=lambda: {"preview_digest": "b" * 64})
+
+        def apply_curator_archive(
+            self, workflow_id: str, *, expected_preview_digest: str
+        ) -> object:
+            calls.append(("apply", workflow_id, expected_preview_digest))
+            return SimpleNamespace(to_dict=lambda: {"transitioned": 1})
+
+    backend = DashboardBackend(service_factory=cast(Any, Service))
+    payload = backend.curator_status()
+    preview = backend.curator_preview("workflow-1", "archive")
+    result = backend.curator_apply(
+        "workflow-1", "archive", cast(str, preview["preview_digest"])
+    )
+
+    rows = cast(list[dict[str, object]], payload["rows"])
+    assert rows[0]["next_transition_at"] == "2026-08-31T00:00:00+00:00"
+    assert result == {"transitioned": 1}
+    assert calls == [
+        ("preview", "workflow-1"),
+        ("apply", "workflow-1", "b" * 64),
+    ]

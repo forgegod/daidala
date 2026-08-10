@@ -22,6 +22,21 @@
         requested_goal: "Recover the blocked verification card.",
         current_constraints_digest: "constraints-digest"
       };
+      var artifactContent = "<script>window.__artifactInjected = true<\/script>\n--- a/daidala/example.py\n+++ b/daidala/example.py\n@@ -1 +1 @@\n-old\n+new\n";
+      var artifactDigest = "27772ec853c0c2b28a60a8c32cebdf405c49bec4f01bedde071e401a5f231005";
+      var artifact = {
+        artifact_id: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        workflow_id: workflow.workflow_id,
+        kind: "implementation",
+        stage: "implementation",
+        policy_revision: 1,
+        plan_revision: 1,
+        digest: artifactDigest,
+        recorded_at: "2026-08-10T06:00:00+00:00",
+        size: new TextEncoder().encode(artifactContent).length,
+        availability: "archived",
+        approval_summary_digest: null
+      };
       var detail = {
         workflow: workflow,
         kanban: {
@@ -46,12 +61,31 @@
       };
       var calls = [];
       window.__phase0BrowserProbeCalls = calls;
+      window.URL.createObjectURL = function (blob) {
+        window.__phase0DownloadedBlob = blob;
+        return "blob:daidala-browser-probe";
+      };
+      window.URL.revokeObjectURL = function () {};
+      window.HTMLAnchorElement.prototype.click = function () {
+        window.__phase0DownloadClicked = true;
+      };
       window.__HERMES_PLUGIN_SDK__ = {
         React: window.React,
         fetchJSON: function (url, options) {
           var method = options && options.method ? options.method : "GET";
           var body = options && options.body ? JSON.parse(options.body) : null;
           calls.push({ url: url, method: method, body: body });
+          if (method === "POST" && /\/artifact-curator\/workflow-browser-probe\/preview$/.test(url)) {
+            return Promise.resolve({
+              operation: body.operation,
+              archive_id: body.archive_id || null,
+              preview_digest: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              actions: [{ action: body.operation, workflow_id: workflow.workflow_id }]
+            });
+          }
+          if (method === "POST" && /\/artifact-curator\/workflow-browser-probe$/.test(url)) {
+            return Promise.resolve({ operation: body.operation, applied: true, actions: [] });
+          }
           if (method === "POST" && /\/cancel\/preview$/.test(url)) {
             return Promise.resolve({
               preview_digest: "browser-preview-digest",
@@ -60,6 +94,24 @@
             });
           }
           if (method === "POST") return Promise.resolve({ success: true });
+          if (/\/artifacts\/workflow-browser-probe\/a{64}\/text$/.test(url)) {
+            return Promise.resolve(Object.assign({ content: artifactContent }, artifact));
+          }
+          if (/\/artifacts$/.test(url)) return Promise.resolve({ artifacts: [artifact] });
+          if (/\/artifact-curator$/.test(url)) {
+            return Promise.resolve({
+              policy: { enabled: true, stale_after_days: 7, archive_after_days: 30 },
+              counts: { active: 0, stale: 0, archived: 1 },
+              pinned: 0,
+              rows: [{
+                workflow_id: workflow.workflow_id,
+                state: "archived",
+                pinned: false,
+                archive_ids: ["cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"],
+                next_transition_at: null
+              }]
+            });
+          }
           if (/\/workflows$/.test(url)) return Promise.resolve({ workflows: [workflow] });
           if (/\/approval-review$/.test(url) || /\/review-decision$/.test(url)) {
             return Promise.resolve({ available: false });
@@ -69,6 +121,13 @@
           if (/\/health$/.test(url)) return Promise.resolve({ success: true });
           if (/\/packs$/.test(url)) return Promise.resolve({ packs: [] });
           return Promise.resolve({});
+        },
+        authedFetch: function (url, options) {
+          calls.push({ url: url, method: options && options.method ? options.method : "GET", body: null });
+          return Promise.resolve(new Response([artifactContent], {
+            status: 200,
+            headers: { "X-Daidala-Artifact-SHA256": artifactDigest }
+          }));
         }
       };
       window.__HERMES_PLUGINS__ = {
@@ -77,9 +136,9 @@
       };
     })();
   </script>
-  <script src="/dashboard/dist/index.js"></script>
+  <script src="/dashboard/dist/index.js?probe=artifact-review"></script>
   <script>
-    window.history.replaceState(null, "", "?workflow=workflow-browser-probe");
+    window.history.replaceState(null, "", "?view=artifacts");
     window.ReactDOM.createRoot(document.getElementById("root")).render(
       window.React.createElement(window.__phase0Page)
     );

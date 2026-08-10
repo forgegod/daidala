@@ -80,6 +80,18 @@ class ArtifactId:
 
 
 @dataclass(frozen=True)
+class ArtifactDownload:
+    """Digest-verified artifact bytes for a non-filesystem delivery boundary."""
+
+    entry: ArtifactCatalogEntry
+    content: bytes
+
+    @property
+    def size(self) -> int:
+        return len(self.content)
+
+
+@dataclass(frozen=True)
 class ArchivedArtifactSource:
     archive_path: Path
     manifest_path: Path
@@ -290,6 +302,20 @@ class ArtifactAccessService:
             entry=record.entry,
             content=content,
             approval_summary=record.approval_summary,
+        )
+
+    def download(
+        self,
+        workflow_id: str,
+        artifact_id: str | ArtifactId,
+        *,
+        ledger: WorkflowLedger | None = None,
+    ) -> ArtifactDownload:
+        """Return one verified artifact within the 64 MiB export bound."""
+        record = self._resolve_record(workflow_id, artifact_id, ledger=ledger)
+        return ArtifactDownload(
+            entry=record.entry,
+            content=self._verified_bytes(record, maximum=_MAX_EXPORT_BYTES),
         )
 
     def export(

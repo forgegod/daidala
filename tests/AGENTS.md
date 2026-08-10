@@ -53,6 +53,9 @@ completeness without touching a real Hermes profile.
   server-derived attended identity, literal diff rendering, preview/apply parity,
   single-ledger plan/review snapshot binding, stale or unchecked rejection, and
   successor-plan navigation without arbitrary dispatch, commit, or push authority.
+  Artifact dashboard coverage additionally proves exact opaque selectors,
+  path-free errors, digest-verified bytes, literal escaped text, authenticated
+  download, and preview-confirm curator dispatch.
 - Checkout lifecycle tests use fake Git boundaries and temporary working trees to
   prove bounded NUL status parsing, receipt-TTL decisions, clone/swap rollback,
   archive-before-wipe failure safety, clean unowned adoption, backup pruning, and
@@ -116,7 +119,7 @@ completeness without touching a real Hermes profile.
 - Artifact-access tests cover deterministic opaque IDs, ledger-only catalogs,
   all active reference kinds, strict source-bound plan summaries, bounded
   digest-verified text, path/symlink/binary rejection, private collision-safe
-  export, legacy readability, and mutation-free reads.
+  export, digest-equivalent download bytes, legacy readability, and mutation-free reads.
 - Archive I/O tests cover deterministic verified tar/gzip round trips, strict
   member paths and bounds, source-file safety, tampering, interrupted writes,
   retry conflicts, and safe idempotent restore.
@@ -149,6 +152,9 @@ completeness without touching a real Hermes profile.
   Its eight packet-addressed files are experiment inputs; only
   `resource_fixture/catalog.py` may change inside an approval-owned evaluation
   worktree. Tests and resource bytes remain immutable across both pack legs.
+- `fixtures/dashboard_phase0_browser_probe.html` is the host-isolated artifact
+  browser fixture. It mocks only authenticated Hermes SDK and Daidala API
+  boundaries and never reads or mutates a real profile.
 
 ## Local Contracts
 

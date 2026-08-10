@@ -15,6 +15,7 @@ from .artifact_access import (
     ArtifactAccessService,
     ArtifactArchiveLookup,
     ArtifactCatalogEntry,
+    ArtifactDownload,
     ArtifactExport,
     ArtifactId,
     ArtifactText,
@@ -1023,6 +1024,18 @@ class WorkflowService:
     ) -> ArtifactText:
         """Read one verified bounded text artifact by opaque ledger identity."""
         return self._artifact_access.read_text(
+            workflow_id, artifact_id, ledger=ledger
+        )
+
+    def download_artifact(
+        self,
+        workflow_id: str,
+        artifact_id: str | ArtifactId,
+        *,
+        ledger: WorkflowLedger | None = None,
+    ) -> ArtifactDownload:
+        """Return one verified bounded artifact for an authenticated transport."""
+        return self._artifact_access.download(
             workflow_id, artifact_id, ledger=ledger
         )
 

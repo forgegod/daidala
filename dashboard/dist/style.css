@@ -46,6 +46,30 @@
   color: var(--daidala-muted);
 }
 
+.daidala-primary-nav {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.2rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+}
+
+.daidala-primary-nav button {
+  border: 0;
+  border-radius: calc(var(--daidala-radius) - 0.15rem);
+  padding: 0.35rem 0.65rem;
+  background: transparent;
+  color: var(--daidala-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.daidala-primary-nav button.is-selected {
+  background: var(--surface-base, rgba(74, 123, 255, 0.12));
+  color: var(--text-primary, inherit);
+}
+
 .daidala-refresh {
   appearance: none;
   border: var(--daidala-border);
@@ -994,4 +1018,168 @@
 .daidala-cancellation button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+.daidala-artifacts,
+.daidala-artifact-detail,
+.daidala-artifact-preview,
+.daidala-artifact-curator-preview {
+  display: grid;
+  gap: var(--daidala-gap);
+}
+
+.daidala-artifact-heading,
+.daidala-curator-summary,
+.daidala-artifact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--daidala-gap);
+}
+
+.daidala-artifact-heading {
+  justify-content: space-between;
+}
+
+.daidala-artifact-heading h2,
+.daidala-artifact-detail h3,
+.daidala-artifact-preview h4,
+.daidala-artifact-curator-preview h4,
+.daidala-artifact-curator-preview p {
+  margin: 0;
+}
+
+.daidala-curator-summary {
+  padding: 0.65rem 0.75rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+}
+
+.daidala-artifact-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.5rem;
+}
+
+.daidala-artifact-filter {
+  display: grid;
+  gap: 0.25rem;
+  color: var(--daidala-muted);
+  font-size: 0.8rem;
+}
+
+.daidala-artifact-filter select,
+.daidala-artifact-filter input,
+.daidala-artifact-actions button,
+.daidala-artifact-curator-preview button {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 0.45rem 0.6rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+  color: var(--text-primary, inherit);
+  font: inherit;
+}
+
+.daidala-artifact-actions button:disabled,
+.daidala-artifact-curator-preview button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.daidala-artifact-layout {
+  display: grid;
+  grid-template-columns: minmax(16rem, 0.8fr) minmax(0, 1.6fr);
+  gap: var(--daidala-gap);
+  min-height: 28rem;
+}
+
+.daidala-artifact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 70vh;
+  overflow: auto;
+}
+
+.daidala-artifact-row {
+  display: grid;
+  gap: 0.2rem;
+  width: 100%;
+  padding: 0.65rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+  color: var(--text-primary, inherit);
+  text-align: left;
+  cursor: pointer;
+}
+
+.daidala-artifact-row span,
+.daidala-artifact-row code {
+  color: var(--daidala-muted);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.daidala-artifact-row.is-selected {
+  border-color: var(--daidala-accent);
+  box-shadow: inset 0.2rem 0 0 var(--daidala-accent);
+}
+
+.daidala-artifact-detail,
+.daidala-artifact-preview,
+.daidala-artifact-curator-preview {
+  align-content: start;
+  padding: var(--daidala-padding);
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+}
+
+.daidala-artifact-identity {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.3rem 0.75rem;
+  margin: 0;
+}
+
+.daidala-artifact-identity dt {
+  color: var(--daidala-muted);
+}
+
+.daidala-artifact-identity dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", monospace);
+  font-size: 0.8rem;
+}
+
+.daidala-artifact-preview pre {
+  max-height: 32rem;
+  margin: 0;
+  padding: 0.75rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border-radius: var(--daidala-radius);
+  background: var(--surface-base, rgba(0, 0, 0, 0.12));
+  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", monospace);
+  font-size: 0.8rem;
+}
+
+.daidala-artifact-curator-preview {
+  border-color: var(--daidala-warning);
+}
+
+@media (max-width: 64rem) {
+  .daidala-artifact-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .daidala-artifact-list {
+    max-height: 24rem;
+  }
 }

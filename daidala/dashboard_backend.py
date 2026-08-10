@@ -19,9 +19,11 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Callable
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, cast
 
+from .artifact_access import ArtifactDownload
 from .checkout_root import CheckoutRootError, CheckoutRootStore
 from .checkouts import CheckoutError, CheckoutManager
 from .constraints import (
@@ -414,6 +416,124 @@ class DashboardBackend:
             workflow_id, ledger=ledger
         ).to_dict()
         return _approval_review_packet(ledger, current_plan)
+
+    def artifacts(self, workflow_id: str | None = None) -> dict[str, object]:
+        """Project path-free artifact metadata from captured ledger snapshots."""
+        service = self.service
+        ledgers = (
+            (service.status(workflow_id),)
+            if workflow_id is not None
+            else tuple(service.store.list_all())
+        )
+        entries = []
+        for ledger in ledgers:
+            entries.extend(
+                entry.to_dict()
+                for entry in service.list_artifacts(
+                    ledger.workflow_id, ledger=ledger
+                )
+            )
+        entries.sort(
+            key=lambda row: (
+                cast(str | None, row["recorded_at"]) or "",
+                str(row["workflow_id"]),
+                str(row["artifact_id"]),
+            ),
+            reverse=True,
+        )
+        return {"workflow_id": workflow_id, "artifacts": entries}
+
+    def artifact_text(self, workflow_id: str, artifact_id: str) -> dict[str, object]:
+        """Project one digest-verified bounded text artifact."""
+        service = self.service
+        ledger = service.status(workflow_id)
+        return service.read_artifact_text(
+            workflow_id, artifact_id, ledger=ledger
+        ).to_dict()
+
+    def artifact_download(self, workflow_id: str, artifact_id: str) -> ArtifactDownload:
+        """Resolve digest-verified bytes without accepting a filesystem path."""
+        service = self.service
+        ledger = service.status(workflow_id)
+        return service.download_artifact(
+            workflow_id, artifact_id, ledger=ledger
+        )
+
+    def curator_status(self) -> dict[str, object]:
+        """Project curator policy, counts, rows, and deterministic transition times."""
+        payload = self.service.curator_status().to_dict()
+        policy = cast(dict[str, object], payload["policy"])
+        rows = cast(list[dict[str, object]], payload["rows"])
+        for row in rows:
+            first_terminal = row["first_terminal_observed_at"]
+            next_transition = None
+            if first_terminal and not row["pinned"]:
+                age_days = (
+                    policy["stale_after_days"]
+                    if row["state"] == "active"
+                    else policy["archive_after_days"]
+                    if row["state"] == "stale"
+                    else None
+                )
+                if age_days is not None:
+                    next_transition = (
+                        datetime.fromisoformat(cast(str, first_terminal))
+                        + timedelta(days=cast(int, age_days))
+                    ).isoformat()
+            row["next_transition_at"] = next_transition
+        return payload
+
+    def curator_preview(
+        self, workflow_id: str, operation: str, archive_id: str | None = None
+    ) -> dict[str, object]:
+        """Preview one closed curator operation."""
+        service = self.service
+        if operation == "pin":
+            preview = service.preview_curator_pin(workflow_id, pinned=True)
+        elif operation == "unpin":
+            preview = service.preview_curator_pin(workflow_id, pinned=False)
+        elif operation == "archive":
+            preview = service.preview_curator_archive(workflow_id)
+        elif operation == "restore" and archive_id is not None:
+            preview = service.preview_curator_restore(workflow_id, archive_id)
+        else:
+            raise ValueError("unsupported curator operation")
+        return preview.to_dict()
+
+    def curator_apply(
+        self,
+        workflow_id: str,
+        operation: str,
+        preview_digest: str,
+        archive_id: str | None = None,
+    ) -> dict[str, object]:
+        """Apply one exact preview-confirmed curator operation."""
+        service = self.service
+        if operation == "pin":
+            result = service.apply_curator_pin(
+                workflow_id,
+                pinned=True,
+                expected_preview_digest=preview_digest,
+            )
+        elif operation == "unpin":
+            result = service.apply_curator_pin(
+                workflow_id,
+                pinned=False,
+                expected_preview_digest=preview_digest,
+            )
+        elif operation == "archive":
+            result = service.apply_curator_archive(
+                workflow_id, expected_preview_digest=preview_digest
+            )
+        elif operation == "restore" and archive_id is not None:
+            result = service.apply_curator_restore(
+                workflow_id,
+                archive_id,
+                expected_preview_digest=preview_digest,
+            )
+        else:
+            raise ValueError("unsupported curator operation")
+        return result.to_dict()
 
     def review_decision(self, workflow_id: str) -> dict[str, Any]:
         """Return exact reviewed evidence and attended disposition state."""

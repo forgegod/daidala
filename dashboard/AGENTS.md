@@ -14,22 +14,26 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   checkout lifecycle preview/apply, and GitHub Projects v2 link read/verify/
   preview/apply routes, read-only reusable constraint-source list/detail routes,
   persisted-configuration verification, non-mutating initialization preview/confirmed apply,
-  and trusted-registration prerequisite diagnosis routes.
-- `dist/index.js` renders workflow progress, the inventory-backed Start workflow
+  trusted-registration prerequisite diagnosis routes, ledger-bound artifact
+  catalog/text/download reads, and digest-confirmed curator controls.
+- `dist/index.js` renders Workflows, Artifacts, and Config primary views;
+  workflow progress; the inventory-backed Start workflow
   wizard, Config → Packs readiness/content, GitHub Projects v2 links,
   constraint source selection and schema-aware authoring, read-only configuration
   verification, initialization preview/apply, prerequisite diagnosis, operator-runbook
   guidance, and confirmed checkout refresh/adoption/backup-pruning/policy
   controls; decision-first supervision;
   exact-plan approval; literal source-bound review evidence/disposition;
-  blocked-card remediation; and previewed cancellation.
+  blocked-card remediation; previewed cancellation; and literal artifact review,
+  verified download, filtering, and pin/unpin/archive/restore preview-confirm controls.
 - `dist/style.css` adapts the extension to host themes and narrow layouts.
 
 ## Local Contracts
 
 - Register only documented Hermes dashboard SDK surfaces.
-- Browser requests use the host SDK's authenticated `fetchJSON` helper and call
-  only scoped Daidala routes; never read the host session token directly.
+- Browser JSON requests use the host SDK's authenticated `fetchJSON` helper;
+  verified byte downloads use its authenticated `authedFetch` helper. Browser
+  code calls only scoped Daidala routes and never reads the host session token.
 - `plugin_api.py` imports the stable `daidala` package exposed by both pip and
   the repository-root directory entry point.
 - Initialize the process-local dashboard service exactly once under concurrent
@@ -59,6 +63,12 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   the attended actor and every workflow/artifact/card/worktree identity, recomputes
   the current preview, and fails closed on stale evidence. Browser responses expose
   only whether an owned worktree will be released, never its profile-local path.
+- Artifact reads accept only an optional exact workflow ID or exact workflow plus
+  opaque artifact ID. Text remains literal and bounded; download bytes are
+  digest-verified and served as non-sniffable attachments with path-free errors.
+  Curator preview/apply accepts only the closed pin, unpin, archive, and restore
+  operations. Restore additionally carries one opaque archive ID; apply requires
+  the exact preview digest and `confirm: true`. No route accepts a filesystem path.
 - Card comment accepts only `{comment, confirm: true}` and unblock accepts only
   `{reason, confirm: true}` after the server validates the card against the current
   workflow ledger and derives its board. Cancellation preview accepts only
@@ -121,10 +131,13 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
 ## Verification
 
 ```bash
-pytest tests/test_dashboard_assets.py tests/test_dashboard_api.py
+pytest tests/test_dashboard_assets.py tests/test_dashboard_api.py tests/test_dashboard.py tests/test_artifact_access.py tests/test_artifact_curator.py
 ```
 
-Browser verification uses an isolated supported Hermes dashboard and desktop plus narrow Chromium screenshots.
+Artifact browser verification uses
+`tests/fixtures/dashboard_phase0_browser_probe.html` in isolated Chromium and
+checks archived-diff listing, literal escaped text, digest-equivalent download,
+and confirmed restore without a real Hermes profile.
 
 ## Child DOX Index
 

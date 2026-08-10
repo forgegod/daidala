@@ -547,6 +547,45 @@ def test_stylesheet_collapses_on_narrow_layouts() -> None:
     assert "@media (max-width: 64rem)" in source
 
 
+def test_bundle_exposes_authenticated_artifact_review_and_curator_controls() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+    style = (DASHBOARD / "dist" / "style.css").read_text(encoding="utf-8")
+
+    required = (
+        'API_BASE + "/artifacts"',
+        '"/text"',
+        '"/download"',
+        'API_BASE + "/artifact-curator"',
+        'SDK.authedFetch',
+        '"Workflows"',
+        '"Artifacts"',
+        '"Config"',
+        'data-testid": "daidala-artifacts"',
+        'data-testid": "daidala-artifact-literal-preview"',
+        'data-testid": "daidala-curator-preview"',
+        '"Literal text preview"',
+        '"Download verified bytes"',
+        '"Preview pin"',
+        '"Preview unpin"',
+        '"Preview archive"',
+        '"Preview restore"',
+        "I confirm applying this exact curator preview",
+        "preview_digest: preview.preview_digest",
+        "confirm: true",
+    )
+    for text in required:
+        assert text in source, f"missing artifact-review contract text: {text}"
+
+    panel = source[source.index("function ArtifactsPanel"):source.index("function Page()")]
+    assert 'createElement("pre", null, text.content)' in panel
+    assert "innerHTML" not in panel
+    assert "dangerouslySetInnerHTML" not in panel
+    assert "path:" not in panel
+    assert ".daidala-primary-nav" in style
+    assert ".daidala-artifact-layout" in style
+    assert ".daidala-artifact-preview pre" in style
+
+
 def test_stylesheet_does_not_reference_external_assets() -> None:
     source = (DASHBOARD / "dist" / "style.css").read_text(encoding="utf-8")
 
