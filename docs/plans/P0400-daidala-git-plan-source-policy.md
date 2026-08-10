@@ -16,11 +16,13 @@
 
 **Produces:** a pure strict representation of a pending committed plan phase, exact Git-object source identity, and an immutable canonical plan-source packet
 
-**Status:** pending — human approval is required before implementation
+**Status:** complete — Phase 0 implementation and verification gate passed
 
 ## Goal
 
 Establish the bounded deterministic policy that identifies exactly one pending phase in a committed repository plan and proves the source bytes belong to the clean target baseline.
+
+**Atomicity rationale:** Parsing, Git-object identity, and immutable packet construction form one pure boundary. This phase neither persists packets nor starts workflows, creates cards, exposes adapters, or changes an existing ledger schema; P0410 and later plans own those integration surfaces.
 
 ## Risk call-out
 
@@ -30,7 +32,7 @@ A mutable working-tree plan, abbreviated revision, untracked source, symlink, tr
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Add strict committed plan-source parsing and packet identity | pending | `pytest -q tests/test_plan_admission.py tests/test_workflow.py tests/test_store.py` exits 0 and proves canonical packet identity, strict phased-plan parsing, exact Git-blob reads, clean-HEAD equality, and fail-closed malformed or drifted inputs |
+| 0 | Add strict committed plan-source parsing and packet identity | done (verification passed) | `pytest -q tests/test_plan_admission.py tests/test_workflow.py tests/test_store.py` exits 0 and proves canonical packet identity, strict phased-plan parsing, exact Git-blob reads, clean-HEAD equality, and fail-closed malformed or drifted inputs |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise.
 

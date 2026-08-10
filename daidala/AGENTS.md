@@ -11,8 +11,9 @@ workflow-pack adapters, and bundled orchestration skills.
 |---|---|
 | `__init__.py` | Hermes tool, skill, and operator CLI registration. |
 | `errors.py` | Policy-ledger, persistence, and host-boundary error hierarchy. |
-| `state.py` | Immutable policy ledger, current and historical review/disposition/verification evidence, revision-request progress, Kanban identifiers, skill activation manifests, and strict serialization. |
-| `workflow.py` | Deterministic policy checks and ledger updates, including exact review/disposition binding and review-driven plan-revision transitions; no operational status transitions. |
+| `state.py` | Immutable policy ledger, current and historical review/disposition/verification evidence, revision-request progress, Kanban identifiers, skill activation manifests, Git plan-source references/packets, and strict serialization. |
+| `workflow.py` | Deterministic policy checks, immutable plan-source packet construction, and ledger updates, including exact review/disposition binding and review-driven plan-revision transitions; no operational status transitions. |
+| `plan_admission.py` | Injectable Git-object boundary and strict parser for one clean, committed, pending repository plan phase and its active-plan dependency graph. |
 | `revision.py` | Bounded review packets, normalized attended feedback, and canonical mutation-free review-decision/revision previews. |
 | `locations.py` | Profile-aware data-root resolution; never hard-codes `~/.hermes`. |
 | `store.py` | SQLite-backed policy-ledger persistence with optimistic concurrency and explicit read-only opening for mutation-free previews. |
@@ -173,6 +174,12 @@ workflow-pack adapters, and bundled orchestration skills.
 - A committed project manifest may narrow trusted registration but never grants
   local paths, credentials, board/profile authority, evaluator capability,
   notification authority, or release permissions.
+- Imported plan admission reads exact UTF-8 bytes from one regular Git blob at
+  the clean checkout's full `HEAD`; source revision and baseline are identical,
+  the path is normalized repository-relative, and working-tree plan bytes never
+  supply approval authority. The resulting packet has canonical digest identity
+  over repository, blob, document digest, selected pending phase, gate, and
+  direct dependencies.
 - Project, registration, cycle, and increment schemas reject unknown fields,
   unbounded content, non-canonical identity, and stale or ambiguous provenance.
 - Evaluation comparison produces `improved`, `equivalent`, `regressed`, or
@@ -338,6 +345,9 @@ fails locally rather than in production.
   write only immutable profile-local cycle artifacts and call injected host
   adapters. Evaluator filesystem operations stay registration-bound; live
   backend execution and retention remain separately gated boundaries.
+- Keep plan-source parsing and Git inspection read-only and injectable. Reject
+  malformed Markdown, graph ambiguity, dirty repositories, and non-blob paths;
+  never repair source text or inspect a mutable plan path for its contents.
 - Register bundled skills with `ctx.register_skill`; do not copy them into the user's mutable skill store.
 - `daidala:setup` remains dashboard-independent, previews the exact
   `schemas.py::START` request, and requires explicit confirmation before any

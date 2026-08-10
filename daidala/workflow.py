@@ -18,6 +18,8 @@ from .state import (
     ArtifactReference,
     CardReference,
     PlanRevisionRequestReference,
+    PlanSourcePacket,
+    PlanSourceReference,
     ReviewDisposition,
     ReviewDispositionAction,
     ReviewRecord,
@@ -57,6 +59,31 @@ def new_workflow(
         stage_profiles=stage_profiles,
         created_at=created_at,
         updated_at=created_at,
+    )
+
+
+def new_plan_source_packet(
+    *,
+    reference: PlanSourceReference,
+    plan_id: str,
+    execution_slot: str,
+    phase_number: int,
+    phase_title: str,
+    verification_gate: str,
+    direct_dependencies: tuple[str, ...],
+    predecessor_workflow_id: str | None = None,
+) -> PlanSourcePacket:
+    """Create immutable pending-phase authority without mutating a workflow ledger."""
+    return PlanSourcePacket(
+        schema="daidala.plan-source-packet/v1",
+        reference=reference,
+        plan_id=plan_id,
+        execution_slot=execution_slot,
+        phase_number=phase_number,
+        phase_title=phase_title,
+        verification_gate=verification_gate,
+        direct_dependencies=direct_dependencies,
+        predecessor_workflow_id=predecessor_workflow_id,
     )
 
 

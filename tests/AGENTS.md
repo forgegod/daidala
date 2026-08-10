@@ -49,6 +49,10 @@ completeness without touching a real Hermes profile.
   owning DOX scope before retention can become eligible.
 - Fake-context tests for plugin tool and skill registration.
 - Temporary-repository tests for policy services and JSON tool handlers.
+- Plan-admission tests use disposable Git repositories to prove exact-blob
+  parsing, canonical packet round trips, pending-phase ordering, dependency
+  graph rejection, and dirty/path/symlink/binary fail-closed behavior without
+  mutating the operator checkout.
 - Fake-inventory tests for exact external-skill prerequisites and host errors.
 - Fake command/registry tests for dry-run installation, pinned revisions, content digests, post-apply verification, and refused recursive installation.
 - Pack-service and dashboard-route tests prove declared-skill-only bounded
@@ -169,6 +173,9 @@ completeness without touching a real Hermes profile.
 ## Work Guidance
 
 - Every new policy operation requires positive, policy-violation, and persistence tests.
+- Plan-source tests must cover canonical packet serialization plus malformed
+  headers/status evidence, duplicate or cyclic dependencies, source revision,
+  tree entry, path, encoding, and working-tree drift rejection.
 - Pure schema phases require round-trip, canonical digest, unknown-field,
   duplicate/collision, bound, and stale-identity tests without live services.
 - Skill activation coverage must prove strict serialization, exact pack-stage

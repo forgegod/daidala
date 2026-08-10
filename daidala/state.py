@@ -8,7 +8,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 from .errors import PolicyViolationError
@@ -18,6 +18,200 @@ _DIGEST = re.compile(r"^[0-9a-f]{64}$")
 _REVISION = re.compile(r"^[0-9a-f]{40}$")
 _SKILL_NAME = re.compile(r"^[a-z0-9][a-z0-9-]{0,127}$")
 _ACTIVATION_SCHEMA = "daidala.skill-activation/v1"
+_PLAN_SOURCE_REFERENCE_SCHEMA = "daidala.plan-source-reference/v1"
+_PLAN_SOURCE_PACKET_SCHEMA = "daidala.plan-source-packet/v1"
+_PLAN_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,127}$")
+_EXECUTION_SLOT = re.compile(r"^P[0-9]{4}$")
+_GIT_OBJECT_ID = re.compile(r"^[0-9a-f]{40,64}$")
+_PLAN_DOCUMENT_BYTES = 1_048_576
+
+
+@dataclass(frozen=True)
+class PlanSourceReference:
+    """Exact immutable Git-object identity for one repository plan document."""
+
+    schema: str
+    repository: str
+    source_revision: str
+    baseline_commit: str
+    plan_path: str
+    plan_blob_id: str
+    plan_digest: str
+    byte_size: int
+
+    def __post_init__(self) -> None:
+        if self.schema != _PLAN_SOURCE_REFERENCE_SCHEMA:
+            raise PolicyViolationError(
+                f"plan source schema must be {_PLAN_SOURCE_REFERENCE_SCHEMA!r}"
+            )
+        _require_absolute_local_path(self.repository, "plan source repository")
+        if "." in Path(self.repository).parts or ".." in Path(self.repository).parts:
+            raise PolicyViolationError("plan source repository must be normalized")
+        if not isinstance(self.source_revision, str) or not _REVISION.fullmatch(
+            self.source_revision
+        ):
+            raise PolicyViolationError("plan source revision must be 40 lowercase hex")
+        if self.baseline_commit != self.source_revision:
+            raise PolicyViolationError("plan source baseline must equal source revision")
+        _require_repository_path(self.plan_path, "plan source path")
+        if not self.plan_path.endswith(".md"):
+            raise PolicyViolationError("plan source path must name a Markdown document")
+        if not isinstance(self.plan_blob_id, str) or not _GIT_OBJECT_ID.fullmatch(
+            self.plan_blob_id
+        ):
+            raise PolicyViolationError("plan source blob ID must be a lowercase Git object ID")
+        _require_digest(self.plan_digest, "plan source digest")
+        if (
+            isinstance(self.byte_size, bool)
+            or not isinstance(self.byte_size, int)
+            or not 1 <= self.byte_size <= _PLAN_DOCUMENT_BYTES
+        ):
+            raise PolicyViolationError(
+                f"plan source byte size must be 1-{_PLAN_DOCUMENT_BYTES}"
+            )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema": self.schema,
+            "repository": self.repository,
+            "source_revision": self.source_revision,
+            "baseline_commit": self.baseline_commit,
+            "plan_path": self.plan_path,
+            "plan_blob_id": self.plan_blob_id,
+            "plan_digest": self.plan_digest,
+            "byte_size": self.byte_size,
+        }
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> PlanSourceReference:
+        _require_exact_fields(
+            raw,
+            {
+                "schema",
+                "repository",
+                "source_revision",
+                "baseline_commit",
+                "plan_path",
+                "plan_blob_id",
+                "plan_digest",
+                "byte_size",
+            },
+            "plan source reference",
+        )
+        try:
+            return cls(**raw)
+        except TypeError as error:
+            raise PolicyViolationError(f"invalid plan source reference: {error}") from error
+
+
+@dataclass(frozen=True)
+class PlanSourcePacket:
+    """Canonical pending-phase authority derived only from a Git plan object."""
+
+    schema: str
+    reference: PlanSourceReference
+    plan_id: str
+    execution_slot: str
+    phase_number: int
+    phase_title: str
+    verification_gate: str
+    direct_dependencies: tuple[str, ...]
+    predecessor_workflow_id: str | None
+
+    def __post_init__(self) -> None:
+        if self.schema != _PLAN_SOURCE_PACKET_SCHEMA:
+            raise PolicyViolationError(
+                f"plan source packet schema must be {_PLAN_SOURCE_PACKET_SCHEMA!r}"
+            )
+        if not isinstance(self.reference, PlanSourceReference):
+            raise PolicyViolationError("plan source packet reference is invalid")
+        _require_plan_id(self.plan_id, "plan source Plan ID")
+        if not isinstance(self.execution_slot, str) or not _EXECUTION_SLOT.fullmatch(
+            self.execution_slot
+        ):
+            raise PolicyViolationError("plan source execution slot must be P plus four digits")
+        if not self.reference.plan_path.rsplit("/", 1)[-1].startswith(
+            f"{self.execution_slot}-"
+        ):
+            raise PolicyViolationError("plan source filename slot does not match execution slot")
+        if (
+            isinstance(self.phase_number, bool)
+            or not isinstance(self.phase_number, int)
+            or self.phase_number < 0
+        ):
+            raise PolicyViolationError("plan source phase number must be non-negative")
+        _require_plain_text(self.phase_title, "plan source phase title", 500)
+        _require_plain_text(self.verification_gate, "plan source verification gate", 4_096)
+        if (
+            not isinstance(self.direct_dependencies, tuple)
+            or len(self.direct_dependencies) > 32
+            or len(set(self.direct_dependencies)) != len(self.direct_dependencies)
+        ):
+            raise PolicyViolationError(
+                "plan source dependencies must be a duplicate-free tuple of at most 32"
+            )
+        for dependency in self.direct_dependencies:
+            _require_plan_id(dependency, "plan source dependency")
+        if self.predecessor_workflow_id is not None:
+            _require_plain_text(
+                self.predecessor_workflow_id,
+                "plan source predecessor workflow ID",
+                128,
+            )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema": self.schema,
+            "reference": self.reference.to_dict(),
+            "plan_id": self.plan_id,
+            "execution_slot": self.execution_slot,
+            "phase_number": self.phase_number,
+            "phase_title": self.phase_title,
+            "verification_gate": self.verification_gate,
+            "direct_dependencies": list(self.direct_dependencies),
+            "predecessor_workflow_id": self.predecessor_workflow_id,
+        }
+
+    def canonical_bytes(self) -> bytes:
+        return json.dumps(
+            self.to_dict(), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+
+    @property
+    def digest(self) -> str:
+        return hashlib.sha256(self.canonical_bytes()).hexdigest()
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> PlanSourcePacket:
+        _require_exact_fields(
+            raw,
+            {
+                "schema",
+                "reference",
+                "plan_id",
+                "execution_slot",
+                "phase_number",
+                "phase_title",
+                "verification_gate",
+                "direct_dependencies",
+                "predecessor_workflow_id",
+            },
+            "plan source packet",
+        )
+        try:
+            return cls(
+                schema=raw["schema"],
+                reference=PlanSourceReference.from_dict(raw["reference"]),
+                plan_id=raw["plan_id"],
+                execution_slot=raw["execution_slot"],
+                phase_number=raw["phase_number"],
+                phase_title=raw["phase_title"],
+                verification_gate=raw["verification_gate"],
+                direct_dependencies=tuple(raw["direct_dependencies"]),
+                predecessor_workflow_id=raw["predecessor_workflow_id"],
+            )
+        except (KeyError, TypeError) as error:
+            raise PolicyViolationError(f"invalid plan source packet: {error}") from error
 
 
 class WorkflowStage(StrEnum):
@@ -1829,3 +2023,23 @@ def _require_absolute_local_path(value: str, label: str) -> None:
     _require_text(value, label)
     if "://" in value or value.startswith("git@") or not Path(value).is_absolute():
         raise PolicyViolationError(f"{label} must be an absolute local path")
+
+
+def _require_repository_path(value: Any, label: str) -> None:
+    _require_text(value, label)
+    if not isinstance(value, str):
+        raise PolicyViolationError(f"{label} must be a string")
+    path = PurePosixPath(value)
+    if (
+        not path.parts
+        or path.is_absolute()
+        or "." in path.parts
+        or ".." in path.parts
+        or path.as_posix() != value
+    ):
+        raise PolicyViolationError(f"{label} must be a normalized repository-relative path")
+
+
+def _require_plan_id(value: Any, label: str) -> None:
+    if not isinstance(value, str) or not _PLAN_ID.fullmatch(value):
+        raise PolicyViolationError(f"{label} must be a canonical plan ID")
