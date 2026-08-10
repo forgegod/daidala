@@ -21,6 +21,7 @@ def register(ctx) -> None:
     handlers = {
         "daidala_pack_info": tools.pack_info,
         "daidala_start": tools.start,
+        "daidala_start_from_plan": tools.start_from_plan,
         "daidala_status": tools.status,
         "daidala_checkouts_status": tools.checkouts_status,
         "daidala_replace_constraints": tools.replace_constraints,

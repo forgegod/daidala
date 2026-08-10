@@ -50,6 +50,28 @@ class FakeState:
 
 
 @dataclass
+class FakePlanReference:
+    source_revision: str = "a" * 40
+    baseline_commit: str = "a" * 40
+    plan_digest: str = "b" * 64
+
+
+@dataclass
+class FakePlanPacket:
+    plan_id: str = "active-policy"
+    execution_slot: str = "P0200"
+    phase_number: int = 0
+    reference: FakePlanReference = field(default_factory=FakePlanReference)
+    digest: str = "c" * 64
+
+
+@dataclass
+class FakePlanStartPreview:
+    packet: FakePlanPacket
+    digest: str = "d" * 64
+
+
+@dataclass
 class FakeCardStatus:
     def to_dict(self) -> dict[str, str]:
         return {"stage": "define", "status": "ready"}
@@ -135,6 +157,15 @@ class FakeService:
 
     def start(self, **kwargs: Any) -> FakeState:
         return self._call("start", **kwargs)
+
+    def preview_start_from_plan(self, **kwargs: Any) -> FakePlanStartPreview:
+        self.calls.append(("preview_start_from_plan", (), kwargs))
+        if self.fail:
+            raise RuntimeError("service failed")
+        return FakePlanStartPreview(packet=kwargs["packet"])
+
+    def start_from_plan(self, **kwargs: Any) -> FakeState:
+        return self._call("start_from_plan", **kwargs)
 
     def status(self, workflow_id: str) -> FakeState:
         return self._call("status", workflow_id)
@@ -447,6 +478,16 @@ def _factory(service: FakeService) -> cli.ServiceFactory:
     return cast(cli.ServiceFactory, lambda: service)
 
 
+def _plan_source_admitter(
+    calls: list[dict[str, object]],
+) -> cli.PlanSourceAdmitter:
+    def admit(**kwargs: object) -> FakePlanPacket:
+        calls.append(kwargs)
+        return FakePlanPacket()
+
+    return cast(cli.PlanSourceAdmitter, admit)
+
+
 def _project_cycle_factory(service: FakeProjectCycles) -> cli.ProjectCycleFactory:
     return cast(cli.ProjectCycleFactory, lambda: service)
 
@@ -469,6 +510,24 @@ def _reconcile_argv() -> list[str]:
         "7",
         "--claim-lease-seconds",
         "600",
+    ]
+
+
+def _start_from_plan_argv() -> list[str]:
+    return [
+        "start-from-plan",
+        "/private/repository",
+        "--plan-path",
+        "docs/plans/P0200-active.md",
+        "--source-revision",
+        "a" * 40,
+        "--phase",
+        "0",
+        "--board",
+        "daidala-test",
+        *PROFILE_ARGS,
+        "--workflow-id",
+        "wf-imported-plan",
     ]
 
 
@@ -518,6 +577,91 @@ def test_standalone_and_hermes_surfaces_make_equivalent_service_calls(
         assert json.loads(host_output)["kanban"] == [
             {"stage": "define", "status": "ready"}
         ]
+
+
+def test_start_from_plan_has_native_standalone_preview_and_apply_parity(capsys) -> None:
+    argv = _start_from_plan_argv()
+    standalone = FakeService()
+    native = FakeService()
+    standalone_sources: list[dict[str, object]] = []
+    native_sources: list[dict[str, object]] = []
+
+    standalone_code = cli.main(
+        argv,
+        service_factory=_factory(standalone),
+        plan_source_admitter=_plan_source_admitter(standalone_sources),
+    )
+    standalone_payload = json.loads(capsys.readouterr().out)
+    native_code = cli.run_command(
+        _host_args(argv),
+        service_factory=_factory(native),
+        plan_source_admitter=_plan_source_admitter(native_sources),
+    )
+    native_payload = json.loads(capsys.readouterr().out)
+
+    assert standalone_code == native_code == 0
+    assert native.calls == standalone.calls
+    assert native_sources == standalone_sources == [
+        {
+            "repository": Path("/private/repository"),
+            "plan_path": "docs/plans/P0200-active.md",
+            "source_revision": "a" * 40,
+            "baseline_commit": "a" * 40,
+            "phase_number": 0,
+            "predecessor_workflow_id": None,
+        }
+    ]
+    assert native.calls[0][0] == "preview_start_from_plan"
+    assert native_payload == standalone_payload
+    assert native_payload == {
+        "success": True,
+        "operation": "start-from-plan",
+        "dry_run": True,
+        "workflow_id": "wf-imported-plan",
+        "plan_source": {
+            "plan_id": "active-policy",
+            "execution_slot": "P0200",
+            "phase_number": 0,
+            "source_revision": "a" * 40,
+            "baseline_commit": "a" * 40,
+            "plan_digest": "b" * 64,
+            "packet_digest": "c" * 64,
+        },
+        "preview_digest": "d" * 64,
+    }
+    assert "/private/repository" not in json.dumps(native_payload)
+    assert "docs/plans/P0200-active.md" not in json.dumps(native_payload)
+
+    missing = FakeService()
+    missing_sources: list[dict[str, object]] = []
+    missing_code = cli.main(
+        [*argv, "--apply"],
+        service_factory=_factory(missing),
+        plan_source_admitter=_plan_source_admitter(missing_sources),
+    )
+    missing_payload = json.loads(capsys.readouterr().out)
+    assert missing_code == 1
+    assert missing.calls == []
+    assert missing_sources == []
+    assert missing_payload == {
+        "success": False,
+        "error": "ValueError",
+        "message": "--apply requires --expected-preview-digest",
+    }
+
+    applying = FakeService()
+    applying_sources: list[dict[str, object]] = []
+    apply_code = cli.main(
+        [*argv, "--apply", "--expected-preview-digest", "d" * 64],
+        service_factory=_factory(applying),
+        plan_source_admitter=_plan_source_admitter(applying_sources),
+    )
+    apply_payload = json.loads(capsys.readouterr().out)
+    assert apply_code == 0
+    assert [name for name, _args, _kwargs in applying.calls] == ["start_from_plan"]
+    assert applying.calls[0][2]["expected_preview_digest"] == "d" * 64
+    assert applying_sources == native_sources
+    assert apply_payload == {**native_payload, "dry_run": False}
 
 
 def test_artifact_list_json_is_byte_identical_across_both_cli_surfaces(capsys) -> None:

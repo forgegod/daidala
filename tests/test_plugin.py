@@ -37,6 +37,7 @@ def test_register_exposes_tool_and_namespaced_skill_source() -> None:
     assert [tool["name"] for tool in ctx.tools] == [
         "daidala_pack_info",
         "daidala_start",
+        "daidala_start_from_plan",
         "daidala_status",
         "daidala_checkouts_status",
         "daidala_replace_constraints",

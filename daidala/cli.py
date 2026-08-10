@@ -19,6 +19,7 @@ from .initialization import apply_initialization, preview_initialization
 from .kanban import KanbanGraphAdapter
 from .locations import resolve_data_root
 from .pack_service import PackCheck, PackService
+from .plan_admission import admit_plan_source
 from .prerequisites import DoctorRunner, run_prerequisite_diagnosis
 from .project_cycles import ProjectCycleOperator
 from .reconciliation import ReconciliationPreview, ReconciliationResult
@@ -33,12 +34,13 @@ from .restricted_container import (
 from .revision import MAX_REVIEW_FEEDBACK_BYTES
 from .service import WorkflowService
 from .skills import ProfileSkillContentRegistry, SkillContentRegistry, SkillInventory
-from .state import WorkflowStage
+from .state import PlanSourcePacket, WorkflowStage
 from .store import WorkflowStore
 
 CommandRunner = Callable[[tuple[str, ...]], tuple[int, str]]
 RevisionResolver = Callable[[str], str]
 ServiceFactory = Callable[[], WorkflowService]
+PlanSourceAdmitter = Callable[..., PlanSourcePacket]
 ContainerProbe = Callable[[str], EvaluatorIsolationEvidence]
 ContainerRequestRunner = Callable[
     [RestrictedContainerRequest, Path], tuple[RestrictedContainerEvidence, Path]
@@ -191,6 +193,35 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     start.add_argument("--pack", default="addyosmani")
     start.add_argument("--workflow-id", required=True)
     _add_constraint_source_arguments(start)
+
+    start_from_plan = sub.add_parser(
+        "start-from-plan",
+        help="Preview or admit one Git-pinned pending repository plan phase",
+    )
+    start_from_plan.add_argument("target_repository")
+    start_from_plan.add_argument("--plan-path", required=True)
+    start_from_plan.add_argument("--source-revision", required=True)
+    start_from_plan.add_argument("--phase", dest="phase_number", required=True, type=int)
+    start_from_plan.add_argument("--board", required=True, dest="board_slug")
+    start_from_plan.add_argument(
+        "--default-profile",
+        dest="profile",
+        required=True,
+        help="Default existing Hermes profile for every executable stage",
+    )
+    start_from_plan.add_argument(
+        "--stage-profile",
+        action="append",
+        default=[],
+        metavar="STAGE=PROFILE",
+        help="Override the default profile for one executable stage (repeatable)",
+    )
+    start_from_plan.add_argument("--pack", default="addyosmani")
+    start_from_plan.add_argument("--workflow-id", required=True)
+    start_from_plan.add_argument("--predecessor-workflow-id")
+    _add_constraint_source_arguments(start_from_plan)
+    start_from_plan.add_argument("--apply", action="store_true")
+    start_from_plan.add_argument("--expected-preview-digest")
 
     status = sub.add_parser(
         "status", help="Show Daidala policy facts and live Kanban card status"
@@ -419,6 +450,7 @@ def main(
     container_probe: ContainerProbe | None = None,
     container_request_runner: ContainerRequestRunner | None = None,
     project_cycle_factory: ProjectCycleFactory | None = None,
+    plan_source_admitter: PlanSourceAdmitter | None = None,
 ) -> int:
     args = build_parser().parse_args(argv)
     return run_command(
@@ -434,6 +466,7 @@ def main(
         container_probe=container_probe,
         container_request_runner=container_request_runner,
         project_cycle_factory=project_cycle_factory,
+        plan_source_admitter=plan_source_admitter,
     )
 
 
@@ -451,6 +484,7 @@ def run_command(
     container_probe: ContainerProbe | None = None,
     container_request_runner: ContainerRequestRunner | None = None,
     project_cycle_factory: ProjectCycleFactory | None = None,
+    plan_source_admitter: PlanSourceAdmitter | None = None,
 ) -> int:
     """Execute one parsed command and return its process exit code."""
     try:
@@ -479,6 +513,7 @@ def run_command(
             return _run_project_cycle(args, selected_project_cycle_factory)
         if args.command in {
             "start",
+            "start-from-plan",
             "status",
             "artifacts",
             "curator",
@@ -490,7 +525,11 @@ def run_command(
             selected_factory = service_factory or (
                 lambda: _default_service(command_runner=command_runner)
             )
-            return _run_lifecycle(args, selected_factory)
+            return _run_lifecycle(
+                args,
+                selected_factory,
+                plan_source_admitter=plan_source_admitter or admit_plan_source,
+            )
         if args.command == "packs":
             return _run_pack_operation(
                 args,
@@ -817,8 +856,15 @@ def _run_init(args: argparse.Namespace) -> int:
     return 0
 
 
-def _run_lifecycle(args: argparse.Namespace, service_factory: ServiceFactory) -> int:
+def _run_lifecycle(
+    args: argparse.Namespace,
+    service_factory: ServiceFactory,
+    *,
+    plan_source_admitter: PlanSourceAdmitter,
+) -> int:
     service = service_factory()
+    if args.command == "start-from-plan":
+        return _run_start_from_plan(args, service, plan_source_admitter)
     if args.command == "artifacts":
         return _run_artifact_operation(args, service)
     if args.command == "curator":
@@ -913,6 +959,72 @@ def _run_lifecycle(args: argparse.Namespace, service_factory: ServiceFactory) ->
         state = service.cancel(args.workflow_id, reason=args.reason)
     _print({"success": True, "operation": args.command, "workflow": state.to_dict()})
     return 0
+
+
+class PlanAdmissionCommandError(ValueError):
+    """Bound a plan-source rejection before the CLI JSON boundary."""
+
+
+def _run_start_from_plan(
+    args: argparse.Namespace,
+    service: WorkflowService,
+    plan_source_admitter: PlanSourceAdmitter,
+) -> int:
+    if args.apply and args.expected_preview_digest is None:
+        raise ValueError("--apply requires --expected-preview-digest")
+    if not args.apply and args.expected_preview_digest is not None:
+        raise ValueError("--expected-preview-digest requires --apply")
+    try:
+        packet = plan_source_admitter(
+            repository=Path(args.target_repository),
+            plan_path=args.plan_path,
+            source_revision=args.source_revision,
+            baseline_commit=args.source_revision,
+            phase_number=args.phase_number,
+            predecessor_workflow_id=args.predecessor_workflow_id,
+        )
+        common = {
+            "packet": packet,
+            "board_slug": args.board_slug,
+            "stage_profiles": _parse_stage_profiles(args.profile, args.stage_profile),
+            "pack_name": args.pack,
+            "workflow_id": args.workflow_id,
+            "predecessor_workflow_id": args.predecessor_workflow_id,
+            **_constraint_source_values(args),
+        }
+        if args.apply:
+            assert isinstance(args.expected_preview_digest, str)
+            service.start_from_plan(
+                **common, expected_preview_digest=args.expected_preview_digest
+            )
+            preview_digest = args.expected_preview_digest
+        else:
+            preview_digest = service.preview_start_from_plan(**common).digest
+    except Exception as error:  # noqa: BLE001 - source bytes and paths are private
+        raise PlanAdmissionCommandError("plan admission rejected") from error
+    _print(
+        {
+            "success": True,
+            "operation": "start-from-plan",
+            "dry_run": not args.apply,
+            "workflow_id": args.workflow_id,
+            "plan_source": _plan_source_metadata(packet),
+            "preview_digest": preview_digest,
+        }
+    )
+    return 0
+
+
+def _plan_source_metadata(packet: PlanSourcePacket) -> dict[str, object]:
+    return {
+        "plan_id": packet.plan_id,
+        "execution_slot": packet.execution_slot,
+        "phase_number": packet.phase_number,
+        "source_revision": packet.reference.source_revision,
+        "baseline_commit": packet.reference.baseline_commit,
+        "plan_digest": packet.reference.plan_digest,
+        "packet_digest": packet.digest,
+    }
 
 
 def _run_artifact_operation(args: argparse.Namespace, service: WorkflowService) -> int:

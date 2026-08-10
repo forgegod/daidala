@@ -102,6 +102,90 @@ def call(handler, args: object) -> dict:
     return json.loads(raw)
 
 
+def _commit(repository: Path, message: str) -> str:
+    subprocess.run(["git", "-C", str(repository), "add", "."], check=True)
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repository),
+            "-c",
+            "user.name=Daidala Tests",
+            "-c",
+            "user.email=daidala@example.invalid",
+            "commit",
+            "-qm",
+            message,
+        ],
+        check=True,
+    )
+    return subprocess.run(
+        ["git", "-C", str(repository), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
+def _admission_plan_document(
+    *, plan_id: str, slot: str, status: str, dependencies: str, phase_status: str
+) -> str:
+    return "\n".join(
+        (
+            f"# {plan_id}",
+            "",
+            f"**Plan ID:** {plan_id}",
+            "",
+            f"**Execution slot:** {slot}",
+            "",
+            "**Created:** 2026-08-10",
+            "",
+            f"**Depends on:** {dependencies}",
+            "",
+            f"**Status:** {status}",
+            "",
+            "## Phase table",
+            "",
+            "| # | Phase | Status | Verification gate |",
+            "|---|---|---|---|",
+            f"| 0 | Keep the fixture deterministic | {phase_status} | `pytest -q` exits 0 |",
+            "",
+            "## Phase 0 — Keep the fixture deterministic",
+            "",
+            "Goal: keep the admission fixture deterministic.",
+            "",
+            "Verification gate: `pytest -q` exits 0",
+            "",
+        )
+    )
+
+
+def _admission_repository(repository: Path) -> str:
+    plans = repository / "docs" / "plans"
+    plans.mkdir(parents=True)
+    (plans / "P0100-complete.md").write_text(
+        _admission_plan_document(
+            plan_id="completed-policy",
+            slot="P0100",
+            status="complete",
+            dependencies="none",
+            phase_status="done (daidala:workflow-1:" + "a" * 64 + ")",
+        ),
+        encoding="utf-8",
+    )
+    (plans / "P0200-active.md").write_text(
+        _admission_plan_document(
+            plan_id="active-policy",
+            slot="P0200",
+            status="pending",
+            dependencies="completed-policy",
+            phase_status="pending",
+        ),
+        encoding="utf-8",
+    )
+    return _commit(repository, "add admission plans")
+
+
 def worker_context(
     service: WorkflowService, workflow_id: str, stage: WorkflowStage
 ) -> dict[str, str]:
@@ -770,6 +854,108 @@ def test_start_requires_explicit_board_and_local_repository(
         assert "absolute local path" in result["message"]
 
 
+def test_start_from_plan_is_preview_first_and_keeps_admission_source_private(
+    service: WorkflowService,
+    target_repository: Path,
+    fake_kanban_host,
+) -> None:
+    source_revision = _admission_repository(target_repository)
+    arguments = {
+        "board_slug": "daidala-test",
+        "target_repository": str(target_repository),
+        "plan_path": "docs/plans/P0200-active.md",
+        "source_revision": source_revision,
+        "phase_number": 0,
+        "stage_profiles": STAGE_PROFILES,
+        "workflow_id": "workflow-imported-plan",
+    }
+
+    preview = call(tools.start_from_plan, arguments)
+
+    assert preview["success"] is True
+    assert preview["operation"] == "start-from-plan"
+    assert preview["dry_run"] is True
+    assert preview["workflow_id"] == "workflow-imported-plan"
+    assert preview["plan_source"] == {
+        "plan_id": "active-policy",
+        "execution_slot": "P0200",
+        "phase_number": 0,
+        "source_revision": source_revision,
+        "baseline_commit": source_revision,
+        "plan_digest": preview["plan_source"]["plan_digest"],
+        "packet_digest": preview["plan_source"]["packet_digest"],
+    }
+    assert len(preview["preview_digest"]) == 64
+    rendered_preview = json.dumps(preview)
+    assert str(target_repository) not in rendered_preview
+    assert "Keep the fixture deterministic" not in rendered_preview
+    assert service.store.list_all() == ()
+    assert fake_kanban_host.cards == {}
+
+    missing_digest = call(tools.start_from_plan, {**arguments, "apply": True})
+    assert missing_digest == {
+        "success": False,
+        "error": "PlanAdmissionError",
+        "message": "apply requires expected_preview_digest",
+    }
+    stale_preview = call(
+        tools.start_from_plan,
+        {**arguments, "apply": True, "expected_preview_digest": "0" * 64},
+    )
+    assert stale_preview == {
+        "success": False,
+        "error": "PlanAdmissionError",
+        "message": "plan admission rejected",
+    }
+    assert service.store.list_all() == ()
+    assert fake_kanban_host.cards == {}
+
+    applied = call(
+        tools.start_from_plan,
+        {
+            **arguments,
+            "apply": True,
+            "expected_preview_digest": preview["preview_digest"],
+        },
+    )
+    assert applied == {**preview, "dry_run": False}
+    ledger = service.status("workflow-imported-plan")
+    assert ledger.plan_source_packet is not None
+    assert ledger.plan_source_packet.reference.source_revision == source_revision
+    assert ledger.artifact_for(WorkflowStage.PLAN) is not None
+    assert fake_kanban_host.cards == {}
+
+    invalid_selector = call(
+        tools.start_from_plan,
+        {**arguments, "plan_path": "../private-plan.md"},
+    )
+    assert invalid_selector == {
+        "success": False,
+        "error": "PlanAdmissionError",
+        "message": "plan admission rejected",
+    }
+
+    (target_repository / "README.md").write_text("advanced\n", encoding="utf-8")
+    _commit(target_repository, "advance source repository")
+    stale_source = call(
+        tools.start_from_plan,
+        {
+            **arguments,
+            "apply": True,
+            "expected_preview_digest": preview["preview_digest"],
+        },
+    )
+    assert stale_source == {
+        "success": False,
+        "error": "PlanAdmissionError",
+        "message": "plan admission rejected",
+    }
+    assert str(target_repository) not in json.dumps(stale_source)
+    assert str(target_repository) not in json.dumps(invalid_selector)
+    assert len(service.store.list_all()) == 1
+    assert fake_kanban_host.cards == {}
+
+
 def test_pack_info_is_strict_and_reports_valid_pack() -> None:
     result = call(tools.pack_info, {"pack": "addyosmani"})
     assert result["success"] is True
@@ -829,6 +1015,7 @@ def test_public_schemas_have_no_removed_lifecycle_aliases() -> None:
     assert {schema["name"] for schema in schemas.ALL_TOOLS} == {
         "daidala_pack_info",
         "daidala_start",
+        "daidala_start_from_plan",
         "daidala_status",
         "daidala_checkouts_status",
         "daidala_replace_constraints",
@@ -854,6 +1041,18 @@ def test_public_schemas_have_no_removed_lifecycle_aliases() -> None:
     assert set(summary["required"]) == {
         "headline", "changes", "affected_areas", "risks", "verification",
     }
+    start_from_plan = schemas.START_FROM_PLAN["parameters"]
+    assert set(start_from_plan["required"]) == {
+        "board_slug",
+        "target_repository",
+        "plan_path",
+        "source_revision",
+        "phase_number",
+        "stage_profiles",
+        "workflow_id",
+    }
+    assert start_from_plan["properties"]["source_revision"]["pattern"] == "^[0-9a-f]{40}$"
+    assert start_from_plan["properties"]["phase_number"]["minimum"] == 0
 
 
 def test_review_disposition_tool_rejects_kanban_worker_context(

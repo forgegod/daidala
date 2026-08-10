@@ -47,8 +47,8 @@ workflow-pack adapters, and bundled orchestration skills.
 | `artifact_curator.py` | Strict profile-local lifecycle policy and compare-and-swap state, live-ledger/Kanban terminal classification, pinned age transitions, verified archive publication, crash-convergent cleanup, exact-ID archive lookup, and safe recovery-root restore. |
 | `curator_cron.py` | Dry-run-first profile-local Hermes Cron setup/removal, exact job/script/policy identity, private compare-and-swap schedule state, and the public `hermes cron` subprocess boundary. |
 | `kanban.py` | Public host-boundary adapter for the idempotent, approval-gated and revision-addressed Hermes card graph. |
-| `schemas.py` | Tool schemas exposed to the model. |
-| `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes. |
+| `schemas.py` | Tool schemas exposed to the model, including strict Git-pinned plan admission inputs. |
+| `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes; plan admission returns metadata only. |
 | `packs.py` | Pack loading and deterministic validation. |
 | `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle, exact artifact list/show/export, attended-review dispatch, dry-run-first curator policy/Cron operations, pack operations, exact preview-digest apply gates, bounded inspection output, and subprocess mutation boundary. |
 | `dashboard_backend.py` | Profile-safe dashboard read model, including persisted configuration, live Kanban, single-ledger exact plan/review evidence, path-free artifact catalog/text/download, curator status/action projections, runtime constraint-template and limit projection, constraint previews, and typed compare-and-swap replacement adapters. |
@@ -180,6 +180,10 @@ workflow-pack adapters, and bundled orchestration skills.
   supply approval authority. The resulting packet has canonical digest identity
   over repository, blob, document digest, selected pending phase, gate, and
   direct dependencies.
+- `start-from-plan` and `daidala_start_from_plan` use that same packet and
+  service path. They are dry-run by default; apply requires the exact fresh
+  preview digest. Their output and failures expose only bounded identity
+  metadata, never plan source bytes or repository paths.
 - A successor imported-plan checkpoint is read-only: it requires exactly one
   packet-bound preceding workflow with accepted review and digest-verified
   implementation/delivery artifacts, a one-parent Git child, the exact
@@ -269,6 +273,12 @@ the same names. `schemas.py::START` defines the JSON schema the model sees;
   is omitted, so a prompt may list only the stages that differ from the
   default. Operators reading a snippet must not interpret missing
   `--stage-profile` entries as missing stages.
+
+`daidala_start_from_plan` and `daidala start-from-plan` share one strict,
+Git-pinned admission contract. Dry runs return bounded metadata only; apply
+requires the exact preview digest and delegates the accepted packet to
+`WorkflowService.start_from_plan`. This boundary never exposes plan bytes or
+repository paths.
 
 ### Cross-document bindings (must stay synchronized)
 

@@ -5,12 +5,14 @@ from __future__ import annotations
 import json
 import os
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from .checkouts import CheckoutManager
 from .kanban import KanbanGraphAdapter, ToolDispatcher
 from .locations import resolve_data_root
 from .packs import load_pack
+from .plan_admission import admit_plan_source
 from .registrations import list_controller_registrations
 from .service import WorkflowService
 from .skills import pack_skill_digests
@@ -107,6 +109,122 @@ def start(args: dict[str, Any], **kwargs: Any) -> str:
             constraints_skill=values.get("constraints_skill"),
             constraints_skill_digest=values.get("constraints_skill_digest"),
         ),
+    )
+
+
+def start_from_plan(args: dict[str, Any], **kwargs: Any) -> str:
+    """Preview or admit one Git-pinned pending plan phase without source disclosure."""
+    del kwargs
+    allowed = {
+        "board_slug",
+        "target_repository",
+        "plan_path",
+        "source_revision",
+        "phase_number",
+        "stage_profiles",
+        "pack",
+        "workflow_id",
+        "predecessor_workflow_id",
+        "constraints_content",
+        "constraints_skill",
+        "constraints_skill_digest",
+        "apply",
+        "expected_preview_digest",
+    }
+    required = {
+        "board_slug",
+        "target_repository",
+        "plan_path",
+        "source_revision",
+        "phase_number",
+        "stage_profiles",
+        "workflow_id",
+    }
+    try:
+        values = _validate_args(args, allowed=allowed, required=required)
+    except Exception as error:  # noqa: BLE001 - Hermes handler boundary
+        return _tool_error(error)
+
+    apply = values.get("apply", False)
+    expected_preview_digest = values.get("expected_preview_digest")
+    if not isinstance(apply, bool):
+        return _plan_admission_error("apply must be a boolean")
+    if apply and expected_preview_digest is None:
+        return _plan_admission_error("apply requires expected_preview_digest")
+    if not apply and expected_preview_digest is not None:
+        return _plan_admission_error("expected_preview_digest requires apply")
+
+    try:
+        packet = admit_plan_source(
+            repository=Path(str(values["target_repository"])),
+            plan_path=values["plan_path"],
+            source_revision=values["source_revision"],
+            baseline_commit=values["source_revision"],
+            phase_number=values["phase_number"],
+            predecessor_workflow_id=values.get("predecessor_workflow_id"),
+        )
+        service = _service_factory()
+        common = {
+            "packet": packet,
+            "board_slug": values["board_slug"],
+            "stage_profiles": values["stage_profiles"],
+            "pack_name": values.get("pack") or "addyosmani",
+            "workflow_id": values["workflow_id"],
+            "predecessor_workflow_id": values.get("predecessor_workflow_id"),
+            "constraints_content": values.get("constraints_content"),
+            "constraints_skill": values.get("constraints_skill"),
+            "constraints_skill_digest": values.get("constraints_skill_digest"),
+        }
+        if apply:
+            assert isinstance(expected_preview_digest, str)
+            service.start_from_plan(
+                **common, expected_preview_digest=expected_preview_digest
+            )
+            preview_digest = expected_preview_digest
+        else:
+            preview_digest = service.preview_start_from_plan(**common).digest
+    except Exception:  # noqa: BLE001 - source and service errors stay bounded
+        return _plan_admission_error("plan admission rejected")
+    return json.dumps(
+        {
+            "success": True,
+            "operation": "start-from-plan",
+            "dry_run": not apply,
+            "workflow_id": values["workflow_id"],
+            "plan_source": _plan_source_metadata(packet),
+            "preview_digest": preview_digest,
+        },
+        sort_keys=True,
+    )
+
+
+def _plan_source_metadata(packet: Any) -> dict[str, Any]:
+    return {
+        "plan_id": packet.plan_id,
+        "execution_slot": packet.execution_slot,
+        "phase_number": packet.phase_number,
+        "source_revision": packet.reference.source_revision,
+        "baseline_commit": packet.reference.baseline_commit,
+        "plan_digest": packet.reference.plan_digest,
+        "packet_digest": packet.digest,
+    }
+
+
+def _plan_admission_error(message: str) -> str:
+    return json.dumps(
+        {"success": False, "error": "PlanAdmissionError", "message": message},
+        sort_keys=True,
+    )
+
+
+def _tool_error(error: Exception) -> str:
+    return json.dumps(
+        {
+            "success": False,
+            "error": error.__class__.__name__,
+            "message": str(error),
+        },
+        sort_keys=True,
     )
 
 
@@ -384,14 +502,7 @@ def _handle(
         values = _validate_args(args, allowed=allowed, required=required)
         return json.dumps({"success": True, **operation(values)}, sort_keys=True)
     except Exception as error:  # noqa: BLE001 - Hermes handler boundary
-        return json.dumps(
-            {
-                "success": False,
-                "error": error.__class__.__name__,
-                "message": str(error),
-            },
-            sort_keys=True,
-        )
+        return _tool_error(error)
 
 
 def _validate_args(

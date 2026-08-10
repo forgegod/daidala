@@ -65,6 +65,65 @@ START = {
     },
 }
 
+START_FROM_PLAN = {
+    "name": "daidala_start_from_plan",
+    "description": "Preview or admit one Git-pinned pending repository plan phase.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "board_slug": {"type": "string"},
+            "target_repository": {"type": "string"},
+            "plan_path": {"type": "string"},
+            "source_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+            "phase_number": {"type": "integer", "minimum": 0},
+            "stage_profiles": {
+                "type": "object",
+                "properties": {
+                    stage: {"type": "string"}
+                    for stage in (
+                        "define",
+                        "plan",
+                        "implement",
+                        "verify",
+                        "review",
+                        "deliver",
+                    )
+                },
+                "required": [
+                    "define",
+                    "plan",
+                    "implement",
+                    "verify",
+                    "review",
+                    "deliver",
+                ],
+                "additionalProperties": False,
+            },
+            "pack": {"type": "string", "default": "addyosmani"},
+            "workflow_id": {"type": "string"},
+            "predecessor_workflow_id": {"type": ["string", "null"]},
+            "constraints_content": {"type": "string"},
+            "constraints_skill": {"type": "string"},
+            "constraints_skill_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "apply": {"type": "boolean", "default": False},
+            "expected_preview_digest": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$",
+            },
+        },
+        "required": [
+            "board_slug",
+            "target_repository",
+            "plan_path",
+            "source_revision",
+            "phase_number",
+            "stage_profiles",
+            "workflow_id",
+        ],
+        "additionalProperties": False,
+    },
+}
+
 REPLACE_CONSTRAINTS = {
     "name": "daidala_replace_constraints",
     "description": "Replace workflow constraints from explicit content or an exact policy skill.",
@@ -350,7 +409,15 @@ DELIVER = {
     },
 }
 
-LIFECYCLE_TOOLS = (START, STATUS, CHECKOUTS_STATUS, REPLACE_CONSTRAINTS, APPROVE, CANCEL)
+LIFECYCLE_TOOLS = (
+    START,
+    START_FROM_PLAN,
+    STATUS,
+    CHECKOUTS_STATUS,
+    REPLACE_CONSTRAINTS,
+    APPROVE,
+    CANCEL,
+)
 EXECUTION_TOOLS = (
     SUBMIT_ARTIFACT,
     SUBMIT_REVIEW,
