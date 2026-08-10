@@ -58,6 +58,10 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   confirm: true}`, re-resolves the current verified plan and bound summary, and
   fails closed on stale or unavailable evidence. The browser renders the plan as
   literal text and never substitutes a summary or Kanban unblock for approval.
+- Workflow summaries expose generated versus Git-pinned plan mode and imported
+  packet identity only as Plan ID, execution slot, phase, source revision,
+  packet digest, and verified packet state. They never expose source paths or
+  bytes, and the dashboard has no admission or checkpoint mutation control.
 - Review preview accepts only `{action, rationale}`; apply accepts only `{action,
   review_digest, preview_digest, rationale, confirm: true}`. The server derives
   the attended actor and every workflow/artifact/card/worktree identity, recomputes

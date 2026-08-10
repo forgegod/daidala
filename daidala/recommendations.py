@@ -180,10 +180,7 @@ def derive_recommendations(
                 Recommendation(
                     action_kind="approve_current_tuple",
                     workflow_id=ledger.workflow_id,
-                    rationale=(
-                        "Review the captured plan and approve its displayed "
-                        "plan and constraint digests to unblock implementation."
-                    ),
+                    rationale=_approval_rationale(ledger),
                     plan_revision=plan_revision,
                     plan_digest=plan_digest,
                     constraints_revision=constraints_revision,
@@ -306,6 +303,19 @@ def derive_recommendations(
         )
 
     return tuple(recommendations)
+
+
+def _approval_rationale(ledger: WorkflowLedger) -> str:
+    if ledger.plan_source_packet is not None:
+        return (
+            "Review the displayed Git-pinned source packet and current plan "
+            "and constraint digests, then approve the exact tuple to unblock "
+            "implementation."
+        )
+    return (
+        "Review the captured plan and approve its displayed plan and constraint "
+        "digests to unblock implementation."
+    )
 
 
 def _approval_matches_ledger(

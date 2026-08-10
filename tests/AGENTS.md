@@ -52,8 +52,8 @@ completeness without touching a real Hermes profile.
 - Plan-admission tests use disposable Git repositories to prove exact-blob
   parsing, canonical packet round trips, pending-phase ordering, dependency
   graph rejection, immutable source-artifact replay, direct-parent checkpoint
-  binding, and dirty/path/symlink/binary/tampered-evidence fail-closed behavior
-  without mutating the operator checkout.
+  binding, two-phase fresh-approval chains, and dirty/path/symlink/binary/
+  tampered-evidence fail-closed behavior without mutating the operator checkout.
 - Fake-inventory tests for exact external-skill prerequisites and host errors.
 - Fake command/registry tests for dry-run installation, pinned revisions, content digests, post-apply verification, and refused recursive installation.
 - Pack-service and dashboard-route tests prove declared-skill-only bounded

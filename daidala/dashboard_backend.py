@@ -845,11 +845,32 @@ def _workflow_summary(ledger: WorkflowLedger) -> dict[str, Any]:
         "pack_source_revision": ledger.pack_source_revision,
         "policy_revision": ledger.policy_revision,
         "plan_revision": ledger.plan_revision,
+        "plan_source": _plan_source_summary(ledger),
         "approval": ledger.approval.to_dict() if ledger.approval else None,
         "current_constraints_revision": ledger.current_constraints_revision,
         "current_constraints_digest": ledger.current_constraints_digest,
         "updated_at": ledger.updated_at.isoformat(),
         "created_at": ledger.created_at.isoformat(),
+    }
+
+
+def _plan_source_summary(ledger: WorkflowLedger) -> dict[str, object]:
+    packet = ledger.plan_source_packet
+    if packet is None:
+        return {"mode": "generated"}
+    return {
+        "mode": "git-pinned",
+        "plan_id": packet.plan_id,
+        "execution_slot": packet.execution_slot,
+        "phase": {
+            "number": packet.phase_number,
+            "title": packet.phase_title,
+        },
+        "source_revision": packet.reference.source_revision,
+        "packet": {
+            "digest": packet.digest,
+            "verification_state": "verified",
+        },
     }
 
 

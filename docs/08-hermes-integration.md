@@ -213,6 +213,14 @@ The plugin registers `hermes daidala` through the documented
 `ctx.register_cli_command` API. Its setup callback and the standalone
 `daidala` executable share one argparse tree and one service dispatcher.
 
+Both forms expose `start-from-plan` for dry-run-first Git-pinned phase
+admission. It accepts a local repository, repository-relative plan path, full
+source revision, phase number, board, complete stage-profile mapping, pack, and
+workflow ID; apply requires the exact preview digest. The dispatcher returns only
+Plan ID, execution slot, phase, source/baseline revision, plan digest, and packet
+digest. It neither exposes source bytes or paths nor creates a checkpoint commit
+or push; a later phase must be admitted from a separately created checkpoint.
+
 Hermes v0.18.2 invokes plugin command callbacks but discards their integer
 return values. The native callback therefore raises `SystemExit` with the
 shared dispatcher's code. This narrow host-compatibility boundary keeps success

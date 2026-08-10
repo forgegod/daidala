@@ -87,6 +87,44 @@ hermes daidala status stable-workflow-id
 The gateway's Kanban dispatcher executes ready cards. The start command creates
 the graph; it does not start a second scheduler, daemon, or nested agent.
 
+## Start a Git-pinned plan phase
+
+`start-from-plan` admits exactly one pending phase from a clean, full Git
+revision. The plan path is repository-relative; Daidala reads its blob from the
+named commit, not mutable checkout bytes. Preview first:
+
+```bash
+hermes daidala start-from-plan /absolute/path/to/repo \
+  --plan-path docs/plans/P0440-example.md \
+  --source-revision <full-commit-a> --phase 0 \
+  --board project-board --default-profile engineer \
+  --pack addyosmani --workflow-id example-phase-0
+```
+
+Apply only with the returned digest:
+
+```bash
+hermes daidala start-from-plan /absolute/path/to/repo \
+  --plan-path docs/plans/P0440-example.md \
+  --source-revision <full-commit-a> --phase 0 \
+  --board project-board --default-profile engineer \
+  --pack addyosmani --workflow-id example-phase-0 --apply \
+  --expected-preview-digest <preview-digest>
+```
+
+The imported workflow has no synthetic `define` or `plan` card. Its dashboard
+summary and approval recommendation show the Git-pinned source revision, Plan
+ID, phase, packet digest, and `verified` packet state without source paths or
+bytes. Approval binds that packet as well as the current plan and constraint
+tuple.
+
+Delivery remains uncommitted and unpushed. If an operator chooses to continue,
+create one separately authorized direct child commit containing only the
+delivered diff and the allowed `done (daidala:<workflow-id>:<delivery-digest>)`
+phase-status projection. Then admit the next pending phase from the child commit
+with a new workflow ID and `--predecessor-workflow-id <prior-workflow-id>`.
+The prior approval cannot authorize that new packet or baseline.
+
 ## Review exact artifacts
 
 List ledger-owned artifacts and select one exact opaque artifact ID. JSON list

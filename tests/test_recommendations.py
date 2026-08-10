@@ -14,6 +14,8 @@ from daidala.recommendations import (
 from daidala.state import (
     ArtifactReference,
     CardReference,
+    PlanSourcePacket,
+    PlanSourceReference,
     SkillDigest,
     StageProfile,
     WorkflowStage,
@@ -77,6 +79,42 @@ def test_current_unapproved_plan_produces_exact_approval_action() -> None:
     assert approval.workflow_id == "wf-1"
     assert approval.plan_digest == "plan-digest"
     assert approval.card_id is None
+
+
+def test_imported_plan_approval_recommendation_names_its_source_packet() -> None:
+    state = ledger()
+    plan = ArtifactReference(WorkflowStage.PLAN, 0, "/plan", "plan-digest", NOW)
+    packet = PlanSourcePacket(
+        schema="daidala.plan-source-packet/v1",
+        reference=PlanSourceReference(
+            schema="daidala.plan-source-reference/v1",
+            repository="/repo",
+            source_revision="a" * 40,
+            baseline_commit="a" * 40,
+            plan_path="docs/plans/P0440-example.md",
+            plan_blob_id="b" * 40,
+            plan_digest="c" * 64,
+            byte_size=1,
+        ),
+        plan_id="p0440-example",
+        execution_slot="P0440",
+        phase_number=0,
+        phase_title="Admit the fixture",
+        verification_gate="pytest -q",
+        direct_dependencies=(),
+        predecessor_workflow_id=None,
+    )
+    state = replace(
+        state,
+        artifacts=(plan,),
+        plan_source_packet=packet,
+    )
+
+    result = derive_recommendations(state, ())
+
+    approval = next(row for row in result if row.action_kind == "approve_current_tuple")
+    assert "Git-pinned source packet" in approval.rationale
+    assert approval.plan_digest == "plan-digest"
 
 
 def test_historical_approval_card_is_inert_for_current_recommendations() -> None:

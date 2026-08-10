@@ -120,6 +120,17 @@ revision request. Blocking findings cannot be overridden; reviewer disagreement
 without changed code is handled by commenting on and unblocking the same review
 card for re-review.
 
+### Git-pinned imported plan workers
+
+For an imported plan, the copied plan artifact and its source packet are the
+immutable phase authority. The implementation worker must not edit the active
+repository plan path, change its phase status, or infer work from a descendant
+commit. If implementation, verification, or review finds a required scope
+change, record the evidence, comment, and block for an attended decision. The
+operator creates any checkpoint commit outside Daidala; the next phase starts
+only from a new Git-pinned source admission and fresh exact approval. These
+restrictions do not alter generated-plan revision handling.
+
 The plan `approval_summary` has exactly `headline`, `changes`, `affected_areas`,
 `risks`, and `verification`. Ground every item in the submitted plan and its
 parent evidence. Do not add fields, submit placeholders, or ask Daidala to

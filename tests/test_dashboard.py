@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from typing import Any, cast
 
@@ -11,6 +12,7 @@ from daidala.constraints import DEFAULT_CONSTRAINT_TEMPLATE
 from daidala.dashboard_backend import (
     DashboardBackend,
     _approval_review_packet,
+    _workflow_summary,
     _workflow_timeline,
 )
 from daidala.recommendations import KanbanSnapshot
@@ -20,6 +22,8 @@ from daidala.state import WorkflowLedger, WorkflowStage
 def _ledger(**overrides: object) -> WorkflowLedger:
     values: dict[str, object] = {
         "workflow_id": "workflow-1",
+        "board_slug": "project-board",
+        "target_repository": "/repository",
         "requested_goal": "Ship the bounded dashboard",
         "policy_revision": 2,
         "plan_revision": 3,
@@ -33,11 +37,39 @@ def _ledger(**overrides: object) -> WorkflowLedger:
         "baseline_commit": "f" * 40,
         "worktree_path": "/profile/workflows/workflow-1/worktree",
         "worktree_owned": True,
+        "plan_source_packet": None,
+        "updated_at": datetime(2026, 8, 10, tzinfo=UTC),
+        "created_at": datetime(2026, 8, 9, tzinfo=UTC),
         "artifact_for": lambda _stage: None,
         "activation_for": lambda _stage: None,
     }
     values.update(overrides)
     return cast(WorkflowLedger, SimpleNamespace(**values))
+
+
+def test_workflow_summary_projects_verified_git_pinned_plan_identity_without_path() -> None:
+    summary = _workflow_summary(
+        _ledger(
+            plan_source_packet=SimpleNamespace(
+                plan_id="phased-fixture",
+                execution_slot="P0440",
+                phase_number=1,
+                phase_title="Admit the checkpoint",
+                digest="a" * 64,
+                reference=SimpleNamespace(source_revision="b" * 40),
+            )
+        )
+    )
+
+    assert summary["plan_source"] == {
+        "mode": "git-pinned",
+        "plan_id": "phased-fixture",
+        "execution_slot": "P0440",
+        "phase": {"number": 1, "title": "Admit the checkpoint"},
+        "source_revision": "b" * 40,
+        "packet": {"digest": "a" * 64, "verification_state": "verified"},
+    }
+    assert "/profile/" not in json.dumps(summary)
 
 
 def test_approval_review_packet_is_exact_bounded_and_path_free() -> None:

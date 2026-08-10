@@ -302,7 +302,41 @@ These service and CLI operations are current. The optional authenticated
 dashboard renders the same source-bound review evidence and preview-confirm
 accept-delivery, request-revision, and reject-workflow controls.
 
-## 7. Recover or cancel
+## 7. Start a Git-pinned phase
+
+Use `start-from-plan` when a repository-tracked plan already names one pending
+phase. The plan path is repository-relative and the source revision is the full,
+clean Git commit that becomes the implementation baseline. Dry run first:
+
+```bash
+hermes daidala start-from-plan /absolute/path/to/repo \
+  --plan-path docs/plans/P0440-example.md \
+  --source-revision <commit-a> --phase 0 \
+  --board project-board --default-profile default \
+  --pack aidlc --workflow-id example-phase-0
+```
+
+The response names only bounded source metadata and a `preview_digest`. Apply
+the unchanged request with that digest:
+
+```bash
+hermes daidala start-from-plan /absolute/path/to/repo \
+  --plan-path docs/plans/P0440-example.md \
+  --source-revision <commit-a> --phase 0 \
+  --board project-board --default-profile default \
+  --pack aidlc --workflow-id example-phase-0 --apply \
+  --expected-preview-digest <preview-digest>
+```
+
+Imported-plan workers treat the captured packet and copied plan artifact as
+immutable. The source plan remains `pending` while Daidala runs it; neither
+workers nor delivery edit it, commit it, or push it. After accepted delivery,
+an operator separately creates one authorized Git child commit containing only
+the delivered diff and the exact `done (daidala:<workflow-id>:<delivery-digest>)`
+status projection. Start phase 1 from that new commit with its own workflow ID
+and `--predecessor-workflow-id example-phase-0`; its packet and approval are new.
+
+## 8. Recover or cancel
 
 For a blocked worker, read its comment and run history, correct the prerequisite,
 comment with the human decision, and unblock the same card:

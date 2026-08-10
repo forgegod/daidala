@@ -32,6 +32,13 @@ apply re-runs every identity check, persists that packet and copied plan bytes,
 and exposes an approval gate without fabricated `define` or `plan` history.
 Failed policy validation creates no graph.
 
+An imported packet names the exact full source revision, Plan ID, execution slot,
+phase identity, and packet digest. The source revision is also the implementation
+baseline. The dashboard projects those bounded facts and `verified` packet state,
+but never the repository-relative source path or plan bytes. The current source
+file stays pending while Daidala executes; a later phase requires a separately
+authorized direct child checkpoint commit and a fresh source packet.
+
 ## Operational status
 
 Daidala stores no `draft`, `running`, `blocked`, or `completed` field. Card
@@ -43,6 +50,7 @@ it never mirrors those statuses into its ledger.
 |---|---|
 | Card readiness, running, blocking, completion, retry, and archive state | Hermes Kanban |
 | Current approved plan digest and approval actor/time | Daidala ledger |
+| Git-pinned source revision, Plan ID, phase, and packet verification state | Daidala ledger packet and path-free dashboard projection |
 | Source-bound plan `approval_summary` and summary digest | Daidala artifact reference |
 | Current structured review, exact attended disposition, and immutable historical review tuples | Daidala ledger |
 | `revision_request`, `successor_packet` identity, and retry checkpoints | Daidala ledger and artifact store |
@@ -137,6 +145,11 @@ approval-card references remain readable ledger evidence but are never completed
 promoted, or recreated. `WorkflowStage.APPROVAL` remains for that serialized
 history; new workflows create no approval `CardReference`.
 
+An approval for source revision A cannot authorize its checkpoint B or any phase
+admitted from B: the copied plan artifact, packet digest, and baseline all change.
+The operator alone creates B after accepted delivery; Daidala validates it
+read-only before presenting the next attended approval.
+
 Structured review is advisory evidence. `accept_delivery`, `request_revision`,
 and `reject_workflow` bind the exact current review, implementation, passing
 verification, plan, policy, and nullable constraint tuple. A stale digest or
@@ -171,6 +184,9 @@ forms must submit an exact typed request; explicit confirmation and current
 digests are revalidated server-side before mutation. Dashboard review disposition
 uses the same server-derived exact evidence and preview-confirm authority as the
 CLI; a revision request reopens only the successor plan's exact approval decision.
+For imported plans, the workflow summary also exposes the path-free packet
+identity and existing recommendation action; it has no admission or checkpoint
+mutation control.
 
 - Contract: this document
 - Ledger model: `daidala/state.py`

@@ -14,7 +14,7 @@
 
 **Produces:** synchronized worker, operator, dashboard-read, and verification contracts plus end-to-end evidence that each externally committed checkpoint requires a new exact source admission and human approval
 
-**Status:** pending
+**Status:** completed
 
 ## Goal
 
@@ -34,7 +34,7 @@ A mutable working-tree plan, an uncommitted status edit, or a source revision di
 
 | # | Phase | Status | Verification gate |
 |---|---|---|---|
-| 0 | Reconcile worker, operator, dashboard-read, and verification contracts | pending | `pytest -q tests/test_worker_contract.py tests/test_recommendations.py tests/test_dashboard_api.py tests/test_cli.py tests/test_plugin.py tests/test_plan_admission.py::test_two_phase_checkpoint_chain && python scripts/check_md_links.py . && lefthook validate && pytest && ruff check . && daidala packs validate addyosmani && daidala packs validate aidlc && python -m build && python -m twine check dist/* && python scripts/check_release_contents.py . --wheel dist/*.whl` exits 0 |
+| 0 | Reconcile worker, operator, dashboard-read, and verification contracts | done (focused gate; `pytest`: 677 passed; docs, lint, pack, and package checks passed) | `pytest -q tests/test_worker_contract.py tests/test_recommendations.py tests/test_dashboard_api.py tests/test_cli.py tests/test_plugin.py tests/test_plan_admission.py::test_two_phase_checkpoint_chain && python scripts/check_md_links.py . && lefthook validate && pytest && ruff check . && daidala packs validate addyosmani && daidala packs validate aidlc && python -m build && python -m twine check dist/* && python scripts/check_release_contents.py . --wheel dist/*.whl` exits 0 |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate passes, `pending` otherwise. In Git-pinned admission, the active source file remains `pending` during Daidala execution; Kanban carries `in-progress`, and only the successful status/checkpoint commit projects `done` into the next source revision.
 

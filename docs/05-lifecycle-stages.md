@@ -53,6 +53,8 @@ at `define` before renewed tuple approval.
    A Git-pinned imported plan starts from the same approval gate but creates no
    synthetic `define` or `plan` card; its unparented `implement` card remains
    bound to the persisted packet digest and immutable copied plan artifact.
+   Its workers never edit the active source plan path; a scope finding blocks for
+   attended action and, when required, a separately committed successor source.
 7. Automated review records evidence but creates no delivery card. An attended
    exact-digest `accept-delivery` decision creates `deliver`; `request-revision`
    preserves the source tuple and creates one revision-addressed Plan card;
@@ -115,6 +117,12 @@ create that source, and local plan replacement is rejected. Changing a generated
 plan invalidates approval, increments the graph revision, and prevents evidence
 submission from the previous graph.
 
+After imported-plan delivery, Daidala still records `committed: false` and
+`pushed: false`. A separate operator-created direct child checkpoint may project
+only the delivered diff and phase status, then another `start-from-plan` request
+admits the next pending phase from that commit. It requires fresh approval; the
+earlier packet and approval are historical evidence only.
+
 Automated review is not delivery authority. Attended disposition binds the exact
 current review and all evidence identities. `accept_delivery` requires an
 accepted review with no blocking findings. A stale tuple or Kanban-worker caller
@@ -169,8 +177,9 @@ The delivery card is created lazily and idempotently only after exact attended
 acceptance; `daidala_deliver` fails closed without that disposition. Delivery
 reports the baseline, pre-verification captured paths, review, disposition, and
 verification evidence, records `committed: false` and `pushed: false`, and then
-releases the owned worktree. Committing or pushing the target requires a separate
-future authorization surface.
+releases the owned worktree. Committing or pushing the target remains outside
+Daidala. For Git-pinned phases, a separately authorized checkpoint commit is
+the only route to a next-phase admission and cannot reuse prior approval.
 
 The dashboard renders the exact review evidence and attended preview-confirm
 disposition over the same service authority as the native CLI. A revision request

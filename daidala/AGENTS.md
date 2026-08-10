@@ -279,6 +279,10 @@ Git-pinned admission contract. Dry runs return bounded metadata only; apply
 requires the exact preview digest and delegates the accepted packet to
 `WorkflowService.start_from_plan`. This boundary never exposes plan bytes or
 repository paths.
+- Dashboard workflow summaries expose generated versus Git-pinned plan mode and,
+  for an imported plan, only Plan ID, execution slot, phase, source revision,
+  packet digest, and verified packet state. They expose no source path or bytes
+  and provide no admission or checkpoint mutation control.
 
 ### Cross-document bindings (must stay synchronized)
 
@@ -289,6 +293,8 @@ that no longer match the plugin:
 
 - `docs/00-getting-started.md` — first-workflow shell example using
   `--board`, `--default-profile`, and `--stage-profile`.
+- `docs/07-runbook.md` — generated and Git-pinned admission, approval, and
+  checkpoint guidance using the exact `start-from-plan` flags.
 - `docs/13-autonomous-triggering.md` — agent prompt bodies that name
   `board`, `pack`, `workflow_id`, target repository, and the full
   `stage_profiles` mapping; plus a direct `hermes daidala start` shell
@@ -296,9 +302,9 @@ that no longer match the plugin:
 - `daidala/skills/orchestrate/SKILL.md` — instructs the orchestration
   worker to call `daidala_start` with the same argument names.
 
-When `schemas.py::START` or `cli.py::start` changes any of these names,
-update all four locations in the same commit (or commit series). The
-The verification gate does not catch doc drift against the live schema; only
+When `schemas.py::START`, `schemas.py::START_FROM_PLAN`, or `cli.py` changes
+any of these names, update every affected location in the same commit (or commit
+series). The verification gate does not catch doc drift against the live schema; only
 `ruff check daidala tests` and `daidala packs validate <pack>` run.
 Add a unit test or schema assertion whenever feasible so the next rename
 fails locally rather than in production.

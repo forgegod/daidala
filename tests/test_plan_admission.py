@@ -35,7 +35,7 @@ from daidala.state import (
     WorkflowStage,
 )
 from daidala.store import WorkflowStore
-from daidala.workflow import new_workflow, record_plan_source
+from daidala.workflow import approve_plan, new_workflow, record_plan_source
 
 DONE_DIGEST = "a" * 64
 
@@ -370,6 +370,8 @@ def checkpoint_fixture(tmp_path: Path, *, binary_diff: bool = False) -> Checkpoi
                 path=stored.plan.path,
                 digest=stored.plan.digest,
                 recorded_at=NOW,
+                approval_summary=summary,
+                approval_summary_digest=summary.digest_for(stored.plan.digest),
             ),
             ArtifactReference(
                 stage=WorkflowStage.IMPLEMENT,
@@ -450,6 +452,112 @@ def checkpoint_packet(fixture: CheckpointFixture, revision: str) -> PlanSourcePa
         phase_number=1,
         predecessor_workflow_id=fixture.ledger.workflow_id,
     )
+
+
+def test_two_phase_checkpoint_chain(tmp_path: Path) -> None:
+    fixture = checkpoint_fixture(tmp_path)
+    phase_zero_plan = fixture.ledger.artifact_for(WorkflowStage.PLAN)
+    assert phase_zero_plan is not None
+    approved_phase_zero = approve_plan(
+        fixture.ledger,
+        plan_digest=phase_zero_plan.digest,
+        plan_source_packet_digest=fixture.packet.digest,
+        decided_at=NOW + timedelta(minutes=3),
+    )
+    assert approved_phase_zero.approval is not None
+    assert (
+        fixture.store.update(
+            approved_phase_zero,
+            expected_updated_at=fixture.ledger.updated_at.isoformat(),
+        )
+        == approved_phase_zero
+    )
+    fixture = replace(fixture, ledger=approved_phase_zero)
+
+    checkpoint_revision = checkpoint_commit(fixture)
+    phase_one_packet = checkpoint_packet(fixture, checkpoint_revision)
+
+    changed_paths = git(
+        fixture.repository,
+        "diff",
+        "--name-only",
+        fixture.revision,
+        checkpoint_revision,
+    ).splitlines()
+    assert changed_paths == [
+        "docs/plans/P0200-active.md",
+        "feature.txt",
+    ]
+    assert f"done (daidala:{fixture.ledger.workflow_id}:" in git(
+        fixture.repository,
+        "show",
+        f"{checkpoint_revision}:{fixture.packet.reference.plan_path}",
+    )
+    assert phase_one_packet.phase_number == 1
+    assert phase_one_packet.reference.source_revision == checkpoint_revision
+    assert phase_one_packet.reference.baseline_commit == checkpoint_revision
+    assert phase_one_packet.reference.plan_digest != phase_zero_plan.digest
+
+    phase_one_summary = ApprovalSummary(
+        headline="Approve the second fixture phase.",
+        changes=("Continue the fixture.",),
+        affected_areas=("fixture",),
+        risks=(),
+        verification=("pytest -q",),
+    )
+    phase_one_ledger = record_plan_source(
+        new_workflow(
+            workflow_id="workflow-1",
+            board_slug="daidala-test",
+            target_repository=str(fixture.repository.resolve()),
+            baseline_commit=checkpoint_revision,
+            requested_goal="Implement the admitted fixture phase.",
+            pack_name="fixture-pack",
+            pack_source_revision="a" * 40,
+            skill_digests=(SkillDigest(name="fixture-skill", digest="fixture-digest"),),
+            stage_profiles=tuple(
+                StageProfile(stage=stage, profile=f"{stage.value}-profile")
+                for stage in WorkflowStage
+                if stage is not WorkflowStage.APPROVAL
+            ),
+            created_at=NOW,
+        ),
+        packet=phase_one_packet,
+        recorded_at=NOW,
+    )
+    phase_one_ledger = replace(
+        phase_one_ledger,
+        artifacts=(
+            ArtifactReference(
+                stage=WorkflowStage.PLAN,
+                plan_revision=0,
+                path="phase-one-plan.md",
+                digest=phase_one_packet.reference.plan_digest,
+                recorded_at=NOW,
+                approval_summary=phase_one_summary,
+                approval_summary_digest=phase_one_summary.digest_for(
+                    phase_one_packet.reference.plan_digest
+                ),
+            ),
+        ),
+    )
+
+    with pytest.raises(PolicyViolationError, match="current plan digest"):
+        approve_plan(
+            phase_one_ledger,
+            plan_digest=phase_zero_plan.digest,
+            plan_source_packet_digest=fixture.packet.digest,
+            decided_at=NOW + timedelta(minutes=4),
+        )
+    approved_phase_one = approve_plan(
+        phase_one_ledger,
+        plan_digest=phase_one_packet.reference.plan_digest,
+        plan_source_packet_digest=phase_one_packet.digest,
+        decided_at=NOW + timedelta(minutes=4),
+    )
+    assert approved_phase_one.approval is not None
+    assert approved_phase_one.approval.plan_source_packet_digest == phase_one_packet.digest
+    assert git(fixture.repository, "status", "--porcelain") == ""
 
 
 def test_admits_one_exact_committed_pending_phase(tmp_path: Path) -> None:
