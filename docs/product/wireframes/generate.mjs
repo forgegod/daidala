@@ -13,21 +13,24 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL(".", import.meta.url));
-const SCREEN = {
-  capability: "CAP-0003",
-  slug: "CAP-0003-operator-dashboard",
-  title: "Operator dashboard",
-  html: "html/CAP-0003-operator-dashboard.html",
-  png: "exports/CAP-0003-operator-dashboard.png",
-  viewport: { width: 1440, height: 960 },
-};
+const SCREENS = [
+  {
+    capability: "CAP-0003",
+    slug: "CAP-0003-operator-dashboard",
+    title: "Operator dashboard",
+    html: "html/CAP-0003-operator-dashboard.html",
+    png: "exports/CAP-0003-operator-dashboard.png",
+    viewport: { width: 1440, height: 960 },
+  },
+];
 
-const html = `<!doctype html>
+function buildHtml(screen) {
+  return `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${SCREEN.capability} — ${SCREEN.title}</title>
+  <title>${screen.capability} — ${screen.title}</title>
   <style>
     :root {
       color-scheme: dark;
@@ -201,18 +204,29 @@ const html = `<!doctype html>
 </body>
 </html>
 `;
+}
 
-const index = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Daidala capability wireframes</title><style>body{max-width:900px;margin:48px auto;padding:0 24px;background:#001f1d;color:#f4ead8;font:16px/1.5 system-ui}a{color:#ffc933}img{max-width:100%;border:1px solid #244845}code{color:#42ea92}</style></head><body><h1>Daidala capability wireframes</h1><p>Static visual references only. Runtime source and executable tests remain behavior authority.</p><h2>${SCREEN.capability} — ${SCREEN.title}</h2><p><a href="${SCREEN.html}">Open interactive HTML</a> · <a href="${SCREEN.png}">Open PNG export</a></p><a href="${SCREEN.html}"><img src="${SCREEN.png}" alt="${SCREEN.title} wireframe"></a><p><code>${SCREEN.viewport.width} × ${SCREEN.viewport.height}</code></p></body></html>
+function buildIndex(screens) {
+  const entries = screens
+    .map(
+      (screen) =>
+        `<h2>${screen.capability} — ${screen.title}</h2><p><a href="${screen.html}">Open interactive HTML</a> · <a href="${screen.png}">Open PNG export</a></p><a href="${screen.html}"><img src="${screen.png}" alt="${screen.title} wireframe"></a><p><code>${screen.viewport.width} × ${screen.viewport.height}</code></p>`,
+    )
+    .join("");
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Daidala capability wireframes</title><style>body{max-width:900px;margin:48px auto;padding:0 24px;background:#001f1d;color:#f4ead8;font:16px/1.5 system-ui}a{color:#ffc933}img{max-width:100%;border:1px solid #244845}code{color:#42ea92}</style></head><body><h1>Daidala capability wireframes</h1><p>Static visual references only. Runtime source and executable tests remain behavior authority.</p>${entries}</body></html>
 `;
+}
 
 mkdirSync(join(ROOT, "html"), { recursive: true });
 mkdirSync(join(ROOT, "exports"), { recursive: true });
-writeFileSync(join(ROOT, SCREEN.html), html, "utf8");
-writeFileSync(join(ROOT, "index.html"), index, "utf8");
+for (const screen of SCREENS) {
+  writeFileSync(join(ROOT, screen.html), buildHtml(screen), "utf8");
+}
+writeFileSync(join(ROOT, "index.html"), buildIndex(SCREENS), "utf8");
 writeFileSync(
   join(ROOT, "manifest.json"),
-  `${JSON.stringify({ version: 1, screens: [SCREEN] }, null, 2)}\n`,
+  `${JSON.stringify({ version: 1, screens: SCREENS }, null, 2)}\n`,
   "utf8",
 );
 
@@ -229,26 +243,30 @@ if (process.argv.includes("--render")) {
   }
   const profile = mkdtempSync(join(tmpdir(), "daidala-wireframe-"));
   try {
-    const result = spawnSync(
-      browser,
-      [
-        "--headless=new",
-        "--disable-gpu",
-        "--no-sandbox",
-        "--hide-scrollbars",
-        `--user-data-dir=${profile}`,
-        `--window-size=${SCREEN.viewport.width},${SCREEN.viewport.height}`,
-        `--screenshot=${join(ROOT, SCREEN.png)}`,
-        `file://${join(ROOT, SCREEN.html)}`,
-      ],
-      { encoding: "utf8" },
-    );
-    if (result.status !== 0) {
-      throw new Error(result.stderr || `Chrome exited ${result.status}`);
+    for (const screen of SCREENS) {
+      const result = spawnSync(
+        browser,
+        [
+          "--headless=new",
+          "--disable-gpu",
+          "--no-sandbox",
+          "--hide-scrollbars",
+          `--user-data-dir=${profile}`,
+          `--window-size=${screen.viewport.width},${screen.viewport.height}`,
+          `--screenshot=${join(ROOT, screen.png)}`,
+          `file://${join(ROOT, screen.html)}`,
+        ],
+        { encoding: "utf8" },
+      );
+      if (result.status !== 0) {
+        throw new Error(result.stderr || `Chrome exited ${result.status}`);
+      }
     }
   } finally {
     rmSync(profile, { recursive: true, force: true });
   }
 }
 
-console.log(`Generated ${SCREEN.html}, index.html, manifest.json${process.argv.includes("--render") ? `, and ${SCREEN.png}` : ""}.`);
+const generatedHtml = SCREENS.map((screen) => screen.html).join(", ");
+const generatedPng = SCREENS.map((screen) => screen.png).join(", ");
+console.log(`Generated ${generatedHtml}, index.html, manifest.json${process.argv.includes("--render") ? `, and ${generatedPng}` : ""}.`);

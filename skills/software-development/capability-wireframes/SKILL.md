@@ -1,7 +1,7 @@
 ---
 name: capability-wireframes
 description: Use when a material feature changes a primary human-facing surface and needs a static CAP-linked wireframe.
-version: 1.0.0
+version: 1.1.0
 author: App Starter
 license: MIT
 metadata:
@@ -16,18 +16,23 @@ metadata:
 
 Use a static, CAP-linked wireframe for every material capability that creates or
 changes a primary human-facing surface. The wireframe makes the intended
-interaction reviewable before implementation and remains a visual reference for
-the implemented capability.
+interaction reviewable and remains a visual reference for the implemented
+capability.
+
+A pending CHG may retain an earlier visual review package, but it is not a
+product wireframe until the same implementation vertical slice creates the CAP,
+runtime behavior, and executable evidence. Never use the product inventory to
+make a proposal look like current behavior.
 
 The portable layout is:
 
 ```text
 docs/product/wireframes/
-├── generate.mjs
-├── manifest.json
-├── index.html
-├── html/CAP-NNNN-<slug>.html
-└── exports/CAP-NNNN-<slug>.png
+├── generate.mjs                    # canonical repository-owned generator
+├── manifest.json                   # generated machine-readable inventory
+├── index.html                      # generated human entry point
+├── html/CAP-NNNN-<slug>.html       # generated per-CAP review source
+└── exports/CAP-NNNN-<slug>.png     # renderer output for the same screen
 ```
 
 The project chooses the visual system and screenshot renderer. Do not copy a
@@ -49,9 +54,12 @@ unreviewed workflow.
 
 - One screen has one stable CAP ID. Name HTML and PNG files
   `CAP-NNNN-<slug>` to match the capability record.
-- HTML is the review source; PNG is a portable rendered export. Generate both
-  from the same repository-owned source and keep `manifest.json` as their
-  machine-readable inventory.
+- `generate.mjs` (or an equally explicit repository-owned generator) is the
+  only editable screen-definition source. It produces the HTML, `index.html`,
+  and `manifest.json`; do not hand-edit those generated outputs.
+- HTML is the portable review source; PNG is a renderer export of that same
+  HTML at the manifest viewport. `manifest.json` inventories the stable CAP ID,
+  title, HTML path, PNG path, and viewport for every screen.
 - `index.html` links every screen. Each qualifying CAP links its matching HTML
   and PNG under a `## Links` section.
 - Wireframes illustrate the intended interface. They are not implementation,
@@ -63,19 +71,36 @@ unreviewed workflow.
   establish a small shared shell and reusable primitives before adding screens;
   do not make every CAP page a separate visual design.
 
+### Proposal-to-capability handoff
+
+- **Pending CHG:** Keep Pencil files, screenshots, and design prose under the
+  active CHG and label them review-only. Do not allocate a CAP ID, add an entry
+  to `docs/product/wireframes/manifest.json`, or link an unimplemented screen
+  from a product CAP.
+- **Implementation slice:** Create the CAP, add one screen definition with its
+  final `CAP-NNNN-<slug>` name, regenerate the inventory/index/HTML, render the
+  PNG, and link both outputs from the CAP in the same slice as the primary
+  surface and its behavior tests.
+- **Pencil relationship:** A Pencil file may be retained as an upstream visual
+  design source or review record. It never replaces the repository-owned HTML
+  generator and PNG export for an implemented CAP.
+
 ## Procedure
 
 1. **Classify the surface.** In the active CHG, identify the primary screen and
-   the task it enables. State the data, permission, and failure boundaries in
-   the CAP; represent their visible consequences in the wireframe.
-2. **Add or update the screen before implementation.** Show the normal state,
-   controls, hierarchy, relevant empty/error/permission state, and the action
-   that completes or blocks the task. Do not turn the page into a prose copy of
-   the CAP.
+   the task it enables. State data, permission, and failure boundaries in the
+   CHG while pending, then in the CAP once implementation begins; represent
+   their visible consequences in the wireframe.
+2. **Use the correct lifecycle boundary.** Keep pre-implementation visual work
+   CHG-local. In the implementation vertical slice, add or update the
+   CAP-linked screen before runtime UI work. Show the normal state, controls,
+   hierarchy, relevant empty/error/permission state, and the action that
+   completes or blocks the task. Do not turn the page into a prose copy of the
+   CAP.
 3. **Generate deterministic artifacts.** Keep screen definitions and shared
-   layout in a repository-owned generator or similarly reproducible source.
-   Regenerate `html/`, `index.html`, and `manifest.json`; render the matching
-   PNG into `exports/`. Do not hand-edit generated outputs.
+   layout in the repository-owned generator. Regenerate `html/`, `index.html`,
+   and `manifest.json`; render the matching PNG into `exports/`. Do not
+   hand-edit generated outputs.
 4. **Link the capability.** Add both relative paths in the CAP's `## Links`
    section. Update `docs/product/README.md` with the wireframe index when the
    repository adopts the feature for the first time.
@@ -91,6 +116,8 @@ unreviewed workflow.
 - Every qualifying CAP has valid relative links to its HTML and PNG artifacts.
 - The generated HTML opens without a project build step, and the PNG is a
   current rendering of that HTML.
+- Pending CHG review artifacts remain outside the product manifest and do not
+  claim an unimplemented CAP.
 - Run the project's product-record validation and the affected behaviour tests.
 
 ## Pitfalls

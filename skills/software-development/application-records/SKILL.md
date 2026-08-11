@@ -1,7 +1,7 @@
 ---
 name: application-records
 description: Use when a material change needs canonical CAP, CHG, decision records, and CAP-linked wireframes for primary human-facing surfaces.
-version: 1.2.0
+version: 1.3.0
 author: Hermes contributors
 license: MIT
 metadata:
@@ -67,6 +67,10 @@ Read these before changing a record:
    - Set one phase to `in-progress`; include executable verification gates.
    - For material work, the tracked CHG is the execution plan. Do not create a
      competing private plan carrying the same progress.
+   - For a pending proposal with a primary human-facing surface, keep visual
+     review artifacts under the CHG. Do not allocate a future CAP ID or add the
+     proposal to the product wireframe manifest: those surfaces describe current
+     implementation only.
 
 3. **Make current behaviour explicit.**
    - Add or amend the affected CAP in the same vertical slice as implementation
@@ -76,9 +80,10 @@ Read these before changing a record:
    - If code/tests contradict the CAP, fix the code or CAP before
      completion; do not leave an ambiguous claim.
    - When the capability adds or changes a primary human-facing surface, load
-     `capability-wireframes` before implementation. Link its static HTML and
-     PNG wireframe in the CAP; the wireframe illustrates the interface but does
-     not replace behaviour-test evidence.
+     `capability-wireframes`. At implementation, create the CAP-linked static
+     HTML/PNG pair, manifest entry, and index link in the same vertical slice as
+     the runtime surface and behavior tests. The wireframe illustrates the
+     interface but does not replace behavior-test evidence.
 
 4. **Place decisions correctly.**
    - Record a capability-local rule in its CAP only when it changes how the
@@ -114,12 +119,17 @@ Read these before changing a record:
    gap precisely before calling the record complete.
 5. **Decision inflation.** Do not create a decision record for local naming or
    code-layout choices. Reserve it for durable cross-cutting forks.
+6. **Premature promotion.** Do not move a CHG review screenshot, Pencil file,
+   or planned screen into `docs/product/wireframes/`. Regenerate a CAP-linked
+   HTML/PNG pair only when its product surface and evidence exist.
 
 ## Verification Checklist
 
 - [ ] Every material changed behaviour has an affected CAP and behaviour-test evidence.
 - [ ] Every qualifying primary human-facing surface has a current CAP-linked
       HTML and PNG wireframe.
+- [ ] Pending CHG review artifacts are not listed in the product wireframe
+      manifest and do not claim unimplemented CAP IDs.
 - [ ] Every active material request has exactly one CHG progress authority.
 - [ ] Every CHG references its source request and valid CAP IDs.
 - [ ] The project's `records:check` integration exits 0.

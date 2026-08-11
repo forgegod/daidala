@@ -1,0 +1,4416 @@
+{
+  "version": "2.14",
+  "children": [
+    {
+      "type": "frame",
+      "id": "vjG4t",
+      "x": 0,
+      "y": 0,
+      "name": "Repository registration review",
+      "width": 1280,
+      "height": 720,
+      "fill": "#041c1c",
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "N0FlnN",
+          "x": 0,
+          "y": 0,
+          "name": "Profile scope banner",
+          "width": 1280,
+          "height": 36,
+          "fill": "#2a2309",
+          "padding": [
+            8,
+            16
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "GmImw",
+              "name": "Profile scope",
+              "fill": "#ffbd38",
+              "content": "Managing profile “daidala-self-improvement” — config, keys, skills, MCPs, model, and new chats apply to that profile.",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Yf3MU",
+          "x": 0,
+          "y": 36,
+          "name": "App body",
+          "width": 1280,
+          "height": 684,
+          "fill": "#041c1c",
+          "children": [
+            {
+              "type": "frame",
+              "id": "CTaGj",
+              "name": "Hermes sidebar",
+              "width": 344,
+              "height": 684,
+              "fill": "#041c1c",
+              "stroke": "#ffe6cb26",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "vertical",
+              "gap": 6,
+              "padding": [
+                12,
+                14
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "rOwAx",
+                  "name": "Brand row",
+                  "width": 316,
+                  "height": 44,
+                  "fill": "#00000000",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "mytn8",
+                      "name": "Brand",
+                      "fill": "#ffe6cb",
+                      "content": "HERMES\nAGENT",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "bold",
+                      "letterSpacing": 1.4
+                    },
+                    {
+                      "type": "frame",
+                      "id": "nUoRy",
+                      "name": "Collapse",
+                      "width": 36,
+                      "height": 36,
+                      "fill": "#00000000",
+                      "stroke": "#ffe6cb26",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "padding": [
+                        7,
+                        14
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Ld0pq",
+                          "name": "Collapse label",
+                          "fill": "#ffe6cb",
+                          "content": "◀",
+                          "fontFamily": "Courier New",
+                          "fontSize": 12,
+                          "fontWeight": "bold"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "NAe8D",
+                  "name": "Profile select",
+                  "width": 316,
+                  "height": 34,
+                  "fill": "#00000000",
+                  "stroke": "#ffbd38",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Gm4gO",
+                      "name": "Profile",
+                      "fill": "#ccbaa8",
+                      "content": "daidala-self-improvement",
+                      "fontFamily": "Courier New",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Qmfos",
+                      "name": "Profile arrow",
+                      "fill": "#ccbaa8",
+                      "content": "⌄",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "yis7G",
+                  "name": "Navigation list",
+                  "width": 316,
+                  "height": 440,
+                  "fill": "#00000000",
+                  "layout": "vertical",
+                  "gap": 1,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "V1NLO1",
+                      "name": "Nav CHAT",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "wfnmr",
+                          "name": "Nav CHAT text",
+                          "fill": "#ccbaa8",
+                          "content": "CHAT",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Cf1Xg",
+                      "name": "Nav SESSIONS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "hQ955",
+                          "name": "Nav SESSIONS text",
+                          "fill": "#ccbaa8",
+                          "content": "SESSIONS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "uT3yU",
+                      "name": "Nav FILES",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "S09Cv5",
+                          "name": "Nav FILES text",
+                          "fill": "#ccbaa8",
+                          "content": "FILES",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Q3kol",
+                      "name": "Nav MODELS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "JdWY6",
+                          "name": "Nav MODELS text",
+                          "fill": "#ccbaa8",
+                          "content": "MODELS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "r03DbB",
+                      "name": "Nav LOGS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "fuuwH",
+                          "name": "Nav LOGS text",
+                          "fill": "#ccbaa8",
+                          "content": "LOGS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "KtY02",
+                      "name": "Nav CRON",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "QOm8i",
+                          "name": "Nav CRON text",
+                          "fill": "#ccbaa8",
+                          "content": "CRON",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "kDMCF",
+                      "name": "Nav SKILLS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "G0XrB",
+                          "name": "Nav SKILLS text",
+                          "fill": "#ccbaa8",
+                          "content": "SKILLS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "nxeyf",
+                      "name": "Nav PLUGINS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "hEW5a",
+                          "name": "Nav PLUGINS text",
+                          "fill": "#ccbaa8",
+                          "content": "PLUGINS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "bSZR2",
+                      "name": "Nav MCP",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "nfIoE",
+                          "name": "Nav MCP text",
+                          "fill": "#ccbaa8",
+                          "content": "MCP",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "SRVgB",
+                      "name": "Nav CHANNELS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "pQCRJ",
+                          "name": "Nav CHANNELS text",
+                          "fill": "#ccbaa8",
+                          "content": "CHANNELS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "l1Uwp4",
+                      "name": "Nav WEBHOOKS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "QHLOt",
+                          "name": "Nav WEBHOOKS text",
+                          "fill": "#ccbaa8",
+                          "content": "WEBHOOKS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "d4YhsC",
+                      "name": "Nav PAIRING",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "x2nkf",
+                          "name": "Nav PAIRING text",
+                          "fill": "#ccbaa8",
+                          "content": "PAIRING",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "j79s9Q",
+                      "name": "Nav PROFILES",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "h7bLgV",
+                          "name": "Nav PROFILES text",
+                          "fill": "#ccbaa8",
+                          "content": "PROFILES",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "G78oO",
+                      "name": "Nav CONFIG",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "vnJPy",
+                          "name": "Nav CONFIG text",
+                          "fill": "#ccbaa8",
+                          "content": "CONFIG",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "KtFu4",
+                      "name": "Nav KEYS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "bkheX",
+                          "name": "Nav KEYS text",
+                          "fill": "#ccbaa8",
+                          "content": "KEYS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "W1DNc",
+                      "name": "Nav SYSTEM",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "xWLC1",
+                          "name": "Nav SYSTEM text",
+                          "fill": "#ccbaa8",
+                          "content": "SYSTEM",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "lJRyX",
+                      "name": "Nav DOCUMENTATION",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "D3HQqz",
+                          "name": "Nav DOCUMENTATION text",
+                          "fill": "#ccbaa8",
+                          "content": "DOCUMENTATION",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "l9Nyp",
+                      "name": "Plugins heading",
+                      "fill": "#9a8f80",
+                      "content": "Plugins",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal",
+                      "letterSpacing": 1.2
+                    },
+                    {
+                      "type": "frame",
+                      "id": "o5YO9p",
+                      "name": "Plugin KANBAN",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "b9tvSp",
+                          "name": "Plugin KANBAN text",
+                          "fill": "#ccbaa8",
+                          "content": "KANBAN",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "nkOG3",
+                      "name": "Plugin ACHIEVEMENTS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ihJR6",
+                          "name": "Plugin ACHIEVEMENTS text",
+                          "fill": "#ccbaa8",
+                          "content": "ACHIEVEMENTS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "pKgm7",
+                      "name": "Plugin DAIDALA",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#1d302d",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "peS5x",
+                          "name": "Plugin DAIDALA text",
+                          "fill": "#ffe6cb",
+                          "content": "DAIDALA",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "bold",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "PcAEt",
+                  "name": "System block",
+                  "width": 316,
+                  "height": 88,
+                  "fill": "#00000000",
+                  "stroke": "#ffe6cb26",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "padding": [
+                    5,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "d5X6m",
+                      "name": "System title",
+                      "fill": "#9a8f80",
+                      "content": "System",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal",
+                      "letterSpacing": 1.1
+                    },
+                    {
+                      "type": "text",
+                      "id": "jbWAj",
+                      "name": "Gateway state",
+                      "fill": "#4ade80",
+                      "content": "Gateway Status: Running",
+                      "fontFamily": "Courier New",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "XjMFE",
+                      "name": "Session state",
+                      "fill": "#ccbaa8",
+                      "content": "Active Sessions: 0",
+                      "fontFamily": "Courier New",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "t1bD9W",
+                      "name": "Theme label",
+                      "fill": "#9a8f80",
+                      "content": "HERMES TEAL (LARGE) · EN · v0.19.0",
+                      "fontFamily": "Courier New",
+                      "fontSize": 9,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Dpf4a",
+              "name": "Main region",
+              "width": 936,
+              "height": 684,
+              "fill": "#041c1c",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "UPqjZ",
+                  "name": "Page header",
+                  "width": 936,
+                  "height": 76,
+                  "fill": "#041c1c",
+                  "stroke": "#ffe6cb26",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    19,
+                    32
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "gIJi8",
+                      "name": "Title group",
+                      "width": 400,
+                      "height": 38,
+                      "fill": "#00000000",
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "upBnL",
+                          "name": "Page title",
+                          "fill": "#ffe6cb",
+                          "content": "CONFIGURE",
+                          "fontFamily": "Inter",
+                          "fontSize": 15.75,
+                          "fontWeight": "bold",
+                          "letterSpacing": 1.26
+                        },
+                        {
+                          "type": "frame",
+                          "id": "PoNKU",
+                          "name": "Count badge",
+                          "width": 38,
+                          "height": 22,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            3,
+                            8
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "WRB06",
+                              "name": "Count",
+                              "fill": "#ffe6cb",
+                              "content": "0",
+                              "fontFamily": "Courier New",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "umKaJ",
+                      "name": "Header tabs",
+                      "width": 354,
+                      "height": 36,
+                      "fill": "#00000000",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "TDLOJ",
+                          "name": "Tab WORKFLOWS",
+                          "width": 118,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "n46sCI",
+                              "name": "Tab WORKFLOWS text",
+                              "fill": "#ccbaa8",
+                              "content": "WORKFLOWS",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 1.05
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "j3RsON",
+                          "name": "Tab ARTIFACTS",
+                          "width": 118,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "XkXwm",
+                              "name": "Tab ARTIFACTS text",
+                              "fill": "#ccbaa8",
+                              "content": "ARTIFACTS",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 1.05
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "p78Fo",
+                          "name": "Tab CONFIG",
+                          "width": 118,
+                          "height": 36,
+                          "fill": "#ffe6cb",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "RQWY3",
+                              "name": "Tab CONFIG text",
+                              "fill": "#041c1c",
+                              "content": "CONFIG",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "bold",
+                              "letterSpacing": 1.05
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "AunyQ",
+                  "name": "GitHub Projects config content",
+                  "width": 936,
+                  "height": 608,
+                  "layout": "vertical",
+                  "gap": 12,
+                  "padding": [
+                    0,
+                    32,
+                    24,
+                    32
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "WCWjq",
+                      "name": "GitHub Projects subtabs",
+                      "width": 872,
+                      "height": 36,
+                      "fill": "#00000000",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "pa3dS",
+                          "name": "Subtab PACKS",
+                          "width": 176,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "nI1uu",
+                              "name": "Subtab PACKS text",
+                              "fill": "#ccbaa8",
+                              "content": "PACKS",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Vba6e",
+                          "name": "Subtab CHECKOUTS & TTL",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "I9NGwN",
+                              "name": "Subtab CHECKOUTS & TTL text",
+                              "fill": "#ccbaa8",
+                              "content": "CHECKOUTS & TTL",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "bold",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "YioHZ",
+                          "name": "Subtab GITHUB PROJECTS",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#1d302d",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "er3hI",
+                              "name": "Subtab GITHUB PROJECTS text",
+                              "fill": "#ccbaa8",
+                              "content": "GITHUB PROJECTS",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "NV0X2",
+                          "name": "Subtab CONSTRAINTS",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "FAYdt",
+                              "name": "Subtab CONSTRAINTS text",
+                              "fill": "#ccbaa8",
+                              "content": "CONSTRAINTS",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Wk8wQ",
+                          "name": "Subtab VERIFICATION",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "xwXse",
+                              "name": "Subtab VERIFICATION text",
+                              "fill": "#ccbaa8",
+                              "content": "VERIFICATION",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "VuX5J",
+                      "name": "GitHub Projects header",
+                      "width": "fill_container",
+                      "height": 48,
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "Z59o9E",
+                          "name": "GitHub Projects title group",
+                          "layout": "vertical",
+                          "gap": 3,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "jz28u",
+                              "name": "GitHub Projects title",
+                              "fill": "#ffe6cb",
+                              "content": "GITHUB PROJECTS",
+                              "fontFamily": "Inter",
+                              "fontSize": 13,
+                              "fontWeight": "bold",
+                              "letterSpacing": 1
+                            },
+                            {
+                              "type": "text",
+                              "id": "I0V13w",
+                              "name": "GitHub Projects description",
+                              "fill": "#9a8f80",
+                              "content": "One verified Projects v2 link per registered project · dashboard metadata only",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "hw1iq",
+                          "name": "Registered project selector",
+                          "width": 275,
+                          "height": 34,
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            6,
+                            9
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "udbly",
+                              "name": "Registered project value",
+                              "fill": "#ccbaa8",
+                              "content": "forgegod/daidala",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 9,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "ZknPF",
+                              "name": "Registered project arrow",
+                              "fill": "#9a8f80",
+                              "content": "⌄",
+                              "fontFamily": "Inter",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "q3eaR",
+                      "name": "Project registration identity",
+                      "width": "fill_container",
+                      "height": 94,
+                      "fill": "#0e2423",
+                      "cornerRadius": 7,
+                      "stroke": "#ffe6cb26",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": [
+                        12,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "WziWi",
+                          "name": "Project registration title",
+                          "fill": "#ffe6cb",
+                          "content": "REGISTRATION-DERIVED IDENTITY · READ-ONLY",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "bold"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "IG3uU",
+                          "name": "Project registration fields",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "YlgtK",
+                              "name": "Project registration REPOSITORY",
+                              "width": 260,
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "tBcAy",
+                                  "name": "REPOSITORY label",
+                                  "fill": "#9a8f80",
+                                  "content": "REPOSITORY",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 7.5,
+                                  "fontWeight": "bold"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "HlX6B",
+                                  "name": "REPOSITORY value",
+                                  "fill": "#ccbaa8",
+                                  "content": "git@github.com:forgegod/daidala.git",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8.5,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "keD5p",
+                              "name": "Project registration INTAKE ALIAS",
+                              "width": 260,
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "VK1Ov",
+                                  "name": "INTAKE ALIAS label",
+                                  "fill": "#9a8f80",
+                                  "content": "INTAKE ALIAS",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 7.5,
+                                  "fontWeight": "bold"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "V0QYw",
+                                  "name": "INTAKE ALIAS value",
+                                  "fill": "#ccbaa8",
+                                  "content": "github-self-improvement",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8.5,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Y96Bmh",
+                              "name": "Project registration REGISTRATION",
+                              "width": 260,
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "fY5ne",
+                                  "name": "REGISTRATION label",
+                                  "fill": "#9a8f80",
+                                  "content": "REGISTRATION",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 7.5,
+                                  "fontWeight": "bold"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "vcQxx",
+                                  "name": "REGISTRATION value",
+                                  "fill": "#ccbaa8",
+                                  "content": "forgegod-daidala · v2",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8.5,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "CVtEa",
+                      "name": "Current GitHub Projects link",
+                      "width": "fill_container",
+                      "height": 164,
+                      "fill": "#0e2423",
+                      "cornerRadius": 7,
+                      "stroke": "#4ade80",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 9,
+                      "padding": [
+                        12,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "NV70J",
+                          "name": "Current project link heading",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Y6n1iY",
+                              "name": "Current project link title",
+                              "fill": "#ffe6cb",
+                              "content": "CURRENT PROJECTS V2 LINK",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "bold"
+                            },
+                            {
+                              "type": "text",
+                              "id": "F6N6Z",
+                              "name": "Current project link status",
+                              "fill": "#4ade80",
+                              "content": "● VERIFIED 18m ago",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "A81bIR",
+                          "name": "Project link OWNER / NUMBER",
+                          "width": "fill_container",
+                          "height": 22,
+                          "stroke": "#ffe6cb15",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            3,
+                            7
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "faxFd",
+                              "name": "OWNER / NUMBER project key",
+                              "fill": "#9a8f80",
+                              "content": "OWNER / NUMBER",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "JC4zT",
+                              "name": "OWNER / NUMBER project value",
+                              "fill": "#ccbaa8",
+                              "content": "forgegod · #3",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "C8Ik4",
+                          "name": "Project link NODE ID",
+                          "width": "fill_container",
+                          "height": 22,
+                          "stroke": "#ffe6cb15",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            3,
+                            7
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "HQah0",
+                              "name": "NODE ID project key",
+                              "fill": "#9a8f80",
+                              "content": "NODE ID",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "LYl5H",
+                              "name": "NODE ID project value",
+                              "fill": "#ccbaa8",
+                              "content": "PVT_kwDOB7…R9m",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "rzHum",
+                          "name": "Project link PROJECT TITLE",
+                          "width": "fill_container",
+                          "height": 22,
+                          "stroke": "#ffe6cb15",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            3,
+                            7
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "M44yds",
+                              "name": "PROJECT TITLE project key",
+                              "fill": "#9a8f80",
+                              "content": "PROJECT TITLE",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "sXfQU",
+                              "name": "PROJECT TITLE project value",
+                              "fill": "#ccbaa8",
+                              "content": "Daidala delivery",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "o5VceZ",
+                          "name": "Project link CAPABILITY",
+                          "width": "fill_container",
+                          "height": 22,
+                          "stroke": "#ffe6cb15",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            3,
+                            7
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "L5Uw6",
+                              "name": "CAPABILITY project key",
+                              "fill": "#9a8f80",
+                              "content": "CAPABILITY",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "MrWup",
+                              "name": "CAPABILITY project value",
+                              "fill": "#ccbaa8",
+                              "content": "bounded fresh read available",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "TIjjK",
+                      "name": "Project link mutation preview",
+                      "width": "fill_container",
+                      "height": 142,
+                      "fill": "#182c2a",
+                      "cornerRadius": 7,
+                      "stroke": "#ffbd38",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": [
+                        12,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "fPZoh",
+                          "name": "Project link preview heading",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "uoKcu",
+                              "name": "Project link preview title",
+                              "fill": "#ffbd38",
+                              "content": "LINK CHANGE PREVIEW · NON-MUTATING",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "bold"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Co0hS",
+                              "name": "Project link preview digest",
+                              "fill": "#9a8f80",
+                              "content": "DIGEST 48b1…a02e",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "nD4iT",
+                          "name": "Project link preview body",
+                          "fill": "#ccbaa8",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Fresh bounded GitHub read matched owner, project number, node ID, and registration-derived identity. No token name or value crosses this boundary.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "Courier Prime",
+                          "fontSize": 8.5,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "blSQM",
+                          "name": "Project link confirmation actions",
+                          "width": "fill_container",
+                          "height": 34,
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "aqR0K",
+                              "name": "Project link confirmation",
+                              "fill": "#ffbd38",
+                              "content": "☐ I confirm applying this exact verified link",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "rmeQY",
+                              "name": "Project link buttons",
+                              "gap": 8,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "Yco9L",
+                                  "name": "VERIFY AGAIN",
+                                  "height": 30,
+                                  "fill": "#00000000",
+                                  "stroke": "#ffe6cb26",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    5,
+                                    9
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "O1wo9D",
+                                      "name": "VERIFY AGAIN label",
+                                      "fill": "#ffe6cb",
+                                      "content": "VERIFY AGAIN",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 8,
+                                      "fontWeight": "bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "RlbKl",
+                                  "name": "APPLY LINK",
+                                  "height": 30,
+                                  "fill": "#ffe6cb",
+                                  "stroke": "#ffe6cb26",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    5,
+                                    9
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "f6Brqe",
+                                      "name": "APPLY LINK label",
+                                      "fill": "#041c1c",
+                                      "content": "APPLY LINK",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 8,
+                                      "fontWeight": "bold"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "ittax",
+                      "name": "GitHub Projects boundary note",
+                      "fill": "#9a8f80",
+                      "content": "Project links do not admit workflows or change GitHub intake. Delete uses the same fresh preview + literal confirmation.",
+                      "fontFamily": "Courier Prime",
+                      "fontSize": 8.5,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "d1oGzJ",
+          "x": 344,
+          "y": 112,
+          "name": "Repository registration workspace",
+          "width": 936,
+          "height": 608,
+          "fill": "#041c1c",
+          "layout": "none",
+          "children": [
+            {
+              "type": "frame",
+              "id": "jqXI2",
+              "x": 0,
+              "y": 0,
+              "name": "Config tab Packs",
+              "width": 82,
+              "height": 36,
+              "fill": "#00000000",
+              "stroke": "#ffe6cb26",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "TpsQg",
+                  "x": 12,
+                  "y": 11,
+                  "name": "Config tab label Packs",
+                  "fill": "#ccbaa8",
+                  "content": "Packs",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "pjpKk",
+              "x": 88,
+              "y": 0,
+              "name": "Config tab Repositories",
+              "width": 108,
+              "height": 36,
+              "fill": "#ffe6cb",
+              "stroke": "#ffe6cb26",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "FG71V",
+                  "x": 12,
+                  "y": 11,
+                  "name": "Config tab label Repositories",
+                  "fill": "#041c1c",
+                  "content": "Repositories",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "IU4cH",
+              "x": 202,
+              "y": 0,
+              "name": "Config tab Checkouts",
+              "width": 82,
+              "height": 36,
+              "fill": "#00000000",
+              "stroke": "#ffe6cb26",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "ZDUkI",
+                  "x": 12,
+                  "y": 11,
+                  "name": "Config tab label Checkouts",
+                  "fill": "#ccbaa8",
+                  "content": "Checkouts",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "lXU6O",
+              "x": 290,
+              "y": 0,
+              "name": "Config tab Constraints",
+              "width": 82,
+              "height": 36,
+              "fill": "#00000000",
+              "stroke": "#ffe6cb26",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "oemAX",
+                  "x": 12,
+                  "y": 11,
+                  "name": "Config tab label Constraints",
+                  "fill": "#ccbaa8",
+                  "content": "Constraints",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "iuSS9",
+              "x": 378,
+              "y": 0,
+              "name": "Config tab Verification",
+              "width": 92,
+              "height": 36,
+              "fill": "#00000000",
+              "stroke": "#ffe6cb26",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Q5FPk7",
+                  "x": 12,
+                  "y": 11,
+                  "name": "Config tab label Verification",
+                  "fill": "#ccbaa8",
+                  "content": "Verification",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "AyooT",
+              "x": 0,
+              "y": 52,
+              "name": "Registration title",
+              "fill": "#ffe6cb",
+              "content": "Register GitHub repository",
+              "fontFamily": "Inter",
+              "fontSize": 20,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "OzFeS",
+              "x": 0,
+              "y": 78,
+              "name": "Registration subtitle",
+              "fill": "#9a8f80",
+              "content": "Review only. URL inspection writes no credential, Git, or GitHub state.",
+              "fontFamily": "Inter",
+              "fontSize": 10,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "PvMHt",
+              "x": 0,
+              "y": 102,
+              "name": "Repository identity",
+              "width": 872,
+              "height": 86,
+              "fill": "#0e2423",
+              "cornerRadius": 7,
+              "stroke": "#ffe6cb26",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "mLRfW",
+                  "x": 14,
+                  "y": 12,
+                  "name": "Identity title",
+                  "fill": "#ffe6cb",
+                  "content": "Repository identity and controller profile",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "W0cNGV",
+                  "x": 14,
+                  "y": 35,
+                  "name": "Identity profile",
+                  "fill": "#ccbaa8",
+                  "content": "Selected controller profile: daidala-self-improvement",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "IEzR0",
+                  "x": 14,
+                  "y": 55,
+                  "name": "Identity URL",
+                  "fill": "#4ade80",
+                  "content": "GitHub URL: https://github.com/acme/payments-service  →  acme/payments-service",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "EYAE3",
+                  "x": 14,
+                  "y": 72,
+                  "name": "Identity policy",
+                  "fill": "#ffbd38",
+                  "content": "Current policy: commit off · push off · registration remains non-secret and non-mutating",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "EgYE8",
+              "x": 0,
+              "y": 202,
+              "name": "GitHub rights instruction",
+              "width": 424,
+              "height": 196,
+              "fill": "#0e2423",
+              "cornerRadius": 7,
+              "stroke": "#ffbd38",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "qpBrJ",
+                  "x": 14,
+                  "y": 12,
+                  "name": "Rights title",
+                  "fill": "#ffe6cb",
+                  "content": "Required GitHub access rights",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "BmPi9",
+                  "x": 14,
+                  "y": 35,
+                  "name": "Rights intro",
+                  "fill": "#ccbaa8",
+                  "content": "For a separately approved branch-delivery capability only:",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "RADGz",
+                  "x": 14,
+                  "y": 55,
+                  "name": "Rights one",
+                  "fill": "#ccbaa8",
+                  "content": "1. Use a fine-grained PAT restricted to this repository.",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "sBjqn",
+                  "x": 14,
+                  "y": 75,
+                  "name": "Rights two",
+                  "fill": "#4ade80",
+                  "content": "2. Grant Contents: read and write only.",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "epqCK",
+                  "x": 14,
+                  "y": 95,
+                  "name": "Rights three",
+                  "fill": "#ccbaa8",
+                  "content": "3. Do not grant organization, Administration, Projects,",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "rKNJT",
+                  "x": 14,
+                  "y": 112,
+                  "name": "Rights four",
+                  "fill": "#ccbaa8",
+                  "content": "   Workflows, or default-branch authority.",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "WYADS",
+                  "x": 14,
+                  "y": 135,
+                  "name": "Rights five",
+                  "fill": "#ccbaa8",
+                  "content": "4. Set an expiry; rotate and revoke promptly.",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "RUlAe",
+                  "x": 14,
+                  "y": 161,
+                  "name": "Rights note",
+                  "fill": "#ffbd38",
+                  "content": "Registration does not require or test this credential.",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Ez3ml",
+              "x": 440,
+              "y": 202,
+              "name": "Profile secret storage instruction",
+              "width": 432,
+              "height": 196,
+              "fill": "#0e2423",
+              "cornerRadius": 7,
+              "stroke": "#ffbd38",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "p1f4jO",
+                  "x": 14,
+                  "y": 12,
+                  "name": "Storage title",
+                  "fill": "#ffe6cb",
+                  "content": "Store a token for the selected profile",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "T3wQ2",
+                  "x": 14,
+                  "y": 35,
+                  "name": "Storage one",
+                  "fill": "#ccbaa8",
+                  "content": "Configure a Hermes secret source outside Daidala.",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "kS1u6",
+                  "x": 14,
+                  "y": 55,
+                  "name": "Storage two",
+                  "fill": "#ccbaa8",
+                  "content": "Bind it to daidala-self-improvement before delivery.",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "u5k1T",
+                  "x": 14,
+                  "y": 75,
+                  "name": "Storage three",
+                  "fill": "#ccbaa8",
+                  "content": "Dashboard and CLI never accept or display the token.",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "Z7GNM2",
+                  "x": 14,
+                  "y": 95,
+                  "name": "Storage four",
+                  "fill": "#ccbaa8",
+                  "content": "Daidala stores only a logical reference; Hermes resolves",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "TVre8",
+                  "x": 14,
+                  "y": 112,
+                  "name": "Storage five",
+                  "fill": "#ccbaa8",
+                  "content": "the value for one bounded delivery operation.",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "sEa0h",
+                  "x": 14,
+                  "y": 140,
+                  "name": "Storage guide label",
+                  "fill": "#4ade80",
+                  "content": "Official Hermes Secrets guide",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "N6UPox",
+                  "x": 14,
+                  "y": 156,
+                  "name": "Storage guide URL",
+                  "fill": "#4ade80",
+                  "textGrowth": "fixed-width",
+                  "width": 400,
+                  "content": "https://hermes-agent.nousresearch.com/docs/user-guide/secrets/",
+                  "fontFamily": "Inter",
+                  "fontSize": 8,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "eNiSW",
+              "x": 0,
+              "y": 414,
+              "name": "Registration preview",
+              "width": 872,
+              "height": 126,
+              "fill": "#0e2423",
+              "cornerRadius": 7,
+              "stroke": "#182c2a",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "E1NZE",
+                  "x": 14,
+                  "y": 12,
+                  "name": "Preview title",
+                  "fill": "#4ade80",
+                  "content": "Preview — no execution",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "p3vt4j",
+                  "x": 14,
+                  "y": 35,
+                  "name": "Preview command",
+                  "fill": "#ccbaa8",
+                  "content": "daidala project register --github-url URL --profile daidala-self-improvement",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "Z23Iyi",
+                  "x": 14,
+                  "y": 56,
+                  "name": "Preview detail",
+                  "fill": "#ccbaa8",
+                  "content": "Would record canonical repository identity and non-secret profile-local registration metadata.",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "qy1Kl",
+                  "x": 14,
+                  "y": 84,
+                  "name": "Preview action",
+                  "fill": "#041c1c",
+                  "content": "Inspect repository",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "srI5H",
+                  "x": 14,
+                  "y": 75,
+                  "name": "Inspect repository action",
+                  "width": 132,
+                  "height": 34,
+                  "fill": "#ffe6cb",
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "mI8zX",
+                      "x": 18,
+                      "y": 11,
+                      "name": "Inspect repository label",
+                      "fill": "#041c1c",
+                      "content": "Inspect repository",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "qlEho",
+              "x": 0,
+              "y": 572,
+              "name": "Review boundary",
+              "fill": "#9a8f80",
+              "textGrowth": "fixed-width",
+              "width": 872,
+              "content": "No token, Git checkout, commit, push, pull request, or GitHub write is created by inspection or registration.",
+              "fontFamily": "Inter",
+              "fontSize": 8.5,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "xypZ1",
+      "x": 0,
+      "y": 800,
+      "name": "Delivery authority review",
+      "width": 1280,
+      "height": 720,
+      "fill": "#041c1c",
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "vqgr3",
+          "x": 0,
+          "y": 0,
+          "name": "Profile scope banner",
+          "width": 1280,
+          "height": 36,
+          "fill": "#2a2309",
+          "padding": [
+            8,
+            16
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "L8fuc",
+              "name": "Profile scope",
+              "fill": "#ffbd38",
+              "content": "Managing profile “daidala-self-improvement” — config, keys, skills, MCPs, model, and new chats apply to that profile.",
+              "fontFamily": "Courier New",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Mi7Z0",
+          "x": 0,
+          "y": 36,
+          "name": "App body",
+          "width": 1280,
+          "height": 684,
+          "fill": "#041c1c",
+          "children": [
+            {
+              "type": "frame",
+              "id": "SZV7g",
+              "name": "Hermes sidebar",
+              "width": 344,
+              "height": 684,
+              "fill": "#041c1c",
+              "stroke": "#ffe6cb26",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "vertical",
+              "gap": 6,
+              "padding": [
+                12,
+                14
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "HiGe4",
+                  "name": "Brand row",
+                  "width": 316,
+                  "height": 44,
+                  "fill": "#00000000",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "BYLJh",
+                      "name": "Brand",
+                      "fill": "#ffe6cb",
+                      "content": "HERMES\nAGENT",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "bold",
+                      "letterSpacing": 1.4
+                    },
+                    {
+                      "type": "frame",
+                      "id": "NKPhV",
+                      "name": "Collapse",
+                      "width": 36,
+                      "height": 36,
+                      "fill": "#00000000",
+                      "stroke": "#ffe6cb26",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "padding": [
+                        7,
+                        14
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "n4feW",
+                          "name": "Collapse label",
+                          "fill": "#ffe6cb",
+                          "content": "◀",
+                          "fontFamily": "Courier New",
+                          "fontSize": 12,
+                          "fontWeight": "bold"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "bqqiT",
+                  "name": "Profile select",
+                  "width": 316,
+                  "height": 34,
+                  "fill": "#00000000",
+                  "stroke": "#ffbd38",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "n6D2h",
+                      "name": "Profile",
+                      "fill": "#ccbaa8",
+                      "content": "daidala-self-improvement",
+                      "fontFamily": "Courier New",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "mqjmU",
+                      "name": "Profile arrow",
+                      "fill": "#ccbaa8",
+                      "content": "⌄",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "M2Jouf",
+                  "name": "Navigation list",
+                  "width": 316,
+                  "height": 440,
+                  "fill": "#00000000",
+                  "layout": "vertical",
+                  "gap": 1,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "eO8Ye",
+                      "name": "Nav CHAT",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "yRDke",
+                          "name": "Nav CHAT text",
+                          "fill": "#ccbaa8",
+                          "content": "CHAT",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "CUen5",
+                      "name": "Nav SESSIONS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "qRhU7",
+                          "name": "Nav SESSIONS text",
+                          "fill": "#ccbaa8",
+                          "content": "SESSIONS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "uITjP",
+                      "name": "Nav FILES",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "GoMJo",
+                          "name": "Nav FILES text",
+                          "fill": "#ccbaa8",
+                          "content": "FILES",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "u0aE1",
+                      "name": "Nav MODELS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "QNdiP",
+                          "name": "Nav MODELS text",
+                          "fill": "#ccbaa8",
+                          "content": "MODELS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "JhbTG",
+                      "name": "Nav LOGS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "o6PmQD",
+                          "name": "Nav LOGS text",
+                          "fill": "#ccbaa8",
+                          "content": "LOGS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "PdGxO",
+                      "name": "Nav CRON",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "kCaN6",
+                          "name": "Nav CRON text",
+                          "fill": "#ccbaa8",
+                          "content": "CRON",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "YUAPD",
+                      "name": "Nav SKILLS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "XKdrh",
+                          "name": "Nav SKILLS text",
+                          "fill": "#ccbaa8",
+                          "content": "SKILLS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "l2TeXm",
+                      "name": "Nav PLUGINS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "omVaC",
+                          "name": "Nav PLUGINS text",
+                          "fill": "#ccbaa8",
+                          "content": "PLUGINS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "jnoHq",
+                      "name": "Nav MCP",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "d7kH2L",
+                          "name": "Nav MCP text",
+                          "fill": "#ccbaa8",
+                          "content": "MCP",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "C4cAr",
+                      "name": "Nav CHANNELS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "fNUC7",
+                          "name": "Nav CHANNELS text",
+                          "fill": "#ccbaa8",
+                          "content": "CHANNELS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Ls3Wh",
+                      "name": "Nav WEBHOOKS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "H9PGD",
+                          "name": "Nav WEBHOOKS text",
+                          "fill": "#ccbaa8",
+                          "content": "WEBHOOKS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ErD1M",
+                      "name": "Nav PAIRING",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "N4wPX",
+                          "name": "Nav PAIRING text",
+                          "fill": "#ccbaa8",
+                          "content": "PAIRING",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "R39xOD",
+                      "name": "Nav PROFILES",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "WxObg",
+                          "name": "Nav PROFILES text",
+                          "fill": "#ccbaa8",
+                          "content": "PROFILES",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "omlQv",
+                      "name": "Nav CONFIG",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "KqPxk",
+                          "name": "Nav CONFIG text",
+                          "fill": "#ccbaa8",
+                          "content": "CONFIG",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ermyW",
+                      "name": "Nav KEYS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "gGErK",
+                          "name": "Nav KEYS text",
+                          "fill": "#ccbaa8",
+                          "content": "KEYS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "leymK",
+                      "name": "Nav SYSTEM",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Poqup",
+                          "name": "Nav SYSTEM text",
+                          "fill": "#ccbaa8",
+                          "content": "SYSTEM",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "v67vYo",
+                      "name": "Nav DOCUMENTATION",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "lpDJJ",
+                          "name": "Nav DOCUMENTATION text",
+                          "fill": "#ccbaa8",
+                          "content": "DOCUMENTATION",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "o0uKaC",
+                      "name": "Plugins heading",
+                      "fill": "#9a8f80",
+                      "content": "Plugins",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal",
+                      "letterSpacing": 1.2
+                    },
+                    {
+                      "type": "frame",
+                      "id": "EHmb8",
+                      "name": "Plugin KANBAN",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "yrILG",
+                          "name": "Plugin KANBAN text",
+                          "fill": "#ccbaa8",
+                          "content": "KANBAN",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "c5dib",
+                      "name": "Plugin ACHIEVEMENTS",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#00000000",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "O8jZMQ",
+                          "name": "Plugin ACHIEVEMENTS text",
+                          "fill": "#ccbaa8",
+                          "content": "ACHIEVEMENTS",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "normal",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ovtCK",
+                      "name": "Plugin DAIDALA",
+                      "width": 316,
+                      "height": 20,
+                      "fill": "#1d302d",
+                      "padding": [
+                        2,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "QRMMe",
+                          "name": "Plugin DAIDALA text",
+                          "fill": "#ffe6cb",
+                          "content": "DAIDALA",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "bold",
+                          "letterSpacing": 1.35
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "qbOHM",
+                  "name": "System block",
+                  "width": 316,
+                  "height": 88,
+                  "fill": "#00000000",
+                  "stroke": "#ffe6cb26",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "padding": [
+                    5,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "BlLcR",
+                      "name": "System title",
+                      "fill": "#9a8f80",
+                      "content": "System",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal",
+                      "letterSpacing": 1.1
+                    },
+                    {
+                      "type": "text",
+                      "id": "NzRRy",
+                      "name": "Gateway state",
+                      "fill": "#4ade80",
+                      "content": "Gateway Status: Running",
+                      "fontFamily": "Courier New",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "AgypQ",
+                      "name": "Session state",
+                      "fill": "#ccbaa8",
+                      "content": "Active Sessions: 0",
+                      "fontFamily": "Courier New",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "gyckd",
+                      "name": "Theme label",
+                      "fill": "#9a8f80",
+                      "content": "HERMES TEAL (LARGE) · EN · v0.19.0",
+                      "fontFamily": "Courier New",
+                      "fontSize": 9,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "uWxTh",
+              "name": "Main region",
+              "width": 936,
+              "height": 684,
+              "fill": "#041c1c",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "X4wYaD",
+                  "name": "Page header",
+                  "width": 936,
+                  "height": 76,
+                  "fill": "#041c1c",
+                  "stroke": "#ffe6cb26",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    19,
+                    32
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "EP427",
+                      "name": "Title group",
+                      "width": 400,
+                      "height": 38,
+                      "fill": "#00000000",
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "NaUsq",
+                          "name": "Page title",
+                          "fill": "#ffe6cb",
+                          "content": "CONFIGURE",
+                          "fontFamily": "Inter",
+                          "fontSize": 15.75,
+                          "fontWeight": "bold",
+                          "letterSpacing": 1.26
+                        },
+                        {
+                          "type": "frame",
+                          "id": "L0vM4t",
+                          "name": "Count badge",
+                          "width": 38,
+                          "height": 22,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            3,
+                            8
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "YDbDh",
+                              "name": "Count",
+                              "fill": "#ffe6cb",
+                              "content": "0",
+                              "fontFamily": "Courier New",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "d6tkMz",
+                      "name": "Header tabs",
+                      "width": 354,
+                      "height": 36,
+                      "fill": "#00000000",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "FGpCk",
+                          "name": "Tab WORKFLOWS",
+                          "width": 118,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "i7jCo",
+                              "name": "Tab WORKFLOWS text",
+                              "fill": "#ccbaa8",
+                              "content": "WORKFLOWS",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 1.05
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "fzB4S",
+                          "name": "Tab ARTIFACTS",
+                          "width": 118,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "wdtMy",
+                              "name": "Tab ARTIFACTS text",
+                              "fill": "#ccbaa8",
+                              "content": "ARTIFACTS",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 1.05
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "UQo6m",
+                          "name": "Tab CONFIG",
+                          "width": 118,
+                          "height": 36,
+                          "fill": "#ffe6cb",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            7,
+                            12
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "a7XC3",
+                              "name": "Tab CONFIG text",
+                              "fill": "#041c1c",
+                              "content": "CONFIG",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "bold",
+                              "letterSpacing": 1.05
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "sdJiy",
+                  "name": "GitHub Projects config content",
+                  "width": 936,
+                  "height": 608,
+                  "layout": "vertical",
+                  "gap": 12,
+                  "padding": [
+                    0,
+                    32,
+                    24,
+                    32
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "lOZcu",
+                      "name": "GitHub Projects subtabs",
+                      "width": 872,
+                      "height": 36,
+                      "fill": "#00000000",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "H0dETx",
+                          "name": "Subtab PACKS",
+                          "width": 176,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Qmfpi",
+                              "name": "Subtab PACKS text",
+                              "fill": "#ccbaa8",
+                              "content": "PACKS",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "r4T0L",
+                          "name": "Subtab CHECKOUTS & TTL",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "dzdAD",
+                              "name": "Subtab CHECKOUTS & TTL text",
+                              "fill": "#ccbaa8",
+                              "content": "CHECKOUTS & TTL",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "bold",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "I4oECr",
+                          "name": "Subtab GITHUB PROJECTS",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#1d302d",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "qUXae",
+                              "name": "Subtab GITHUB PROJECTS text",
+                              "fill": "#ccbaa8",
+                              "content": "GITHUB PROJECTS",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "o6x55Y",
+                          "name": "Subtab CONSTRAINTS",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "OaJPk",
+                              "name": "Subtab CONSTRAINTS text",
+                              "fill": "#ccbaa8",
+                              "content": "CONSTRAINTS",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "CuWw0",
+                          "name": "Subtab VERIFICATION",
+                          "width": 174,
+                          "height": 36,
+                          "fill": "#00000000",
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "RbKju",
+                              "name": "Subtab VERIFICATION text",
+                              "fill": "#ccbaa8",
+                              "content": "VERIFICATION",
+                              "fontFamily": "Inter",
+                              "fontSize": 9.5,
+                              "fontWeight": "normal",
+                              "letterSpacing": 0.8
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "WHEXW",
+                      "name": "GitHub Projects header",
+                      "width": "fill_container",
+                      "height": 48,
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "nx66F",
+                          "name": "GitHub Projects title group",
+                          "layout": "vertical",
+                          "gap": 3,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "j2k68",
+                              "name": "GitHub Projects title",
+                              "fill": "#ffe6cb",
+                              "content": "GITHUB PROJECTS",
+                              "fontFamily": "Inter",
+                              "fontSize": 13,
+                              "fontWeight": "bold",
+                              "letterSpacing": 1
+                            },
+                            {
+                              "type": "text",
+                              "id": "wN0es",
+                              "name": "GitHub Projects description",
+                              "fill": "#9a8f80",
+                              "content": "One verified Projects v2 link per registered project · dashboard metadata only",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Yi4mT",
+                          "name": "Registered project selector",
+                          "width": 275,
+                          "height": 34,
+                          "stroke": "#ffe6cb26",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            6,
+                            9
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "x6pLc",
+                              "name": "Registered project value",
+                              "fill": "#ccbaa8",
+                              "content": "forgegod/daidala",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 9,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "dky3N",
+                              "name": "Registered project arrow",
+                              "fill": "#9a8f80",
+                              "content": "⌄",
+                              "fontFamily": "Inter",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "UMWx2",
+                      "name": "Project registration identity",
+                      "width": "fill_container",
+                      "height": 94,
+                      "fill": "#0e2423",
+                      "cornerRadius": 7,
+                      "stroke": "#ffe6cb26",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": [
+                        12,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "i2UYfj",
+                          "name": "Project registration title",
+                          "fill": "#ffe6cb",
+                          "content": "REGISTRATION-DERIVED IDENTITY · READ-ONLY",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "bold"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "FtiNj",
+                          "name": "Project registration fields",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "AjP6u",
+                              "name": "Project registration REPOSITORY",
+                              "width": 260,
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "bAAV2",
+                                  "name": "REPOSITORY label",
+                                  "fill": "#9a8f80",
+                                  "content": "REPOSITORY",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 7.5,
+                                  "fontWeight": "bold"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "xrMrb",
+                                  "name": "REPOSITORY value",
+                                  "fill": "#ccbaa8",
+                                  "content": "git@github.com:forgegod/daidala.git",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8.5,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Z9pTu7",
+                              "name": "Project registration INTAKE ALIAS",
+                              "width": 260,
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "hYfY3",
+                                  "name": "INTAKE ALIAS label",
+                                  "fill": "#9a8f80",
+                                  "content": "INTAKE ALIAS",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 7.5,
+                                  "fontWeight": "bold"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "fupIo",
+                                  "name": "INTAKE ALIAS value",
+                                  "fill": "#ccbaa8",
+                                  "content": "github-self-improvement",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8.5,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "dfm2p",
+                              "name": "Project registration REGISTRATION",
+                              "width": 260,
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "R38xOF",
+                                  "name": "REGISTRATION label",
+                                  "fill": "#9a8f80",
+                                  "content": "REGISTRATION",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 7.5,
+                                  "fontWeight": "bold"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "hJPea",
+                                  "name": "REGISTRATION value",
+                                  "fill": "#ccbaa8",
+                                  "content": "forgegod-daidala · v2",
+                                  "fontFamily": "Courier Prime",
+                                  "fontSize": 8.5,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ktclq",
+                      "name": "Current GitHub Projects link",
+                      "width": "fill_container",
+                      "height": 164,
+                      "fill": "#0e2423",
+                      "cornerRadius": 7,
+                      "stroke": "#4ade80",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 9,
+                      "padding": [
+                        12,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "SJC2z",
+                          "name": "Current project link heading",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "F0boz8",
+                              "name": "Current project link title",
+                              "fill": "#ffe6cb",
+                              "content": "CURRENT PROJECTS V2 LINK",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "bold"
+                            },
+                            {
+                              "type": "text",
+                              "id": "KHPmR",
+                              "name": "Current project link status",
+                              "fill": "#4ade80",
+                              "content": "● VERIFIED 18m ago",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "jVBSR",
+                          "name": "Project link OWNER / NUMBER",
+                          "width": "fill_container",
+                          "height": 22,
+                          "stroke": "#ffe6cb15",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            3,
+                            7
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "t4kPN",
+                              "name": "OWNER / NUMBER project key",
+                              "fill": "#9a8f80",
+                              "content": "OWNER / NUMBER",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "esMyY",
+                              "name": "OWNER / NUMBER project value",
+                              "fill": "#ccbaa8",
+                              "content": "forgegod · #3",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "JiIfZ",
+                          "name": "Project link NODE ID",
+                          "width": "fill_container",
+                          "height": 22,
+                          "stroke": "#ffe6cb15",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            3,
+                            7
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "kLAti",
+                              "name": "NODE ID project key",
+                              "fill": "#9a8f80",
+                              "content": "NODE ID",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "ix0OC",
+                              "name": "NODE ID project value",
+                              "fill": "#ccbaa8",
+                              "content": "PVT_kwDOB7…R9m",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "q5sZY",
+                          "name": "Project link PROJECT TITLE",
+                          "width": "fill_container",
+                          "height": 22,
+                          "stroke": "#ffe6cb15",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            3,
+                            7
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "d5Su3",
+                              "name": "PROJECT TITLE project key",
+                              "fill": "#9a8f80",
+                              "content": "PROJECT TITLE",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "XRaed",
+                              "name": "PROJECT TITLE project value",
+                              "fill": "#ccbaa8",
+                              "content": "Daidala delivery",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "RaoKd",
+                          "name": "Project link CAPABILITY",
+                          "width": "fill_container",
+                          "height": 22,
+                          "stroke": "#ffe6cb15",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            3,
+                            7
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "lQ5Ii",
+                              "name": "CAPABILITY project key",
+                              "fill": "#9a8f80",
+                              "content": "CAPABILITY",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "H6cHd8",
+                              "name": "CAPABILITY project value",
+                              "fill": "#ccbaa8",
+                              "content": "bounded fresh read available",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "al4Rl",
+                      "name": "Project link mutation preview",
+                      "width": "fill_container",
+                      "height": 142,
+                      "fill": "#182c2a",
+                      "cornerRadius": 7,
+                      "stroke": "#ffbd38",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": [
+                        12,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "oelby",
+                          "name": "Project link preview heading",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "FcQpE",
+                              "name": "Project link preview title",
+                              "fill": "#ffbd38",
+                              "content": "LINK CHANGE PREVIEW · NON-MUTATING",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "bold"
+                            },
+                            {
+                              "type": "text",
+                              "id": "FVmvI",
+                              "name": "Project link preview digest",
+                              "fill": "#9a8f80",
+                              "content": "DIGEST 48b1…a02e",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "Y2J1BG",
+                          "name": "Project link preview body",
+                          "fill": "#ccbaa8",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Fresh bounded GitHub read matched owner, project number, node ID, and registration-derived identity. No token name or value crosses this boundary.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "Courier Prime",
+                          "fontSize": 8.5,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "xjwOY",
+                          "name": "Project link confirmation actions",
+                          "width": "fill_container",
+                          "height": 34,
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "JSmZo",
+                              "name": "Project link confirmation",
+                              "fill": "#ffbd38",
+                              "content": "☐ I confirm applying this exact verified link",
+                              "fontFamily": "Courier Prime",
+                              "fontSize": 8.5,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "uX7Oe",
+                              "name": "Project link buttons",
+                              "gap": 8,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "TLS2z",
+                                  "name": "VERIFY AGAIN",
+                                  "height": 30,
+                                  "fill": "#00000000",
+                                  "stroke": "#ffe6cb26",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    5,
+                                    9
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "fU65k",
+                                      "name": "VERIFY AGAIN label",
+                                      "fill": "#ffe6cb",
+                                      "content": "VERIFY AGAIN",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 8,
+                                      "fontWeight": "bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "n8JxE",
+                                  "name": "APPLY LINK",
+                                  "height": 30,
+                                  "fill": "#ffe6cb",
+                                  "stroke": "#ffe6cb26",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    5,
+                                    9
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "uglrW",
+                                      "name": "APPLY LINK label",
+                                      "fill": "#041c1c",
+                                      "content": "APPLY LINK",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 8,
+                                      "fontWeight": "bold"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "OpIA5",
+                      "name": "GitHub Projects boundary note",
+                      "fill": "#9a8f80",
+                      "content": "Project links do not admit workflows or change GitHub intake. Delete uses the same fresh preview + literal confirmation.",
+                      "fontFamily": "Courier Prime",
+                      "fontSize": 8.5,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "dwK4H",
+          "x": 344,
+          "y": 112,
+          "name": "Delivery authority workspace",
+          "width": 936,
+          "height": 608,
+          "fill": "#041c1c",
+          "layout": "none",
+          "children": [
+            {
+              "type": "frame",
+              "id": "Wmtki",
+              "x": 0,
+              "y": 0,
+              "name": "Config tab Packs",
+              "width": 82,
+              "height": 36,
+              "fill": "#00000000",
+              "stroke": "#ffe6cb26",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "LSsld",
+                  "x": 12,
+                  "y": 11,
+                  "name": "Config tab label Packs",
+                  "fill": "#ccbaa8",
+                  "content": "Packs",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "CSqC9",
+              "x": 88,
+              "y": 0,
+              "name": "Config tab Repositories",
+              "width": 108,
+              "height": 36,
+              "fill": "#ffe6cb",
+              "stroke": "#ffe6cb26",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "B8WchT",
+                  "x": 12,
+                  "y": 11,
+                  "name": "Config tab label Repositories",
+                  "fill": "#041c1c",
+                  "content": "Repositories",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "zOgNB",
+              "x": 202,
+              "y": 0,
+              "name": "Config tab Checkouts",
+              "width": 82,
+              "height": 36,
+              "fill": "#00000000",
+              "stroke": "#ffe6cb26",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "E3SIw7",
+                  "x": 12,
+                  "y": 11,
+                  "name": "Config tab label Checkouts",
+                  "fill": "#ccbaa8",
+                  "content": "Checkouts",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Jetx8",
+              "x": 290,
+              "y": 0,
+              "name": "Config tab Constraints",
+              "width": 82,
+              "height": 36,
+              "fill": "#00000000",
+              "stroke": "#ffe6cb26",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Fy3cw",
+                  "x": 12,
+                  "y": 11,
+                  "name": "Config tab label Constraints",
+                  "fill": "#ccbaa8",
+                  "content": "Constraints",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "iEdZi",
+              "x": 378,
+              "y": 0,
+              "name": "Config tab Verification",
+              "width": 92,
+              "height": 36,
+              "fill": "#00000000",
+              "stroke": "#ffe6cb26",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "vmNuO",
+                  "x": 12,
+                  "y": 11,
+                  "name": "Config tab label Verification",
+                  "fill": "#ccbaa8",
+                  "content": "Verification",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "wKMW7",
+              "x": 0,
+              "y": 52,
+              "name": "Delivery title",
+              "fill": "#ffe6cb",
+              "content": "Review delivery authority",
+              "fontFamily": "Inter",
+              "fontSize": 20,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "L5rt5R",
+              "x": 0,
+              "y": 78,
+              "name": "Delivery subtitle",
+              "fill": "#9a8f80",
+              "content": "Future capability only. All evidence gates are required before a bounded branch delivery.",
+              "fontFamily": "Inter",
+              "fontSize": 10,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "GZ39V",
+              "x": 0,
+              "y": 102,
+              "name": "Delivery profile and secret state",
+              "width": 872,
+              "height": 86,
+              "fill": "#0e2423",
+              "cornerRadius": 7,
+              "stroke": "#ffbd38",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "xDTlt",
+                  "x": 14,
+                  "y": 12,
+                  "name": "Delivery profile title",
+                  "fill": "#ffe6cb",
+                  "content": "Bound controller profile: daidala-self-improvement",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "X8Ky3",
+                  "x": 14,
+                  "y": 37,
+                  "name": "Delivery profile one",
+                  "fill": "#ffbd38",
+                  "content": "Delivery credential: unavailable — no configured Hermes secret source or profile binding.",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "DdU59",
+                  "x": 14,
+                  "y": 60,
+                  "name": "Delivery profile two",
+                  "fill": "#ccbaa8",
+                  "content": "Fail closed: no fallback, token field, credential name, or direct secret-manager action exists here.",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "C9Genh",
+              "x": 0,
+              "y": 204,
+              "name": "Required delivery evidence",
+              "width": 536,
+              "height": 192,
+              "fill": "#0e2423",
+              "cornerRadius": 7,
+              "stroke": "#ffe6cb26",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "hqGI3",
+                  "x": 14,
+                  "y": 12,
+                  "name": "Evidence title",
+                  "fill": "#ffe6cb",
+                  "content": "Required delivery evidence",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "E59QzG",
+                  "x": 14,
+                  "y": 39,
+                  "name": "Evidence one",
+                  "fill": "#4ade80",
+                  "content": "✓ Accepted review packet and exact diff identity",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "MOVI7",
+                  "x": 14,
+                  "y": 64,
+                  "name": "Evidence two",
+                  "fill": "#4ade80",
+                  "content": "✓ Allowed branch: daidala/cycle-0042",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "Ar3iW",
+                  "x": 14,
+                  "y": 89,
+                  "name": "Evidence three",
+                  "fill": "#ffbd38",
+                  "content": "! Release policy: commit off · push off",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "YWmV3",
+                  "x": 14,
+                  "y": 114,
+                  "name": "Evidence four",
+                  "fill": "#ffbd38",
+                  "content": "! Profile-bound delivery credential unavailable",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "fZ84J",
+                  "x": 14,
+                  "y": 139,
+                  "name": "Evidence five",
+                  "fill": "#ccbaa8",
+                  "content": "— Fresh delivery preview digest not generated",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "kmsb0",
+                  "x": 14,
+                  "y": 165,
+                  "name": "Evidence note",
+                  "fill": "#9a8f80",
+                  "content": "Any blocked item prevents confirmation and Git invocation.",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "pVA9X",
+              "x": 552,
+              "y": 204,
+              "name": "Credential setup instruction",
+              "width": 320,
+              "height": 192,
+              "fill": "#0e2423",
+              "cornerRadius": 7,
+              "stroke": "#ffbd38",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "ONQ3n",
+                  "x": 14,
+                  "y": 12,
+                  "name": "Gate title",
+                  "fill": "#ffe6cb",
+                  "content": "Credential setup gate",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "DAB1i",
+                  "x": 14,
+                  "y": 37,
+                  "name": "Gate one",
+                  "fill": "#ccbaa8",
+                  "textGrowth": "fixed-width",
+                  "width": 292,
+                  "content": "1. Configure the selected Hermes profile.",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "kB3kz",
+                  "x": 14,
+                  "y": 60,
+                  "name": "Gate two",
+                  "fill": "#ccbaa8",
+                  "textGrowth": "fixed-width",
+                  "width": 292,
+                  "content": "2. Store a restricted token in its supported secret source.",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "AyICa",
+                  "x": 14,
+                  "y": 88,
+                  "name": "Gate three",
+                  "fill": "#ccbaa8",
+                  "textGrowth": "fixed-width",
+                  "width": 292,
+                  "content": "3. Use the same least-rights rule: repository scope + Contents read/write only.",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "J3u3bc",
+                  "x": 14,
+                  "y": 124,
+                  "name": "Gate guide",
+                  "fill": "#4ade80",
+                  "content": "Hermes Secrets documentation",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "Qao2W",
+                  "x": 14,
+                  "y": 141,
+                  "name": "Gate URL",
+                  "fill": "#4ade80",
+                  "textGrowth": "fixed-width",
+                  "width": 292,
+                  "content": "https://hermes-agent.nousresearch.com/docs/user-guide/secrets/",
+                  "fontFamily": "Inter",
+                  "fontSize": 8,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "MpYBp",
+              "x": 0,
+              "y": 412,
+              "name": "Delivery transaction preview",
+              "width": 872,
+              "height": 124,
+              "fill": "#0e2423",
+              "cornerRadius": 7,
+              "stroke": "#182c2a",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "BaVJj",
+                  "x": 14,
+                  "y": 12,
+                  "name": "Transaction title",
+                  "fill": "#ffe6cb",
+                  "content": "Future transaction preview",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "LB7nm",
+                  "x": 14,
+                  "y": 37,
+                  "name": "Transaction one",
+                  "fill": "#ccbaa8",
+                  "content": "Repository acme/payments-service · branch daidala/cycle-0042 · default branch excluded",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "l9ORn",
+                  "x": 14,
+                  "y": 59,
+                  "name": "Transaction two",
+                  "fill": "#ccbaa8",
+                  "content": "Action: commit and push branch only after policy enablement, exact preview digest, confirmation, and approval.",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "Dgq4b",
+                  "x": 626,
+                  "y": 76,
+                  "name": "Disabled delivery action",
+                  "width": 232,
+                  "height": 34,
+                  "fill": "#9a8f80",
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "cMAIa",
+                      "x": 17,
+                      "y": 11,
+                      "name": "Disabled delivery label",
+                      "fill": "#041c1c",
+                      "content": "Confirm commit and push branch",
+                      "fontFamily": "Inter",
+                      "fontSize": 9,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "saCNw",
+              "x": 0,
+              "y": 572,
+              "name": "Review boundary",
+              "fill": "#9a8f80",
+              "textGrowth": "fixed-width",
+              "width": 872,
+              "content": "The dashboard never accepts a PAT or changes Hermes secret-source configuration; a missing check fails closed.",
+              "fontFamily": "Inter",
+              "fontSize": 8.5,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "fileToken": "bb6b54fd-faee-4673-836e-eaa8070088ee"
+}
