@@ -90,18 +90,107 @@ Prerequisites:
 - the Hermes gateway running so its Kanban dispatcher can claim ready cards;
 - a clean local Git target repository.
 
+### Connect the target repository
+
+There is no separate repository registration or import step. Pass the absolute
+path to the repository root as the first argument to `hermes daidala start`, or
+select that same root in the Daidala dashboard. It must be the Git root—not a
+subdirectory—and it must have no modified or untracked files:
+
+```bash
+cd /absolute/path/to/repo
+git rev-parse --show-toplevel
+git status --short
+```
+
+At start, Daidala verifies those facts, records the exact `HEAD` as the
+workflow's immutable baseline, and assigns the original checkout to the
+`define` and `plan` cards. Starting the workflow does not modify that checkout.
+After exact human approval of the plan, Daidala creates a detached Git worktree
+at that baseline under its profile-local data root; `implement`, `verify`, and
+`review` run there instead. The original checkout remains untouched, and
+delivery reports a reviewed diff without committing or pushing it.
+
+### Use an existing GitHub repository
+
+Daidala targets a local checkout, not a GitHub URL. Clone the repository and
+choose the branch or commit you intend to approve before starting the workflow:
+
+```bash
+git clone https://github.com/<owner>/<repository>.git /absolute/path/to/repo
+git -C /absolute/path/to/repo switch <branch>
+# Or pin one exact commit instead: git -C /absolute/path/to/repo switch --detach <commit>
+repo_root="$(git -C /absolute/path/to/repo rev-parse --show-toplevel)"
+git -C "$repo_root" status --short
+```
+
+For an existing local clone, use its root instead:
+
+```bash
+repo_root="$(git -C /path/to/existing-clone rev-parse --show-toplevel)"
+git -C "$repo_root" status --short
+```
+
+Daidala never clones, fetches, pulls, pushes, creates remote branches, or sends
+a GitHub credential. It binds only the selected local `HEAD`; updating a clone
+or selecting another commit is an operator action before a new workflow starts.
+
 ```bash
 hermes plugins install forgegod/daidala --enable
 hermes daidala packs check aidlc
 hermes kanban boards create project-board --name "Project board"
+```
+
+### Use the graphical integration (optional)
+
+The install command also registers Daidala's optional graphical integration in
+the same Hermes profile. If the dashboard host was already running, restart it
+after installation, then open `/plugins?profile=<profile>` and select
+**Daidala**:
+
+```bash
+hermes -p <profile> gateway restart   # or restart the dashboard service
+```
+
+The Daidala tab provides the guided, confirmation-gated configuration and
+**Start workflow** path. It is an alternative to the CLI start command below,
+not a replacement for the board, pack, clean-repository, and gateway
+prerequisites. The tab only appears in profiles where Daidala is installed and
+enabled.
+
+### Choose a workflow pack
+
+Both packs create the same approval-gated `define → plan → implement → verify
+→ review → deliver` graph. They differ only in their pinned methodology skills
+and activation policy:
+
+| Pack | Source | When to choose it |
+|---|---|---|
+| `aidlc` | [AWS Labs AI-DLC workflows](https://github.com/awslabs/aidlc-workflows) v1.0.1 | The bundled first-run default. Daidala supplies one required `daidala:aidlc-adapter` skill for every stage, so no separate skill installation is needed once `packs check` passes. |
+| `addyosmani` | [Addy Osmani's agent-skills](https://github.com/addyosmani/agent-skills) | A finer-grained engineering-methodology pack. It pins distinct required and conditional external skills for specification, planning, implementation, verification, review, and delivery. Install its exact pinned skills before use: |
+
+```bash
+hermes daidala packs install addyosmani
+hermes daidala packs install addyosmani --apply
+hermes daidala packs check addyosmani
+```
+
+Every assigned worker profile must have the selected pack's exact skills. See
+[Pack adapters](docs/09-pack-adapters.md) for the full stage-to-skill mapping.
+
+Run the gateway in a separate terminal on WSL before starting the workflow from
+either surface:
+
+```bash
 hermes gateway run
 ```
 
-Run the gateway in a separate terminal on WSL. Then start explicitly with one
-profile for every stage:
+Then start explicitly with one profile for every stage, or complete the
+equivalent request in the Daidala tab:
 
 ```bash
-hermes daidala start /absolute/path/to/repo "Implement the requested change" \
+repo_root="$(git -C /absolute/path/to/repo rev-parse --show-toplevel)"
+hermes daidala start "$repo_root" "Implement the requested change" \
   --board project-board \
   --default-profile default \
   --pack aidlc \
