@@ -2688,10 +2688,20 @@
         ? createElement(
             "section",
             { className: "daidala-skill-document", "data-testid": "daidala-skill-content" },
-            createElement("h4", null, documentView.skill + " · installed SKILL.md"),
+            createElement("h4", null, documentView.skill + " · " + (
+              documentView.content_origin === "pinned-source"
+                ? "pinned source SKILL.md"
+                : documentView.content_origin === "bundled"
+                  ? "bundled SKILL.md"
+                  : "installed SKILL.md"
+            )),
             createElement("p", { className: "daidala-workflow-meta" },
               documentView.available
-                ? String(documentView.byte_size) + " UTF-8 bytes"
+                ? String(documentView.byte_size) + " UTF-8 bytes" + (
+                    documentView.content_origin === "pinned-source"
+                      ? " · source revision " + documentView.source_revision
+                      : ""
+                  )
                 : documentView.unavailable_reason
             ),
             documentView.available

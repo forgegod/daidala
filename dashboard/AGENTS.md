@@ -92,8 +92,10 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   from the workflow ledger; output is capped at 64 KiB, execution at ten seconds,
   and only allowlisted fields enter the detail snapshot.
 - Pack routes accept only bundled pack names and declared skill names. Content is
-  literal, path-free, and bounded to 1 MiB; install apply requires a fresh
-  matching preview digest and literal confirmation.
+  literal, path-free, and bounded to 1 MiB. Config → Packs labels installed,
+  bundled, and pinned-source documents distinctly; a pinned-source preview never
+  implies installation or readiness. Install apply requires a fresh matching
+  preview digest and literal confirmation.
 - Preview and declined setup must not mutate; start requires a literal checked confirmation.
 - Wizard inventory derives the mounted controller profile from Hermes' documented
   profile inventory and exposes only registrations bound to that profile. The

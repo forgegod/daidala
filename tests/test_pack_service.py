@@ -78,6 +78,7 @@ def test_declared_bundled_skill_returns_exact_bounded_document() -> None:
     document = service.skill_content("aidlc", "aidlc-adapter").to_dict()
 
     assert document["available"] is True
+    assert document["content_origin"] == "bundled"
     assert document["content"].startswith("---\nname: aidlc-adapter")
     assert document["byte_size"] == len(document["content"].encode("utf-8"))
     assert document["byte_size"] <= MAX_SKILL_DOCUMENT_BYTES
@@ -92,34 +93,70 @@ def test_declared_bundled_skill_returns_exact_bounded_document() -> None:
     assert "path" not in document
 
 
-def test_content_rejects_undeclared_and_hides_missing_external_paths() -> None:
+def test_content_rejects_undeclared_and_previews_pinned_external_document() -> None:
     service = build_service(MutableRegistry())
 
     with pytest.raises(UnknownPackSkillError, match="not declared"):
         service.skill_content("aidlc", "not-declared")
 
-    missing = service.skill_content("addyosmani", "interview-me").to_dict()
+    preview = service.skill_content("addyosmani", "interview-me").to_dict()
     expected = next(
         skill for skill in required_skills(load_pack("addyosmani")) if skill.name == "interview-me"
     )
 
-    assert missing == {
-        "pack": "addyosmani",
-        "skill": "interview-me",
-        "stages": ["define"],
-        "activation": ["conditional"],
-        "bundled": False,
-        "external": True,
-        "install_target": expected.install,
-        "expected_digest": expected.content_digest,
-        "observed_digest": None,
-        "installed": False,
-        "ready": False,
-        "available": False,
-        "byte_size": None,
-        "content": None,
-        "unavailable_reason": "skill is not installed",
-    }
+    assert preview["pack"] == "addyosmani"
+    assert preview["skill"] == "interview-me"
+    assert preview["stages"] == ["define"]
+    assert preview["activation"] == ["conditional"]
+    assert preview["install_target"] == expected.install
+    assert preview["expected_digest"] == expected.content_digest
+    assert preview["observed_digest"] is None
+    assert preview["installed"] is False
+    assert preview["ready"] is False
+    assert preview["available"] is True
+    assert preview["content_origin"] == "pinned-source"
+    assert preview["source_revision"] == load_pack("addyosmani").source_revision
+    content = preview["content"]
+    assert isinstance(content, str)
+    assert content.startswith("---\nname: interview-me\n")
+    assert preview["byte_size"] == len(content.encode("utf-8"))
+    assert preview["unavailable_reason"] is None
+    assert "path" not in preview
+
+
+def test_all_external_pack_skills_have_pinned_source_previews() -> None:
+    service = build_service(MutableRegistry())
+    required = required_skills(load_pack("addyosmani"))
+
+    documents = [service.skill_content("addyosmani", skill.name).to_dict() for skill in required]
+
+    assert len(documents) == 20
+    assert all(document["available"] is True for document in documents)
+    assert all(document["content_origin"] == "pinned-source" for document in documents)
+    for skill, document in zip(required, documents, strict=True):
+        content = document["content"]
+        assert isinstance(content, str)
+        assert content.startswith(f"---\nname: {skill.name}\n")
+
+
+def test_installed_external_document_takes_precedence_over_source_preview() -> None:
+    skill = next(
+        skill for skill in required_skills(load_pack("addyosmani")) if skill.name == "interview-me"
+    )
+    assert skill.content_digest is not None
+    service = build_service(
+        MutableRegistry(
+            digests={skill.name: skill.content_digest},
+            documents={skill.name: "# installed\n"},
+        )
+    )
+
+    document = service.skill_content("addyosmani", skill.name).to_dict()
+
+    assert document["installed"] is True
+    assert document["ready"] is True
+    assert document["content_origin"] == "installed"
+    assert document["content"] == "# installed\n"
 
 
 def test_oversized_document_returns_metadata_without_partial_content() -> None:

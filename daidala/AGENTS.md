@@ -55,6 +55,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `recommendations.py` | Pure finite pending-decision and next-action derivation from ledger facts and live Kanban snapshots. |
 | `setup_wizard.py` | Typed setup preview, confirmation gate, and documented Hermes board/profile inventory commands with bounded long-name table parsing. |
 | `packs/` | Skill-set-specific lifecycle mappings. |
+| `pack_skill_docs/` | Attributed, display-only external `SKILL.md` snapshots from exact pack source revisions; never activation providers. |
 | `skills/` | Namespaced read-only orchestration and guided-setup skills bundled with the plugin. |
 
 ## Local Contracts
@@ -125,7 +126,10 @@ workflow-pack adapters, and bundled orchestration skills.
   across artifact-write, card-archive, worktree-release, and Plan-card failures.
 - Pack installation recomputes the complete preview identity before mutation,
   requires literal confirmation plus the matching digest, and exposes only
-  declared pack/skill identities and bounded `SKILL.md` content.
+  declared pack/skill identities and bounded `SKILL.md` content. An installed
+  external document takes precedence; otherwise an attributed snapshot from the
+  pack's exact source revision may provide display text without satisfying
+  installation or readiness.
 - `project-cycle admit --apply` requires the exact cycle ID and canonical intake
   digest returned by a fresh dry-run. The apply path reruns live prerequisites
   and rejects changed issue, manifest, pack, constraints, baseline, registration,

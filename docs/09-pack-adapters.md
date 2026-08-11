@@ -39,6 +39,11 @@ the requirement. Missing requirements block workflow creation and list their
 install targets. Pack installation dry-runs missing-skill mutations by default
 and requires exact complete-directory digests before workflow start.
 
+Config → Packs may display attributed `SKILL.md` snapshots copied from the exact
+pinned Addyosmani revision before installation. These snapshots are review text
+only: workers cannot load them, and they do not satisfy name or directory-digest
+readiness checks.
+
 ## Adapter and engine boundary
 
 The Addyosmani adapter does not add conditionals to Python. All packs share:
@@ -97,6 +102,7 @@ The same temporary-repository fixture executes both packs through
 ## Source of truth
 
 - Mappings: `daidala/packs/addyosmani.yaml`, `daidala/packs/aidlc.yaml`
+- Addyosmani display snapshots and license: `daidala/pack_skill_docs/addyosmani/`
 - AI-DLC adapter and license: `daidala/skills/aidlc-adapter/`
 - Pack model and validation: `daidala/packs.py`
 - Exact skill gate: `daidala/skills.py`

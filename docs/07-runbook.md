@@ -59,6 +59,11 @@ Installation is also dry-run by default. Review every proposed `hermes skills
 install` command before using `--apply`. Recursive installation is refused by
 the verified Hermes baseline.
 
+In the dashboard, Config → Packs lets you select any declared skill to inspect
+its bounded literal `SKILL.md` text. Addyosmani skills that are not installed use
+an attributed snapshot from the pack's pinned source revision; that display-only
+preview does not satisfy the installed-skill or content-digest readiness gate.
+
 ## Start and resume a workflow
 
 Start explicitly on an existing named board. One default profile is sufficient;

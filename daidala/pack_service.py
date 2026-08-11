@@ -137,6 +137,7 @@ class PackCheck:
 class PackSkillDocument:
     pack: str
     skill: str
+    source_revision: str
     stages: tuple[str, ...]
     activations: tuple[str, ...]
     bundled: bool
@@ -147,6 +148,7 @@ class PackSkillDocument:
     installed: bool
     ready: bool
     available: bool
+    content_origin: str | None
     byte_size: int | None
     content: str | None
     unavailable_reason: str | None
@@ -155,6 +157,7 @@ class PackSkillDocument:
         return {
             "pack": self.pack,
             "skill": self.skill,
+            "source_revision": self.source_revision,
             "stages": list(self.stages),
             "activation": list(self.activations),
             "bundled": self.bundled,
@@ -165,6 +168,7 @@ class PackSkillDocument:
             "installed": self.installed,
             "ready": self.ready,
             "available": self.available,
+            "content_origin": self.content_origin,
             "byte_size": self.byte_size,
             "content": self.content,
             "unavailable_reason": self.unavailable_reason,
@@ -302,19 +306,28 @@ class PackService:
             else self._registry.content_digest(skill_name) if installed else None
         )
         content: str | None
+        content_origin: str | None = None
         unavailable_reason: str | None = None
         if first.bundled is not None:
             resource = resources.files(__package__).joinpath(
                 "skills", first.bundled, "SKILL.md"
             )
             content = resource.read_text(encoding="utf-8")
-        elif not installed:
-            content = None
-            unavailable_reason = "skill is not installed"
-        else:
+            content_origin = "bundled"
+        elif installed:
             content = self._registry.skill_markdown(skill_name)
+            if content is not None:
+                content_origin = "installed"
+        else:
+            content = None
+        if content is None and first.is_external:
+            content = _packaged_skill_document(pack.name, skill_name)
             if content is None:
-                unavailable_reason = "skill document is unavailable"
+                unavailable_reason = (
+                    "skill document is unavailable" if installed else "skill is not installed"
+                )
+            else:
+                content_origin = "pinned-source"
         byte_size = len(content.encode("utf-8")) if content is not None else None
         if byte_size is not None and byte_size > MAX_SKILL_DOCUMENT_BYTES:
             content = None
@@ -324,6 +337,7 @@ class PackService:
         return PackSkillDocument(
             pack=pack.name,
             skill=skill_name,
+            source_revision=pack.source_revision,
             stages=tuple(stage for stage, _skill in declarations),
             activations=tuple(skill.activation.value for _stage, skill in declarations),
             bundled=first.bundled is not None,
@@ -334,6 +348,7 @@ class PackService:
             installed=installed,
             ready=installed and observed_digest == expected_digest,
             available=content is not None,
+            content_origin=content_origin,
             byte_size=byte_size,
             content=content,
             unavailable_reason=unavailable_reason,
@@ -373,6 +388,18 @@ class PackService:
             executed=tuple(executed),
             pack=verified,
         )
+
+
+def _packaged_skill_document(pack_name: str, skill_name: str) -> str | None:
+    resource = resources.files(__package__).joinpath(
+        "pack_skill_docs", pack_name, skill_name, "SKILL.md"
+    )
+    if not resource.is_file():
+        return None
+    try:
+        return resource.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as error:
+        raise PackServiceError("packaged skill document is unavailable") from error
 
 
 def _validation(pack: WorkflowPack) -> PackValidation:
