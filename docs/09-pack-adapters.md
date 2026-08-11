@@ -41,8 +41,11 @@ and requires exact complete-directory digests before workflow start.
 
 Config → Packs exposes an Addyosmani `SKILL.md` only after that exact external
 skill is installed. Before installation, the dashboard shows the exact install
-target and blocks workflow preview/start without substituting source text for
-installed readiness.
+target and pinned source link and blocks workflow preview/start without
+substituting source text for installed readiness. Individual and pack-wide
+install, enable, and disable actions require a fresh preview digest, explicit
+confirmation, and post-action verification. Disable updates the active profile's
+Hermes `skills.disabled` list; it does not delete shared skill files.
 
 ## Adapter and engine boundary
 

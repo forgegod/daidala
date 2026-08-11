@@ -122,6 +122,12 @@ The dispatcher does not install missing skills at runtime. Daidala's readiness
 checks exist so a missing exact name or mismatched external skill digest stops
 the workflow instead of silently running with a partial methodology.
 
+An installed but profile-disabled required skill is also not loadable. Operators
+repair availability under **Config → Packs** with preview-confirmed individual or
+pack-wide install, enable, and disable actions. Disable is reversible and changes
+the active profile's Hermes `skills.disabled` state without uninstalling shared
+skill content.
+
 ## Assessing `Use When` as a relevance gate
 
 The Addyosmani catalog gives every skill a `Use When` description, and each

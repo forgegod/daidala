@@ -84,9 +84,10 @@ def test_dashboard_mutations_use_only_closed_post_routes() -> None:
     assert 'API_BASE + "/wizard/boards/preview"' in source
     assert 'API_BASE + "/wizard/boards"' in source
     assert '"Repository path"' not in source
-    assert '"/install/preview"' in source
-    assert '"/install"' in source
-    assert "preview_digest: previewDigest, confirm: true" in source
+    assert '"/skills/action/preview"' in source
+    assert '"/skills/action"' in source
+    assert "preview_digest: preview.preview_digest" in source
+    assert "confirm: true" in source
     assert '"/approval-review"' in source
     assert '"/approve"' in source
     assert "artifact_id: plan.artifact_id" in source
@@ -184,7 +185,7 @@ def test_bundle_exposes_schema_aware_constraint_authoring_and_source_selection()
     assert "constraints/sources/{path}" not in source
 
 
-def test_bundle_exposes_pack_inventory_readiness_content_and_confirmed_install() -> None:
+def test_bundle_exposes_pack_inventory_content_and_confirmed_skill_actions() -> None:
     source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
 
     required_strings = (
@@ -196,18 +197,25 @@ def test_bundle_exposes_pack_inventory_readiness_content_and_confirmed_install()
         "Packs",
         "Validate",
         "Check readiness",
-        "Preview installation",
+        "Install all",
+        "Enable all",
+        "Disable all",
+        "Install skill",
+        "Enable skill",
+        "Disable skill",
         "installed SKILL.md",
-        "not installed · installation required",
-        "Install target ",
-        "Install this pack before starting a workflow or viewing its SKILL.md.",
+        "not installed",
+        "disabled",
+        "View source",
         "Loaded installation details.",
         "content_origin",
+        "source_url",
+        "enabled",
         "expected ",
         "observed ",
-        "Bundled adapter · check only",
-        "I confirm these exact external skill installations",
-        "Install external skills",
+        "I confirm this exact pack skill action",
+        '"/skills/action/preview"',
+        '"/skills/action"',
     )
     for text in required_strings:
         assert text in source, f"missing pack UI contract text: {text}"

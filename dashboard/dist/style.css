@@ -527,6 +527,21 @@
   gap: 0.5rem;
 }
 
+.daidala-source-link {
+  padding: 0.45rem 0.65rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  color: var(--daidala-accent);
+  font: inherit;
+  text-decoration: none;
+}
+
+.daidala-source-link:hover,
+.daidala-source-link:focus-visible {
+  outline: 2px solid var(--daidala-accent);
+  outline-offset: 2px;
+}
+
 .daidala-config button,
 .daidala-pack button {
   padding: 0.45rem 0.65rem;

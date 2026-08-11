@@ -105,10 +105,12 @@ from daidala.initialization import (
 from daidala.locations import resolve_data_root
 from daidala.pack_service import (
     MAX_SKILL_DOCUMENT_BYTES,
+    PackActionError,
     PackConfirmationError,
     PackInstallError,
     PackService,
     PackServiceError,
+    SkillAction,
     StalePackPreviewError,
     UnknownPackSkillError,
 )
@@ -253,6 +255,7 @@ def health() -> dict[str, Any]:
         "bounded_mutations": [
             "initialization",
             "pack_install",
+            "pack_skill_availability",
             "workflow_setup",
             "constraints_replace",
             "workflow_approve",
@@ -846,6 +849,31 @@ def checkouts_policy_apply(payload: dict[str, Any]) -> dict[str, Any]:
         raise HTTPException(status_code=409, detail=str(error)) from error
 
 
+def _pack_skill_action_request(
+    payload: dict[str, Any], *, apply: bool
+) -> tuple[SkillAction, str | None]:
+    required = {"action", "preview_digest", "confirm"} if apply else {"action"}
+    allowed = required | {"skill"}
+    if not required.issubset(payload) or not set(payload).issubset(allowed):
+        raise HTTPException(status_code=400, detail="exact pack skill action fields are required")
+    if apply and payload.get("confirm") is not True:
+        raise HTTPException(status_code=400, detail="explicit confirmation is required")
+    if apply and not _is_sha256(payload.get("preview_digest")):
+        raise HTTPException(status_code=400, detail="valid preview_digest is required")
+    try:
+        action = SkillAction(payload.get("action"))
+    except (TypeError, ValueError) as error:
+        raise HTTPException(
+            status_code=400, detail="action must be install, enable, or disable"
+        ) from error
+    skill_name = payload.get("skill")
+    if skill_name is not None and (
+        not isinstance(skill_name, str) or not skill_name.strip()
+    ):
+        raise HTTPException(status_code=400, detail="skill must be a non-empty string")
+    return action, skill_name.strip() if skill_name is not None else None
+
+
 @router.get("/packs")
 def packs() -> dict[str, Any]:
     """List bundled packs with their validated six-stage declarations."""
@@ -915,6 +943,48 @@ def pack_install(pack_name: str, payload: dict[str, Any]) -> dict[str, Any]:
     except StalePackPreviewError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
     except (PackInstallError, PackError, PackServiceError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@router.post("/packs/{pack_name}/skills/action/preview")
+def pack_skill_action_preview(
+    pack_name: str, payload: dict[str, Any]
+) -> dict[str, Any]:
+    """Preview one individual or pack-wide install/enable/disable action."""
+
+    action, skill_name = _pack_skill_action_request(payload, apply=False)
+    try:
+        return pack_service_factory().preview_action(
+            pack_name, action, skill_name=skill_name
+        ).to_dict()
+    except UnknownPackSkillError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except (PackActionError, PackError, PackServiceError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@router.post("/packs/{pack_name}/skills/action")
+def pack_skill_action_apply(
+    pack_name: str, payload: dict[str, Any]
+) -> dict[str, Any]:
+    """Apply one exact freshly previewed pack skill action."""
+
+    action, skill_name = _pack_skill_action_request(payload, apply=True)
+    try:
+        return pack_service_factory().apply_action(
+            pack_name,
+            action,
+            skill_name=skill_name,
+            expected_preview_digest=payload["preview_digest"],
+            confirm=True,
+        ).to_dict()
+    except PackConfirmationError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except UnknownPackSkillError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except StalePackPreviewError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    except (PackActionError, PackError, PackServiceError) as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
 
 

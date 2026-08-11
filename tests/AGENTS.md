@@ -57,9 +57,11 @@ completeness without touching a real Hermes profile.
 - Fake-inventory tests for exact external-skill prerequisites and host errors.
 - Fake command/registry tests for dry-run installation, pinned revisions, content digests, post-apply verification, and refused recursive installation.
 - Pack-service and dashboard-route tests prove declared-skill-only bounded
-  installed/bundled content, explicit unavailable state for uninstalled external
-  skills, validation/check parity, canonical preview identity, stale-preview
-  rejection, literal confirmation, and post-install verification.
+  installed/bundled content, exact source links, explicit unavailable state for
+  uninstalled external skills, host-qualified enabled state, atomic profile-config
+  persistence, validation/check parity, individual and pack-wide canonical action
+  previews, stale-preview rejection, literal confirmation, and post-action
+  verification.
 - Dashboard review-route, GitHub Project link, and asset tests prove path-free exact evidence,
   server-derived attended identity, literal diff rendering, preview/apply parity,
   single-ledger plan/review snapshot binding, stale or unchecked rejection, and

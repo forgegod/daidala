@@ -59,11 +59,19 @@ Installation is also dry-run by default. Review every proposed `hermes skills
 install` command before using `--apply`. Recursive installation is refused by
 the verified Hermes baseline.
 
-In the dashboard, Config → Packs renders bounded literal `SKILL.md` text only for
-bundled or installed skills. Uninstalled Addyosmani skills are labeled
-`installation required` with their exact install targets. Start workflow keeps
-the pack selectable for inspection but disables preview/start until its readiness
-state is `ready`.
+In the dashboard, **Config → Packs** renders bounded literal `SKILL.md` text only
+for bundled or installed skills. Select a declaration to open its exact source
+link and use its applicable **Install skill**, **Enable skill**, or **Disable
+skill** action. **Install all**, **Enable all**, and **Disable all** target every
+applicable declared skill in the pack. Review the affected names and preview
+digest, tick the confirmation box, then apply; Daidala rejects stale previews and
+verifies installation, content digest, or enabled state afterward. Disable is a
+reversible update to `skills.disabled` for the active profile, not an uninstall.
+
+Uninstalled Addyosmani skills remain labeled `installation required` with their
+exact install targets. Installed but disabled skills are also not ready. Start
+workflow keeps the pack selectable for inspection but disables preview/start
+until its readiness state is `ready`.
 
 ## Start and resume a workflow
 

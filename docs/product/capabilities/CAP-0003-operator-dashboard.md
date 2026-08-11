@@ -13,7 +13,14 @@ An authenticated operator can inspect workflow state and evidence, perform bound
 - Start workflow lists every bundled pack with its readiness state, links repository registration to path-safe operator guidance, and disables primary views that cannot preserve the open browser draft.
 - Approval, review disposition, card remediation, cancellation, setup, and curator mutations use preview/confirm or exact-identity requests; the server derives authoritative workflow, board, repository, and worktree facts.
 - Artifact views expose ledger-bound metadata, bounded literal text, digest-verified downloads, and closed curator actions without accepting filesystem paths.
-- Config → Packs renders bounded literal skill text only for bundled or installed skills and identifies uninstalled external skills with their exact install targets. Start workflow keeps packs selectable for inspection while naming installation-required, blocked, and unavailable readiness states explicitly.
+- Config → Packs renders bounded literal skill text only for bundled or installed
+  skills, identifies uninstalled external skills with their exact install targets,
+  links every declaration to its source, and shows installed and enabled state.
+  Individual and pack-wide install, enable, and disable actions require a fresh
+  digest-bound preview plus explicit confirmation. Disable updates the active
+  profile's Hermes availability state without removing shared skill content.
+  Start workflow keeps packs selectable for inspection while naming
+  installation-required, blocked, and unavailable readiness states explicitly.
 - The dashboard includes explicit loading, empty, unavailable, validation, and destructive-confirmation states and uses the host Hermes theme and authenticated SDK boundaries.
 
 ## Evidence

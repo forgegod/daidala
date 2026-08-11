@@ -939,6 +939,31 @@ def test_pack_routes_use_one_typed_service_projection() -> None:
             calls.append(("install", name, expected_preview_digest, confirm))
             return Result({"success": True})
 
+        def preview_action(self, name: str, action: object, *, skill_name=None) -> Result:
+            calls.append(("preview_action", name, str(action), skill_name))
+            return Result({"action": str(action), "skills": [skill_name] if skill_name else []})
+
+        def apply_action(
+            self,
+            name: str,
+            action: object,
+            *,
+            skill_name=None,
+            expected_preview_digest: str,
+            confirm: bool,
+        ) -> Result:
+            calls.append(
+                (
+                    "apply_action",
+                    name,
+                    str(action),
+                    skill_name,
+                    expected_preview_digest,
+                    confirm,
+                )
+            )
+            return Result({"success": True, "affected": [skill_name] if skill_name else []})
+
     api.__dict__["pack_service_factory"] = PackService
 
     assert [row["name"] for row in api.packs()["packs"]] == ["addyosmani", "aidlc"]
@@ -950,6 +975,49 @@ def test_pack_routes_use_one_typed_service_projection() -> None:
         "addyosmani", {"preview_digest": "a" * 64, "confirm": True}
     ) == {"success": True}
     assert ("install", "addyosmani", "a" * 64, True) in calls
+    assert api.pack_skill_action_preview(
+        "aidlc", {"action": "disable", "skill": "aidlc-adapter"}
+    )["skills"] == ["aidlc-adapter"]
+    assert api.pack_skill_action_apply(
+        "aidlc",
+        {
+            "action": "enable",
+            "skill": "aidlc-adapter",
+            "preview_digest": "b" * 64,
+            "confirm": True,
+        },
+    ) == {"success": True, "affected": ["aidlc-adapter"]}
+    assert (
+        "apply_action",
+        "aidlc",
+        "enable",
+        "aidlc-adapter",
+        "b" * 64,
+        True,
+    ) in calls
+
+
+def test_pack_skill_action_routes_reject_unknown_fields_and_unconfirmed_apply() -> None:
+    api = load_api()
+    calls = 0
+
+    def pack_service_factory() -> object:
+        nonlocal calls
+        calls += 1
+        return object()
+
+    api.__dict__["pack_service_factory"] = pack_service_factory
+
+    with pytest.raises(FakeHTTPException) as unknown:
+        api.pack_skill_action_preview("aidlc", {"action": "enable", "unexpected": True})
+    assert unknown.value.status_code == 400
+
+    with pytest.raises(FakeHTTPException) as unconfirmed:
+        api.pack_skill_action_apply(
+            "aidlc", {"action": "disable", "preview_digest": "a" * 64}
+        )
+    assert unconfirmed.value.status_code == 400
+    assert calls == 0
 
 
 def test_unconfirmed_pack_install_does_not_construct_service() -> None:

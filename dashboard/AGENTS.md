@@ -38,8 +38,8 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   the repository-root directory entry point.
 - Initialize the process-local dashboard service exactly once under concurrent
   first requests; route threads must not race SQLite schema initialization.
-- Workflow polling is read-only. Mutations are limited to confirmed external
-  pack-skill installation, board creation, confirmed setup, and compare-and-swap
+- Workflow polling is read-only. Mutations are limited to confirmed declared
+  pack-skill install/enable/disable actions, board creation, confirmed setup, and compare-and-swap
   constraint replacement, plus exact current-plan approval through
   `POST /workflows/{workflow_id}/approve`, exact attended review disposition
   through `POST /workflows/{workflow_id}/review-disposition`, confirmed
@@ -94,8 +94,10 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
 - Pack routes accept only bundled pack names and declared skill names. Content is
   literal, path-free, and bounded to 1 MiB. Config → Packs renders `SKILL.md`
   content only for bundled or installed skills; uninstalled external skills show
-  their installation requirement and exact install target. Install apply requires
-  a fresh matching preview digest and literal confirmation.
+  their installation requirement, exact install target, and pinned source link.
+  Individual and pack-wide install, enable, and disable apply require a fresh
+  matching action preview digest, literal confirmation, and post-action
+  verification. Disable is never presented as uninstall or deletion.
 - Preview and declined setup must not mutate; start requires a literal checked confirmation.
 - Wizard inventory derives the mounted controller profile from Hermes' documented
   profile inventory and exposes only registrations bound to that profile. The

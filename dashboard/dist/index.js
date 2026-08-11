@@ -262,17 +262,25 @@
     return postJson(API_BASE + "/packs/" + encodeURIComponent(packName) + "/check", {});
   }
 
-  function previewPackInstall(packName) {
+  function previewPackSkillAction(packName, action, skillName) {
+    var payload = { action: action };
+    if (skillName) payload.skill = skillName;
     return postJson(
-      API_BASE + "/packs/" + encodeURIComponent(packName) + "/install/preview",
-      {}
+      API_BASE + "/packs/" + encodeURIComponent(packName) + "/skills/action/preview",
+      payload
     );
   }
 
-  function installPack(packName, previewDigest) {
+  function applyPackSkillAction(packName, preview) {
+    var payload = {
+      action: preview.action,
+      preview_digest: preview.preview_digest,
+      confirm: true
+    };
+    if (preview.skill_name) payload.skill = preview.skill_name;
     return postJson(
-      API_BASE + "/packs/" + encodeURIComponent(packName) + "/install",
-      { preview_digest: previewDigest, confirm: true }
+      API_BASE + "/packs/" + encodeURIComponent(packName) + "/skills/action",
+      payload
     );
   }
 
@@ -2566,6 +2574,39 @@
     var hasExternal = pack.stages.some(function (stage) {
       return stage.skills.some(function (skill) { return skill.external; });
     });
+    var uniqueSkills = [];
+    var seenSkills = {};
+    stages.forEach(function (stage) {
+      stage.skills.forEach(function (skill) {
+        if (!seenSkills[skill.name]) {
+          seenSkills[skill.name] = true;
+          uniqueSkills.push(skill);
+        }
+      });
+    });
+    var missingCount = check ? uniqueSkills.filter(function (skill) {
+      return skill.external && !skill.installed;
+    }).length : 0;
+    var disabledCount = check ? uniqueSkills.filter(function (skill) {
+      return skill.installed && skill.enabled === false;
+    }).length : 0;
+    var enabledCount = check ? uniqueSkills.filter(function (skill) {
+      return skill.installed && skill.enabled === true;
+    }).length : 0;
+    var documentAction = null;
+    var documentActionLabel = null;
+    if (documentView) {
+      if (!documentView.installed && documentView.external) {
+        documentAction = "install";
+        documentActionLabel = "Install skill";
+      } else if (documentView.installed && documentView.enabled === false) {
+        documentAction = "enable";
+        documentActionLabel = "Enable skill";
+      } else if (documentView.installed && documentView.enabled === true) {
+        documentAction = "disable";
+        documentActionLabel = "Disable skill";
+      }
+    }
     var status = !check
       ? busy
         ? "Checking readiness"
@@ -2614,25 +2655,41 @@
 
     function runCheck() {
       run(function () { return checkPack(pack.name); }, "Readiness check complete.")
-        .then(function (value) { setCheck(value); setPreview(null); setConfirmed(false); })
+        .then(function (value) {
+          setCheck(value);
+          setPreview(null);
+          setDocumentView(null);
+          setConfirmed(false);
+        })
         .catch(function () {});
     }
 
-    function runPreview() {
-      run(function () { return previewPackInstall(pack.name); }, "Installation preview ready.")
-        .then(function (value) { setCheck(value); setPreview(value); setConfirmed(false); })
-        .catch(function () {});
-    }
-
-    function runInstall() {
+    function runActionPreview(action, skillName) {
       run(
-        function () { return installPack(pack.name, preview.preview_digest); },
-        "External skills installed and verified."
+        function () { return previewPackSkillAction(pack.name, action, skillName); },
+        "Pack skill action preview ready."
+      )
+        .then(function (value) {
+          setCheck(value.pack);
+          setPreview(value);
+          setConfirmed(false);
+        })
+        .catch(function () {});
+    }
+
+    function runActionApply() {
+      run(
+        function () { return applyPackSkillAction(pack.name, preview); },
+        "Pack skill action applied and verified."
       )
         .then(function (value) {
           setCheck(value.pack);
           setPreview(null);
           setConfirmed(false);
+          if (documentView && value.affected.indexOf(documentView.skill) !== -1) {
+            return buildPackSkillContent(pack.name, documentView.skill).then(setDocumentView);
+          }
+          return null;
         })
         .catch(function () {});
     }
@@ -2677,8 +2734,22 @@
         createElement("button", { type: "button", disabled: busy, onClick: runValidation }, "Validate"),
         createElement("button", { type: "button", disabled: busy, onClick: runCheck }, "Check readiness"),
         hasExternal
-          ? createElement("button", { type: "button", disabled: busy, onClick: runPreview }, "Preview installation")
-          : createElement("span", { className: "daidala-workflow-meta" }, "Bundled adapter · check only")
+          ? createElement("button", {
+              type: "button",
+              disabled: busy || !check || missingCount === 0,
+              onClick: function () { runActionPreview("install", null); }
+            }, "Install all" + (check ? " (" + missingCount + ")" : ""))
+          : null,
+        createElement("button", {
+          type: "button",
+          disabled: busy || !check || disabledCount === 0,
+          onClick: function () { runActionPreview("enable", null); }
+        }, "Enable all" + (check ? " (" + disabledCount + ")" : "")),
+        createElement("button", {
+          type: "button",
+          disabled: busy || !check || enabledCount === 0,
+          onClick: function () { runActionPreview("disable", null); }
+        }, "Disable all" + (check ? " (" + enabledCount + ")" : ""))
       ),
       createElement(
         "div",
@@ -2694,12 +2765,12 @@
               stage.skills.map(function (skill) {
                 var readiness = !check
                   ? "installation status not checked"
-                  : skill.bundled
-                    ? "bundled · ready"
-                    : !skill.installed
-                      ? "not installed · installation required"
+                  : !skill.installed
+                    ? "not installed"
+                    : skill.enabled === false
+                      ? (skill.bundled ? "bundled · disabled" : "installed · disabled")
                       : skill.ready
-                        ? "installed · ready"
+                        ? (skill.bundled ? "bundled · ready" : "installed · ready")
                         : "installed · digest mismatch";
                 return createElement(
                   "li",
@@ -2716,12 +2787,7 @@
                     createElement("span", { className: "daidala-skill-digest" },
                       "expected " + skill.expected_digest +
                       (skill.observed_digest ? " · observed " + skill.observed_digest : " · observed unavailable")
-                    ),
-                    skill.external
-                      ? createElement("span", { className: "daidala-skill-meta" },
-                          "Install target " + skill.install_target
-                        )
-                      : null
+                    )
                   )
                 );
               })
@@ -2744,8 +2810,26 @@
             )),
             createElement("p", { className: "daidala-workflow-meta" },
               documentView.available
-                ? String(documentView.byte_size) + " UTF-8 bytes"
+                ? String(documentView.byte_size) + " UTF-8 bytes · " +
+                  (documentView.enabled === false ? "disabled" : "enabled")
                 : documentView.unavailable_reason
+            ),
+            createElement("div", { className: "daidala-pack-actions" },
+              createElement("a", {
+                href: documentView.source_url,
+                target: "_blank",
+                rel: "noreferrer",
+                className: "daidala-source-link"
+              }, "View source"),
+              documentAction
+                ? createElement("button", {
+                    type: "button",
+                    disabled: busy,
+                    onClick: function () {
+                      runActionPreview(documentAction, documentView.skill);
+                    }
+                  }, documentActionLabel)
+                : null
             ),
             documentView.available
               ? createElement("pre", null, documentView.content)
@@ -2753,11 +2837,10 @@
                   createElement("p", null,
                     documentView.installed
                       ? "The installed SKILL.md could not be loaded."
-                      : "Install this pack before starting a workflow or viewing its SKILL.md."
+                      : "Use Install skill above to make this skill available."
                   ),
                   createElement("p", { className: "daidala-skill-digest" },
-                    "Install target " + (documentView.install_target || "bundled") +
-                    " · expected digest " + documentView.expected_digest
+                    "Expected digest " + documentView.expected_digest
                   )
                 )
           )
@@ -2766,38 +2849,40 @@
         ? createElement(
             "section",
             { className: "daidala-pack-preview", "data-testid": "daidala-pack-preview" },
-            createElement("h4", null, "External skill installation preview"),
+            createElement("h4", null, "Pack skill action preview"),
+            createElement("p", null,
+              "Action: " + preview.action +
+              (preview.skill_name ? " · skill: " + preview.skill_name : " · all applicable skills")
+            ),
             createElement("p", { className: "daidala-skill-digest" },
               "Preview digest " + preview.preview_digest
             ),
-            preview.actions.length
-              ? createElement("ul", null, preview.actions.map(function (action) {
-                  return createElement("li", { key: action.name },
-                    action.name + " ← " + action.install_target
-                  );
+            preview.skills.length
+              ? createElement("ul", null, preview.skills.map(function (skill) {
+                  return createElement("li", { key: skill }, skill);
                 }))
-              : createElement("p", null, "No external installation actions are required."),
+              : createElement("p", null, "No skills currently require this action."),
             preview.blockers.length
               ? createElement("p", { className: "daidala-banner daidala-banner-error" },
                   preview.blockers.join("; ")
                 )
               : null,
-            preview.actions.length && preview.installable
+            preview.applicable
               ? createElement("label", { className: "daidala-pack-confirm" },
                   createElement("input", {
                     type: "checkbox",
                     checked: confirmed,
                     onChange: function (event) { setConfirmed(event.target.checked); }
                   }),
-                  "I confirm these exact external skill installations"
+                  "I confirm this exact pack skill action"
                 )
               : null,
-            preview.actions.length && preview.installable
+            preview.applicable
               ? createElement("button", {
                   type: "button",
                   disabled: busy || !confirmed,
-                  onClick: runInstall
-                }, "Install external skills")
+                  onClick: runActionApply
+                }, "Apply " + preview.action)
               : null
           )
         : null,
