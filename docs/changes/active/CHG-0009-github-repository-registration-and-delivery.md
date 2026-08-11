@@ -91,7 +91,7 @@ The approved preparation is deliberately narrower than a content migration: the 
 | Phase | Status | Verification gate |
 |---|---|---|
 | Wireframe generator preparation | done (`node docs/product/wireframes/generate.mjs --render`; CAP-0003 outputs byte-identical) | The generator supports multiple current CAP entries without creating planned entries. |
-| Approval boundary | pending | Direct operator approval of this CHG scope, Hermes secret-source/profile-aliasing approach, review wireframes, and branch-only delivery rule. |
+| Approval boundary | done (direct operator approval: "Approve CHG-0009") | Direct operator approval of this CHG scope, Hermes secret-source/profile-aliasing approach, review wireframes, and branch-only delivery rule. |
 | Repository registration vertical slice | pending | Focused URL/manifest/registration CLI and dashboard tests; generated CAP-0004 wireframe; `python scripts/check_records.py .`; `python scripts/check_md_links.py .`. |
 | Delivery authority and branch publish vertical slice | pending | Focused credential-boundary, preview/apply, branch-only Git, retry, and dashboard-state tests; generated CAP-0005 wireframe; full affected repository gate. |
 | Closeout | pending | Current CAPs, architecture/security/setup documentation, CHG evidence, full repository gate, and human review are complete before archival. |
@@ -112,6 +112,7 @@ The approved preparation is deliberately narrower than a content migration: the 
 
 ## Evidence
 
+- Direct operator approval: "Approve CHG-0009". This authorizes implementation of the approved registration, secret-source/profile-aliasing, review-wireframe, and branch-only delivery scope; it does not bypass phase gates or attended delivery confirmation.
 - Review-only design package: [`design.md`](CHG-0009-github-repository-registration-and-delivery/design.md), its [Pencil source](CHG-0009-github-repository-registration-and-delivery/wireframes/repository-registration-and-delivery.pen), and native [registration](CHG-0009-github-repository-registration-and-delivery/wireframes/exports/repository-registration.png) and [delivery](CHG-0009-github-repository-registration-and-delivery/wireframes/exports/delivery-authority.png) PNGs. It is not a CAP-linked current-product wireframe and grants no runtime authority.
 - Existing contract evidence: [`docs/16-self-improvement-setup.md`](../../16-self-improvement-setup.md) documents explicit environment bindings; [`docs/01-architecture.md`](../../01-architecture.md) and [`docs/06-security.md`](../../06-security.md) retain the current no-commit/no-push policy. Hermes secret-source behavior is governed by the [official Secrets guide](https://hermes-agent.nousresearch.com/docs/user-guide/secrets/).
 - The review screens were compared with the locally running [Daidala Config view](http://127.0.0.1:9119/daidala?view=config) and preserve the complete Hermes shell and Daidala Config navigation from the historical review source. The local view is visual-reference evidence only; it confers no implementation authority.
