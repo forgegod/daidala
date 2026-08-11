@@ -46,6 +46,9 @@ Own dependency-free development and repository verification utilities.
   Twine and release-content checks, complete host identity tuples, fresh probe
   homes, exact core skill/Kanban/worker-context evidence, zero admission mutation
   commands, and literal-confirmation plus preview-mutation evidence.
+- Release-content repository scans inspect tracked files that still exist in the
+  working tree; intentional tracked deletions are verified through the built wheel
+  rather than treated as unreadable-file failures.
 - Ignore generated, virtual-environment, VCS, and cache directories.
 - Markdown checking supports fenced and indented code exclusion, UTF-8 BOMs,
   headings indented by up to three spaces, duplicate/custom anchors, reference

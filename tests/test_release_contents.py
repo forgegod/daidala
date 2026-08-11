@@ -41,6 +41,18 @@ def test_release_checker_accepts_clean_repository_and_wheel(tmp_path: Path) -> N
     assert "1 tracked file(s), 1 wheel member(s)" in result.stdout
 
 
+def test_release_checker_skips_tracked_files_deleted_from_worktree(tmp_path: Path) -> None:
+    root = tmp_path / "repository"
+    root.mkdir()
+    initialize_repository(root, {"obsolete.txt": b"removed release content\n"})
+    (root / "obsolete.txt").unlink()
+
+    result = run_checker(root)
+
+    assert result.returncode == 0, result.stderr
+    assert "0 tracked file(s)" in result.stdout
+
+
 def test_release_checker_rejects_runtime_state_and_secret_signatures(tmp_path: Path) -> None:
     root = tmp_path / "repository"
     root.mkdir()

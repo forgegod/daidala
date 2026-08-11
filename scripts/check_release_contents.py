@@ -34,7 +34,8 @@ def tracked_files(root: Path) -> list[Path]:
     )
     if result.returncode != 0:
         raise RuntimeError(result.stderr.decode(errors="replace").strip() or "git ls-files failed")
-    return [root / item.decode() for item in result.stdout.split(b"\0") if item]
+    paths = [root / item.decode() for item in result.stdout.split(b"\0") if item]
+    return [path for path in paths if path.is_file()]
 
 
 def check_payload(name: str, payload: bytes) -> list[str]:
