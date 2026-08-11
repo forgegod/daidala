@@ -321,13 +321,9 @@ class PackService:
         else:
             content = None
         if content is None and first.is_external:
-            content = _packaged_skill_document(pack.name, skill_name)
-            if content is None:
-                unavailable_reason = (
-                    "skill document is unavailable" if installed else "skill is not installed"
-                )
-            else:
-                content_origin = "pinned-source"
+            unavailable_reason = (
+                "skill document is unavailable" if installed else "skill is not installed"
+            )
         byte_size = len(content.encode("utf-8")) if content is not None else None
         if byte_size is not None and byte_size > MAX_SKILL_DOCUMENT_BYTES:
             content = None
@@ -388,20 +384,6 @@ class PackService:
             executed=tuple(executed),
             pack=verified,
         )
-
-
-def _packaged_skill_document(pack_name: str, skill_name: str) -> str | None:
-    resource = resources.files(__package__).joinpath(
-        "pack_skill_docs", pack_name, skill_name, "SKILL.md"
-    )
-    if not resource.is_file():
-        return None
-    try:
-        return resource.read_text(encoding="utf-8")
-    except (OSError, UnicodeError) as error:
-        raise PackServiceError("packaged skill document is unavailable") from error
-
-
 def _validation(pack: WorkflowPack) -> PackValidation:
     digests = dict(pack_skill_digests(pack))
     stages = tuple(

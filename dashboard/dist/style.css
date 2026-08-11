@@ -510,7 +510,7 @@
   color: var(--daidala-ok);
 }
 
-.daidala-pack-status.is-installation-available {
+.daidala-pack-status.is-installation-required {
   border-color: var(--daidala-warning);
   color: var(--daidala-warning);
 }

@@ -127,21 +127,7 @@ def test_wheel_contains_plugin_resources_and_module_entrypoint(tmp_path: Path) -
         assert "daidala/packs/aidlc.yaml" in names
         assert "daidala/skills/aidlc-adapter/SKILL.md" in names
         assert "daidala/skills/aidlc-adapter/references/LICENSE-AIDLC.txt" in names
-        assert "daidala/pack_skill_docs/addyosmani/interview-me/SKILL.md" in names
-        assert "daidala/pack_skill_docs/addyosmani/LICENSE" in names
-        source_snapshots = {
-            path.parent.name
-            for path in (REPOSITORY / "daidala" / "pack_skill_docs" / "addyosmani").glob(
-                "*/SKILL.md"
-            )
-        }
-        wheel_snapshots = {
-            Path(name).parent.name
-            for name in names
-            if name.startswith("daidala/pack_skill_docs/addyosmani/")
-            and name.endswith("/SKILL.md")
-        }
-        assert wheel_snapshots == source_snapshots
+        assert not any(name.startswith("daidala/pack_skill_docs/") for name in names)
         assert "daidala/skills/orchestrate/SKILL.md" in names
         assert "daidala/skills/setup/SKILL.md" in names
         assert not any(

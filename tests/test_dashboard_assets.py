@@ -198,9 +198,11 @@ def test_bundle_exposes_pack_inventory_readiness_content_and_confirmed_install()
         "Check readiness",
         "Preview installation",
         "installed SKILL.md",
-        "pinned source SKILL.md",
+        "not installed · installation required",
+        "Install target ",
+        "Install this pack before starting a workflow or viewing its SKILL.md.",
+        "Loaded installation details.",
         "content_origin",
-        "source revision",
         "expected ",
         "observed ",
         "Bundled adapter · check only",
@@ -213,6 +215,8 @@ def test_bundle_exposes_pack_inventory_readiness_content_and_confirmed_install()
     assert 'data-testid": "daidala-pack"' in source
     assert 'data-testid": "daidala-skill-content"' in source
     assert 'data-testid": "daidala-pack-preview"' in source
+    assert "pinned source SKILL.md" not in source
+    assert '"pinned-source"' not in source
     assert '"/dispatch"' not in source.lower()
     assert "dispatch_tool" not in source.lower()
 
@@ -379,8 +383,11 @@ def test_bundle_exposes_the_closed_inventory_backed_start_workflow_wizard() -> N
     assert 'data-testid": "daidala-start-workflow"' in source
     assert 'data-testid": "daidala-start-readiness"' in source
     assert "inventory.pack_options" in source
-    assert 'status: "not checked"' in source
-    assert 'result.ready ? "ready" : "blocked"' in source
+    assert 'status: "readiness unavailable"' in source
+    assert '"installation required"' in source
+    assert "result && result.ready" in source
+    assert "actions.length" in source
+    assert "requires external skill installation before a workflow can start" in source
     assert "ready_packs" not in source
     assert "localStorage" in source
     assert '"target_repository"' not in source

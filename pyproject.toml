@@ -41,9 +41,6 @@ include = ["daidala*", "dashboard*"]
 [tool.setuptools.package-data]
 daidala = [
   "packs/*.yaml",
-  "pack_skill_docs/*/*/SKILL.md",
-  "pack_skill_docs/*/LICENSE",
-  "pack_skill_docs/*/SOURCE.md",
   "skills/*/SKILL.md",
   "skills/*/references/*",
 ]

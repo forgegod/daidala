@@ -282,9 +282,17 @@
       return Promise.all(packs.map(function (name) {
         return checkPack(name)
           .then(function (result) {
-            return { name: name, status: result && result.ready ? "ready" : "blocked" };
+            var actions = result && Array.isArray(result.actions) ? result.actions : [];
+            return {
+              name: name,
+              status: result && result.ready
+                ? "ready"
+                : actions.length
+                  ? "installation required"
+                  : "blocked"
+            };
           })
-          .catch(function () { return { name: name, status: "not checked" }; });
+          .catch(function () { return { name: name, status: "readiness unavailable" }; });
       })).then(function (packOptions) {
         inventory.pack_options = packOptions;
         return inventory;
@@ -2559,12 +2567,30 @@
       return stage.skills.some(function (skill) { return skill.external; });
     });
     var status = !check
-      ? "Not checked"
+      ? busy
+        ? "Checking readiness"
+        : "Not checked"
       : check.ready
         ? "Ready"
         : check.installable && check.actions.length > 0
-          ? "Installation available"
+          ? "Installation required"
           : "Blocked";
+
+    useEffect(function () {
+      var cancelled = false;
+      setBusy(true);
+      checkPack(pack.name)
+        .then(function (value) {
+          if (!cancelled) setCheck(value);
+        })
+        .catch(function (caught) {
+          if (!cancelled) setMessage("Readiness check unavailable: " + caught.message);
+        })
+        .finally(function () {
+          if (!cancelled) setBusy(false);
+        });
+      return function () { cancelled = true; };
+    }, [pack.name]);
 
     function run(action, successMessage) {
       setBusy(true);
@@ -2614,9 +2640,15 @@
     function loadContent(skillName) {
       run(
         function () { return buildPackSkillContent(pack.name, skillName); },
-        "Loaded exact declared skill content."
+        null
       )
-        .then(setDocumentView)
+        .then(function (value) {
+          setDocumentView(value);
+          setMessage(value.available
+            ? "Loaded exact declared skill content."
+            : "Loaded installation details."
+          );
+        })
         .catch(function () {});
     }
 
@@ -2660,7 +2692,15 @@
               "ul",
               null,
               stage.skills.map(function (skill) {
-                var readiness = !check ? "not checked" : skill.ready ? "ready" : "not ready";
+                var readiness = !check
+                  ? "installation status not checked"
+                  : skill.bundled
+                    ? "bundled · ready"
+                    : !skill.installed
+                      ? "not installed · installation required"
+                      : skill.ready
+                        ? "installed · ready"
+                        : "installed · digest mismatch";
                 return createElement(
                   "li",
                   { key: skill.name },
@@ -2671,12 +2711,17 @@
                   },
                     createElement("span", { className: "daidala-skill-name" }, skill.name),
                     createElement("span", { className: "daidala-skill-meta" },
-                      skill.activation + " · " + (skill.external ? "external" : "bundled") + " · " + readiness
+                      skill.activation + " · " + readiness
                     ),
                     createElement("span", { className: "daidala-skill-digest" },
                       "expected " + skill.expected_digest +
                       (skill.observed_digest ? " · observed " + skill.observed_digest : " · observed unavailable")
-                    )
+                    ),
+                    skill.external
+                      ? createElement("span", { className: "daidala-skill-meta" },
+                          "Install target " + skill.install_target
+                        )
+                      : null
                   )
                 );
               })
@@ -2689,26 +2734,31 @@
             "section",
             { className: "daidala-skill-document", "data-testid": "daidala-skill-content" },
             createElement("h4", null, documentView.skill + " · " + (
-              documentView.content_origin === "pinned-source"
-                ? "pinned source SKILL.md"
-                : documentView.content_origin === "bundled"
+              documentView.available
+                ? documentView.content_origin === "bundled"
                   ? "bundled SKILL.md"
                   : "installed SKILL.md"
+                : documentView.installed
+                  ? "installed SKILL.md unavailable"
+                  : "not installed"
             )),
             createElement("p", { className: "daidala-workflow-meta" },
               documentView.available
-                ? String(documentView.byte_size) + " UTF-8 bytes" + (
-                    documentView.content_origin === "pinned-source"
-                      ? " · source revision " + documentView.source_revision
-                      : ""
-                  )
+                ? String(documentView.byte_size) + " UTF-8 bytes"
                 : documentView.unavailable_reason
             ),
             documentView.available
               ? createElement("pre", null, documentView.content)
-              : createElement("p", null,
-                  "Pinned target: " + (documentView.install_target || "bundled") +
-                  " · expected digest " + documentView.expected_digest
+              : createElement("div", { className: "daidala-banner daidala-banner-warning" },
+                  createElement("p", null,
+                    documentView.installed
+                      ? "The installed SKILL.md could not be loaded."
+                      : "Install this pack before starting a workflow or viewing its SKILL.md."
+                  ),
+                  createElement("p", { className: "daidala-skill-digest" },
+                    "Install target " + (documentView.install_target || "bundled") +
+                    " · expected digest " + documentView.expected_digest
+                  )
                 )
           )
         : null,
@@ -2989,7 +3039,9 @@
     var boards = inventory && Array.isArray(inventory.boards) ? inventory.boards : [];
     var packs = inventory && Array.isArray(inventory.pack_options) ? inventory.pack_options : [];
     var policySources = inventory && Array.isArray(inventory.policy_sources) ? inventory.policy_sources : [];
-    var hasRequest = form.project_id && form.pack && form.board_slug && form.goal.trim() &&
+    var selectedPack = packs.find(function (option) { return option.name === form.pack; }) || null;
+    var hasRequest = selectedPack && selectedPack.status === "ready" &&
+      form.project_id && form.pack && form.board_slug && form.goal.trim() &&
       WIZARD_STAGES.every(function (stage) { return form.stage_profiles[stage]; });
 
     return createElement("section", { className: "daidala-wizard", "data-testid": "daidala-start-workflow" },
@@ -3012,6 +3064,19 @@
             select("Pack · readiness", form.pack, function (value) { change("pack", value); }, packs.map(function (option) { return { value: option.name, label: option.name + " · " + option.status }; })),
             createElement("a", { href: "/daidala?section=packs&return=start-workflow", onClick: function (event) { navigateDashboard(event, "/daidala?section=packs&return=start-workflow"); } }, "Manage packs")
           ),
+          selectedPack ? createElement("p", {
+            className: selectedPack.status === "ready"
+              ? "daidala-banner daidala-banner-success"
+              : "daidala-banner daidala-banner-warning"
+          },
+            selectedPack.status === "ready"
+              ? selectedPack.name + " is installed and ready."
+              : selectedPack.status === "installation required"
+                ? selectedPack.name + " requires external skill installation before a workflow can start. Use Manage packs to review and install them."
+                : selectedPack.status === "readiness unavailable"
+                  ? selectedPack.name + " readiness could not be verified. Use Manage packs to retry the check."
+                  : selectedPack.name + " is blocked. Use Manage packs to inspect the blockers."
+          ) : null,
           createElement("div", { className: "daidala-wizard-section-heading" },
             select("Registered repository", form.project_id, function (value) { change("project_id", value); }, projects.map(function (row) { return { value: row.project_id, label: row.project_id + " · " + row.repository }; })),
             createElement("a", { href: "/daidala?section=runbook&return=start-workflow", onClick: function (event) { navigateDashboard(event, "/daidala?section=runbook&return=start-workflow"); } }, "Register repository")

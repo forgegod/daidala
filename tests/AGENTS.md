@@ -57,8 +57,8 @@ completeness without touching a real Hermes profile.
 - Fake-inventory tests for exact external-skill prerequisites and host errors.
 - Fake command/registry tests for dry-run installation, pinned revisions, content digests, post-apply verification, and refused recursive installation.
 - Pack-service and dashboard-route tests prove declared-skill-only bounded
-  installed/bundled/pinned-source content, validation/check parity, complete
-  external snapshot coverage, canonical preview identity, stale-preview
+  installed/bundled content, explicit unavailable state for uninstalled external
+  skills, validation/check parity, canonical preview identity, stale-preview
   rejection, literal confirmation, and post-install verification.
 - Dashboard review-route, GitHub Project link, and asset tests prove path-free exact evidence,
   server-derived attended identity, literal diff rendering, preview/apply parity,
@@ -210,8 +210,7 @@ completeness without touching a real Hermes profile.
 - Artifact persistence coverage must prove every stage resolves its current
   policy/plan directory and that retries never overwrite or infer historical
   evidence.
-- Every new packaged resource requires a wheel-content assertion; external
-  display snapshots must also prove complete pack-declaration coverage.
+- Every new packaged resource requires a wheel-content assertion.
 
 ## Verification
 
