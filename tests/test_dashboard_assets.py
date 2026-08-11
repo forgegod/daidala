@@ -347,7 +347,9 @@ def test_bundle_exposes_the_closed_inventory_backed_start_workflow_wizard() -> N
         'API_BASE + "/wizard/boards/preview"',
         'API_BASE + "/wizard/boards"',
         "Mounted controller profile",
+        "Pack · readiness",
         "Registered repository",
+        "Register repository",
         "Requested outcome / Prompt",
         "Worker profile default",
         "Advanced workflow settings",
@@ -373,6 +375,10 @@ def test_bundle_exposes_the_closed_inventory_backed_start_workflow_wizard() -> N
 
     assert 'data-testid": "daidala-start-workflow"' in source
     assert 'data-testid": "daidala-start-readiness"' in source
+    assert "inventory.pack_options" in source
+    assert 'status: "not checked"' in source
+    assert 'result.ready ? "ready" : "blocked"' in source
+    assert "ready_packs" not in source
     assert "localStorage" in source
     assert '"target_repository"' not in source
     assert "inventory.policy_sources" in source
@@ -381,11 +387,23 @@ def test_bundle_exposes_the_closed_inventory_backed_start_workflow_wizard() -> N
     assert 'href: "#cron"' not in source
     assert 'href: "#config-constraints"' not in source
     assert "/daidala?section=constraints&return=start-workflow" in source
+    assert "/daidala?section=runbook&return=start-workflow" in source
     assert "window.history.pushState" in source
     assert 'addEventListener("popstate"' in source
     assert "Hermes Cron schedules future admissions only" in source
     assert "existingWorkflowId" in source
     assert "Opened it without creating a second workflow" in source
+
+
+def test_start_workflow_disables_primary_navigation_that_cannot_preserve_the_draft() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    assert 'disabled: starting && view.value !== "workflows"' in source
+    assert 'title: starting && view.value !== "workflows"' in source
+    assert "Finish or close Start workflow before changing views." in source
+    assert ".daidala-primary-nav button:disabled" in (
+        DASHBOARD / "dist" / "style.css"
+    ).read_text(encoding="utf-8")
 
 
 def test_bundle_reopens_a_started_workflow_without_an_incomplete_duplicate() -> None:

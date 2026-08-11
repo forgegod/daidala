@@ -281,10 +281,12 @@
       var packs = inventory && Array.isArray(inventory.packs) ? inventory.packs : [];
       return Promise.all(packs.map(function (name) {
         return checkPack(name)
-          .then(function (result) { return result && result.ready ? name : null; })
-          .catch(function () { return null; });
-      })).then(function (readyPacks) {
-        inventory.ready_packs = readyPacks.filter(Boolean);
+          .then(function (result) {
+            return { name: name, status: result && result.ready ? "ready" : "blocked" };
+          })
+          .catch(function () { return { name: name, status: "not checked" }; });
+      })).then(function (packOptions) {
+        inventory.pack_options = packOptions;
         return inventory;
       });
     });
@@ -1652,6 +1654,7 @@
     var identity = props.health && props.health.identity ? props.health.identity : {};
     var rows = [
       ["Install and enable", "Host-owned CLI", "hermes plugins install forgegod/daidala --enable\nhermes plugins list"],
+      ["Register repository", "Profile-local setup", "Follow docs/16-self-improvement-setup.md section 9. The dashboard does not accept repository paths or credentials."],
       ["Initialize", "Configuration verification", "Open initialization preview"],
       ["Diagnose prerequisites", "Configuration verification", "Run local checks or Run live checks"],
       ["Pack dependencies", "Config → Packs", "Validate, inspect, then explicitly install"],
@@ -2775,7 +2778,8 @@
         } catch (_error) {}
         setForm(function (current) {
           var profiles = Array.isArray(next.profiles) ? next.profiles : [];
-          var readyPacks = Array.isArray(next.ready_packs) ? next.ready_packs : [];
+          var packOptions = Array.isArray(next.pack_options) ? next.pack_options : [];
+          var packNames = packOptions.map(function (option) { return option.name; });
           var projects = Array.isArray(next.projects) ? next.projects : [];
           var boards = Array.isArray(next.boards) ? next.boards : [];
           var worker = profiles.indexOf(saved.worker_default) >= 0
@@ -2791,8 +2795,8 @@
             project_id: projects.some(function (row) {
               return row.project_id === (saved.project_id || current.project_id);
             }) ? (saved.project_id || current.project_id) : "",
-            pack: readyPacks.indexOf(saved.pack || current.pack) >= 0
-              ? (saved.pack || current.pack) : readyPacks[0] || "",
+            pack: packNames.indexOf(saved.pack || current.pack) >= 0
+              ? (saved.pack || current.pack) : packNames[0] || "",
             board_slug: boards.some(function (row) {
               return row.slug === (saved.board_slug || current.board_slug);
             }) ? (saved.board_slug || current.board_slug) : "",
@@ -2973,7 +2977,7 @@
     var profiles = inventory && Array.isArray(inventory.profiles) ? inventory.profiles : [];
     var projects = inventory && Array.isArray(inventory.projects) ? inventory.projects : [];
     var boards = inventory && Array.isArray(inventory.boards) ? inventory.boards : [];
-    var packs = inventory && Array.isArray(inventory.ready_packs) ? inventory.ready_packs : [];
+    var packs = inventory && Array.isArray(inventory.pack_options) ? inventory.pack_options : [];
     var policySources = inventory && Array.isArray(inventory.policy_sources) ? inventory.policy_sources : [];
     var hasRequest = form.project_id && form.pack && form.board_slug && form.goal.trim() &&
       WIZARD_STAGES.every(function (stage) { return form.stage_profiles[stage]; });
@@ -2995,10 +2999,13 @@
             createElement("p", { className: "daidala-workflow-meta" }, inventory.controller_profile || "Unavailable")
           ),
           createElement("div", { className: "daidala-wizard-section-heading" },
-            select("Pack · installed and ready", form.pack, function (value) { change("pack", value); }, packs.map(function (name) { return { value: name, label: name }; })),
+            select("Pack · readiness", form.pack, function (value) { change("pack", value); }, packs.map(function (option) { return { value: option.name, label: option.name + " · " + option.status }; })),
             createElement("a", { href: "/daidala?section=packs&return=start-workflow", onClick: function (event) { navigateDashboard(event, "/daidala?section=packs&return=start-workflow"); } }, "Manage packs")
           ),
-          select("Registered repository", form.project_id, function (value) { change("project_id", value); }, projects.map(function (row) { return { value: row.project_id, label: row.project_id + " · " + row.repository }; })),
+          createElement("div", { className: "daidala-wizard-section-heading" },
+            select("Registered repository", form.project_id, function (value) { change("project_id", value); }, projects.map(function (row) { return { value: row.project_id, label: row.project_id + " · " + row.repository }; })),
+            createElement("a", { href: "/daidala?section=runbook&return=start-workflow", onClick: function (event) { navigateDashboard(event, "/daidala?section=runbook&return=start-workflow"); } }, "Register repository")
+          ),
           createElement("label", { className: "daidala-wizard-field" }, createElement("span", null, "Requested outcome / Prompt"),
             createElement("textarea", { value: form.goal, rows: 3, onChange: function (event) { change("goal", event.target.value); } })
           ),
@@ -3341,6 +3348,10 @@
             return createElement("button", {
               key: view.value,
               type: "button",
+              disabled: starting && view.value !== "workflows",
+              title: starting && view.value !== "workflows"
+                ? "Finish or close Start workflow before changing views."
+                : null,
               className: route.view === view.value ? "is-selected" : "",
               "aria-current": route.view === view.value ? "page" : null,
               onClick: function () {
