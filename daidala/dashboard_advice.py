@@ -22,6 +22,18 @@ class SetupAnalysisUnavailable(SetupAnalysisError):
     """No supported host-model facade was registered for this process."""
 
 
+_ADVICE_TARGETS = (
+    "workflows",
+    "artifacts",
+    "config-packs",
+    "config-github-projects",
+    "config-checkouts",
+    "config-constraints",
+    "config-verification",
+    "config-runbook",
+)
+
+
 _ANALYSIS_SCHEMA: dict[str, object] = {
     "type": "object",
     "additionalProperties": False,
@@ -34,11 +46,11 @@ _ANALYSIS_SCHEMA: dict[str, object] = {
             "items": {
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["screen", "title", "advice"],
+                "required": ["target", "title", "advice"],
                 "properties": {
-                    "screen": {
+                    "target": {
                         "type": "string",
-                        "enum": ["workflows", "artifacts", "config", "runbook"],
+                        "enum": list(_ADVICE_TARGETS),
                     },
                     "title": {"type": "string", "minLength": 1, "maxLength": 100},
                     "advice": {"type": "string", "minLength": 1, "maxLength": 400},
@@ -54,12 +66,14 @@ Do not claim to have inspected files, credentials, artifacts, repositories, or
 Kanban cards. Do not invent status. Do not propose commands, configuration keys,
 or product capabilities that are not explicitly represented in the snapshot.
 Prioritize the next one to three actions that help the operator configure Daidala
-or make an informed workflow decision. A priority screen must be one of the
-provided dashboard screens. This analysis cannot make changes and never replaces
-the dashboard's deterministic workflow recommendations. Treat numeric setup
-requirements as objective facts: a minimum is unmet when observed is lower, and
-a maximum is unmet when observed is higher. Do not call a pack operational when
-it has blocked packs, missing phase skill coverage, or no ready pack."""
+or make an informed workflow decision. A priority target must be one of the
+provided dashboard destinations. Use `config-packs` for blocked workflow packs,
+missing phase skill coverage, and other pack readiness remediation. This analysis
+cannot make changes and never replaces the dashboard's deterministic workflow
+recommendations. Treat numeric setup requirements as objective facts: a minimum
+is unmet when observed is lower, and a maximum is unmet when observed is higher.
+Do not call a pack operational when it has blocked packs, missing phase skill
+coverage, or no ready pack."""
 
 _provider_lock = Lock()
 _provider: Any | None = None
@@ -254,12 +268,12 @@ def _normalize_analysis(value: Any) -> dict[str, object]:
     for priority in priorities_value:
         if not isinstance(priority, Mapping):
             raise SetupAnalysisError("Host model returned invalid advice priorities.")
-        screen = priority.get("screen")
-        if screen not in {"workflows", "artifacts", "config", "runbook"}:
+        target = priority.get("target")
+        if target not in _ADVICE_TARGETS:
             raise SetupAnalysisError("Host model returned an invalid advice target.")
         priorities.append(
             {
-                "screen": screen,
+                "target": target,
                 "title": _bounded_text(priority.get("title"), "priority title", 100),
                 "advice": _bounded_text(priority.get("advice"), "priority advice", 400),
             }

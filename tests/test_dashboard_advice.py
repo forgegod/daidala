@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import pytest
 
 from daidala.dashboard_advice import (
+    SetupAnalysisError,
     SetupAnalysisUnavailable,
     build_setup_analysis_snapshot,
     configure_setup_analysis,
@@ -24,7 +25,7 @@ class FakeHostModel:
                 "summary": "One repository is ready; verify its checkout before starting work.",
                 "priorities": [
                     {
-                        "screen": "config",
+                        "target": "config-verification",
                         "title": "Verify configuration",
                         "advice": "Use Verification to resolve the remaining checkout state.",
                     }
@@ -196,7 +197,7 @@ def test_setup_analysis_uses_the_configured_host_model_and_validates_response() 
             "summary": "One repository is ready; verify its checkout before starting work.",
             "priorities": [
                 {
-                    "screen": "config",
+                    "target": "config-verification",
                     "title": "Verify configuration",
                     "advice": "Use Verification to resolve the remaining checkout state.",
                 }
@@ -210,6 +211,7 @@ def test_setup_analysis_uses_the_configured_host_model_and_validates_response() 
     assert call["purpose"] == "daidala.dashboard.setup_advice"
     assert "Treat numeric setup" in str(call["instructions"])
     assert "requirements as objective facts" in str(call["instructions"])
+    assert "config-packs" in str(call["json_schema"])
     assert call["temperature"] == 0.2
     assert call["max_tokens"] == 700
 
@@ -219,3 +221,27 @@ def test_setup_analysis_fails_closed_without_a_host_model() -> None:
 
     with pytest.raises(SetupAnalysisUnavailable):
         request_setup_analysis({"configuration": {}, "workflows": {}, "artifacts": {}})
+
+
+def test_setup_analysis_rejects_an_unknown_advice_target() -> None:
+    class InvalidTargetHostModel:
+        def complete_structured(self, **_kwargs: object) -> object:
+            return SimpleNamespace(
+                parsed={
+                    "summary": "Configuration is incomplete.",
+                    "priorities": [
+                        {
+                            "target": "config",
+                            "title": "Review configuration",
+                            "advice": "Open the right configuration tab.",
+                        }
+                    ],
+                }
+            )
+
+    configure_setup_analysis(InvalidTargetHostModel())
+    try:
+        with pytest.raises(SetupAnalysisError, match="invalid advice target"):
+            request_setup_analysis({"configuration": {}, "workflows": {}, "artifacts": {}})
+    finally:
+        configure_setup_analysis(None)

@@ -639,6 +639,12 @@ def test_bundle_explains_primary_screens_and_keeps_model_advice_on_demand() -> N
         "does not replace deterministic workflow recommendations",
         'data-testid": "daidala-setup-advice"',
         'data-testid": "daidala-screen-guidance-"',
+        "Config → Packs",
+        "Config → GitHub Projects",
+        "Config → Checkouts",
+        "Config → Constraints",
+        "Config → Verification",
+        "Config → Runbook",
     )
     for text in required:
         assert text in source, f"missing dashboard guidance: {text}"
@@ -648,6 +654,16 @@ def test_bundle_explains_primary_screens_and_keeps_model_advice_on_demand() -> N
     ]
     assert "useEffect" not in advice_panel
     assert "requestSetupAnalysis()" in advice_panel
+    assert "openDashboardTarget(priority.target)" in advice_panel
+    assert "priority.screen" not in advice_panel
+    assert (
+        '"Open " + (ADVICE_TARGETS[priority.target] || { label: "Dashboard" }).label'
+        in advice_panel
+    )
+    assert (
+        '"config-packs": { label: "Config → Packs", '
+        'path: "/daidala?view=config&section=packs" }'
+    ) in source
     assert ".daidala-screen-guidance" in style
     assert ".daidala-setup-advice" in style
 

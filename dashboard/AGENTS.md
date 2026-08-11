@@ -124,9 +124,10 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   they exclude pack names, skill names, sources, blockers, and install commands.
   It uses only the documented `ctx.llm` facade registered by Daidala; it does not
   read Hermes model configuration or internals. The request is explicit, never
-  polled, non-mutating, and returns only validated advisory text plus existing
-  dashboard screen targets. Model failures remain explicit and never replace
-  deterministic workflow recommendations.
+  polled, non-mutating, and returns only validated advisory text plus closed exact
+  dashboard destinations. Model failures remain explicit and never replace
+  deterministic workflow recommendations. Pack and phase-skill remediation
+  targets Config → Packs rather than a generic workflow screen.
 - Initialization preview exposes only the resolved profile-local ledger target and
   observed schema state; apply accepts exactly `{preview_digest, confirm: true}`
   and resets the cached service only after creation. Prerequisite diagnosis accepts

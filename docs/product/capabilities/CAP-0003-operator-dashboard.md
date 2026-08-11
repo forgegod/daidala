@@ -17,8 +17,9 @@ An authenticated operator can inspect workflow state and evidence, perform bound
   aggregate path-free readiness counts, including a registered GitHub Project,
   workflow-pack presence, per-phase installed and ready skill coverage, and
   blocked-pack counts. It never runs while polling, returns only validated links
-  to existing screens, and never replaces deterministic workflow recommendations
-  or performs an action.
+  to closed exact dashboard destinations, including Config → Packs for blocked
+  packs and missing phase skill coverage, and never replaces deterministic
+  workflow recommendations or performs an action.
 - Start workflow lists every bundled pack with its readiness state, links repository registration to path-safe operator guidance, and disables primary views that cannot preserve the open browser draft.
 - Approval, review disposition, card remediation, cancellation, setup, and curator mutations use preview/confirm or exact-identity requests; the server derives authoritative workflow, board, repository, and worktree facts.
 - Artifact views expose ledger-bound metadata, bounded literal text, digest-verified downloads, and closed curator actions without accepting filesystem paths.

@@ -179,7 +179,7 @@ const html = `<!doctype html>
       <section class="workspace">
         <div class="stats"><div class="stat active"><b>1</b><small>Active</small></div><div class="stat attention"><b>2</b><small>Awaiting action</small></div><div class="stat"><b>14</b><small>Completed</small></div><div class="stat"><b>1</b><small>Cancelled</small></div></div>
         <div class="filters"><div class="field"><label>Status</label><span>All states</span></div><div class="field"><label>Pack</label><span>All packs</span></div><div class="field"><label>Search</label><span>workflow ID or outcome</span></div><div class="button primary">Start workflow</div></div>
-        <section class="guidance"><div><b>Workflow supervision</b><p>Use Workflows to inspect approval-gated progress and make the next required human decision from source-bound evidence.</p></div><div class="advice"><b>Readiness advice</b><p>One-off path-free guidance; advisory only.</p><div class="button">Analyze Daidala readiness</div></div></section>
+        <section class="guidance"><div><b>Workflow supervision</b><p>Use Workflows to inspect approval-gated progress and make the next required human decision from source-bound evidence.</p></div><div class="advice"><b>Readiness advice</b><p>One-off path-free guidance; advisory only.</p><div class="button">Analyze Daidala readiness</div><p><b>Resolve blocked workflow packs</b></p><div class="button">Open Config → Packs</div></div></section>
 
         <h2 class="section-title">Awaiting action · open the workflow to decide</h2>
         <div class="attention-card">
