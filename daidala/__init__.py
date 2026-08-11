@@ -5,12 +5,19 @@ from __future__ import annotations
 from pathlib import Path
 
 from . import cli, schemas, tools
+from .dashboard_advice import configure_setup_analysis
 from .packs import __version__
 
 
 def register(ctx) -> None:
     """Register Daidala tools and bundled, namespaced skills with Hermes."""
     tools.configure_host(ctx.dispatch_tool)
+    try:
+        configure_setup_analysis(ctx.llm)
+    except (AttributeError, ImportError):
+        # Older compatible hosts may mount the dashboard without the documented
+        # plugin LLM facade. The advice route reports that capability explicitly.
+        configure_setup_analysis(None)
     ctx.register_cli_command(
         name="daidala",
         help="Operate Daidala workflows and workflow packs",

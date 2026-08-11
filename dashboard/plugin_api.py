@@ -84,6 +84,12 @@ from daidala.checkout_root import (
 )
 from daidala.checkouts import CheckoutError, CheckoutManager
 from daidala.constraints import extract_policy_skill_constraints, parse_workflow_constraints
+from daidala.dashboard_advice import (
+    SetupAnalysisError,
+    SetupAnalysisUnavailable,
+    build_setup_analysis_snapshot,
+    request_setup_analysis,
+)
 from daidala.dashboard_backend import (
     DashboardBackend,
     DashboardBackendError,
@@ -393,6 +399,29 @@ def artifacts(workflow_id: str | None = None) -> dict[str, object]:
         raise HTTPException(status_code=404, detail="Workflow unavailable") from error
     except ArtifactAccessError as error:
         _raise_artifact_error(error)
+
+
+@router.post("/setup-analysis")
+def setup_analysis(payload: dict[str, object]) -> dict[str, object]:
+    """Generate one explicit, bounded, advisory-only readiness analysis."""
+
+    if payload:
+        raise HTTPException(status_code=400, detail="setup analysis does not accept browser data")
+    backend = DashboardBackend(service_factory=service_factory)
+    try:
+        snapshot = build_setup_analysis_snapshot(
+            backend.configuration(), backend.list_workflows(), backend.artifacts()
+        )
+    except (DashboardBackendError, StoreError, ArtifactAccessError) as error:
+        raise HTTPException(status_code=409, detail="Setup readiness is unavailable") from error
+    try:
+        return request_setup_analysis(snapshot)
+    except SetupAnalysisUnavailable as error:
+        raise HTTPException(status_code=503, detail="Host-model advice is unavailable") from error
+    except SetupAnalysisError as error:
+        raise HTTPException(
+            status_code=502, detail="Host-model advice could not be generated"
+        ) from error
 
 
 @router.get("/artifacts/{workflow_id}/{artifact_id}/text")

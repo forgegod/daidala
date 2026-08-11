@@ -622,6 +622,36 @@ def test_bundle_exposes_authenticated_artifact_review_and_curator_controls() -> 
     assert ".daidala-artifact-preview pre" in style
 
 
+def test_bundle_explains_primary_screens_and_keeps_model_advice_on_demand() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+    style = (DASHBOARD / "dist" / "style.css").read_text(encoding="utf-8")
+
+    required = (
+        "Workflow supervision",
+        "Artifact evidence",
+        "Configuration readiness",
+        "No workflow is recorded for this profile.",
+        "If the catalog is empty, no workflow has captured evidence yet.",
+        "Readiness advice",
+        "Analyze Daidala readiness",
+        'API_BASE + "/setup-analysis"',
+        "Model advice unavailable. Deterministic guidance remains available.",
+        "does not replace deterministic workflow recommendations",
+        'data-testid": "daidala-setup-advice"',
+        'data-testid": "daidala-screen-guidance-"',
+    )
+    for text in required:
+        assert text in source, f"missing dashboard guidance: {text}"
+
+    advice_panel = source[
+        source.index("function SetupAdvicePanel"):source.index("function ConfigurationPanel")
+    ]
+    assert "useEffect" not in advice_panel
+    assert "requestSetupAnalysis()" in advice_panel
+    assert ".daidala-screen-guidance" in style
+    assert ".daidala-setup-advice" in style
+
+
 def test_stylesheet_does_not_reference_external_assets() -> None:
     source = (DASHBOARD / "dist" / "style.css").read_text(encoding="utf-8")
 

@@ -52,6 +52,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `packs.py` | Pack loading and deterministic validation. |
 | `cli.py` | Shared `hermes daidala` and standalone operator command tree, lifecycle, exact artifact list/show/export, attended-review dispatch, dry-run-first curator policy/Cron operations, pack operations, exact preview-digest apply gates, bounded inspection output, and subprocess mutation boundary. |
 | `dashboard_backend.py` | Profile-safe dashboard read model, including persisted configuration, live Kanban, single-ledger exact plan/review evidence, path-free artifact catalog/text/download, curator status/action projections, runtime constraint-template and limit projection, constraint previews, and typed compare-and-swap replacement adapters. |
+| `dashboard_advice.py` | Bounded host-model setup-advice request, aggregate path-free readiness snapshot, and strict structured-response normalization. |
 | `recommendations.py` | Pure finite pending-decision and next-action derivation from ledger facts and live Kanban snapshots. |
 | `setup_wizard.py` | Typed setup preview, confirmation gate, and documented Hermes board/profile inventory commands with bounded long-name table parsing. |
 | `packs/` | Skill-set-specific lifecycle mappings. |
@@ -246,6 +247,11 @@ workflow-pack adapters, and bundled orchestration skills.
   ready, running, blocked, done, or archived field.
 - Dashboard reads live Kanban state through documented `hermes kanban` commands;
   unavailable host state is labeled and never replaced by cached status.
+- Dashboard setup advice uses only the documented `ctx.llm` plugin facade
+  registered at plugin startup. It accepts no browser facts, sends only aggregate
+  path-free readiness counts, is explicit/on-demand and advisory-only, and fails
+  unavailable rather than importing Hermes internals or replacing deterministic
+  workflow recommendations.
 - Agent-facing Kanban integration uses `ctx.dispatch_tool`; native and standalone
   CLI handlers translate the same narrow adapter boundary into documented
   `hermes kanban` subprocess commands. Daidala never imports or writes Hermes'

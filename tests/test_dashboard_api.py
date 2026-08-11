@@ -89,6 +89,7 @@ def test_router_exports_all_phase_two_routes() -> None:
         "prerequisites",
         "configuration",
         "artifacts",
+        "setup_analysis",
         "artifact_text",
         "artifact_download",
         "artifact_curator_status",
@@ -143,6 +144,77 @@ def test_router_exports_all_phase_two_routes() -> None:
         "wizard_start",
     ):
         assert callable(getattr(api, name))
+
+
+def test_setup_analysis_route_uses_server_derived_path_free_snapshot() -> None:
+    api = load_api()
+    captured: list[dict[str, object]] = []
+
+    class Backend:
+        def __init__(self, *, service_factory: object) -> None:
+            self.service_factory = service_factory
+
+        def configuration(self) -> dict[str, object]:
+            return {
+                "registrations": [
+                    {
+                        "checkout": {"status": "healthy", "path": "/private/checkout"},
+                        "github_project": {"status": "not_configured"},
+                    }
+                ]
+            }
+
+        def list_workflows(self) -> dict[str, object]:
+            return {
+                "workflows": [
+                    {
+                        "requested_goal": "private request",
+                        "target_repository": "/private/repository",
+                        "approval": None,
+                        "plan_source": {"mode": "generated"},
+                    }
+                ]
+            }
+
+        def artifacts(self) -> dict[str, object]:
+            return {
+                "artifacts": [
+                    {"artifact_id": "private-artifact", "availability": "active"}
+                ]
+            }
+
+    def analyze(snapshot: dict[str, object]) -> dict[str, object]:
+        captured.append(snapshot)
+        return {"analysis": {"summary": "Ready", "priorities": []}, "model": {}}
+
+    api.__dict__["DashboardBackend"] = Backend
+    api.__dict__["request_setup_analysis"] = analyze
+
+    assert api.setup_analysis({}) == {
+        "analysis": {"summary": "Ready", "priorities": []},
+        "model": {},
+    }
+    assert captured == [
+        {
+            "configuration": {
+                "registration_count": 1,
+                "readiness_counts": {
+                    "checkout:healthy": 1,
+                    "github_project:not_configured": 1,
+                },
+            },
+            "workflows": {
+                "count": 1,
+                "state_counts": {"approval:pending": 1, "plan_source:generated": 1},
+            },
+            "artifacts": {"count": 1, "availability_counts": {"availability:active": 1}},
+        }
+    ]
+    assert "/private" not in json.dumps(captured)
+
+    with pytest.raises(FakeHTTPException) as malformed:
+        api.setup_analysis({"workflow_id": "browser-controlled"})
+    assert malformed.value.status_code == 400
 
 
 def test_router_imports_after_directory_plugin_registration(tmp_path: Path) -> None:

@@ -14,6 +14,7 @@ class FakeContext:
         self.tools: list[dict] = []
         self.skills: list[tuple[str, Path]] = []
         self.cli_commands: list[dict] = []
+        self.llm: object | None = None
 
     def register_tool(self, **kwargs) -> None:
         self.tools.append(kwargs)
@@ -66,6 +67,18 @@ def test_register_exposes_tool_and_namespaced_skill_source() -> None:
     assert "dashboard is available" in setup_instructions
     assert len(ctx.cli_commands) == 1
     assert ctx.cli_commands[0]["name"] == "daidala"
+
+
+def test_register_configures_dashboard_advice_from_host_llm(monkeypatch) -> None:
+    ctx = FakeContext()
+    ctx.llm = object()
+    configured: list[object] = []
+
+    monkeypatch.setattr(daidala, "configure_setup_analysis", configured.append)
+
+    daidala.register(ctx)
+
+    assert configured == [ctx.llm]
 
 
 def test_manifest_tool_inventory_matches_runtime_registration() -> None:

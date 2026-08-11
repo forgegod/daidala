@@ -1194,7 +1194,71 @@
   border-color: var(--daidala-warning);
 }
 
+.daidala-screen-guidance,
+.daidala-setup-advice,
+.daidala-setup-advice-result {
+  display: grid;
+  gap: 0.5rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+}
+
+.daidala-screen-guidance {
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.65fr);
+  align-items: center;
+  padding: 0.75rem var(--daidala-padding);
+}
+
+.daidala-screen-guidance p,
+.daidala-setup-advice h2,
+.daidala-setup-advice p,
+.daidala-setup-advice-result p {
+  margin: 0;
+}
+
+.daidala-setup-advice {
+  padding: var(--daidala-padding);
+}
+
+.daidala-setup-advice > button,
+.daidala-setup-advice-result button {
+  justify-self: start;
+  padding: 0.45rem 0.6rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-base, rgba(74, 123, 255, 0.12));
+  color: var(--text-primary, inherit);
+  font: inherit;
+  cursor: pointer;
+}
+
+.daidala-setup-advice > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.daidala-setup-advice-result {
+  padding: 0.75rem;
+}
+
+.daidala-setup-advice-result ol {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding-left: 1.4rem;
+}
+
+.daidala-setup-advice-result li {
+  display: grid;
+  gap: 0.25rem;
+}
+
 @media (max-width: 64rem) {
+  .daidala-screen-guidance {
+    grid-template-columns: 1fr;
+  }
+
   .daidala-artifact-layout {
     grid-template-columns: 1fr;
   }
