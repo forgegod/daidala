@@ -99,6 +99,10 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   matching action preview digest, literal confirmation, and post-action
   verification. Disable is never presented as uninstall or deletion.
 - Preview and declined setup must not mutate; start requires a literal checked confirmation.
+- Start-workflow management links preserve the browser-local draft while opening
+  their exact Config tab above it. After a routed tab renders, the Config section
+  receives keyboard focus and scrolls to the viewport start so the navigation
+  result is immediately visible.
 - Wizard inventory derives the mounted controller profile from Hermes' documented
   profile inventory and exposes only registrations bound to that profile. The
   runtime-root identity takes precedence only after exact inventory validation;

@@ -1581,14 +1581,27 @@
     var tabState = useState(props.section || "packs");
     var tab = tabState[0];
     var setTab = tabState[1];
+    var panelRef = useRef(null);
 
     useEffect(function () {
       if (props.section) setTab(props.section);
     }, [props.section]);
 
+    useEffect(function () {
+      if (!props.section || !panelRef.current) return;
+      panelRef.current.focus({ preventScroll: true });
+      panelRef.current.scrollIntoView({ block: "start" });
+    }, [props.section]);
+
     return createElement(
       "section",
-      { className: "daidala-config-section", "data-testid": "daidala-config" },
+      {
+        className: "daidala-config-section",
+        "data-testid": "daidala-config",
+        "aria-label": "Configuration",
+        ref: panelRef,
+        tabIndex: -1
+      },
       createElement(
         "header",
         { className: "daidala-config-section-header" },

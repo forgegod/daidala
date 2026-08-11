@@ -424,6 +424,21 @@ def test_start_workflow_disables_primary_navigation_that_cannot_preserve_the_dra
     ).read_text(encoding="utf-8")
 
 
+def test_routed_start_configuration_is_scrolled_and_focused_after_render() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+    config_panel = source[
+        source.index("function ConfigurationPanel") : source.index("function configurationStatus")
+    ]
+
+    assert "var panelRef = useRef(null);" in config_panel
+    assert "ref: panelRef" in config_panel
+    assert "tabIndex: -1" in config_panel
+    assert '"aria-label": "Configuration"' in config_panel
+    assert "if (!props.section || !panelRef.current) return;" in config_panel
+    assert 'panelRef.current.focus({ preventScroll: true });' in config_panel
+    assert 'panelRef.current.scrollIntoView({ block: "start" });' in config_panel
+
+
 def test_bundle_reopens_a_started_workflow_without_an_incomplete_duplicate() -> None:
     source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
 

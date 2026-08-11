@@ -20,7 +20,11 @@ An authenticated operator can inspect workflow state and evidence, perform bound
   to closed exact dashboard destinations, including Config → Packs for blocked
   packs and missing phase skill coverage, and never replaces deterministic
   workflow recommendations or performs an action.
-- Start workflow lists every bundled pack with its readiness state, links repository registration to path-safe operator guidance, and disables primary views that cannot preserve the open browser draft.
+- Start workflow lists every bundled pack with its readiness state, links
+  repository registration to path-safe operator guidance, and disables primary
+  views that cannot preserve the open browser draft. Manage packs, Register
+  repository, and Manage sources preserve that draft while moving visual and
+  keyboard focus to their exact Config destination.
 - Approval, review disposition, card remediation, cancellation, setup, and curator mutations use preview/confirm or exact-identity requests; the server derives authoritative workflow, board, repository, and worktree facts.
 - Artifact views expose ledger-bound metadata, bounded literal text, digest-verified downloads, and closed curator actions without accepting filesystem paths.
 - Config → Packs renders bounded literal skill text only for bundled or installed
