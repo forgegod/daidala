@@ -187,7 +187,28 @@ def test_setup_analysis_route_uses_server_derived_path_free_snapshot() -> None:
         captured.append(snapshot)
         return {"analysis": {"summary": "Ready", "priorities": []}, "model": {}}
 
+    class PackCheck:
+        def to_dict(self) -> dict[str, object]:
+            return {
+                "ready": False,
+                "installable": True,
+                "blockers": ["disabled skill"],
+                "validation": {
+                    "stages": [
+                        {"id": "define", "skills": [{"installed": True, "ready": False}]}
+                    ]
+                },
+            }
+
+    class PackService:
+        def bundled_names(self) -> tuple[str, ...]:
+            return ("test-pack",)
+
+        def check(self, _name: str) -> PackCheck:
+            return PackCheck()
+
     api.__dict__["DashboardBackend"] = Backend
+    api.__dict__["pack_service_factory"] = PackService
     api.__dict__["request_setup_analysis"] = analyze
 
     assert api.setup_analysis({}) == {
@@ -202,12 +223,32 @@ def test_setup_analysis_route_uses_server_derived_path_free_snapshot() -> None:
                     "checkout:healthy": 1,
                     "github_project:not_configured": 1,
                 },
+                "requirements": {"registered_github_project": {"minimum": 1, "observed": 0}},
             },
             "workflows": {
                 "count": 1,
                 "state_counts": {"approval:pending": 1, "plan_source:generated": 1},
             },
             "artifacts": {"count": 1, "availability_counts": {"availability:active": 1}},
+            "packs": {
+                "pack_count": 1,
+                "ready_pack_count": 0,
+                "blocked_pack_count": 1,
+                "installable_pack_count": 1,
+                "phase_counts": {
+                    "define": {
+                        "declared_pack_count": 1,
+                        "packs_with_installed_skill": 1,
+                        "packs_with_ready_skill": 0,
+                    }
+                },
+                "requirements": {
+                    "workflow_pack": {"minimum": 1, "observed": 1},
+                    "operational_pack": {"minimum": 1, "observed": 0},
+                    "unblocked_packs": {"maximum": 0, "observed": 1},
+                    "installed_skill_per_phase": {"define": {"minimum": 1, "observed": 1}},
+                },
+            },
         }
     ]
     assert "/private" not in json.dumps(captured)

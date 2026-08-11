@@ -118,12 +118,15 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   never returns aliases, credentials, raw probe output, private destinations,
   registration checkout paths, or GitHub Project node IDs.
 - `POST /setup-analysis` accepts exactly an empty object. The server derives
-  aggregate, path-free configuration/workflow/artifact readiness counts and uses
-  only the documented `ctx.llm` facade registered by Daidala; it does not read
-  Hermes model configuration or internals. The request is explicit, never polled,
-  non-mutating, and returns only validated advisory text plus existing dashboard
-  screen targets. Model failures remain explicit and never replace deterministic
-  workflow recommendations.
+  aggregate, path-free configuration/workflow/artifact readiness counts plus
+  registered GitHub Project and pack-check phase coverage. Pack facts include
+  only counts for packs, blocked/ready state, and installed/ready skill coverage;
+  they exclude pack names, skill names, sources, blockers, and install commands.
+  It uses only the documented `ctx.llm` facade registered by Daidala; it does not
+  read Hermes model configuration or internals. The request is explicit, never
+  polled, non-mutating, and returns only validated advisory text plus existing
+  dashboard screen targets. Model failures remain explicit and never replace
+  deterministic workflow recommendations.
 - Initialization preview exposes only the resolved profile-local ledger target and
   observed schema state; apply accepts exactly `{preview_digest, confirm: true}`
   and resets the cached service only after creation. Prerequisite diagnosis accepts

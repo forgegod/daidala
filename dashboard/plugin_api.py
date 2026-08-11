@@ -409,10 +409,22 @@ def setup_analysis(payload: dict[str, object]) -> dict[str, object]:
         raise HTTPException(status_code=400, detail="setup analysis does not accept browser data")
     backend = DashboardBackend(service_factory=service_factory)
     try:
+        pack_service = pack_service_factory()
+        packs = {
+            "packs": [
+                pack_service.check(name).to_dict() for name in pack_service.bundled_names()
+            ]
+        }
         snapshot = build_setup_analysis_snapshot(
-            backend.configuration(), backend.list_workflows(), backend.artifacts()
+            backend.configuration(), backend.list_workflows(), backend.artifacts(), packs
         )
-    except (DashboardBackendError, StoreError, ArtifactAccessError) as error:
+    except (
+        DashboardBackendError,
+        StoreError,
+        ArtifactAccessError,
+        PackError,
+        PackServiceError,
+    ) as error:
         raise HTTPException(status_code=409, detail="Setup readiness is unavailable") from error
     try:
         return request_setup_analysis(snapshot)

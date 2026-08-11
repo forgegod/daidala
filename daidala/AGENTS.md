@@ -249,9 +249,10 @@ workflow-pack adapters, and bundled orchestration skills.
   unavailable host state is labeled and never replaced by cached status.
 - Dashboard setup advice uses only the documented `ctx.llm` plugin facade
   registered at plugin startup. It accepts no browser facts, sends only aggregate
-  path-free readiness counts, is explicit/on-demand and advisory-only, and fails
-  unavailable rather than importing Hermes internals or replacing deterministic
-  workflow recommendations.
+  path-free readiness counts, including GitHub Project registration and
+  pack/phase installed, ready, and blocked counts. It is explicit/on-demand and
+  advisory-only, and fails unavailable rather than importing Hermes internals or
+  replacing deterministic workflow recommendations.
 - Agent-facing Kanban integration uses `ctx.dispatch_tool`; native and standalone
   CLI handlers translate the same narrow adapter boundary into documented
   `hermes kanban` subprocess commands. Daidala never imports or writes Hermes'

@@ -56,7 +56,10 @@ or product capabilities that are not explicitly represented in the snapshot.
 Prioritize the next one to three actions that help the operator configure Daidala
 or make an informed workflow decision. A priority screen must be one of the
 provided dashboard screens. This analysis cannot make changes and never replaces
-the dashboard's deterministic workflow recommendations."""
+the dashboard's deterministic workflow recommendations. Treat numeric setup
+requirements as objective facts: a minimum is unmet when observed is lower, and
+a maximum is unmet when observed is higher. Do not call a pack operational when
+it has blocked packs, missing phase skill coverage, or no ready pack."""
 
 _provider_lock = Lock()
 _provider: Any | None = None
@@ -74,6 +77,7 @@ def build_setup_analysis_snapshot(
     configuration: Mapping[str, Any],
     workflows: Mapping[str, Any],
     artifacts: Mapping[str, Any],
+    packs: Mapping[str, Any] | None = None,
 ) -> dict[str, object]:
     """Reduce existing read projections to model-safe aggregate readiness facts."""
 
@@ -85,7 +89,9 @@ def build_setup_analysis_snapshot(
             continue
         for name in ("checkout", "github_project", "intake", "evaluator", "notification"):
             value = registration.get(name)
-            status = value.get("status") if isinstance(value, Mapping) else None
+            status = None
+            if isinstance(value, Mapping):
+                status = value.get("status") or value.get("state")
             if isinstance(status, str):
                 readiness[f"{name}:{status}"] += 1
 
@@ -111,10 +117,63 @@ def build_setup_analysis_snapshot(
         if isinstance(availability, str):
             artifact_states[f"availability:{availability}"] += 1
 
+    pack_rows = packs.get("packs") if isinstance(packs, Mapping) else []
+    pack_items = pack_rows if isinstance(pack_rows, list) else []
+    phase_counts: dict[str, Counter[str]] = {}
+    ready_pack_count = 0
+    blocked_pack_count = 0
+    installable_pack_count = 0
+    for pack in pack_items[:20]:
+        if not isinstance(pack, Mapping):
+            continue
+        if pack.get("ready") is True:
+            ready_pack_count += 1
+        if isinstance(pack.get("blockers"), list) and pack["blockers"]:
+            blocked_pack_count += 1
+        if pack.get("installable") is True:
+            installable_pack_count += 1
+        validation = pack.get("validation")
+        stages = validation.get("stages") if isinstance(validation, Mapping) else []
+        if not isinstance(stages, list):
+            continue
+        for stage in stages:
+            if not isinstance(stage, Mapping) or not isinstance(stage.get("id"), str):
+                continue
+            skills = stage.get("skills")
+            skill_rows = skills if isinstance(skills, list) else []
+            counts = phase_counts.setdefault(stage["id"], Counter())
+            counts["declared_pack_count"] += 1
+            has_installed_skill = any(
+                isinstance(skill, Mapping) and skill.get("installed") is True
+                for skill in skill_rows
+            )
+            if has_installed_skill:
+                counts["packs_with_installed_skill"] += 1
+            has_ready_skill = any(
+                isinstance(skill, Mapping) and skill.get("ready") is True for skill in skill_rows
+            )
+            if has_ready_skill:
+                counts["packs_with_ready_skill"] += 1
+
+    rendered_phase_counts = {
+        phase: {
+            "declared_pack_count": counts["declared_pack_count"],
+            "packs_with_installed_skill": counts["packs_with_installed_skill"],
+            "packs_with_ready_skill": counts["packs_with_ready_skill"],
+        }
+        for phase, counts in sorted(phase_counts.items())
+    }
+
     return {
         "configuration": {
             "registration_count": len(registrations),
             "readiness_counts": dict(sorted(readiness.items())),
+            "requirements": {
+                "registered_github_project": {
+                    "minimum": 1,
+                    "observed": readiness["github_project:healthy"],
+                }
+            },
         },
         "workflows": {
             "count": len(workflow_items),
@@ -123,6 +182,25 @@ def build_setup_analysis_snapshot(
         "artifacts": {
             "count": len(artifact_items),
             "availability_counts": dict(sorted(artifact_states.items())),
+        },
+        "packs": {
+            "pack_count": len(pack_items),
+            "ready_pack_count": ready_pack_count,
+            "blocked_pack_count": blocked_pack_count,
+            "installable_pack_count": installable_pack_count,
+            "phase_counts": rendered_phase_counts,
+            "requirements": {
+                "workflow_pack": {"minimum": 1, "observed": len(pack_items)},
+                "operational_pack": {"minimum": 1, "observed": ready_pack_count},
+                "unblocked_packs": {"maximum": 0, "observed": blocked_pack_count},
+                "installed_skill_per_phase": {
+                    phase: {
+                        "minimum": 1,
+                        "observed": counts["packs_with_installed_skill"],
+                    }
+                    for phase, counts in rendered_phase_counts.items()
+                },
+            },
         },
     }
 

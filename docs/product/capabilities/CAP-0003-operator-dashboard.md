@@ -14,9 +14,11 @@ An authenticated operator can inspect workflow state and evidence, perform bound
   unavailable condition: workflow supervision, ledger-bound artifact evidence,
   or configuration readiness. Workflows can explicitly request one advisory
   readiness analysis from the configured host model. The request sends only
-  aggregate path-free readiness counts, never runs while polling, returns only
-  validated links to existing screens, and never replaces deterministic workflow
-  recommendations or performs an action.
+  aggregate path-free readiness counts, including a registered GitHub Project,
+  workflow-pack presence, per-phase installed and ready skill coverage, and
+  blocked-pack counts. It never runs while polling, returns only validated links
+  to existing screens, and never replaces deterministic workflow recommendations
+  or performs an action.
 - Start workflow lists every bundled pack with its readiness state, links repository registration to path-safe operator guidance, and disables primary views that cannot preserve the open browser draft.
 - Approval, review disposition, card remediation, cancellation, setup, and curator mutations use preview/confirm or exact-identity requests; the server derives authoritative workflow, board, repository, and worktree facts.
 - Artifact views expose ledger-bound metadata, bounded literal text, digest-verified downloads, and closed curator actions without accepting filesystem paths.
@@ -44,7 +46,7 @@ An authenticated operator can inspect workflow state and evidence, perform bound
 
 - [`tests/test_dashboard_api.py`](../../../tests/test_dashboard_api.py) — exact identities, path-free responses, preview/apply gates, and bounded routes.
 - [`tests/test_dashboard_assets.py`](../../../tests/test_dashboard_assets.py) — primary views, states, authenticated SDK use, and host-theme behavior.
-- [`tests/test_dashboard_advice.py`](../../../tests/test_dashboard_advice.py) — aggregate snapshot minimization, host-model invocation, response bounds, and unavailable behavior.
+- [`tests/test_dashboard_advice.py`](../../../tests/test_dashboard_advice.py) — aggregate snapshot minimization, GitHub and pack-phase readiness requirements, host-model invocation, response bounds, and unavailable behavior.
 - [`tests/test_dashboard.py`](../../../tests/test_dashboard.py) — read-model, timeline, recommendation, and artifact projections.
 
 ## Contracts
