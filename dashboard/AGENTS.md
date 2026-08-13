@@ -51,10 +51,15 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   repository registration after a fresh digest. GitHub link preview/verification
   and registration/checkout previews are non-mutating; browser
   payloads never carry credential values, an environment-variable name, a
-  repository checkout path, or a GitHub Project node ID. Repository-registration
-  preview accepts exactly `{github_url}`; apply additionally requires a SHA-256
-  `preview_digest` and `confirm: true`, derives the mounted profile, and delegates
-  only to the deterministic registration service.
+  repository checkout path, credential alias, credential-source detail, or a
+  GitHub Project node ID. Repository-registration profile inventory returns only
+  Hermes-validated profile names and the dashboard default. Registration-list
+  requests carry one such selected name; preview accepts exactly
+  `{github_url, controller_profile}` and apply additionally requires a SHA-256
+  `preview_digest` and `confirm: true`. Every selected name is revalidated and
+  re-resolved through Hermes before the deterministic registration service reads
+  profile-local state; preview readiness exposes only boolean credential
+  availability.
 - Checkout lifecycle routes derive the registration and checkout from a project ID.
   Refresh, clean-unowned adoption, backup pruning, and policy replacement each
   recompute a preview and require its exact digest plus `confirm: true`; browser

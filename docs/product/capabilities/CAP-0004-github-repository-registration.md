@@ -19,8 +19,19 @@ credential alias, environment-variable name, or token to Daidala.
 - Apply re-inspects the repository and accepts only the exact preview digest
   plus the literal `register-repository` confirmation. It writes only the
   controller registration and credential-bindings records.
-- The dashboard accepts only the GitHub URL for preview. Apply additionally
-  accepts its digest and `confirm: true`; the server derives the mounted profile.
+- Config → Repositories lists the selected existing Hermes profile's repository
+  identities and refreshes that list when the operator changes profile. It shows
+  no profile root, checkout, credential alias, environment-variable name, or
+  secret metadata.
+- The dashboard accepts a GitHub URL and an existing Hermes profile name for
+  preview. Apply additionally accepts the digest and `confirm: true`; the
+  server resolves the named profile through Hermes on every request and binds
+  the preview digest to that profile.
+- GitHub Contents API Base64 line wrapping is normalized before strict decoding;
+  malformed non-Base64 content remains rejected.
+- Public preview readiness exposes only `credential_available`; credential
+  aliases and secret-source details remain internal to the profile-local
+  registration and binding records.
 - Registration never accepts or stores a token, creates a GitHub Project,
   creates a checkout, commits, pushes, publishes, or grants delivery authority.
 

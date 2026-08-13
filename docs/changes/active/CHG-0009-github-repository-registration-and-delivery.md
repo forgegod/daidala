@@ -19,7 +19,7 @@ branch/commit receipt evidence before it releases the owned worktree.
 - Design one deterministic `daidala project register` preview/apply workflow and one Config → Repositories dashboard workflow backed by the same Python service. The dashboard must not start a nested CLI process.
 - Accept only pasteable GitHub.com repository page or clone URLs, normalize them to `owner/repository`, and reject credentials, local paths, non-GitHub hosts, query/fragment strings, and repository sub-resource URLs.
 - Make preview read the repository metadata and committed `.daidala/project.yaml` through the host's existing read-only GitHub CLI authentication. Preview must fail closed for an inaccessible repository, malformed/missing manifest, canonical identity mismatch, allowed-remote mismatch, duplicate project ID, or stale confirmation digest.
-- Keep checkout paths, controller data roots, environment-variable names, credential values, GitHub Project node IDs, and target worktree content outside browser requests and responses. The UI may show an explicit Hermes profile and safe secret-alias/readiness state, but never a secret value, vault item, bootstrap token, or source command. The one intentional browser input is the GitHub.com link; after inspection the UI presents its derived `owner/repository` identity rather than treating a pasted remote as configuration authority.
+- Keep checkout paths, controller data roots, environment-variable names, credential values, GitHub Project node IDs, and target worktree content outside browser requests and responses. The UI may show and select an existing Hermes profile plus safe secret-alias/readiness state, but never a secret value, vault item, bootstrap token, or source command. The only browser inputs are the selected existing profile name and GitHub.com link; after inspection the UI presents its derived `owner/repository` identity rather than treating a pasted remote as configuration authority.
 - Persist only strict non-secret registration and credential-binding records after an exact preview digest and explicit confirmation. A static registration may remain diagnostically blocked while its real credentials are not available; it must not fabricate prerequisite evidence.
 - Read controller authority from a strict profile-local `repository-registration-defaults.yaml` prerequisite because those values are neither repository policy nor safe browser inputs. Registration never creates or edits that prerequisite and browser responses expose readiness booleans rather than its private destination or environment bindings.
 - Implement a separate attended delivery-authority record and exact commit/push
@@ -44,7 +44,7 @@ project ID: acme-payments-service
 controller profile: daidala-self-improvement
 manifest: 6f12…9c80
 registration: would write two non-secret profile-local records
-delivery secret alias: not configured — does not block registration
+credential available: no — does not block registration
 next: repeat with --apply --expected-preview-digest 6f12…9c80 --confirm register-repository
 ```
 
@@ -52,7 +52,7 @@ next: repeat with --apply --expected-preview-digest 6f12…9c80 --confirm regist
 
 ### Dashboard: Config → Repositories
 
-The primary registration screen reuses the existing dark teal, cream, amber, and green Hermes dashboard language. It is a three-state wizard, not a repository editor. It identifies the selected Hermes profile and shows only safe secret-profile aliasing/readiness state. It never exposes a profile wrapper alias, raw secret name, source command, vault item, or token.
+The primary registration screen reuses the existing dark teal, cream, amber, and green Hermes dashboard language. It is a three-state wizard, not a repository editor. It identifies the selected Hermes profile and shows only boolean credential-availability readiness. It never exposes a profile wrapper alias, raw secret name, source command, vault item, or token.
 
 ```text
 CONFIG / REPOSITORIES                                             [Refresh]
@@ -72,7 +72,7 @@ REPOSITORY IDENTITY                         CONTROLLER READINESS
 acme/payments-service                       Profile: daidala-self-improvement
 Project ID: acme-payments-service            ✓ Board selected
 Manifest: 6f12…9c80                          ✓ Attended target configured
-Release: commit off · push off               ! Delivery secret source not configured
+Release: commit off · push off               ! Credential not available
 
 This screen never accepts a path, token, credential alias, or environment value.
 
@@ -170,11 +170,27 @@ remains provenance; it is not a product-wireframe source.
   `twine check dist/*`, release-content (`289` tracked files, `66` wheel
   members), and `git diff --check`. No real credential lookup, target commit, or
   push occurred.
-- Final delivery-surface review found that the internal preview serializer exposed
-  the non-secret credential alias through CLI/dashboard output. The public
-  projection now omits that alias while retaining it in the canonical
-  preview/authorization identity; real-object CLI and dashboard API regression
-  tests cover the boundary. The complete repository/release gate passed again
-  after this remediation: records and Markdown links, Lefthook, full `pytest`,
-  Ruff, both pack validations, package build, `twine check dist/*`,
-  release-content, and `git diff --check`. Final human review is still pending.
+- Final delivery-surface review found that the registration-preview serializer
+  exposed a non-secret credential alias through CLI/dashboard output. The public
+  projection now exposes only `credential_available`; aliases remain solely in
+  profile-local records. Real-object CLI and dashboard API regression tests
+  cover the boundary. The complete repository/release gate passed after this
+  remediation: records and Markdown links, Lefthook, full `pytest`, Ruff, both
+  pack validations, package build, `twine check dist/*`, release-content, and
+  `git diff --check`. Final human review is still pending.
+- Registration-profile and GitHub Contents decoding remediation: Config →
+  Repositories now lists safe repository identities from the explicitly selected
+  existing Hermes profile, refreshes the list and invalidates previews on profile
+  changes, and re-resolves the selected name through Hermes for every preview or
+  apply request. The browser receives no profile root, checkout, credential
+  alias, environment name, or secret metadata. GitHub's newline-wrapped Base64
+  manifest content is normalized before strict decoding; invalid Base64 remains
+  rejected. A real non-mutating CLI preview for `forgegod/daidala` under
+  `daidala-self-improvement` now reaches the expected duplicate-registration
+  result rather than failing manifest decoding. Focused regression coverage
+  exercises wrapped content, selected-profile listing/projection, and the
+  safe duplicate result.
+- Registration preview public-surface remediation: the API, CLI projection, and
+  dashboard now expose only boolean `credential_available` readiness. The
+  delivery credential alias and source/value-check details remain inside the
+  digest-bound profile-local records and are absent from browser-visible output.

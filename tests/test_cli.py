@@ -508,8 +508,7 @@ class FakeRepositoryRegistrationPreview:
             "readiness": {
                 "board_selected": True,
                 "attended_target_configured": True,
-                "delivery_credential_alias": "github-repository-delivery",
-                "delivery_secret_value_checked": False,
+                "credential_available": False,
             },
             "writes": {
                 "record_count": 2,

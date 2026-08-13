@@ -160,15 +160,30 @@
     });
   }
 
-  function previewRepositoryRegistration(githubUrl) {
-    return postJson(API_BASE + "/repository-registration/preview", {
-      github_url: githubUrl
+  function buildRepositoryRegistrationProfiles() {
+    return fetchJson(API_BASE + "/repository-registration/profiles");
+  }
+
+  function buildRepositoryRegistrations(controllerProfile) {
+    return fetchJson(
+      API_BASE + "/repository-registration/registrations?controller_profile=" +
+      encodeURIComponent(controllerProfile)
+    ).then(function (payload) {
+      return payload && Array.isArray(payload.registrations) ? payload.registrations : [];
     });
   }
 
-  function applyRepositoryRegistration(githubUrl, previewDigest) {
+  function previewRepositoryRegistration(githubUrl, controllerProfile) {
+    return postJson(API_BASE + "/repository-registration/preview", {
+      github_url: githubUrl,
+      controller_profile: controllerProfile
+    });
+  }
+
+  function applyRepositoryRegistration(githubUrl, controllerProfile, previewDigest) {
     return postJson(API_BASE + "/repository-registration", {
       github_url: githubUrl,
+      controller_profile: controllerProfile,
       preview_digest: previewDigest,
       confirm: true
     });
@@ -2381,6 +2396,15 @@
   }
 
   function RepositoryRegistrationPanel() {
+    var profilesState = useState(undefined);
+    var profiles = profilesState[0];
+    var setProfiles = profilesState[1];
+    var controllerProfileState = useState("");
+    var controllerProfile = controllerProfileState[0];
+    var setControllerProfile = controllerProfileState[1];
+    var registrationsState = useState(undefined);
+    var registrations = registrationsState[0];
+    var setRegistrations = registrationsState[1];
     var urlState = useState("");
     var githubUrl = urlState[0];
     var setGithubUrl = urlState[1];
@@ -2397,10 +2421,51 @@
     var message = messageState[0];
     var setMessage = messageState[1];
 
+    function refreshRegistrations(profile) {
+      if (!profile) return Promise.resolve();
+      setRegistrations(undefined);
+      return buildRepositoryRegistrations(profile).then(setRegistrations).catch(function (caught) {
+        setRegistrations([]);
+        setMessage("Repository list unavailable: " + errorText(caught));
+      });
+    }
+
+    function refreshProfiles(preferredProfile) {
+      setMessage("");
+      return buildRepositoryRegistrationProfiles().then(function (result) {
+        var available = result && Array.isArray(result.profiles) ? result.profiles : [];
+        var defaultProfile = result && typeof result.selected_profile === "string"
+          ? result.selected_profile
+          : "";
+        var selected = typeof preferredProfile === "string" && available.indexOf(preferredProfile) !== -1
+          ? preferredProfile
+          : defaultProfile;
+        setProfiles(available);
+        setControllerProfile(selected);
+        return refreshRegistrations(selected);
+      }).catch(function (caught) {
+        setProfiles([]);
+        setControllerProfile("");
+        setRegistrations([]);
+        setMessage("Hermes profile inventory unavailable: " + errorText(caught));
+      });
+    }
+
+    useEffect(function () { refreshProfiles().catch(function () {}); }, []);
+
+    function selectControllerProfile(event) {
+      var selected = event.target.value;
+      setControllerProfile(selected);
+      setPreview(null);
+      setConfirmed(false);
+      setMessage("Selected profile changed; it requires a fresh inspection.");
+      refreshRegistrations(selected).catch(function () {});
+    }
+
     function inspect() {
-      if (!githubUrl.trim()) return;
+      if (!githubUrl.trim() || !controllerProfile) return;
       setBusy(true); setMessage(""); setPreview(null); setConfirmed(false);
-      previewRepositoryRegistration(githubUrl.trim()).then(function (result) {
+      previewRepositoryRegistration(githubUrl.trim(), controllerProfile).then(function (result) {
         setPreview(result);
       }).catch(function (caught) {
         setMessage("Repository inspection unavailable: " + errorText(caught));
@@ -2410,9 +2475,10 @@
     function apply() {
       if (!preview || !confirmed) return;
       setBusy(true); setMessage("");
-      applyRepositoryRegistration(githubUrl.trim(), preview.preview_digest).then(function (result) {
+      applyRepositoryRegistration(githubUrl.trim(), preview.controller_profile, preview.preview_digest).then(function (result) {
         setPreview(result); setConfirmed(false);
         setMessage("Repository registered. Refresh Configuration verification before starting a workflow.");
+        refreshRegistrations(preview.controller_profile).catch(function () {});
       }).catch(function (caught) {
         setMessage("Repository was not registered: " + errorText(caught));
       }).finally(function () { setBusy(false); });
@@ -2425,10 +2491,29 @@
         createElement("div", null,
           createElement("h2", null, "Repositories"),
           createElement("p", { className: "daidala-workflow-meta" },
-            "Register a GitHub repository into the mounted controller profile. The browser cannot choose a profile or provide credentials."
+            "Register a GitHub repository into one existing Hermes profile. Daidala does not accept credentials."
           )
+        ),
+        createElement("button", { type: "button", disabled: busy, onClick: function () { refreshProfiles(controllerProfile).catch(function () {}); } }, "Refresh profiles")
+      ),
+      createElement("label", { className: "daidala-wizard-field" },
+        createElement("span", null, "Selected Hermes profile"),
+        createElement("select", {
+          value: controllerProfile,
+          disabled: busy || profiles === undefined || !profiles.length,
+          onChange: selectControllerProfile
+        },
+          createElement("option", { value: "" }, profiles === undefined ? "Loading profiles…" : "Select profile"),
+          (profiles || []).map(function (profile) {
+            return createElement("option", { key: profile, value: profile }, profile);
+          })
         )
       ),
+      registrations === undefined ? createElement("p", { className: "daidala-workflow-meta" }, "Loading registered repositories…")
+        : registrations.length === 0 ? createElement("p", { className: "daidala-workflow-meta" }, "No repositories are registered for this profile.")
+          : createElement("ul", { className: "daidala-list" }, registrations.map(function (registration) {
+              return createElement("li", { key: registration.project_id }, registration.repository_canonical + " · " + registration.project_id);
+            })),
       createElement("label", { className: "daidala-wizard-field" },
         createElement("span", null, "GitHub repository link"),
         createElement("input", {
@@ -2437,13 +2522,14 @@
           onChange: function (event) { setGithubUrl(event.target.value); setPreview(null); setConfirmed(false); }
         })
       ),
-      createElement("button", { type: "button", disabled: busy || !githubUrl.trim(), onClick: inspect }, busy ? "Inspecting…" : "Inspect repository"),
+      createElement("button", { type: "button", disabled: busy || !githubUrl.trim() || !controllerProfile, onClick: inspect }, busy ? "Inspecting…" : "Inspect repository"),
       preview ? createElement("section", { className: "daidala-github-link-preview" },
         createElement("h3", null, "Registration preview"),
         createElement("p", null, "Repository: " + preview.repository + " · Project: " + preview.project_id),
+        createElement("p", null, "Profile: " + preview.controller_profile),
         createElement("p", null, "Manifest digest: " + preview.manifest_digest),
         createElement("p", null, "Release policy: commit " + (preview.release.allow_commit ? "allowed" : "denied") + ", push " + (preview.release.allow_push ? "allowed" : "denied") + ", publish " + (preview.release.allow_publish ? "allowed" : "denied")),
-        createElement("p", null, "Readiness: board " + (readiness.board_selected ? "selected" : "missing") + ", attended target " + (readiness.attended_target_configured ? "configured" : "missing") + ", delivery alias " + (readiness.delivery_credential_alias || "missing") + ", secret value " + (readiness.delivery_secret_value_checked ? "checked" : "not checked")),
+        createElement("p", null, "Readiness: board " + (readiness.board_selected ? "selected" : "missing") + ", attended target " + (readiness.attended_target_configured ? "configured" : "missing") + ", credential " + (readiness.credential_available ? "available" : "not available")),
         createElement("p", null, "This preview creates " + (writes.record_count || 0) + " non-secret profile-local records."),
         createElement("p", { className: "daidala-workflow-meta" }, "This action does not commit, push, create a GitHub Project, or store a token."),
         createElement("code", null, preview.preview_digest),

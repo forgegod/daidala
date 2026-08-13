@@ -257,8 +257,7 @@ class RegistrationPreview:
             "readiness": {
                 "board_selected": True,
                 "attended_target_configured": True,
-                "delivery_credential_alias": DELIVERY_CREDENTIAL_ALIAS,
-                "delivery_secret_value_checked": False,
+                "credential_available": False,
             },
             "writes": {
                 "record_count": 2,
@@ -427,7 +426,7 @@ class RepositoryRegistrationService:
         ):
             raise RepositoryRegistrationError("committed project manifest response is invalid")
         try:
-            content = base64.b64decode(encoded_content, validate=True)
+            content = base64.b64decode(encoded_content.replace("\n", ""), validate=True)
         except (ValueError, binascii.Error) as error:
             raise RepositoryRegistrationError(
                 "committed project manifest encoding is invalid"

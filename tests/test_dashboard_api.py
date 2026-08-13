@@ -97,6 +97,8 @@ def test_router_exports_all_phase_two_routes() -> None:
         "artifact_curator_preview",
         "artifact_curator_apply",
         "registrations",
+        "repository_registration_profiles",
+        "repository_registrations",
         "repository_registration_preview",
         "repository_registration_apply",
         "github_project_links",
@@ -1602,7 +1604,7 @@ def test_configuration_route_delegates_to_the_profile_safe_backend() -> None:
     assert payload == expected
 
 
-def test_repository_registration_routes_use_one_profile_bound_preview_and_apply_service() -> None:
+def test_repository_registration_routes_use_the_explicit_selected_profile() -> None:
     api = load_api()
     preview = types.SimpleNamespace(
         to_dict=lambda: {
@@ -1611,7 +1613,7 @@ def test_repository_registration_routes_use_one_profile_bound_preview_and_apply_
             "project_id": "forgegod-daidala",
             "controller_profile": "controller",
             "preview_digest": "f" * 64,
-            "readiness": {"board_selected": True, "delivery_secret_value_checked": False},
+            "readiness": {"board_selected": True, "credential_available": False},
             "writes": {"record_count": 2},
         }
     )
@@ -1626,14 +1628,20 @@ def test_repository_registration_routes_use_one_profile_bound_preview_and_apply_
             calls.append(("apply", github_url, kwargs))
             return preview
 
-    api.__dict__["_repository_registration_service"] = lambda: Service()
+    api.__dict__["_repository_registration_service"] = lambda profile: (
+        calls.append(("service", profile)) or Service()
+    )
 
     inspected = api.repository_registration_preview(
-        {"github_url": "https://github.com/forgegod/daidala"}
+        {
+            "github_url": "https://github.com/forgegod/daidala",
+            "controller_profile": "daidala-self-improvement",
+        }
     )
     applied = api.repository_registration_apply(
         {
             "github_url": "https://github.com/forgegod/daidala",
+            "controller_profile": "daidala-self-improvement",
             "preview_digest": "f" * 64,
             "confirm": True,
         }
@@ -1642,7 +1650,9 @@ def test_repository_registration_routes_use_one_profile_bound_preview_and_apply_
     assert inspected == preview.to_dict()
     assert applied == preview.to_dict()
     assert calls == [
+        ("service", "daidala-self-improvement"),
         ("preview", "https://github.com/forgegod/daidala"),
+        ("service", "daidala-self-improvement"),
         (
             "apply",
             "https://github.com/forgegod/daidala",
@@ -1650,6 +1660,93 @@ def test_repository_registration_routes_use_one_profile_bound_preview_and_apply_
         ),
     ]
     assert "token" not in json.dumps(applied).lower()
+    assert "credential_alias" not in json.dumps(applied)
+
+
+def test_repository_registration_profiles_and_rows_resolve_only_selected_profile(
+    tmp_path: Path,
+) -> None:
+    api = load_api()
+    dashboard_root = (tmp_path / "dashboard").resolve()
+    controller_root = (tmp_path / "controller").resolve()
+    dashboard_root.mkdir()
+    controller_root.mkdir()
+    registration = types.SimpleNamespace(
+        project_id="forgegod-daidala",
+        controller_profile="daidala-self-improvement",
+        repository_canonical="forgegod/daidala",
+    )
+    calls: list[str] = []
+
+    api.__dict__["active_profile"] = lambda _run, **_kwargs: "daidala-dashboard"
+    api.__dict__["list_profiles"] = lambda _run: [
+        "daidala-dashboard",
+        "daidala-self-improvement",
+    ]
+
+    def resolve(profile: str, _run: object) -> Path:
+        calls.append(profile)
+        return {
+            "daidala-dashboard": dashboard_root,
+            "daidala-self-improvement": controller_root,
+        }[profile]
+
+    api.__dict__["resolve_profile_root"] = resolve
+    api.__dict__["list_controller_registrations"] = lambda root: (
+        (registration,) if root == controller_root else ()
+    )
+
+    assert api.repository_registration_profiles() == {
+        "selected_profile": "daidala-dashboard",
+        "profiles": ["daidala-dashboard", "daidala-self-improvement"],
+    }
+    assert api.repository_registrations("daidala-self-improvement") == {
+        "controller_profile": "daidala-self-improvement",
+        "registrations": [
+            {
+                "project_id": "forgegod-daidala",
+                "repository_canonical": "forgegod/daidala",
+            }
+        ],
+    }
+    assert calls == ["daidala-self-improvement"]
+
+
+def test_repository_registration_rows_reject_unknown_profile_before_resolution() -> None:
+    api = load_api()
+    api.__dict__["list_profiles"] = lambda _run: ["daidala-dashboard"]
+    api.__dict__["resolve_profile_root"] = lambda *_args: pytest.fail(
+        "unknown profile must not be resolved"
+    )
+
+    with pytest.raises(api.HTTPException) as raised:
+        api.repository_registrations("forged-profile")
+
+    assert raised.value.status_code == 409
+    assert raised.value.detail == "selected Hermes profile is unavailable"
+
+
+def test_repository_registration_preview_names_duplicate_registration_safely() -> None:
+    api = load_api()
+
+    class Service:
+        def preview(self, _github_url: str) -> object:
+            raise api.RepositoryRegistrationError(
+                "project ID is already registered in this profile"
+            )
+
+    api.__dict__["_repository_registration_service"] = lambda _profile: Service()
+
+    with pytest.raises(api.HTTPException) as raised:
+        api.repository_registration_preview(
+            {
+                "github_url": "https://github.com/forgegod/daidala",
+                "controller_profile": "daidala-self-improvement",
+            }
+        )
+
+    assert raised.value.status_code == 409
+    assert raised.value.detail == "repository is already registered for selected profile"
 
 
 def test_project_link_verify_returns_only_sanitized_session_result(tmp_path: Path) -> None:

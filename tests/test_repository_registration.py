@@ -70,8 +70,9 @@ def write_defaults(root: Path) -> None:
 
 
 class GitHubRunner:
-    def __init__(self, manifest: str = MANIFEST) -> None:
+    def __init__(self, manifest: str = MANIFEST, *, wrap_manifest_content: bool = False) -> None:
         self.manifest = manifest
+        self.wrap_manifest_content = wrap_manifest_content
         self.commands: list[tuple[str, ...]] = []
         self.environments: list[dict[str, str]] = []
 
@@ -94,12 +95,15 @@ class GitHubRunner:
             "repos/forgegod/daidala/contents/.daidala/project.yaml",
         ):
             content = self.manifest.encode("utf-8")
+            encoded = base64.b64encode(content).decode("ascii")
+            if self.wrap_manifest_content:
+                encoded = base64.encodebytes(content).decode("ascii")
             return 0, json.dumps(
                 {
                     "type": "file",
                     "encoding": "base64",
                     "size": len(content),
-                    "content": base64.b64encode(content).decode("ascii"),
+                    "content": encoded,
                 }
             )
         return 1, "private error that must not be surfaced"
@@ -174,11 +178,33 @@ def test_preview_is_path_secret_and_private_destination_free(tmp_path: Path) -> 
         "allow_push": False,
         "allow_publish": False,
     }
+    assert payload["readiness"] == {
+        "board_selected": True,
+        "attended_target_configured": True,
+        "credential_available": False,
+    }
     assert str(root) not in rendered
     assert "telegram:" not in rendered
     assert "environment_variable" not in rendered
+    assert "credential_alias" not in rendered
+    assert "github-repository-delivery" not in rendered
     assert "GH_TOKEN" not in runner.environments[0]
     assert runner.environments[0]["GH_PROMPT_DISABLED"] == "1"
+
+
+def test_preview_accepts_github_wrapped_base64_manifest_content(tmp_path: Path) -> None:
+    root = (tmp_path / "controller").resolve()
+    write_defaults(root)
+    service = RepositoryRegistrationService(
+        root,
+        "daidala-self-improvement",
+        runner=GitHubRunner(wrap_manifest_content=True),
+        environ={"PATH": "/usr/bin"},
+    )
+
+    preview = service.preview("https://github.com/forgegod/daidala")
+
+    assert preview.project_id == "forgegod-daidala"
 
 
 def test_apply_reinspects_and_writes_exactly_two_private_records(tmp_path: Path) -> None:

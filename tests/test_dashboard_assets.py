@@ -82,8 +82,9 @@ def test_dashboard_mutations_use_only_closed_post_routes() -> None:
     assert 'API_BASE + "/wizard/preview"' in source
     assert 'API_BASE + "/wizard/start"' in source
     assert 'API_BASE + "/wizard/boards/preview"' in source
-    assert 'API_BASE + "/wizard/boards"' in source
+    assert '"/wizard/boards"' in source
     assert '"Repository path"' not in source
+    assert "delivery_credential_alias" not in source
     assert '"/skills/action/preview"' in source
     assert '"/skills/action"' in source
     assert "preview_digest: preview.preview_digest" in source
@@ -267,13 +268,17 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
     required_strings = (
         'API_BASE + "/repository-registration/preview"',
         'API_BASE + "/repository-registration"',
+        'API_BASE + "/repository-registration/profiles"',
+        'API_BASE + "/repository-registration/registrations?controller_profile="',
         "Repositories",
+        "Selected Hermes profile",
+        "requires a fresh inspection",
         "GitHub repository link",
         "Inspect repository",
         "Registration preview",
         "Manifest digest:",
         "Release policy:",
-        "delivery alias",
+        "credential ",
         "This action does not commit, push, create a GitHub Project, or store a token.",
         "I confirm registering this exact repository",
         "Register repository",
@@ -285,6 +290,7 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
     assert "checkout_path" not in source
     assert "repository_path" not in source
     assert "token:" not in source.lower()
+    assert "delivery_credential_alias" not in source
 
 
 def test_bundle_exposes_confirmed_path_free_checkout_lifecycle_actions() -> None:

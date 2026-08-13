@@ -133,6 +133,7 @@ from daidala.registrations import (
 from daidala.repository_registration import (
     RepositoryRegistrationError,
     RepositoryRegistrationService,
+    resolve_profile_root,
 )
 from daidala.revision import MAX_REVIEW_FEEDBACK_BYTES
 from daidala.service import ServiceError
@@ -346,11 +347,27 @@ def _current_registrations() -> tuple[ControllerRegistration, ...]:
         raise HTTPException(status_code=409, detail="registered projects are invalid") from error
 
 
-def _repository_registration_service() -> RepositoryRegistrationService:
-    """Use the dashboard's mounted profile; the browser cannot select another."""
+def _repository_registration_profile_root(controller_profile: str) -> Path:
+    """Resolve one browser-named profile through Hermes before any profile read."""
 
-    profile = active_profile(_run_command, fallback_name=resolve_data_root().name)
-    return RepositoryRegistrationService(resolve_data_root().resolve(), profile)
+    try:
+        if controller_profile not in list_profiles(_run_command):
+            raise RepositoryRegistrationError("selected Hermes profile is unavailable")
+        return resolve_profile_root(controller_profile, _run_command)
+    except (RepositoryRegistrationError, SetupWizardError) as error:
+        raise HTTPException(
+            status_code=409, detail="selected Hermes profile is unavailable"
+        ) from error
+
+
+def _repository_registration_service(
+    controller_profile: str,
+) -> RepositoryRegistrationService:
+    """Bind a registration preview to one validated existing Hermes profile."""
+
+    return RepositoryRegistrationService(
+        _repository_registration_profile_root(controller_profile), controller_profile
+    )
 
 
 def _delivery_service() -> BranchDeliveryService:
@@ -571,10 +588,49 @@ def registrations() -> dict[str, Any]:
     }
 
 
+@router.get("/repository-registration/profiles")
+def repository_registration_profiles() -> dict[str, object]:
+    """List safe existing profile names and the dashboard-profile default."""
+
+    try:
+        selected_profile = active_profile(
+            _run_command, fallback_name=resolve_data_root().name
+        )
+        return {
+            "selected_profile": selected_profile,
+            "profiles": list_profiles(_run_command),
+        }
+    except SetupWizardError as error:
+        raise HTTPException(
+            status_code=502, detail="Hermes profile inventory is unavailable"
+        ) from error
+
+
+@router.get("/repository-registration/registrations")
+def repository_registrations(controller_profile: str) -> dict[str, object]:
+    """Project only selected-profile repository identity facts for Config."""
+
+    root = _repository_registration_profile_root(controller_profile)
+    try:
+        rows = list_controller_registrations(root)
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail="registered projects are invalid") from error
+    return {
+        "controller_profile": controller_profile,
+        "registrations": [
+            {
+                "project_id": row.project_id,
+                "repository_canonical": row.repository_canonical,
+            }
+            for row in rows
+        ],
+    }
+
+
 def _repository_registration_request(
     payload: dict[str, object], *, apply: bool
-) -> tuple[str, str | None]:
-    fields = {"github_url"}
+) -> tuple[str, str, str | None]:
+    fields = {"github_url", "controller_profile"}
     if apply:
         fields |= {"preview_digest", "confirm"}
     if set(payload) != fields or (apply and payload.get("confirm") is not True):
@@ -582,24 +638,33 @@ def _repository_registration_request(
             status_code=400, detail="exact repository registration fields are required"
         )
     github_url = payload.get("github_url")
-    if not isinstance(github_url, str):
-        raise HTTPException(status_code=400, detail="GitHub repository link is required")
+    controller_profile = payload.get("controller_profile")
+    if not isinstance(github_url, str) or not isinstance(controller_profile, str):
+        raise HTTPException(
+            status_code=400,
+            detail="GitHub repository link and controller profile are required",
+        )
     digest = payload.get("preview_digest")
     if digest is not None and not _is_sha256(digest):
         raise HTTPException(status_code=400, detail="preview_digest must be a SHA-256 identity")
-    return github_url, digest if isinstance(digest, str) else None
+    return github_url, controller_profile, digest if isinstance(digest, str) else None
 
 
 @router.post("/repository-registration/preview")
 def repository_registration_preview(payload: dict[str, object]) -> dict[str, object]:
     """Inspect one GitHub repository without creating profile-local records."""
 
-    github_url, _ = _repository_registration_request(payload, apply=False)
+    github_url, controller_profile, _ = _repository_registration_request(payload, apply=False)
     try:
-        return _repository_registration_service().preview(github_url).to_dict()
+        return _repository_registration_service(controller_profile).preview(github_url).to_dict()
     except RepositoryRegistrationError as error:
+        detail = (
+            "repository is already registered for selected profile"
+            if str(error) == "project ID is already registered in this profile"
+            else "repository registration preview unavailable"
+        )
         raise HTTPException(
-            status_code=409, detail="repository registration preview unavailable"
+            status_code=409, detail=detail
         ) from error
 
 
@@ -607,10 +672,10 @@ def repository_registration_preview(payload: dict[str, object]) -> dict[str, obj
 def repository_registration_apply(payload: dict[str, object]) -> dict[str, object]:
     """Create only the fresh preview-confirmed profile-local registration records."""
 
-    github_url, digest = _repository_registration_request(payload, apply=True)
+    github_url, controller_profile, digest = _repository_registration_request(payload, apply=True)
     assert digest is not None
     try:
-        return _repository_registration_service().apply(
+        return _repository_registration_service(controller_profile).apply(
             github_url,
             expected_preview_digest=digest,
             confirmation="register-repository",
