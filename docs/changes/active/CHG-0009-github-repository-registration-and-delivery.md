@@ -1,6 +1,6 @@
 # CHG-0009: GitHub repository registration and delivery authority
 
-**Status:** pending
+**Status:** blocked
 **Source request:** Direct operator request: "According to the skills create the CHR and design as proposed including the CLI and dashboard support. Do not execute before approval. In order to secure the PAT make a recommendation how to store the PAT in a secure way"; clarification: "I mean CHG"
 **Affected capabilities:** CAP-0003, CAP-0004
 **Created:** 2026-08-11
@@ -95,7 +95,7 @@ The approved preparation is deliberately narrower than a content migration: the 
 | Wireframe generator preparation | done (`node docs/product/wireframes/generate.mjs --render`; CAP-0003 outputs byte-identical) | The generator supports multiple current CAP entries without creating planned entries. |
 | Approval boundary | done (direct operator approval: "Approve CHG-0009") | Direct operator approval of this CHG scope, Hermes secret-source/profile-aliasing approach, review wireframes, and branch-only delivery rule. |
 | Repository registration vertical slice | done (`.venv/bin/pytest -q tests/test_repository_registration.py tests/test_cli.py tests/test_dashboard_api.py tests/test_dashboard_assets.py`; `.venv/bin/ruff check .`; `.venv/bin/python scripts/check_records.py .`; `.venv/bin/python scripts/check_md_links.py .`; `.venv/bin/daidala packs validate addyosmani`; `.venv/bin/daidala packs validate aidlc`) | CLI/dashboard adapters, CAP-0004 wireframe, and focused end-to-end tests passed. |
-| Delivery authority and branch publish vertical slice | pending | Requires separate direct operator approval after the completed registration checkpoint. Focused credential-boundary, preview/apply, branch-only Git, retry, and dashboard-state tests; generated CAP-0005 wireframe; full affected repository gate. |
+| Delivery authority and branch publish vertical slice | blocked | Requires separate direct operator approval after the completed registration checkpoint. Focused credential-boundary, preview/apply, branch-only Git, retry, and dashboard-state tests; generated CAP-0005 wireframe; full affected repository gate. |
 | Closeout | pending | Current CAPs, architecture/security/setup documentation, CHG evidence, full repository gate, and human review are complete before archival. |
 
 ## Decisions
@@ -126,3 +126,6 @@ The approved preparation is deliberately narrower than a content migration: the 
 - Repository registration vertical-slice gate passed on 2026-08-13: record and
   Markdown-link checks, 156 focused registration/CLI/dashboard tests, Ruff, and
   Addyosmani and AI-DLC pack validation all completed successfully.
+- State reconciliation: commits `8b37de7` and `c56e31e` contain the completed
+  registration vertical slice and its recorded phase gate. This CHG is blocked
+  only on the delivery slice's separately required direct approval.
