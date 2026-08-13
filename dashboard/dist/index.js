@@ -132,7 +132,7 @@
         : null,
       decision: decision === "plan-approval" ? decision : null,
       planRevision: planRevision && /^\d+$/.test(planRevision) ? planRevision : null,
-      section: ["packs", "github-projects", "checkouts", "constraints", "verification", "runbook"].indexOf(section) >= 0
+      section: ["packs", "repositories", "github-projects", "checkouts", "constraints", "verification", "runbook"].indexOf(section) >= 0
         ? section
         : null,
       view: section ? "config" : ["workflows", "artifacts", "config"].indexOf(requestedView) >= 0
@@ -157,6 +157,20 @@
   function buildRegistrations() {
     return fetchJson(API_BASE + "/registrations").then(function (payload) {
       return payload && Array.isArray(payload.registrations) ? payload.registrations : [];
+    });
+  }
+
+  function previewRepositoryRegistration(githubUrl) {
+    return postJson(API_BASE + "/repository-registration/preview", {
+      github_url: githubUrl
+    });
+  }
+
+  function applyRepositoryRegistration(githubUrl, previewDigest) {
+    return postJson(API_BASE + "/repository-registration", {
+      github_url: githubUrl,
+      preview_digest: previewDigest,
+      confirm: true
     });
   }
 
@@ -1619,6 +1633,11 @@
           onClick: function () { setTab("packs"); }
         }, "Packs"),
         createElement("button", {
+          type: "button", role: "tab", "aria-selected": tab === "repositories",
+          className: tab === "repositories" ? "is-selected" : "",
+          onClick: function () { setTab("repositories"); }
+        }, "Repositories"),
+        createElement("button", {
           type: "button", role: "tab", "aria-selected": tab === "github-projects",
           className: tab === "github-projects" ? "is-selected" : "",
           onClick: function () { setTab("github-projects"); }
@@ -1646,8 +1665,10 @@
       ),
       tab === "packs"
         ? createElement(PackBrowser)
-        : tab === "github-projects"
-          ? createElement(GitHubProjectLinksPanel)
+        : tab === "repositories"
+          ? createElement(RepositoryRegistrationPanel)
+          : tab === "github-projects"
+            ? createElement(GitHubProjectLinksPanel)
           : tab === "checkouts"
             ? createElement(CheckoutManagerPanel)
             : tab === "constraints"
@@ -2230,6 +2251,83 @@
                 )
                 : null
             )
+    );
+  }
+
+  function RepositoryRegistrationPanel() {
+    var urlState = useState("");
+    var githubUrl = urlState[0];
+    var setGithubUrl = urlState[1];
+    var previewState = useState(null);
+    var preview = previewState[0];
+    var setPreview = previewState[1];
+    var confirmedState = useState(false);
+    var confirmed = confirmedState[0];
+    var setConfirmed = confirmedState[1];
+    var busyState = useState(false);
+    var busy = busyState[0];
+    var setBusy = busyState[1];
+    var messageState = useState("");
+    var message = messageState[0];
+    var setMessage = messageState[1];
+
+    function inspect() {
+      if (!githubUrl.trim()) return;
+      setBusy(true); setMessage(""); setPreview(null); setConfirmed(false);
+      previewRepositoryRegistration(githubUrl.trim()).then(function (result) {
+        setPreview(result);
+      }).catch(function (caught) {
+        setMessage("Repository inspection unavailable: " + errorText(caught));
+      }).finally(function () { setBusy(false); });
+    }
+
+    function apply() {
+      if (!preview || !confirmed) return;
+      setBusy(true); setMessage("");
+      applyRepositoryRegistration(githubUrl.trim(), preview.preview_digest).then(function (result) {
+        setPreview(result); setConfirmed(false);
+        setMessage("Repository registered. Refresh Configuration verification before starting a workflow.");
+      }).catch(function (caught) {
+        setMessage("Repository was not registered: " + errorText(caught));
+      }).finally(function () { setBusy(false); });
+    }
+
+    var readiness = preview && preview.readiness ? preview.readiness : {};
+    var writes = preview && preview.writes ? preview.writes : {};
+    return createElement("section", { className: "daidala-config", "data-testid": "daidala-repository-registration" },
+      createElement("header", { className: "daidala-config-header" },
+        createElement("div", null,
+          createElement("h2", null, "Repositories"),
+          createElement("p", { className: "daidala-workflow-meta" },
+            "Register a GitHub repository into the mounted controller profile. The browser cannot choose a profile or provide credentials."
+          )
+        )
+      ),
+      createElement("label", { className: "daidala-wizard-field" },
+        createElement("span", null, "GitHub repository link"),
+        createElement("input", {
+          value: githubUrl,
+          placeholder: "github.com/owner/repository",
+          onChange: function (event) { setGithubUrl(event.target.value); setPreview(null); setConfirmed(false); }
+        })
+      ),
+      createElement("button", { type: "button", disabled: busy || !githubUrl.trim(), onClick: inspect }, busy ? "Inspecting…" : "Inspect repository"),
+      preview ? createElement("section", { className: "daidala-github-link-preview" },
+        createElement("h3", null, "Registration preview"),
+        createElement("p", null, "Repository: " + preview.repository + " · Project: " + preview.project_id),
+        createElement("p", null, "Manifest digest: " + preview.manifest_digest),
+        createElement("p", null, "Release policy: commit " + (preview.release.allow_commit ? "allowed" : "denied") + ", push " + (preview.release.allow_push ? "allowed" : "denied") + ", publish " + (preview.release.allow_publish ? "allowed" : "denied")),
+        createElement("p", null, "Readiness: board " + (readiness.board_selected ? "selected" : "missing") + ", attended target " + (readiness.attended_target_configured ? "configured" : "missing") + ", delivery alias " + (readiness.delivery_credential_alias || "missing") + ", secret value " + (readiness.delivery_secret_value_checked ? "checked" : "not checked")),
+        createElement("p", null, "This preview creates " + (writes.record_count || 0) + " non-secret profile-local records."),
+        createElement("p", { className: "daidala-workflow-meta" }, "This action does not commit, push, create a GitHub Project, or store a token."),
+        createElement("code", null, preview.preview_digest),
+        createElement("label", { className: "daidala-pack-confirm" },
+          createElement("input", { type: "checkbox", checked: confirmed, onChange: function (event) { setConfirmed(event.target.checked); } }),
+          " I confirm registering this exact repository"
+        ),
+        createElement("button", { type: "button", disabled: busy || !confirmed, onClick: apply }, "Register repository")
+      ) : null,
+      message ? createElement("p", { role: "status", className: "daidala-banner" }, message) : null
     );
   }
 

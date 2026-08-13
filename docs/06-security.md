@@ -157,6 +157,14 @@ bundled skills, artifacts, documentation, tests, or package metadata. Secrets
 must remain in Hermes-owned configuration and approval paths, not Daidala
 artifacts.
 
+Repository registration accepts a GitHub.com identity link, not a credential.
+It reads repository metadata through the host's existing read-only GitHub CLI
+authentication and writes only non-secret profile-local registration records
+after an exact preview digest and literal confirmation. Dashboard requests never
+carry a token, alias, environment-variable name, controller path, or checkout
+path. A future delivery credential remains separate authority and cannot be
+granted by registration.
+
 The repository must not contain live Kanban or policy-ledger state, target
 worktrees, SQLite databases, model transcripts, generated workspaces, or
 credentials. Runtime paths use a Hermes-resolved, profile-aware data root and

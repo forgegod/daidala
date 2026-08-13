@@ -492,6 +492,49 @@ def _project_cycle_factory(service: FakeProjectCycles) -> cli.ProjectCycleFactor
     return cast(cli.ProjectCycleFactory, lambda: service)
 
 
+@dataclass
+class FakeRepositoryRegistrationPreview:
+    digest: str = "f" * 64
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "valid": True,
+            "repository": "forgegod/daidala",
+            "project_id": "forgegod-daidala",
+            "controller_profile": "controller",
+            "manifest_digest": "a" * 64,
+            "release": {"allow_commit": False, "allow_push": False, "allow_publish": False},
+            "readiness": {
+                "board_selected": True,
+                "attended_target_configured": True,
+                "delivery_credential_alias": "github-repository-delivery",
+                "delivery_secret_value_checked": False,
+            },
+            "writes": {
+                "record_count": 2,
+                "registration": True,
+                "credential_bindings": True,
+            },
+            "preview_digest": self.digest,
+        }
+
+
+class FakeRepositoryRegistrationService:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, object]] = []
+        self.preview_result = FakeRepositoryRegistrationPreview()
+
+    def preview(self, github_url: str) -> FakeRepositoryRegistrationPreview:
+        self.calls.append(("preview", github_url))
+        return self.preview_result
+
+    def apply(
+        self, github_url: str, *, expected_preview_digest: str, confirmation: str
+    ) -> FakeRepositoryRegistrationPreview:
+        self.calls.append(("apply", (github_url, expected_preview_digest, confirmation)))
+        return self.preview_result
+
+
 def _reconcile_argv() -> list[str]:
     return [
         "project-cycle",
@@ -681,6 +724,70 @@ def test_artifact_list_json_is_byte_identical_across_both_cli_surfaces(capsys) -
     assert payload["operation"] == "artifacts-list"
     assert payload["artifacts"][0]["artifact_id"] == "a" * 64
     assert "content" not in native_output
+
+
+def test_project_register_preview_and_apply_have_native_cli_parity(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    standalone = FakeRepositoryRegistrationService()
+    native = FakeRepositoryRegistrationService()
+    argv = [
+        "project",
+        "register",
+        "--github-url",
+        "https://github.com/forgegod/daidala",
+        "--profile",
+        "controller",
+    ]
+    def runner(_command: tuple[str, ...]) -> tuple[int, str]:
+        return 0, f"Path: {tmp_path}"
+
+    standalone_code = cli.main(
+        argv,
+        command_runner=runner,
+        repository_registration_factory=lambda _root, _profile: standalone,  # type: ignore[arg-type]
+    )
+    standalone_payload = json.loads(capsys.readouterr().out)
+    native_code = cli.run_command(
+        _host_args(argv),
+        command_runner=runner,
+        repository_registration_factory=lambda _root, _profile: native,  # type: ignore[arg-type]
+    )
+    native_payload = json.loads(capsys.readouterr().out)
+
+    assert standalone_code == native_code == 0
+    assert standalone.calls == native.calls == [("preview", "https://github.com/forgegod/daidala")]
+    assert standalone_payload == native_payload == {
+        "success": True,
+        "operation": "project-register",
+        "dry_run": True,
+        "preview": standalone.preview_result.to_dict(),
+    }
+
+    applied_code = cli.main(
+        [
+            *argv,
+            "--apply",
+            "--expected-preview-digest",
+            "f" * 64,
+            "--confirm",
+            "register-repository",
+        ],
+        command_runner=runner,
+        repository_registration_factory=lambda _root, _profile: standalone,  # type: ignore[arg-type]
+    )
+    applied_payload = json.loads(capsys.readouterr().out)
+    assert applied_code == 0
+    assert standalone.calls[-1] == (
+        "apply",
+        ("https://github.com/forgegod/daidala", "f" * 64, "register-repository"),
+    )
+    assert applied_payload == {
+        "success": True,
+        "operation": "project-register",
+        "dry_run": False,
+        "preview": standalone.preview_result.to_dict(),
+    }
 
 
 def test_artifact_list_human_output_contains_metadata_only(capsys) -> None:

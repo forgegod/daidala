@@ -1,0 +1,53 @@
+# CAP-0004: GitHub repository registration
+
+**Status:** implemented
+**Primary surface:** Daidala Config → Repositories
+
+## Outcome
+
+An operator can preview and explicitly register one GitHub repository for one
+existing Hermes controller profile without providing a filesystem path,
+credential alias, environment-variable name, or token to Daidala.
+
+## Behavior
+
+- `daidala project register --github-url URL --profile NAME` and Config →
+  Repositories use the same deterministic registration service.
+- Preview inspects the canonical GitHub identity and committed project policy,
+  reports the derived project ID, release flags, safe readiness state, two
+  proposed non-secret writes, and a digest bound to the profile and proposal.
+- Apply re-inspects the repository and accepts only the exact preview digest
+  plus the literal `register-repository` confirmation. It writes only the
+  controller registration and credential-bindings records.
+- The dashboard accepts only the GitHub URL for preview. Apply additionally
+  accepts its digest and `confirm: true`; the server derives the mounted profile.
+- Registration never accepts or stores a token, creates a GitHub Project,
+  creates a checkout, commits, pushes, publishes, or grants delivery authority.
+
+## Evidence
+
+### Runtime
+
+- [`daidala/repository_registration.py`](../../../daidala/repository_registration.py) — canonical GitHub URL validation, preview digest, prerequisite validation, and atomic two-record write.
+- [`daidala/cli.py`](../../../daidala/cli.py) — standalone and native CLI preview/apply adapter.
+- [`dashboard/plugin_api.py`](../../../dashboard/plugin_api.py) — exact path-free dashboard request boundary.
+- [`dashboard/dist/index.js`](../../../dashboard/dist/index.js) — Config → Repositories preview and explicit confirmation UI.
+
+### Tests
+
+- [`tests/test_repository_registration.py`](../../../tests/test_repository_registration.py) — deterministic registration core and fail-closed policy tests.
+- [`tests/test_cli.py`](../../../tests/test_cli.py) — native/standalone registration preview/apply parity.
+- [`tests/test_dashboard_api.py`](../../../tests/test_dashboard_api.py) — exact dashboard payload and confirmation boundary.
+- [`tests/test_dashboard_assets.py`](../../../tests/test_dashboard_assets.py) — path-free browser surface contract.
+
+## Contracts
+
+- [`docs/06-security.md`](../../06-security.md) — Hermes-owned secret and generated-state boundary.
+- [`docs/07-runbook.md`](../../07-runbook.md) — operator preview/apply procedure.
+- [`docs/16-self-improvement-setup.md`](../../16-self-improvement-setup.md) — profile-local controller prerequisite guidance.
+
+## Links
+
+- [CHG-0009](../../changes/active/CHG-0009-github-repository-registration-and-delivery.md)
+- [HTML wireframe](../wireframes/html/CAP-0004-github-repository-registration.html)
+- [PNG wireframe](../wireframes/exports/CAP-0004-github-repository-registration.png)

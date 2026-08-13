@@ -261,6 +261,32 @@ def test_bundle_exposes_path_free_github_project_link_management() -> None:
     assert "repository_path" not in source
 
 
+def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    required_strings = (
+        'API_BASE + "/repository-registration/preview"',
+        'API_BASE + "/repository-registration"',
+        "Repositories",
+        "GitHub repository link",
+        "Inspect repository",
+        "Registration preview",
+        "Manifest digest:",
+        "Release policy:",
+        "delivery alias",
+        "This action does not commit, push, create a GitHub Project, or store a token.",
+        "I confirm registering this exact repository",
+        "Register repository",
+    )
+    for text in required_strings:
+        assert text in source, f"missing repository registration UI contract text: {text}"
+
+    assert 'data-testid": "daidala-repository-registration"' in source
+    assert "checkout_path" not in source
+    assert "repository_path" not in source
+    assert "token:" not in source.lower()
+
+
 def test_bundle_exposes_confirmed_path_free_checkout_lifecycle_actions() -> None:
     source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
 

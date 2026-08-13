@@ -9,6 +9,7 @@ Capability records describe material behavior that is implemented now. They are 
 | [CAP-0001 — Approval-gated workflow execution](capabilities/CAP-0001-approval-gated-workflow-execution.md) | implemented | none; presented by CAP-0003 |
 | [CAP-0002 — Git-pinned phased-plan admission](capabilities/CAP-0002-git-pinned-phased-plan-admission.md) | implemented | none; CLI and CAP-0003 adapters |
 | [CAP-0003 — Operator dashboard](capabilities/CAP-0003-operator-dashboard.md) | implemented | [wireframe index](wireframes/index.html) |
+| [CAP-0004 — GitHub repository registration](capabilities/CAP-0004-github-repository-registration.md) | implemented | Config → Repositories ([wireframe](wireframes/index.html)) |
 
 ## Capability contract
 

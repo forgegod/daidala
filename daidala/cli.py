@@ -23,6 +23,10 @@ from .plan_admission import admit_plan_source
 from .prerequisites import DoctorRunner, run_prerequisite_diagnosis
 from .project_cycles import ProjectCycleOperator
 from .reconciliation import ReconciliationPreview, ReconciliationResult
+from .repository_registration import (
+    RepositoryRegistrationService,
+    resolve_profile_root,
+)
 from .restricted_container import (
     RestrictedContainerEvidence,
     RestrictedContainerExecutor,
@@ -46,6 +50,7 @@ ContainerRequestRunner = Callable[
     [RestrictedContainerRequest, Path], tuple[RestrictedContainerEvidence, Path]
 ]
 ProjectCycleFactory = Callable[[], ProjectCycleOperator]
+RepositoryRegistrationFactory = Callable[[Path, str], RepositoryRegistrationService]
 
 
 def register_cli(parser: argparse.ArgumentParser) -> None:
@@ -172,6 +177,24 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     project_cycle_cancel.add_argument("--reason", required=True)
     project_cycle_cancel.add_argument("--apply", action="store_true")
     project_cycle_cancel.add_argument("--expected-preview-digest")
+
+    project = sub.add_parser(
+        "project", help="Preview or register one GitHub repository for a Hermes profile"
+    )
+    project_sub = project.add_subparsers(dest="project_command", required=True)
+    project_register = project_sub.add_parser(
+        "register", help="Inspect GitHub policy before registering one repository"
+    )
+    project_register.add_argument("--github-url", required=True)
+    project_register.add_argument(
+        "--profile", required=True, help="Existing Hermes controller profile"
+    )
+    project_register.add_argument("--apply", action="store_true")
+    project_register.add_argument("--expected-preview-digest")
+    project_register.add_argument(
+        "--confirm",
+        help="Literal confirmation token required by --apply: register-repository",
+    )
 
     start = sub.add_parser("start", help="Validate inputs and create the initial Kanban graph")
     start.add_argument("target_repository")
@@ -451,6 +474,7 @@ def main(
     container_request_runner: ContainerRequestRunner | None = None,
     project_cycle_factory: ProjectCycleFactory | None = None,
     plan_source_admitter: PlanSourceAdmitter | None = None,
+    repository_registration_factory: RepositoryRegistrationFactory | None = None,
 ) -> int:
     args = build_parser().parse_args(argv)
     return run_command(
@@ -467,6 +491,7 @@ def main(
         container_request_runner=container_request_runner,
         project_cycle_factory=project_cycle_factory,
         plan_source_admitter=plan_source_admitter,
+        repository_registration_factory=repository_registration_factory,
     )
 
 
@@ -485,6 +510,7 @@ def run_command(
     container_request_runner: ContainerRequestRunner | None = None,
     project_cycle_factory: ProjectCycleFactory | None = None,
     plan_source_admitter: PlanSourceAdmitter | None = None,
+    repository_registration_factory: RepositoryRegistrationFactory | None = None,
 ) -> int:
     """Execute one parsed command and return its process exit code."""
     try:
@@ -511,6 +537,13 @@ def run_command(
                 project_cycle_factory or ProjectCycleOperator
             )
             return _run_project_cycle(args, selected_project_cycle_factory)
+        if args.command == "project":
+            return _run_project_registration(
+                args,
+                repository_registration_factory
+                or (lambda root, profile: RepositoryRegistrationService(root, profile)),
+                command_runner or _run_command,
+            )
         if args.command in {
             "start",
             "start-from-plan",
@@ -763,6 +796,44 @@ def _run_project_cycle(
             "success": True,
             "operation": "project-cycle-admit",
             **result.to_dict(),
+        }
+    )
+    return 0
+
+
+def _run_project_registration(
+    args: argparse.Namespace,
+    factory: RepositoryRegistrationFactory,
+    command_runner: CommandRunner,
+) -> int:
+    """Expose repository registration through the shared preview-confirm boundary."""
+
+    if args.project_command != "register":
+        raise ValueError(f"unsupported project command: {args.project_command}")
+    if args.apply and args.expected_preview_digest is None:
+        raise ValueError("--apply requires --expected-preview-digest")
+    if not args.apply and (
+        args.expected_preview_digest is not None or args.confirm is not None
+    ):
+        raise ValueError("--expected-preview-digest and --confirm require --apply")
+    root = resolve_profile_root(args.profile, command_runner)
+    service = factory(root, args.profile)
+    if args.apply:
+        assert isinstance(args.expected_preview_digest, str)
+        assert isinstance(args.confirm, str)
+        preview = service.apply(
+            args.github_url,
+            expected_preview_digest=args.expected_preview_digest,
+            confirmation=args.confirm,
+        )
+    else:
+        preview = service.preview(args.github_url)
+    _print(
+        {
+            "success": True,
+            "operation": "project-register",
+            "dry_run": not args.apply,
+            "preview": preview.to_dict(),
         }
     )
     return 0

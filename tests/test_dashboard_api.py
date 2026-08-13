@@ -96,6 +96,8 @@ def test_router_exports_all_phase_two_routes() -> None:
         "artifact_curator_preview",
         "artifact_curator_apply",
         "registrations",
+        "repository_registration_preview",
+        "repository_registration_apply",
         "github_project_links",
         "github_project_link",
         "github_project_link_preview",
@@ -1506,6 +1508,56 @@ def test_configuration_route_delegates_to_the_profile_safe_backend() -> None:
     payload = api.configuration()
 
     assert payload == expected
+
+
+def test_repository_registration_routes_use_one_profile_bound_preview_and_apply_service() -> None:
+    api = load_api()
+    preview = types.SimpleNamespace(
+        to_dict=lambda: {
+            "valid": True,
+            "repository": "forgegod/daidala",
+            "project_id": "forgegod-daidala",
+            "controller_profile": "controller",
+            "preview_digest": "f" * 64,
+            "readiness": {"board_selected": True, "delivery_secret_value_checked": False},
+            "writes": {"record_count": 2},
+        }
+    )
+    calls: list[tuple[object, ...]] = []
+
+    class Service:
+        def preview(self, github_url: str) -> object:
+            calls.append(("preview", github_url))
+            return preview
+
+        def apply(self, github_url: str, **kwargs: object) -> object:
+            calls.append(("apply", github_url, kwargs))
+            return preview
+
+    api.__dict__["_repository_registration_service"] = lambda: Service()
+
+    inspected = api.repository_registration_preview(
+        {"github_url": "https://github.com/forgegod/daidala"}
+    )
+    applied = api.repository_registration_apply(
+        {
+            "github_url": "https://github.com/forgegod/daidala",
+            "preview_digest": "f" * 64,
+            "confirm": True,
+        }
+    )
+
+    assert inspected == preview.to_dict()
+    assert applied == preview.to_dict()
+    assert calls == [
+        ("preview", "https://github.com/forgegod/daidala"),
+        (
+            "apply",
+            "https://github.com/forgegod/daidala",
+            {"expected_preview_digest": "f" * 64, "confirmation": "register-repository"},
+        ),
+    ]
+    assert "token" not in json.dumps(applied).lower()
 
 
 def test_project_link_verify_returns_only_sanitized_session_result(tmp_path: Path) -> None:

@@ -11,6 +11,17 @@
         "width": 1440,
         "height": 960
       }
+    },
+    {
+      "capability": "CAP-0004",
+      "slug": "CAP-0004-github-repository-registration",
+      "title": "GitHub repository registration",
+      "html": "html/CAP-0004-github-repository-registration.html",
+      "png": "exports/CAP-0004-github-repository-registration.png",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      }
     }
   ]
 }

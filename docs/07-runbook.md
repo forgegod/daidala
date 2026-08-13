@@ -32,6 +32,27 @@ confirmation. It creates the profile-local `daidala/policy-ledger.sqlite3`
 schema. Repeating it with a fresh preview is safe and reports a no-op. The dry
 run prints the target path and does not create directories or files.
 
+## Register a GitHub repository
+
+Registration is preview-first and writes only after the selected controller
+profile is resolved by Hermes:
+
+```bash
+daidala project register --github-url https://github.com/acme/payments-service \
+  --profile controller
+daidala project register --github-url https://github.com/acme/payments-service \
+  --profile controller --apply --expected-preview-digest <preview-digest> \
+  --confirm register-repository
+```
+
+Preview validates the canonical GitHub identity and committed project manifest,
+then reports safe readiness, release flags, and the two proposed non-secret
+profile-local records. Apply repeats that inspection and rejects stale digests.
+It does not accept or store a token, create a checkout or GitHub Project, commit,
+push, publish, or grant delivery authority. In the dashboard use **Config →
+Repositories**: paste only the GitHub.com repository link, inspect the preview,
+then tick the explicit confirmation before registering.
+
 ## Diagnose prerequisites
 
 ```bash

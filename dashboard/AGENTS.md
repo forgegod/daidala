@@ -10,7 +10,8 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
 - `plugin_api.py` mounts the profile-safe read model, bounded pack operations,
   narrowly scoped setup routes, bounded Kanban detail reads, exact-plan approval,
   exact attended review preview/apply routes, workflow-owned card comment/unblock,
-  cancellation preview/apply routes, registration projections, checkout-root and
+  cancellation preview/apply routes, preview-confirmed repository registration,
+  registration projections, checkout-root and
   checkout lifecycle preview/apply, and GitHub Projects v2 link read/verify/
   preview/apply routes, read-only reusable constraint-source list/detail routes,
   persisted-configuration verification, non-mutating initialization preview/confirmed apply,
@@ -18,7 +19,8 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   catalog/text/download reads, and digest-confirmed curator controls.
 - `dist/index.js` renders Workflows, Artifacts, and Config primary views;
   workflow progress; the inventory-backed Start workflow
-  wizard, Config → Packs readiness/content, GitHub Projects v2 links,
+  wizard, Config → Repositories registration, Config → Packs readiness/content,
+  GitHub Projects v2 links,
   constraint source selection and schema-aware authoring, read-only configuration
   verification, initialization preview/apply, prerequisite diagnosis, operator-runbook
   guidance, and confirmed checkout refresh/adoption/backup-pruning/policy
@@ -45,10 +47,14 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   through `POST /workflows/{workflow_id}/review-disposition`, confirmed
   workflow-owned-card comment/unblock routes, digest-bound cancellation
   through `POST /workflows/{workflow_id}/cancel`, confirmed checkout-root
-  replacement, and confirmed GitHub Projects v2 link upsert/removal. GitHub link
-  preview/verification and registration/checkout reads are non-mutating; browser
+  replacement, confirmed GitHub Projects v2 link upsert/removal, and confirmed
+  repository registration after a fresh digest. GitHub link preview/verification
+  and registration/checkout previews are non-mutating; browser
   payloads never carry credential values, an environment-variable name, a
-  repository checkout path, or a GitHub Project node ID.
+  repository checkout path, or a GitHub Project node ID. Repository-registration
+  preview accepts exactly `{github_url}`; apply additionally requires a SHA-256
+  `preview_digest` and `confirm: true`, derives the mounted profile, and delegates
+  only to the deterministic registration service.
 - Checkout lifecycle routes derive the registration and checkout from a project ID.
   Refresh, clean-unowned adoption, backup pruning, and policy replacement each
   recompute a preview and require its exact digest plus `confirm: true`; browser

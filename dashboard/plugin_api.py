@@ -127,6 +127,10 @@ from daidala.registrations import (
     list_controller_registrations,
     registration_path,
 )
+from daidala.repository_registration import (
+    RepositoryRegistrationError,
+    RepositoryRegistrationService,
+)
 from daidala.revision import MAX_REVIEW_FEEDBACK_BYTES
 from daidala.service import ServiceError
 from daidala.setup_wizard import (
@@ -336,6 +340,13 @@ def _current_registrations() -> tuple[ControllerRegistration, ...]:
         return list_controller_registrations(resolve_data_root().resolve())
     except ValueError as error:
         raise HTTPException(status_code=409, detail="registered projects are invalid") from error
+
+
+def _repository_registration_service() -> RepositoryRegistrationService:
+    """Use the dashboard's mounted profile; the browser cannot select another."""
+
+    profile = active_profile(_run_command, fallback_name=resolve_data_root().name)
+    return RepositoryRegistrationService(resolve_data_root().resolve(), profile)
 
 
 def _registered_project(project_id: str) -> ControllerRegistration:
@@ -548,6 +559,56 @@ def registrations() -> dict[str, Any]:
             for row in rows
         ]
     }
+
+
+def _repository_registration_request(
+    payload: dict[str, object], *, apply: bool
+) -> tuple[str, str | None]:
+    fields = {"github_url"}
+    if apply:
+        fields |= {"preview_digest", "confirm"}
+    if set(payload) != fields or (apply and payload.get("confirm") is not True):
+        raise HTTPException(
+            status_code=400, detail="exact repository registration fields are required"
+        )
+    github_url = payload.get("github_url")
+    if not isinstance(github_url, str):
+        raise HTTPException(status_code=400, detail="GitHub repository link is required")
+    digest = payload.get("preview_digest")
+    if digest is not None and not _is_sha256(digest):
+        raise HTTPException(status_code=400, detail="preview_digest must be a SHA-256 identity")
+    return github_url, digest if isinstance(digest, str) else None
+
+
+@router.post("/repository-registration/preview")
+def repository_registration_preview(payload: dict[str, object]) -> dict[str, object]:
+    """Inspect one GitHub repository without creating profile-local records."""
+
+    github_url, _ = _repository_registration_request(payload, apply=False)
+    try:
+        return _repository_registration_service().preview(github_url).to_dict()
+    except RepositoryRegistrationError as error:
+        raise HTTPException(
+            status_code=409, detail="repository registration preview unavailable"
+        ) from error
+
+
+@router.post("/repository-registration")
+def repository_registration_apply(payload: dict[str, object]) -> dict[str, object]:
+    """Create only the fresh preview-confirmed profile-local registration records."""
+
+    github_url, digest = _repository_registration_request(payload, apply=True)
+    assert digest is not None
+    try:
+        return _repository_registration_service().apply(
+            github_url,
+            expected_preview_digest=digest,
+            confirmation="register-repository",
+        ).to_dict()
+    except RepositoryRegistrationError as error:
+        raise HTTPException(
+            status_code=409, detail="repository registration could not be applied"
+        ) from error
 
 
 @router.get("/github-project-links")

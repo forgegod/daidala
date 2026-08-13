@@ -1,8 +1,8 @@
 # CHG-0009: GitHub repository registration and delivery authority
 
-**Status:** in-progress
+**Status:** pending
 **Source request:** Direct operator request: "According to the skills create the CHR and design as proposed including the CLI and dashboard support. Do not execute before approval. In order to secure the PAT make a recommendation how to store the PAT in a secure way"; clarification: "I mean CHG"
-**Affected capabilities:** CAP-0003
+**Affected capabilities:** CAP-0003, CAP-0004
 **Created:** 2026-08-11
 **Scope amendment:** The approved scope includes Hermes secret-source and secret profile-aliasing design, explicit controller-profile selection in CLI/dashboard concepts, and review-only Pencil wireframes. Phase entry found that a repository URL and committed manifest cannot supply the board, intake/findings aliases, maintainer identities, attended destination, evaluator policy, or limits required by the strict controller-registration record. The registration slice therefore adds one strict profile-local `repository-registration-defaults.yaml` prerequisite. Preview reads that record without exposing private values; apply still writes exactly the two approved project-local records and blocks when the prerequisite is missing or invalid.
 
@@ -10,7 +10,8 @@
 
 After explicit implementation approval, an operator will be able to paste a GitHub.com repository link into a preview-first CLI or the Daidala Config surface, inspect the repository's committed Daidala manifest, and create a non-secret profile-local registration. A later, separately approved delivery capability will allow an accepted reviewed worktree to be committed and pushed only to a Daidala-owned branch with a dedicated least-privilege credential.
 
-Current behavior remains unchanged: registration is manual, the dashboard is read-only for registrations, and Daidala has no target commit or push surface.
+Current behavior has manual preview-confirmed registration through the CLI and
+dashboard. Daidala still has no target commit or push surface.
 
 ## Scope
 
@@ -93,8 +94,8 @@ The approved preparation is deliberately narrower than a content migration: the 
 |---|---|---|
 | Wireframe generator preparation | done (`node docs/product/wireframes/generate.mjs --render`; CAP-0003 outputs byte-identical) | The generator supports multiple current CAP entries without creating planned entries. |
 | Approval boundary | done (direct operator approval: "Approve CHG-0009") | Direct operator approval of this CHG scope, Hermes secret-source/profile-aliasing approach, review wireframes, and branch-only delivery rule. |
-| Repository registration vertical slice | in-progress | Registration core policy and tests are in progress; completing the slice requires CLI/dashboard adapters, generated CAP-0004 wireframe, and focused end-to-end tests; `python scripts/check_records.py .`; `python scripts/check_md_links.py .`. |
-| Delivery authority and branch publish vertical slice | pending | Focused credential-boundary, preview/apply, branch-only Git, retry, and dashboard-state tests; generated CAP-0005 wireframe; full affected repository gate. |
+| Repository registration vertical slice | done (`.venv/bin/pytest -q tests/test_repository_registration.py tests/test_cli.py tests/test_dashboard_api.py tests/test_dashboard_assets.py`; `.venv/bin/ruff check .`; `.venv/bin/python scripts/check_records.py .`; `.venv/bin/python scripts/check_md_links.py .`; `.venv/bin/daidala packs validate addyosmani`; `.venv/bin/daidala packs validate aidlc`) | CLI/dashboard adapters, CAP-0004 wireframe, and focused end-to-end tests passed. |
+| Delivery authority and branch publish vertical slice | pending | Requires separate direct operator approval after the completed registration checkpoint. Focused credential-boundary, preview/apply, branch-only Git, retry, and dashboard-state tests; generated CAP-0005 wireframe; full affected repository gate. |
 | Closeout | pending | Current CAPs, architecture/security/setup documentation, CHG evidence, full repository gate, and human review are complete before archival. |
 
 ## Decisions
@@ -118,5 +119,10 @@ The approved preparation is deliberately narrower than a content migration: the 
 - Review-only design package: [`design.md`](CHG-0009-github-repository-registration-and-delivery/design.md), its [Pencil source](CHG-0009-github-repository-registration-and-delivery/wireframes/repository-registration-and-delivery.pen), and native [registration](CHG-0009-github-repository-registration-and-delivery/wireframes/exports/repository-registration.png) and [delivery](CHG-0009-github-repository-registration-and-delivery/wireframes/exports/delivery-authority.png) PNGs. It is not a CAP-linked current-product wireframe and grants no runtime authority.
 - Existing contract evidence: [`docs/16-self-improvement-setup.md`](../../16-self-improvement-setup.md) documents explicit environment bindings; [`docs/01-architecture.md`](../../01-architecture.md) and [`docs/06-security.md`](../../06-security.md) retain the current no-commit/no-push policy. Hermes secret-source behavior is governed by the [official Secrets guide](https://hermes-agent.nousresearch.com/docs/user-guide/secrets/).
 - The review screens were compared with the locally running [Daidala Config view](http://127.0.0.1:9119/daidala?view=config) and preserve the complete Hermes shell and Daidala Config navigation from the historical review source. The local view is visual-reference evidence only; it confers no implementation authority.
-- No runtime behavior, CLI command, dashboard route, credential binding, PAT, secret source, commit, push, or external GitHub action has been executed.
-- The implementation evidence and CAP links are intentionally pending the approved vertical slices above.
+- The registration core, CLI and dashboard adapters, CAP-0004, and its generated
+  wireframe are implemented in the repository. Verification evidence is recorded
+  only after the phase gate passes; no target repository registration, PAT, secret
+  source, commit, push, or external GitHub action has been executed.
+- Repository registration vertical-slice gate passed on 2026-08-13: record and
+  Markdown-link checks, 156 focused registration/CLI/dashboard tests, Ruff, and
+  Addyosmani and AI-DLC pack validation all completed successfully.
