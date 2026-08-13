@@ -111,7 +111,7 @@ returned activation digest for the handoff or blocking comment.
 | `implement` | Apply only the approved plan in the persistent worktree, then call `daidala_capture_implementation`. | Complete with the immutable diff and changed-path references. |
 | `verify` | Run every approved command in the persistent worktree and immediately call `daidala_record_verification` with the exact command, exit code, and output. | Complete only when the final evidence passes; otherwise comment and block. |
 | `review` | Review the captured diff and verification evidence without changing files, then call `daidala_submit_review` with outcome, summary, and bounded findings whose evidence digests name the implementation diff or passing verification outputs. | An accepted review is complete evidence; another outcome must comment and block with `review-required:`. Never call attended disposition tools. |
-| `deliver` | Call `daidala_deliver` and inspect its durable delivery artifact. This card exists only after an attended `daidala_review_disposition(action: "accept_delivery")` for the exact review digest. | Complete with changed paths and evidence references, explicitly reporting `committed: false` and `pushed: false`. |
+| `deliver` | This is an attended branch-delivery gate. Do not call a worker delivery tool. An attended `daidala deliver` command first inspects the exact branch, review, verification, manifest, registration, credential-availability, and changed-path preview; after re-checking it, the operator runs `daidala deliver WORKFLOW_ID --apply --expected-preview-digest DIGEST --confirm`. | The attended adapter alone commits the reviewed diff, pushes `daidala/WORKFLOW_ID`, records the receipt, completes the card, and releases the owned worktree. |
 
 Automated review is evidence, not delivery authority. Review workers must never
 call attended disposition tools. An attended launcher or operator inspects the
@@ -119,6 +119,9 @@ bounded review packet and chooses exact acceptance, workflow rejection, or a
 revision request. Blocking findings cannot be overridden; reviewer disagreement
 without changed code is handled by commenting on and unblocking the same review
 card for re-review.
+
+Deliver workers must not commit, push, or complete the Deliver card. They leave
+the reviewed owned worktree unchanged for the attended branch-delivery adapter.
 
 ### Git-pinned imported plan workers
 
@@ -156,12 +159,12 @@ using schema `daidala.handoff/v1`. Metadata must contain:
   `constraints_revision`, `constraints_digest`, `stage`, `pack`, `pack_revision`,
   `outcome`, `artifact_refs`, `skill_activation_digest`, and `active_skills`;
 - `workspace_path` and `baseline_commit` for `implement`, `verify`, `review`, and
-  `deliver`;
+  `deliver` only when delivery is completed by the attended adapter;
 - diff and changed-path manifest references for `implement`;
 - exact commands, exit codes, and output references for `verify`;
 - the structured review outcome, review digest, and finding evidence digests for `review`;
-- the delivery artifact and its `committed: false`, `pushed: false` restrictions
-  for `deliver`.
+- the delivery receipt branch, commit, and authorization digest for attended
+  `deliver`; workers must not emit delivery handoffs.
 
 Use artifact references and digests, not large artifact bodies or raw logs. Keep
 credentials, tokens, and unrelated transcripts out of comments and metadata.
@@ -214,7 +217,8 @@ activation boundary, and still cannot approve that plan.
 - Rewinding directly to `implement`, `verify`, or `define` instead of using a
   new plan revision or a new workflow as appropriate.
 - Reporting model prose as verification evidence.
-- Committing or pushing target changes as part of delivery.
+- A worker committing, pushing, or completing the Deliver card. Only the
+  confirmed attended CLI or dashboard branch-delivery adapter may do that.
 - Spawning a new MCP, HTTP service, or nested `hermes chat` process.
 
 ## Verification Checklist
@@ -235,6 +239,7 @@ activation boundary, and still cannot approve that plan.
 - [ ] A revision request preserved source evidence and produced one successor
       Plan card; no direct phase rewind occurred.
 - [ ] Delivery card exists only after exact attended review acceptance.
-- [ ] Delivery reports changed paths without a target commit or push.
-- [ ] Every worker run ended through `kanban_complete` or `kanban_block` with a
+- [ ] Delivery was previewed and then confirmed through the attended adapter;
+      the durable receipt names the exact branch and commit.
+- [ ] Every worker-run stage ended through `kanban_complete` or `kanban_block` with a
       durable `daidala.handoff/v1` handoff or blocking comment.

@@ -30,6 +30,14 @@ const SCREENS = [
     png: "exports/CAP-0004-github-repository-registration.png",
     viewport: { width: 1440, height: 960 },
   },
+  {
+    capability: "CAP-0005",
+    slug: "CAP-0005-reviewed-github-branch-delivery",
+    title: "Reviewed GitHub branch delivery",
+    html: "html/CAP-0005-reviewed-github-branch-delivery.html",
+    png: "exports/CAP-0005-reviewed-github-branch-delivery.png",
+    viewport: { width: 1440, height: 960 },
+  },
 ];
 
 function buildRepositoryRegistrationHtml(screen) {
@@ -62,8 +70,35 @@ function buildRepositoryRegistrationHtml(screen) {
 </body></html>`;
 }
 
+function buildReviewedBranchDeliveryHtml(screen) {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${screen.capability} — ${screen.title}</title>
+  <style>
+    :root { color-scheme: dark; --bg:#001f1d; --panel:#032725; --soft:#082f2c; --line:#244845; --text:#f4ead8; --muted:#8fa6a1; --cream:#ffe6ca; --ink:#102321; --amber:#ffc933; --green:#42ea92; }
+    * { box-sizing:border-box; } body { margin:0; width:1440px; min-height:960px; overflow:hidden; background:var(--bg); color:var(--text); font:14px/1.4 Inter,ui-sans-serif,system-ui,sans-serif; }
+    .profile { height:38px; padding:10px 18px; color:var(--amber); background:#2c2500; border-bottom:1px solid #675700; } .shell { display:grid; grid-template-columns:268px 1fr; min-height:922px; } aside { padding:22px 16px; border-right:1px solid var(--line); } .brand { font-size:19px; font-weight:800; letter-spacing:.12em; } nav { margin-top:30px; display:grid; gap:4px; } nav div { padding:9px 12px; color:var(--muted); font-size:11px; letter-spacing:.1em; text-transform:uppercase; } nav .active { color:var(--cream); background:#29413f; font-weight:800; }
+    main { min-width:0; } header { height:86px; padding:24px 34px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); } h1,h2,h3,p { margin-top:0; } h1 { font-size:20px; letter-spacing:.08em; text-transform:uppercase; } .tabs { display:flex; } .tab { padding:11px 22px; border:1px solid var(--line); color:var(--muted); font-size:11px; letter-spacing:.1em; text-transform:uppercase; } .tab.active { color:var(--ink); background:var(--cream); border-color:var(--cream); font-weight:800; }
+    .workspace { padding:28px 34px; } .crumb { color:var(--amber); font-size:11px; letter-spacing:.1em; text-transform:uppercase; } .intro { max-width:860px; color:var(--muted); } .card { max-width:1080px; padding:23px; border:1px solid var(--line); background:var(--panel); } .status { display:flex; gap:12px; align-items:center; margin-bottom:18px; padding:11px 13px; border:1px solid var(--green); background:#06372f; } .status b { color:var(--green); font-size:11px; letter-spacing:.1em; text-transform:uppercase; }
+    .facts { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1px; border:1px solid var(--line); background:var(--line); } .facts section { min-height:116px; padding:15px; background:var(--soft); } .label { color:var(--muted); font-size:10px; letter-spacing:.11em; text-transform:uppercase; } .value { margin:5px 0 13px; color:var(--cream); font-size:16px; font-weight:700; overflow-wrap:anywhere; } code { color:var(--green); font-size:12px; } .paths { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:20px; } .paths ul { margin:7px 0 0; padding-left:20px; color:var(--cream); } .paths li { margin:5px 0; } .gate { padding:15px; border:1px solid var(--amber); background:#182c28; } .gate p { color:var(--muted); } label { display:block; margin:13px 0; color:var(--cream); } button { padding:12px 18px; border:1px solid var(--cream); background:var(--cream); color:var(--ink); font-weight:800; letter-spacing:.06em; text-transform:uppercase; } .note { margin-top:17px; max-width:1080px; padding:13px 16px; border:1px dashed #496763; color:var(--muted); } .annotation { position:fixed; right:14px; bottom:11px; color:#617b77; font-size:10px; }
+  </style>
+</head>
+<body>
+  <div class="profile">Managing profile “demo-controller” — branch delivery resolves authority only from this mounted Hermes profile.</div>
+  <div class="shell"><aside><div class="brand">HERMES<br>AGENT</div><nav><div>Chat</div><div>Sessions</div><div>Kanban</div><div>Skills</div><div>Plugins</div><div class="active">Daidala</div></nav></aside>
+  <main><header><h1>Daidala</h1><div class="tabs"><div class="tab active">Workflows</div><div class="tab">Artifacts</div><div class="tab">Config</div></div></header>
+    <section class="workspace"><p class="crumb">Workflows / dependency-refresh-demo / delivery</p><h2>Reviewed branch delivery</h2><p class="intro">Inspect the fresh preview derived from accepted review evidence. Confirmation can commit and push only the displayed Daidala-owned branch.</p>
+      <section class="card"><div class="status"><b>Ready for attended confirmation</b><span>Accepted review · release policy allows commit and push · delivery credential available</span></div><div class="facts"><section><p class="label">Target branch</p><p class="value">daidala/dependency-refresh-demo</p><p class="label">Baseline</p><code>47c4…ac91</code></section><section><p class="label">Review evidence</p><p class="value">Accepted review</p><p class="label">Review digest</p><code>7ba4…10d2</code></section><section><p class="label">Preview identity</p><p class="value">Fresh exact preview</p><p class="label">Preview digest</p><code>0a9f…cb31</code></section></div><div class="paths"><section><h3>Reviewed changed paths</h3><ul><li>daidala/delivery.py</li><li>tests/test_delivery.py</li><li>docs/07-runbook.md</li></ul></section><section class="gate"><h3>Commit and push boundary</h3><p>The browser neither supplies nor displays a credential. It cannot select a remote, branch, worktree, or changed path.</p><label><input type="checkbox"> I confirm committing and pushing this exact branch delivery.</label><button>Confirm commit and push branch</button></section></div></section><p class="note">The operation creates no pull request, merge, release, publication, or default-branch update. Completion records only branch and commit receipt, then releases the Daidala-owned worktree.</p>
+    </section></main></div><div class="annotation">Static capability wireframe · synthetic data · no runtime authority</div>
+</body></html>`;
+}
+
 function buildHtml(screen) {
   if (screen.capability === "CAP-0004") return buildRepositoryRegistrationHtml(screen);
+  if (screen.capability === "CAP-0005") return buildReviewedBranchDeliveryHtml(screen);
   return `<!doctype html>
 <html lang="en">
 <head>

@@ -13,6 +13,7 @@ from typing import Any
 
 import pytest
 
+from daidala.delivery import DeliveryPreview
 from daidala.state import ReviewOutcome
 
 ROOT = Path(__file__).parents[1]
@@ -128,6 +129,8 @@ def test_router_exports_all_phase_two_routes() -> None:
         "review_decision",
         "review_disposition_preview",
         "review_disposition",
+        "delivery_preview",
+        "delivery_apply",
         "workflow_card_comment",
         "workflow_card_unblock",
         "workflow_cancel_preview",
@@ -146,6 +149,95 @@ def test_router_exports_all_phase_two_routes() -> None:
         "wizard_start",
     ):
         assert callable(getattr(api, name))
+
+
+def test_delivery_routes_require_exact_preview_confirmation_and_redact_authority() -> None:
+    api = load_api()
+    calls: list[tuple[object, ...]] = []
+    expected_preview = DeliveryPreview(
+        workflow_id="workflow-1",
+        project_id="project-1",
+        branch="daidala/workflow-1",
+        baseline_commit="a" * 40,
+        manifest_digest="b" * 64,
+        registration_digest="c" * 64,
+        credential_alias="github-repository-delivery",
+        credential_available=True,
+        review_digest="d" * 64,
+        implementation_digest="e" * 64,
+        verification_digests=("f" * 64,),
+        plan_digest="0" * 64,
+        plan_revision=1,
+        changed_paths=("daidala/service.py",),
+    )
+
+    class Delivery:
+        def preview(self, workflow_id: str) -> DeliveryPreview:
+            calls.append(("preview", workflow_id))
+            return expected_preview
+
+        def apply(self, workflow_id: str, **kwargs: object) -> object:
+            calls.append(("apply", workflow_id, kwargs))
+            return types.SimpleNamespace(
+                workflow_id=workflow_id,
+                committed=True,
+                pushed=True,
+                delivery_authorization=types.SimpleNamespace(
+                    branch="daidala/workflow-1",
+                    commit="b" * 40,
+                    credential_alias="github-repository-delivery",
+                ),
+            )
+
+    api.__dict__["_delivery_service"] = Delivery
+
+    preview = api.delivery_preview("workflow-1", {})
+    applied = api.delivery_apply(
+        "workflow-1", {"preview_digest": expected_preview.digest, "confirm": True}
+    )
+
+    assert preview["branch"] == "daidala/workflow-1"
+    assert applied == {
+        "workflow_id": "workflow-1",
+        "branch": "daidala/workflow-1",
+        "commit": "b" * 40,
+        "committed": True,
+        "pushed": True,
+    }
+    assert calls == [
+        ("preview", "workflow-1"),
+        (
+            "apply",
+            "workflow-1",
+            {"expected_preview_digest": expected_preview.digest, "confirm": True},
+        ),
+    ]
+    assert "credential_alias" not in json.dumps([preview, applied])
+
+
+def test_delivery_routes_reject_noncanonical_payloads_before_service_dispatch() -> None:
+    api = load_api()
+    calls = 0
+
+    def delivery_service() -> object:
+        nonlocal calls
+        calls += 1
+        return object()
+
+    api.__dict__["_delivery_service"] = delivery_service
+
+    invalid_payloads = (
+        (api.delivery_preview, {"confirm": True}),
+        (api.delivery_apply, {}),
+        (api.delivery_apply, {"preview_digest": "a" * 64, "confirm": False}),
+        (api.delivery_apply, {"preview_digest": "not-a-digest", "confirm": True}),
+        (api.delivery_apply, {"preview_digest": "a" * 64, "confirm": True, "extra": 1}),
+    )
+    for route, payload in invalid_payloads:
+        with pytest.raises(FakeHTTPException) as raised:
+            route("workflow-1", payload)
+        assert raised.value.status_code == 400
+    assert calls == 0
 
 
 def test_setup_analysis_route_uses_server_derived_path_free_snapshot() -> None:

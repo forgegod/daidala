@@ -999,7 +999,6 @@ def test_execution_handlers_keep_json_boundary() -> None:
             tools.record_verification,
             {"workflow_id": "workflow", "command": "pytest", "exit_code": 0, "output": "ok"},
         ),
-        (tools.deliver, {"workflow_id": "workflow"}),
     ]
 
     for handler, arguments in cases:
@@ -1028,7 +1027,6 @@ def test_public_schemas_have_no_removed_lifecycle_aliases() -> None:
         "daidala_capture_implementation",
         "daidala_record_skill_activation",
         "daidala_record_verification",
-        "daidala_deliver",
     }
     for schema in schemas.ALL_TOOLS:
         assert schema["parameters"]["additionalProperties"] is False

@@ -1219,6 +1219,141 @@ class ReviewDisposition:
 
 
 @dataclass(frozen=True)
+class DeliveryAuthorization:
+    """One exact attended authority to commit and push a reviewed branch."""
+
+    workflow_id: str
+    project_id: str
+    branch: str
+    baseline_commit: str
+    manifest_digest: str
+    registration_digest: str
+    credential_alias: str
+    review_digest: str
+    implementation_digest: str
+    verification_digests: tuple[str, ...]
+    plan_digest: str
+    plan_revision: int
+    preview_digest: str
+    commit: str | None
+    authorized_at: datetime
+    schema: str = "daidala.delivery-authorization/v1"
+
+    def __post_init__(self) -> None:
+        if self.schema != "daidala.delivery-authorization/v1":
+            raise PolicyViolationError("delivery authorization schema is invalid")
+        _require_text(self.workflow_id, "delivery authorization workflow ID")
+        _require_plan_id(self.project_id, "delivery authorization project ID")
+        if (
+            not isinstance(self.branch, str)
+            or not re.fullmatch(r"daidala/[A-Za-z0-9][A-Za-z0-9._-]{0,127}", self.branch)
+            or self.branch != f"daidala/{self.workflow_id}"
+        ):
+            raise PolicyViolationError("delivery branch must be a Daidala-owned branch")
+        for digest, label in (
+            (self.manifest_digest, "delivery manifest digest"),
+            (self.registration_digest, "delivery registration digest"),
+            (self.review_digest, "delivery review digest"),
+            (self.implementation_digest, "delivery implementation digest"),
+            (self.plan_digest, "delivery plan digest"),
+            (self.preview_digest, "delivery preview digest"),
+        ):
+            _require_digest(digest, label)
+        if not isinstance(self.baseline_commit, str) or not _REVISION.fullmatch(
+            self.baseline_commit
+        ):
+            raise PolicyViolationError("delivery baseline commit must be 40 lowercase hex")
+        _require_plan_id(self.credential_alias, "delivery credential alias")
+        if not isinstance(self.verification_digests, tuple) or not self.verification_digests:
+            raise PolicyViolationError("delivery authorization requires verification digests")
+        for digest in self.verification_digests:
+            _require_digest(digest, "delivery verification digest")
+        if tuple(sorted(set(self.verification_digests))) != self.verification_digests:
+            raise PolicyViolationError("delivery verification digests must be sorted and unique")
+        _require_revision(self.plan_revision)
+        if self.commit is not None and (
+            not isinstance(self.commit, str) or not _REVISION.fullmatch(self.commit)
+        ):
+            raise PolicyViolationError("delivery commit must be 40 lowercase hex")
+        _require_aware(self.authorized_at, "delivery authorized_at")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema": self.schema,
+            "workflow_id": self.workflow_id,
+            "project_id": self.project_id,
+            "branch": self.branch,
+            "baseline_commit": self.baseline_commit,
+            "manifest_digest": self.manifest_digest,
+            "registration_digest": self.registration_digest,
+            "credential_alias": self.credential_alias,
+            "review_digest": self.review_digest,
+            "implementation_digest": self.implementation_digest,
+            "verification_digests": list(self.verification_digests),
+            "plan_digest": self.plan_digest,
+            "plan_revision": self.plan_revision,
+            "preview_digest": self.preview_digest,
+            "commit": self.commit,
+            "authorized_at": self.authorized_at.isoformat(),
+        }
+
+    def canonical_bytes(self) -> bytes:
+        return json.dumps(
+            self.to_dict(), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+
+    @property
+    def digest(self) -> str:
+        return hashlib.sha256(self.canonical_bytes()).hexdigest()
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> DeliveryAuthorization:
+        _require_exact_fields(
+            raw,
+            {
+                "schema",
+                "workflow_id",
+                "project_id",
+                "branch",
+                "baseline_commit",
+                "manifest_digest",
+                "registration_digest",
+                "credential_alias",
+                "review_digest",
+                "implementation_digest",
+                "verification_digests",
+                "plan_digest",
+                "plan_revision",
+                "preview_digest",
+                "commit",
+                "authorized_at",
+            },
+            "delivery authorization",
+        )
+        try:
+            return cls(
+                schema=raw["schema"],
+                workflow_id=raw["workflow_id"],
+                project_id=raw["project_id"],
+                branch=raw["branch"],
+                baseline_commit=raw["baseline_commit"],
+                manifest_digest=raw["manifest_digest"],
+                registration_digest=raw["registration_digest"],
+                credential_alias=raw["credential_alias"],
+                review_digest=raw["review_digest"],
+                implementation_digest=raw["implementation_digest"],
+                verification_digests=tuple(raw["verification_digests"]),
+                plan_digest=raw["plan_digest"],
+                plan_revision=raw["plan_revision"],
+                preview_digest=raw["preview_digest"],
+                commit=raw["commit"],
+                authorized_at=datetime.fromisoformat(raw["authorized_at"]),
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            raise PolicyViolationError(f"invalid delivery authorization: {error}") from error
+
+
+@dataclass(frozen=True)
 class PlanRevisionRequestReference:
     """Durable intent for one review-driven successor Plan revision."""
 
@@ -1495,6 +1630,7 @@ class WorkflowLedger:
     review_disposition_history: tuple[ReviewDisposition, ...] = ()
     revision_requests: tuple[PlanRevisionRequestReference, ...] = ()
     activation_manifests: tuple[ActivationManifestReference, ...] = ()
+    delivery_authorization: DeliveryAuthorization | None = None
     committed: bool = False
     pushed: bool = False
 
@@ -1515,8 +1651,8 @@ class WorkflowLedger:
         _require_revision(self.policy_revision)
         if self.updated_at < self.created_at:
             raise PolicyViolationError("updated_at cannot be before created_at")
-        if self.committed or self.pushed:
-            raise PolicyViolationError("Daidala delivery cannot commit or push")
+        if self.pushed and not self.committed:
+            raise PolicyViolationError("pushed delivery requires a committed delivery")
         if self.plan_source_packet is not None:
             if not isinstance(self.plan_source_packet, PlanSourcePacket):
                 raise PolicyViolationError("plan source packet must be a plan source packet")
@@ -1675,6 +1811,38 @@ class WorkflowLedger:
                 or disposition.constraints_digest != review.constraints_digest
             ):
                 raise PolicyViolationError("review disposition must match the current review tuple")
+        if self.delivery_authorization is not None:
+            authorization = self.delivery_authorization
+            review = self.review
+            implementation = self.artifact_for(WorkflowStage.IMPLEMENT)
+            if (
+                review is None
+                or implementation is None
+                or self.review_disposition is None
+                or self.review_disposition.action is not ReviewDispositionAction.ACCEPT_DELIVERY
+                or authorization.workflow_id != self.workflow_id
+                or authorization.branch != f"daidala/{self.workflow_id}"
+                or authorization.baseline_commit != self.baseline_commit
+                or authorization.review_digest != review.digest
+                or authorization.implementation_digest != implementation.digest
+                or authorization.plan_digest != review.plan_digest
+                or authorization.plan_revision != self.plan_revision
+                or authorization.verification_digests != review.verification_digests
+            ):
+                raise PolicyViolationError(
+                    "delivery authorization must match the current accepted review"
+                )
+        if self.committed != self.pushed:
+            raise PolicyViolationError("branch delivery cannot record a partial commit or push")
+        if self.committed or self.pushed:
+            if self.delivery_authorization is None:
+                raise PolicyViolationError(
+                    "committed delivery requires exact delivery authorization"
+                )
+            if self.artifact_for(WorkflowStage.DELIVER) is None:
+                raise PolicyViolationError("committed delivery requires a delivery artifact")
+            if self.delivery_authorization.commit is None:
+                raise PolicyViolationError("committed delivery requires a recorded delivery commit")
 
         historical_reviews = [row.digest for row in self.review_history]
         if len(historical_reviews) != len(set(historical_reviews)):
@@ -1865,6 +2033,8 @@ class WorkflowLedger:
         }
         if self.plan_source_packet is not None:
             payload["plan_source_packet"] = self.plan_source_packet.to_dict()
+        if self.delivery_authorization is not None:
+            payload["delivery_authorization"] = self.delivery_authorization.to_dict()
         return payload
 
     @classmethod
@@ -1899,6 +2069,7 @@ class WorkflowLedger:
                 "review_disposition_history",
                 "revision_requests",
                 "activation_manifests",
+                "delivery_authorization",
                 "committed",
                 "pushed",
             }
@@ -1975,6 +2146,11 @@ class WorkflowLedger:
                 activation_manifests=tuple(
                     ActivationManifestReference.from_dict(row)
                     for row in raw["activation_manifests"]
+                ),
+                delivery_authorization=(
+                    DeliveryAuthorization.from_dict(raw["delivery_authorization"])
+                    if raw.get("delivery_authorization")
+                    else None
                 ),
                 committed=raw["committed"],
                 pushed=raw["pushed"],

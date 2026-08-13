@@ -589,6 +589,33 @@ def test_blocked_card_remediation_and_cancellation_use_preview_confirm_routes() 
     assert "recommendation.rationale" in source
 
 
+def test_branch_delivery_uses_only_preview_confirmed_path_free_routes() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    required = (
+        "function WorkflowDelivery(props)",
+        '"/delivery/preview"',
+        '"/delivery"',
+        "Preview branch delivery",
+        "Confirm commit and push branch",
+        "I confirm committing and pushing this exact branch delivery",
+        "Delivery credential unavailable.",
+        "Branch delivery completed:",
+        'data-testid": "daidala-delivery"',
+    )
+    for text in required:
+        assert text in source, f"missing branch delivery contract text: {text}"
+
+    panel = source[
+        source.index("function WorkflowDelivery") : source.index("function renderTimeline")
+    ]
+    assert "credential_alias" not in panel
+    assert "token" not in panel.lower()
+    assert "worktree_path" not in panel
+    assert "innerHTML" not in panel
+    assert "dangerouslySetInnerHTML" not in panel
+
+
 def test_bundle_targets_phase_two_read_endpoints() -> None:
     source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
 

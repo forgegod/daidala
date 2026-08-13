@@ -80,7 +80,7 @@ state machine.
 | Structured review outcome, bounded findings, evidence digests, and review identity | Daidala policy ledger |
 | Attended `accept_delivery`, `request_revision`, or `reject_workflow` disposition | Daidala policy ledger |
 | Immutable revision intent, successor packet, and retry checkpoints | Daidala policy ledger and artifact store |
-| Target commit or push | Unavailable without separate authorization |
+| Target branch commit and push | `daidala/delivery.py` after a preview-bound attended confirmation |
 
 No operational transition requires bidirectional status synchronization.
 Daidala reads Hermes status when presenting a combined view and applies only
@@ -149,8 +149,15 @@ and its recorded plan requires a fresh exact approval before a new worktree or
 post-gate graph can exist. The dashboard exposes exact-plan approval and attended
 review disposition through the same service authority as the native and
 standalone CLI; a revision request reopens the revision-addressed plan approval
-decision. Exact accepted disposition creates the delivery card; successful
-delivery records evidence and then releases the owned worktree.
+decision. Exact accepted disposition creates the delivery card. The separate
+attended delivery service revalidates the trusted registration, committed
+release policy, reviewed diff, and exact `daidala/<workflow-id>` branch before
+one commit/push transaction; it records the receipt and then releases the owned
+worktree. It neither updates a default branch nor creates a pull request, merge,
+release, or publication. The registered checkout remote proves the local checkout
+still maps to the canonical repository; the authenticated HTTPS transport endpoint
+is then derived from that same committed, registered canonical identity (see
+[Operator runbook: Reviewed branch delivery](07-runbook.md#reviewed-branch-delivery)).
 
 Native `hermes daidala` is the canonical operator surface. The standalone
 `daidala` executable shares its parser and handlers for diagnostics and smoke
@@ -209,7 +216,8 @@ state and lifecycle tools enforce one policy consistently:
 - reject a target repository with existing tracked or untracked changes;
 - create a fresh Daidala-owned Git worktree for implementation;
 - produce a reviewed working-tree diff, not an automatic target commit or push;
-- require separate authorization before committing or pushing target changes;
+- require a separately previewed and explicitly confirmed attended branch-delivery
+  transaction before committing or pushing target changes;
 - bind one human approval to the complete plan artifact digest;
 - invalidate approval whenever that plan changes.
 
@@ -256,6 +264,7 @@ that capability generically.
 | Policy ledger and persistence | `daidala/state.py`, `daidala/workflow.py`, `daidala/store.py` | State, policy, persistence, and restart tests |
 | Kanban graph and execution isolation | `daidala/service.py`, `daidala/kanban.py`, `daidala/execution.py` | Fake-host graph/recovery tests and isolated Hermes lifecycle probes |
 | Worktree cleanup and rollback | `daidala/service.py`, `daidala/execution.py` | Cross-pack delivery and cancellation tests |
+| Reviewed branch delivery | `daidala/delivery.py`, `daidala/service.py` | `tests/test_delivery.py`, CLI, dashboard API, and dashboard asset tests |
 | Pack schema and invariants | `daidala/packs.py` | `tests/test_packs.py` |
 | Addy Osmani mapping | `daidala/packs/addyosmani.yaml` | Pack load and CLI validation |
 | AI-DLC mapping | `daidala/packs/aidlc.yaml`, `daidala/skills/aidlc-adapter/` | Pack, fixture-workflow, registration, and wheel tests |

@@ -836,6 +836,15 @@ class DashboardBackend:
 
 
 def _workflow_summary(ledger: WorkflowLedger) -> dict[str, Any]:
+    authorization = ledger.delivery_authorization
+    delivery = (
+        {
+            "branch": authorization.branch,
+            "commit": authorization.commit,
+        }
+        if ledger.committed and ledger.pushed and authorization is not None
+        else None
+    )
     return {
         "workflow_id": ledger.workflow_id,
         "board_slug": ledger.board_slug,
@@ -849,6 +858,9 @@ def _workflow_summary(ledger: WorkflowLedger) -> dict[str, Any]:
         "approval": ledger.approval.to_dict() if ledger.approval else None,
         "current_constraints_revision": ledger.current_constraints_revision,
         "current_constraints_digest": ledger.current_constraints_digest,
+        "committed": ledger.committed,
+        "pushed": ledger.pushed,
+        "delivery_authorization": delivery,
         "updated_at": ledger.updated_at.isoformat(),
         "created_at": ledger.created_at.isoformat(),
     }

@@ -398,17 +398,6 @@ RECORD_SKILL_ACTIVATION = {
     },
 }
 
-DELIVER = {
-    "name": "daidala_deliver",
-    "description": "Record reviewed paths and evidence without commit or push.",
-    "parameters": {
-        "type": "object",
-        "properties": {"workflow_id": {"type": "string"}},
-        "required": ["workflow_id"],
-        "additionalProperties": False,
-    },
-}
-
 LIFECYCLE_TOOLS = (
     START,
     START_FROM_PLAN,
@@ -425,6 +414,5 @@ EXECUTION_TOOLS = (
     CAPTURE_IMPLEMENTATION,
     RECORD_SKILL_ACTIVATION,
     RECORD_VERIFICATION,
-    DELIVER,
 )
 ALL_TOOLS = (PACK_INFO, *LIFECYCLE_TOOLS, REVIEW_DISPOSITION, *EXECUTION_TOOLS)

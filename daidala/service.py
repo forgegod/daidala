@@ -72,6 +72,7 @@ from .state import (
     ActivationReferenceState,
     ApprovalSummary,
     ConstraintSourceProvenance,
+    DeliveryAuthorization,
     PlanRevisionRequestReference,
     PlanSourcePacket,
     ReviewDisposition,
@@ -96,6 +97,7 @@ from .workflow import (
     record_artifact,
     record_card,
     record_constraints,
+    record_delivery_authorization,
     record_imported_plan,
     record_plan_revision_request,
     record_plan_source,
@@ -1551,28 +1553,54 @@ class WorkflowService:
             finalized = self.store.update(finalized, expected_updated_at=observed.updated_at)
         return finalized.activation_manifests[-1], finalized
 
-    def deliver(self, workflow_id: str, *, board_slug: str, task_id: str) -> WorkflowLedger:
-        """Record reviewed evidence and remove the worktree without commit or push."""
+    def record_delivery_authorization(
+        self,
+        workflow_id: str,
+        *,
+        authorization: DeliveryAuthorization,
+    ) -> WorkflowLedger:
+        """Persist exact branch-delivery authority before a side-effecting Git call."""
+        observed = self.store.get_with_token(workflow_id)
+        updated = record_delivery_authorization(
+            observed.ledger,
+            authorization=authorization,
+            recorded_at=self._clock(),
+        )
+        if updated is observed.ledger:
+            return updated
+        return self.store.update(updated, expected_updated_at=observed.updated_at)
+
+    def finalize_branch_delivery(
+        self,
+        workflow_id: str,
+        *,
+        authorization: DeliveryAuthorization,
+        board_slug: str,
+        task_id: str,
+    ) -> WorkflowLedger:
+        """Record a pushed reviewed branch and then release only the owned worktree."""
         observed = self.store.get_with_token(workflow_id)
         ledger = observed.ledger
         self._require_current_card_context(
             ledger, WorkflowStage.DELIVER, board_slug=board_slug, task_id=task_id
         )
         _require_stage_activation(ledger, WorkflowStage.DELIVER)
+        if ledger.delivery_authorization != authorization or authorization.commit is None:
+            raise ServiceError("delivery authorization changed before finalization")
         delivery = ledger.artifact_for(WorkflowStage.DELIVER)
         if delivery is None:
-            if not ledger.worktree_path or not ledger.worktree_owned:
-                raise ExecutionError("workflow has no Daidala-owned implementation worktree")
-            changed_paths = self._implementation_changed_paths(ledger)
             payload = {
                 "workflow_id": ledger.workflow_id,
                 "baseline_commit": ledger.baseline_commit,
-                "changed_paths": list(changed_paths),
+                "changed_paths": list(self._implementation_changed_paths(ledger)),
                 "verification": [
                     evidence.to_dict() for evidence in ledger.verification_evidence
                 ],
-                "committed": False,
-                "pushed": False,
+                "committed": True,
+                "pushed": True,
+                "branch": authorization.branch,
+                "commit": authorization.commit,
+                "delivery_authorization_digest": authorization.digest,
             }
             artifact = self._workspace.write_json_artifact(
                 workflow_id,
@@ -1591,20 +1619,30 @@ class WorkflowService:
                 digest=artifact.digest,
                 recorded_at=self._clock(),
             )
-            ledger = self.store.update(
+            ledger = replace(ledger, committed=True, pushed=True, updated_at=self._clock())
+            ledger = self.store.update(ledger, expected_updated_at=observed.updated_at)
+        kanban = self._require_kanban()
+        live_delivery = kanban.show_card(ledger, WorkflowStage.DELIVER)
+        if live_delivery.status != "done":
+            kanban.complete_delivery(
                 ledger,
-                expected_updated_at=observed.updated_at,
+                branch=authorization.branch,
+                commit=authorization.commit,
             )
+        if not kanban.delivery_receipt_matches(
+            ledger,
+            branch=authorization.branch,
+            commit=authorization.commit,
+        ):
+            raise ServiceError("delivery card lacks the exact branch-delivery receipt")
         if ledger.worktree_path and ledger.worktree_owned:
             self._workspace.remove_worktree(
                 ledger.target_repository,
                 ledger.worktree_path,
             )
-            observed_after_delivery = ledger.updated_at.isoformat()
-            ledger = release_worktree(ledger, released_at=self._clock())
+            released = release_worktree(ledger, released_at=self._clock())
             ledger = self.store.update(
-                ledger,
-                expected_updated_at=observed_after_delivery,
+                released, expected_updated_at=ledger.updated_at.isoformat()
             )
         return ledger
 

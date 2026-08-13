@@ -416,8 +416,10 @@ Every trigger deployment must:
 - set budgets and retry limits in Hermes/provider policy because Daidala makes
   no model calls and owns no token budget.
 
-Do not grant the trigger credentials for commit, push, merge, deployment, or
-plan approval. Daidala delivery remains uncommitted and unpushed.
+Do not grant trigger credentials for commit, push, merge, deployment, or plan
+approval. An automated trigger cannot run attended branch delivery; only the
+separately previewed and confirmed operator CLI/dashboard adapter can commit and
+push the derived Daidala branch.
 
 ## Operational limitations
 

@@ -455,19 +455,6 @@ def record_skill_activation(args: dict[str, Any], **kwargs: Any) -> str:
     )
 
 
-def deliver(args: dict[str, Any], **kwargs: Any) -> str:
-    """Record delivery without committing or pushing target changes."""
-    del kwargs
-    return _service_handler(
-        args,
-        allowed={"workflow_id"},
-        required={"workflow_id"},
-        operation=lambda service, values: service.deliver(
-            str(values["workflow_id"]), **_worker_context()
-        ),
-    )
-
-
 def _worker_context() -> dict[str, str]:
     board_slug = os.environ.get("HERMES_KANBAN_BOARD")
     task_id = os.environ.get("HERMES_KANBAN_TASK")

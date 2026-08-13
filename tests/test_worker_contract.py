@@ -52,7 +52,7 @@ def test_historical_approval_stage_has_no_worker_skills() -> None:
         ("implement", "daidala_capture_implementation"),
         ("verify", "daidala_record_verification"),
         ("review", "daidala_submit_review"),
-        ("deliver", "daidala_deliver"),
+        ("deliver", "attended `daidala deliver`"),
     ),
 )
 def test_worker_contract_maps_every_stage_to_policy_evidence_operation(
@@ -133,6 +133,6 @@ def test_worker_contract_forbids_post_capture_mutation_and_target_delivery() -> 
     assert "Implementation scope is immutable" in instructions
     assert "must not modify it" in instructions
     assert "revision-addressed Plan card" in instructions
-    assert "`committed: false` and `pushed: false`" in instructions
+    assert "must not commit, push, or complete the Deliver card" in instructions
     assert "Review workers must never\ncall attended disposition tools" in instructions
     assert "no direct phase rewind occurred" in instructions

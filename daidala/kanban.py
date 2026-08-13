@@ -163,6 +163,44 @@ class KanbanGraphAdapter:
             raise KanbanError("kanban_show returned invalid assignee")
         return KanbanCardStatus(card.stage, card.task_id, status, assignee)
 
+    def delivery_receipt_matches(
+        self,
+        ledger: WorkflowLedger,
+        *,
+        branch: str,
+        commit: str,
+    ) -> bool:
+        """Return whether the live Deliver card records this exact pushed receipt."""
+
+        card = ledger.card_for(WorkflowStage.DELIVER)
+        if card is None:
+            raise KanbanError("workflow has no delivery card")
+        payload = self._tool_json(
+            "kanban_show",
+            {"task_id": card.task_id, "board": ledger.board_slug},
+        )
+        task = payload.get("task")
+        runs = payload.get("runs")
+        if (
+            not isinstance(task, Mapping)
+            or task.get("id") != card.task_id
+            or task.get("status") != "done"
+            or not isinstance(runs, list)
+        ):
+            return False
+        completed_runs = [
+            run
+            for run in runs
+            if isinstance(run, Mapping) and run.get("outcome") == "completed"
+        ]
+        if len(completed_runs) != 1:
+            return False
+        return completed_runs[0].get("metadata") == {
+            "schema": "daidala.delivery/v1",
+            "branch": branch,
+            "commit": commit,
+        }
+
     def combined_status(self, ledger: WorkflowLedger) -> tuple[KanbanCardStatus, ...]:
         return tuple(
             self.show_card(ledger, stage)
@@ -181,6 +219,27 @@ class KanbanGraphAdapter:
                 "task_id": card.task_id,
                 "summary": "Daidala structured review evidence recorded.",
                 "metadata": {"schema": "daidala.review/v1", "review_digest": review_digest},
+                "board": ledger.board_slug,
+            },
+        )
+
+    def complete_delivery(
+        self, ledger: WorkflowLedger, *, branch: str, commit: str
+    ) -> None:
+        """Complete one pushed branch-delivery card with non-secret receipt facts."""
+        card = ledger.card_for(WorkflowStage.DELIVER)
+        if card is None:
+            raise KanbanError("workflow has no delivery card")
+        self._tool_json(
+            "kanban_complete",
+            {
+                "task_id": card.task_id,
+                "summary": "Daidala reviewed branch delivery completed.",
+                "metadata": {
+                    "schema": "daidala.delivery/v1",
+                    "branch": branch,
+                    "commit": commit,
+                },
                 "board": ledger.board_slug,
             },
         )

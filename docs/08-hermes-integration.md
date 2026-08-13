@@ -31,11 +31,12 @@ releases:
 The verified directory and entry-point discovery paths register exactly:
 
 - tool `daidala_pack_info`;
-- tools `daidala_start`, `daidala_status`, `daidala_replace_constraints`,
-  `daidala_approve`, and `daidala_cancel`;
-- tools `daidala_submit_artifact`, `daidala_prepare_implementation`,
-  `daidala_capture_implementation`, `daidala_record_skill_activation`,
-  `daidala_record_verification`, and `daidala_deliver`;
+- tools `daidala_start`, `daidala_start_from_plan`, `daidala_status`,
+  `daidala_checkouts_status`, `daidala_replace_constraints`,
+  `daidala_approve`, `daidala_cancel`, and `daidala_review_disposition`;
+- tools `daidala_submit_artifact`, `daidala_submit_review`,
+  `daidala_prepare_implementation`, `daidala_capture_implementation`,
+  `daidala_record_skill_activation`, and `daidala_record_verification`;
 - skills `daidala:aidlc-adapter`, `daidala:orchestrate`, and `daidala:setup`;
 - operator command family `hermes daidala`.
 
@@ -74,7 +75,7 @@ HERMES_HOME="$isolated_home" hermes plugins list --user --json
 The list output must report `daidala` as enabled with source `git`. A fresh
 Hermes process using the same `HERMES_HOME` must expose `hermes daidala` and
 produce byte-equivalent native and standalone pack-validation JSON. The exact
-12-tool and three-skill inventories are pinned against `register(ctx)` by
+15-tool and three-skill inventories are pinned against `register(ctx)` by
 `tests/test_plugin.py`.
 
 Daidala does not override built-in tools.
@@ -158,7 +159,7 @@ Daidala distribution. Public remote `main` and the installed plugin both
 resolved to merge commit `4dd50d6545af998a2a5ff8dba6fe4cd021ba4134`.
 
 A fresh process reported the plugin enabled with source `git`, registered the
-12 tools and three qualified skills listed above, exposed `hermes daidala`, and
+the then-current 12 tools and three qualified skills listed above, exposed `hermes daidala`, and
 validated the bundled packs. Plugin and dashboard compatibility probes executed
 from the untouched public clone both passed. The dashboard discovered the
 manifest, served exact asset bytes, mounted the authenticated router, returned
@@ -309,7 +310,7 @@ hermes plugins install forgegod/daidala --enable
 
 The v0.20.0 `v2026.8.3` public-install smoke exercised this exact command in a
 fresh `HERMES_HOME`, then used a separate Hermes process to confirm that the
-plugin is enabled without errors, registers all 12 tools, loads all three
+plugin is enabled without errors, registers the then-current 12 tools, loads all three
 bundled skills, exposes the native CLI and dashboard manifest, and validates
 both packs. Plugin and dashboard probes exercised the untouched public clone on
 the tagged host.
@@ -334,10 +335,12 @@ the tagged host.
   host and passed plugin and dashboard probes from that clone.
 - Plugin registration, approval-gated Kanban graph mapping, policy-ledger persistence,
   exact-skill and pinned-content gates, fresh worktrees, artifact capture,
-  verification evidence, review, uncommitted delivery, shared native/standalone
+  verification evidence, review, attended branch delivery, shared native/standalone
   operator commands, dry-run/apply/check/update planning, and approval-gated
   idempotent Kanban graph dispatch, operator CLI graph creation, and worker
-  recovery are implemented. Target commit/push remains unavailable.
+  recovery are implemented. Branch delivery is not a Hermes worker tool: the
+  attended CLI/dashboard adapter independently previews, confirms, commits, and
+  pushes only the derived reviewed branch.
 - Both bundled packs declare `>=0.18.2,<0.21.0`. Compatibility with another
   Hermes minor line must pass the complete matrix before widening that range.
 
@@ -354,9 +357,9 @@ and enforces these rules:
 
 - reject dirty target repositories;
 - implement in a fresh Daidala-owned worktree;
-- return a reviewed working-tree diff without automatically committing or
-  pushing target changes;
-- require separate authorization for any target commit or push;
+- return a reviewed working-tree diff without worker-initiated commit or push;
+- require the separate attended branch-delivery authorization for any target
+  commit or push;
 - bind one approval to the complete plan digest and invalidate that approval
   after any plan modification.
 

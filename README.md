@@ -41,11 +41,11 @@ that runtime:
 - **Artifact review and recovery** provides ledger-bound list/show/export,
   authenticated literal dashboard review, verified workflow archives, and safe
   restore into a profile-local recovery root.
-- **Conservative delivery** reports a reviewed diff with `committed: false` and
-  `pushed: false`.
+- **Attended branch delivery** previews and explicitly confirms one exact
+  reviewed diff before committing and pushing it to `daidala/<workflow-id>`.
 - **Pack neutrality** keeps pack-specific skill mappings in YAML rather than
   branching the Python engine.
-- **Native surfaces** expose 12 agent tools, three bundled skills, the shared
+- **Native surfaces** expose 15 agent tools, three bundled skills, the shared
   `hermes daidala`/`daidala` CLI, and an optional authenticated dashboard tab.
 
 ## How it integrates
@@ -68,7 +68,7 @@ flowchart LR
     P -->|"human approves exact plan digest<br>in Daidala ledger"| I["implement"]
     I --> V["verify"]
     V --> R["review"]
-    R --> DL["deliver<br>no commit or push"]
+    R --> DL["deliver<br>attended branch delivery"]
 
     H["Hermes Kanban<br>status, dispatch, retries"] --> D
     H --> P
@@ -109,7 +109,8 @@ workflow's immutable baseline, and assigns the original checkout to the
 After exact human approval of the plan, Daidala creates a detached Git worktree
 at that baseline under its profile-local data root; `implement`, `verify`, and
 `review` run there instead. The original checkout remains untouched, and
-delivery reports a reviewed diff without committing or pushing it.
+delivery remains non-mutating until an attended operator separately previews and
+confirms exact reviewed branch delivery.
 
 ### Use an existing GitHub repository
 
@@ -131,9 +132,12 @@ repo_root="$(git -C /path/to/existing-clone rev-parse --show-toplevel)"
 git -C "$repo_root" status --short
 ```
 
-Daidala never clones, fetches, pulls, pushes, creates remote branches, or sends
-a GitHub credential. It binds only the selected local `HEAD`; updating a clone
-or selecting another commit is an operator action before a new workflow starts.
+Daidala never clones, fetches, pulls, or updates the selected branch. After
+accepted review, an attended operator may separately preview and explicitly
+confirm delivery of the exact reviewed diff to the derived
+`daidala/<workflow-id>` branch with a dedicated credential. Updating a clone or
+selecting another commit is otherwise an operator action before a new workflow
+starts.
 
 ```bash
 hermes plugins install forgegod/daidala --enable
@@ -262,7 +266,7 @@ instead of asking Hermes goal decomposition to choose an orchestrator profile.
   v0.18.2 and v0.19.0 remain supported matrix hosts; neither is a prerequisite
   or preferred host for a v0.20.0 installation.
 - Supported entry points: native `hermes daidala`, standalone diagnostics,
-  12 agent-facing plugin tools, three qualified bundled skills, and the
+  15 agent-facing plugin tools, three qualified bundled skills, and the
   optional authenticated Hermes dashboard extension.
 - Packs: Addyosmani `agent-skills` and the bundled AI-DLC v1.0.1 adapter.
 - Unattended runtime: the existing Hermes gateway Kanban dispatcher only.

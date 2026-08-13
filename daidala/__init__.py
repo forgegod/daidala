@@ -41,7 +41,6 @@ def register(ctx) -> None:
         "daidala_capture_implementation": tools.capture_implementation,
         "daidala_record_skill_activation": tools.record_skill_activation,
         "daidala_record_verification": tools.record_verification,
-        "daidala_deliver": tools.deliver,
     }
     for schema in schemas.ALL_TOOLS:
         ctx.register_tool(

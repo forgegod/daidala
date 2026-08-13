@@ -345,7 +345,7 @@ workflow mechanics around them.
 | Verify | Record exact commands, exit codes, and output references. | Which approved checks to run and how to diagnose failures without inventing success. |
 | Review | Store structured outcome, summary, bounded findings, and an exact digest against captured evidence. | Which quality, security, maintainability, and performance concerns to assess. |
 | Disposition | Bind an attended action to the exact current review and evidence tuple without creating a card. | None; no worker exists. |
-| Deliver | Produce `delivery.json` only after exact attended acceptance, with reviewed references and no commit or push. | How to report release readiness, documentation, migration, or operational considerations. |
+| Deliver | Workers report release readiness only and leave the owned worktree unchanged. The attended CLI/dashboard adapter separately previews, then commits and pushes the reviewed branch after exact confirmation. | How to report release readiness, documentation, migration, or operational considerations. |
 
 The shipped packs demonstrate two valid mapping styles:
 
@@ -402,11 +402,13 @@ The stage uses the matching Daidala operation:
 | Implement | `daidala_capture_implementation` |
 | Verify | `daidala_record_verification` |
 | Review | `daidala_submit_artifact(stage: "review")` |
-| Deliver | `daidala_deliver` |
 
 These operations write artifacts and policy facts before the worker reports the
 card complete. Each rejects missing, pending, stale-revision, or blocked
-activation references.
+activation references. Deliver has no worker evidence operation: workers must
+not complete its card, commit, or push. After attended review acceptance, only
+the separately previewed and confirmed CLI/dashboard adapter may perform the
+branch transaction and complete Deliver with its receipt.
 
 ### 5. The worker completes with structured metadata
 
@@ -414,8 +416,8 @@ A successful worker calls `kanban_complete` with a concise summary and
 `daidala.handoff/v1` metadata. The metadata includes workflow, pack, plan
 revision, stage, outcome, artifact references, `skill_activation_digest`, and
 active skill names. Post-approval handoffs also carry workspace and baseline
-facts; implementation, verification, review, and delivery add their
-stage-specific evidence.
+facts; implementation, verification, and review add their stage-specific
+evidence. The attended delivery receipt is a separate adapter-owned record.
 
 Large artifacts and raw logs are not copied into handoff metadata. Their paths
 and digests make the handoff compact while preserving an auditable source.
@@ -531,9 +533,11 @@ One gap directly affects user influence over skill-driven work:
    become an invisible override.
 
 Related controls that remain outside the pack model include per-stage tool and
-network allowlists, runtime budgets, additional approval gates, and authorized
-commit or pull-request delivery. Skills can recommend these controls, but model
-instructions must not be mistaken for deterministic enforcement.
+network allowlists, runtime budgets, additional approval gates, and pull-request
+delivery. Attended exact reviewed-branch commit/push is already available through
+the non-model CLI/dashboard delivery surface; pull-request creation remains
+operator-owned. Skills can recommend these controls, but model instructions must
+not be mistaken for deterministic enforcement.
 
 ## Why this design matters
 

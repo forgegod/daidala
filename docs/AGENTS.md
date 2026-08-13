@@ -21,7 +21,8 @@ change records, and historical implementation plans.
   Cron, and unavailable-control boundaries.
 - `07-runbook.md` owns the executable operator lifecycle for installation,
   initialization, prerequisite diagnosis, pack readiness, workflow start/status,
-  exact plan approval, exact attended review disposition, plan-revision recovery,
+  exact plan approval, exact attended review disposition, reviewed branch delivery,
+  plan-revision recovery,
   exact artifact list/show/export/archive/restore, curator scheduling,
   cancellation, upgrade, and native/standalone CLI parity.
 - `08-hermes-integration.md` owns verified Hermes versions, discovery paths, and installation limitations.

@@ -2,8 +2,9 @@
 
 The executable lifecycle is a Hermes Kanban card graph. Daidala validates
 policy and records evidence; it does not call a model, start another agent
-process, publish a competing task status, or automatically commit and push
-target changes.
+process, publish a competing task status, or let a worker commit or push target
+changes. A separate attended branch-delivery adapter may commit and push only
+after its own exact preview and confirmation gates.
 
 The approval-gated graph, stage worker handoff/recovery contract, and native and
 standalone operator-command paths are implemented.
@@ -29,7 +30,7 @@ at `define` before renewed tuple approval.
 | Verify | Immutable implementation scope and exact commands | Commands, exit codes, and output references | Complete or block |
 | Review | Captured diff and passing evidence | Structured outcome, summary, bounded findings, exact review digest | Accepted evidence completes; other outcomes comment and block |
 | Disposition | Exact current review, implementation, verification, plan, policy, and constraint tuple | Attended action, actor, rationale, and exact digest binding | Ledger-only human gate; no Kanban card |
-| Deliver | Exact attended acceptance of an accepted, non-blocking review | `delivery.json` with `committed: false`, `pushed: false` | Complete or block |
+| Deliver | Exact attended acceptance of an accepted, non-blocking review | Adapter-owned receipt naming reviewed branch, commit, remote ref, and authorization digest | Completed only by the attended adapter or remains pending |
 
 ## Graph creation and assignment
 
@@ -100,9 +101,9 @@ set. Loaded pack skills are candidates, not proof that every skill applies.
 activation artifact records applicable, deferred, not-applicable, or blocked
 decisions with criteria, evidence, rationale, and applicable-skill rank.
 
-Daidala accepts each stage's artifact, implementation capture, verification
-record, review, or delivery only when the current stage/revision has a finalized,
-unblocked activation reference. Missing and pending references fail closed. A
+Daidala accepts each worker stage's artifact, implementation capture, verification
+record, or review only when the current stage/revision has a finalized, unblocked
+activation reference. Missing and pending references fail closed. A
 blocked manifest remains durable for audit, but the worker comments with its
 digest and blocked skill and blocks the Kanban card without a completion handoff.
 A deferred skill whose condition occurs requires a superseding manifest before
@@ -117,11 +118,16 @@ create that source, and local plan replacement is rejected. Changing a generated
 plan invalidates approval, increments the graph revision, and prevents evidence
 submission from the previous graph.
 
-After imported-plan delivery, Daidala still records `committed: false` and
-`pushed: false`. A separate operator-created direct child checkpoint may project
-only the delivered diff and phase status, then another `start-from-plan` request
-admits the next pending phase from that commit. It requires fresh approval; the
-earlier packet and approval are historical evidence only.
+After imported-plan delivery, the attended adapter records the exact reviewed
+branch, commit, and remote ref only when the committed manifest enables delivery.
+Otherwise delivery remains blocked; it never falls back to a direct checkpoint.
+The Deliver card's single completed run must contain the same non-secret
+branch/commit receipt before a replay may release the owned worktree. Any other
+completed-run metadata fails closed rather than being treated as delivery
+authority.
+Any later `start-from-plan` request still requires a separately admitted source
+packet and fresh approval; the earlier packet and approval are historical
+evidence only.
 
 Automated review is not delivery authority. Attended disposition binds the exact
 current review and all evidence identities. `accept_delivery` requires an
@@ -174,12 +180,15 @@ There is no direct phase rewind.
 ## Delivery boundary
 
 The delivery card is created lazily and idempotently only after exact attended
-acceptance; `daidala_deliver` fails closed without that disposition. Delivery
-reports the baseline, pre-verification captured paths, review, disposition, and
-verification evidence, records `committed: false` and `pushed: false`, and then
-releases the owned worktree. Committing or pushing the target remains outside
-Daidala. For Git-pinned phases, a separately authorized checkpoint commit is
-the only route to a next-phase admission and cannot reuse prior approval.
+acceptance. It has no worker operation. The attended CLI/dashboard adapter
+revalidates the baseline, pre-verification captured paths, review, disposition,
+verification evidence, committed manifest, trusted registration, release flags,
+derived `daidala/<workflow-id>` branch, credential availability, and fresh
+preview digest. Only then can its literal confirmation commit the reviewed diff,
+push that branch, record the remote-ref receipt, complete Deliver, and release
+the owned worktree. It rejects drift, missing credentials, a conflicting remote
+branch, and non-derived branches without mutation. For Git-pinned phases, later
+admission still requires a separately admitted source packet and fresh approval.
 
 The dashboard renders the exact review evidence and attended preview-confirm
 disposition over the same service authority as the native CLI. A revision request

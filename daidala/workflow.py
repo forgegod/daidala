@@ -17,6 +17,7 @@ from .state import (
     ApprovalSummary,
     ArtifactReference,
     CardReference,
+    DeliveryAuthorization,
     PlanRevisionRequestReference,
     PlanSourcePacket,
     PlanSourceReference,
@@ -445,7 +446,40 @@ def invalidate_approval(
             if ledger.review_disposition
             else ledger.review_disposition_history
         ),
+        delivery_authorization=None,
         updated_at=invalidated_at,
+    )
+
+
+def record_delivery_authorization(
+    ledger: WorkflowLedger,
+    *,
+    authorization: DeliveryAuthorization,
+    recorded_at: datetime,
+) -> WorkflowLedger:
+    """Persist one exact attended branch-delivery authority without advancing state."""
+    if not isinstance(authorization, DeliveryAuthorization):
+        raise PolicyViolationError("delivery authorization is invalid")
+    if authorization.workflow_id != ledger.workflow_id:
+        raise PolicyViolationError("delivery authorization workflow does not match")
+    existing = ledger.delivery_authorization
+    if existing == authorization:
+        return ledger
+    if existing is not None:
+        if existing.commit is None and authorization.commit is not None and (
+            replace(existing, commit=authorization.commit) == authorization
+        ):
+            return replace(
+                ledger,
+                delivery_authorization=authorization,
+                updated_at=recorded_at,
+            )
+        raise PolicyViolationError("workflow already has a different delivery authorization")
+    _require_not_before(ledger, recorded_at)
+    return replace(
+        ledger,
+        delivery_authorization=authorization,
+        updated_at=recorded_at,
     )
 
 
@@ -558,6 +592,7 @@ def begin_plan_revision(
         review_history=(*ledger.review_history, review),
         review_disposition=None,
         review_disposition_history=(*ledger.review_disposition_history, disposition),
+        delivery_authorization=None,
         updated_at=advanced_at,
     )
 
@@ -603,6 +638,7 @@ def replace_plan(
         artifacts=(*ledger.artifacts, replacement),
         approval=None,
         verification_evidence=(),
+        delivery_authorization=None,
         updated_at=replaced_at,
     )
 

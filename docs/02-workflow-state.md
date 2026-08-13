@@ -56,6 +56,7 @@ it never mirrors those statuses into its ledger.
 | `revision_request`, `successor_packet` identity, and retry checkpoints | Daidala ledger and artifact store |
 | Current and historical constraint revisions, digests, artifacts, and source provenance | Daidala ledger |
 | Baseline, worktree ownership, and immutable changed-path manifest | Daidala ledger |
+| Preview-bound delivery authorization, commit receipt, and branch identity | Daidala ledger |
 | Worker summaries, comments, run outcomes, and retry history | Hermes Kanban |
 | Artifact bytes, digests, and exact verification evidence | Daidala artifact store and ledger |
 
@@ -119,6 +120,7 @@ synthetic plan card, so its `implement` card has no parent while `verify` and
 | Post-gate graph appears | `created` for `implement`, `verify`, and `review` | Approval, baseline, plan revision, profiles, exact skills, and worktree all validate |
 | Automated review succeeds | `completed` for an accepted review or `blocked` with `review-required:` otherwise | Structured review binds the exact implementation, passing verification, activation, and current card tuple; blocking findings prohibit accepted outcome |
 | Attended review is accepted | `created` for `deliver` | Exact current review digest and preview digest are fresh; accepted review has no blocking findings; Kanban-worker authority is rejected |
+| Branch delivery succeeds | `completed` for `deliver` | Trusted registration/remote and committed release policy match; exact reviewed diff/paths, branch, preview, credential binding, commit, and remote ref all verify before receipt and owned-worktree release |
 | Revision is requested | recorded post-gate card IDs are archived; one revision-addressed `plan` card parented to the source review card is created | Canonical revision request and successor packet persist before archive and owned-worktree release; current approval/evidence moves to immutable history |
 | Revisioned plan succeeds | no implementation card yet | `plan-N/plan.md` resolves the request and exposes a new exact approval tuple |
 | Stage succeeds | `completed` | Handoff schema, plan revision, stage artifact, and evidence digest validate |

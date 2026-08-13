@@ -125,7 +125,9 @@ completeness without touching a real Hermes profile.
   parity, redaction, pass/blocked/not-run/error aggregation, bounded `GH_TOKEN`
   child environments, and complete, missing, malformed, denied, unavailable,
   and partial host states.
-- Temporary Git worktree tests for the approved end-to-end executable slice.
+- Temporary Git worktree tests for the approved executable slice, including exact
+  reviewed branch delivery, credential redaction, and replay-safe receipt/worktree
+  recovery.
 - Revision-addressed artifact tests cover policy and plan supersession, exact
   ledger references, historical-byte retention, create-or-verify replay,
   conflicting content, unsafe relative paths, and symlink rejection.

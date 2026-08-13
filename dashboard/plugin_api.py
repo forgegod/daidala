@@ -29,6 +29,8 @@ Supervision endpoints include:
 - ``POST /api/plugins/daidala/workflows/{workflow_id}/approve``
 - ``POST /api/plugins/daidala/workflows/{workflow_id}/review-disposition/preview``
 - ``POST /api/plugins/daidala/workflows/{workflow_id}/review-disposition``
+- ``POST /api/plugins/daidala/workflows/{workflow_id}/delivery/preview``
+- ``POST /api/plugins/daidala/workflows/{workflow_id}/delivery``
 - ``POST /api/plugins/daidala/workflows/{workflow_id}/cards/{card_id}/comment``
 - ``POST /api/plugins/daidala/workflows/{workflow_id}/cards/{card_id}/unblock``
 - ``POST /api/plugins/daidala/workflows/{workflow_id}/cancel/preview``
@@ -96,6 +98,7 @@ from daidala.dashboard_backend import (
     HostUnavailableError,
     UnknownWorkflowError,
 )
+from daidala.delivery import BranchDeliveryService, DeliveryError
 from daidala.errors import PolicyViolationError, WorkflowError
 from daidala.github_project_links import (
     GitHubProjectLink,
@@ -271,6 +274,7 @@ def health() -> dict[str, Any]:
             "workflow_approve",
             "review_disposition_preview",
             "review_disposition",
+            "branch_delivery",
             "artifact_curator",
         ],
     }
@@ -347,6 +351,12 @@ def _repository_registration_service() -> RepositoryRegistrationService:
 
     profile = active_profile(_run_command, fallback_name=resolve_data_root().name)
     return RepositoryRegistrationService(resolve_data_root().resolve(), profile)
+
+
+def _delivery_service() -> BranchDeliveryService:
+    """Resolve branch-delivery authority only for the mounted controller profile."""
+
+    return BranchDeliveryService(service_factory(), profile_root=resolve_data_root())
 
 
 def _registered_project(project_id: str) -> ControllerRegistration:
@@ -1257,6 +1267,64 @@ def review_disposition(workflow_id: str, payload: dict[str, Any]) -> dict[str, A
     if isinstance(preview, dict):
         result = {**result, "preview": _browser_review_preview(preview)}
     return result
+
+
+def _delivery_request(payload: dict[str, Any], *, apply: bool) -> str | None:
+    expected = {"preview_digest", "confirm"} if apply else set()
+    if set(payload) != expected:
+        raise HTTPException(status_code=400, detail="exact delivery fields are required")
+    if not apply:
+        return None
+    if payload.get("confirm") is not True:
+        raise HTTPException(status_code=400, detail="explicit delivery confirmation is required")
+    digest = payload.get("preview_digest")
+    if not _is_sha256(digest):
+        raise HTTPException(status_code=400, detail="preview_digest must be a SHA-256 identity")
+    assert isinstance(digest, str)
+    return digest
+
+
+@router.post("/workflows/{workflow_id}/delivery/preview")
+def delivery_preview(workflow_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Return one path-free, credential-free branch-delivery preview."""
+
+    _delivery_request(payload, apply=False)
+    try:
+        return _delivery_service().preview(workflow_id).to_dict()
+    except StoreError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except (DeliveryError, WorkflowError):
+        raise HTTPException(status_code=409, detail="branch delivery preview unavailable") from None
+
+
+@router.post("/workflows/{workflow_id}/delivery")
+def delivery_apply(workflow_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Commit and push only the exact confirmed reviewed branch preview."""
+
+    preview_digest = _delivery_request(payload, apply=True)
+    assert preview_digest is not None
+    try:
+        ledger = _delivery_service().apply(
+            workflow_id,
+            expected_preview_digest=preview_digest,
+            confirm=True,
+        )
+    except StoreError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except (DeliveryError, WorkflowError):
+        raise HTTPException(
+            status_code=409, detail="branch delivery could not be applied"
+        ) from None
+    authorization = ledger.delivery_authorization
+    if authorization is None or authorization.commit is None:
+        raise HTTPException(status_code=409, detail="branch delivery receipt unavailable")
+    return {
+        "workflow_id": ledger.workflow_id,
+        "branch": authorization.branch,
+        "commit": authorization.commit,
+        "committed": ledger.committed,
+        "pushed": ledger.pushed,
+    }
 
 
 @router.post("/workflows/{workflow_id}/cards/{card_id}/comment")

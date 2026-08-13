@@ -424,6 +424,20 @@
     });
   }
 
+  function previewWorkflowDelivery(workflowId) {
+    return postJson(
+      API_BASE + "/workflows/" + encodeURIComponent(workflowId) + "/delivery/preview",
+      {}
+    );
+  }
+
+  function applyWorkflowDelivery(workflowId, previewDigest) {
+    return postJson(
+      API_BASE + "/workflows/" + encodeURIComponent(workflowId) + "/delivery",
+      { preview_digest: previewDigest, confirm: true }
+    );
+  }
+
   function buildDecisions(workflowId) {
     return fetchJson(
       API_BASE + "/workflows/" + encodeURIComponent(workflowId) + "/decisions"
@@ -906,6 +920,112 @@
     );
   }
 
+  function WorkflowDelivery(props) {
+    var packet = props.packet;
+    var disposition = packet && packet.disposition;
+    var previewState = useState(null);
+    var preview = previewState[0];
+    var setPreview = previewState[1];
+    var confirmedState = useState(false);
+    var confirmed = confirmedState[0];
+    var setConfirmed = confirmedState[1];
+    var busyState = useState(false);
+    var busy = busyState[0];
+    var setBusy = busyState[1];
+    var messageState = useState("");
+    var message = messageState[0];
+    var setMessage = messageState[1];
+    var completed = props.completed;
+
+    if (!packet || packet.available === false || !disposition || disposition.action !== "accept_delivery") {
+      return null;
+    }
+
+    function requestPreview() {
+      setBusy(true);
+      setMessage("");
+      previewWorkflowDelivery(props.workflowId).then(function (next) {
+        setPreview(next);
+        setConfirmed(false);
+      }).catch(function (error) {
+        setPreview(null);
+        setMessage(error.message);
+      }).finally(function () {
+        setBusy(false);
+      });
+    }
+
+    function applyPreview() {
+      if (!preview || !preview.credential_available || !confirmed) return;
+      setBusy(true);
+      setMessage("");
+      applyWorkflowDelivery(props.workflowId, preview.preview_digest).then(function (result) {
+        setPreview(null);
+        setConfirmed(false);
+        setMessage("Branch delivery completed: " + result.branch + " · " + result.commit);
+        props.onDelivered();
+      }).catch(function (error) {
+        setMessage(error.message);
+      }).finally(function () {
+        setBusy(false);
+      });
+    }
+
+    if (completed) {
+      return createElement(
+        "section",
+        { className: "daidala-delivery", "data-testid": "daidala-delivery" },
+        createElement("h4", { className: "daidala-workflow-section-title" }, "Branch delivery"),
+        createElement("p", { className: "daidala-banner" }, "Branch delivery is recorded."),
+        completed.branch
+          ? createElement("p", null, "Branch " + completed.branch + " · commit " + (completed.commit || "recorded"))
+          : null
+      );
+    }
+
+    return createElement(
+      "section",
+      { className: "daidala-delivery", "data-testid": "daidala-delivery" },
+      createElement("h4", { className: "daidala-workflow-section-title" }, "Branch delivery"),
+      createElement("p", null, "Review the exact branch-delivery preview before confirming the commit and push."),
+      !preview
+        ? createElement("button", {
+            type: "button", disabled: busy, onClick: requestPreview
+          }, busy ? "Previewing…" : "Preview branch delivery")
+        : createElement(React.Fragment, null,
+            createElement("dl", { className: "daidala-workflow-identity" },
+              createElement("div", null, createElement("dt", null, "branch"), createElement("dd", null, preview.branch)),
+              createElement("div", null, createElement("dt", null, "baseline commit"), createElement("dd", null, preview.baseline_commit)),
+              createElement("div", null, createElement("dt", null, "review digest"), createElement("dd", null, preview.review_digest)),
+              createElement("div", null, createElement("dt", null, "delivery credential"), createElement("dd", null, preview.credential_available ? "available" : "unavailable")),
+              createElement("div", null, createElement("dt", null, "preview digest"), createElement("dd", null, preview.preview_digest))
+            ),
+            createElement("h5", null, "Reviewed changed paths"),
+            createElement("ul", null, preview.changed_paths.map(function (path) {
+              return createElement("li", { key: path }, path);
+            })),
+            !preview.credential_available
+              ? createElement("p", { className: "daidala-banner daidala-banner-warning" }, "Delivery credential unavailable. Configure the mounted Hermes profile outside Daidala, then request a fresh preview.")
+              : createElement(React.Fragment, null,
+                  createElement("label", { className: "daidala-confirm" },
+                    createElement("input", {
+                      type: "checkbox",
+                      checked: confirmed,
+                      onChange: function (event) { setConfirmed(event.target.checked); }
+                    }),
+                    "I confirm committing and pushing this exact branch delivery"
+                  ),
+                  createElement("button", {
+                    type: "button",
+                    disabled: busy || !confirmed,
+                    onClick: applyPreview
+                  }, busy ? "Delivering…" : "Confirm commit and push branch")
+                )
+          ),
+      message ? createElement("p", { role: "status", className: "daidala-banner" }, message) : null
+    );
+  }
+
   function renderTimeline(detail) {
     var timeline = detail && Array.isArray(detail.timeline) ? detail.timeline : [];
     return createElement(
@@ -1280,6 +1400,12 @@
             packet: reviewDecision,
             onDecided: onReviewDecided
           }),
+      createElement(WorkflowDelivery, {
+        workflowId: summary.workflow_id,
+        packet: reviewDecision,
+        completed: summary.committed && summary.pushed ? summary.delivery_authorization : null,
+        onDelivered: onApproved
+      }),
       createElement(
         "h4",
         { className: "daidala-workflow-section-title" },

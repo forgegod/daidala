@@ -34,6 +34,9 @@ def _ledger(**overrides: object) -> WorkflowLedger:
         "approval": None,
         "review": None,
         "review_disposition": None,
+        "committed": False,
+        "pushed": False,
+        "delivery_authorization": None,
         "baseline_commit": "f" * 40,
         "worktree_path": "/profile/workflows/workflow-1/worktree",
         "worktree_owned": True,
@@ -70,6 +73,30 @@ def test_workflow_summary_projects_verified_git_pinned_plan_identity_without_pat
         "packet": {"digest": "a" * 64, "verification_state": "verified"},
     }
     assert "/profile/" not in json.dumps(summary)
+
+
+def test_workflow_summary_exposes_only_completed_branch_delivery_receipt() -> None:
+    summary = _workflow_summary(
+        _ledger(
+            committed=True,
+            pushed=True,
+            delivery_authorization=SimpleNamespace(
+                branch="daidala/workflow-1",
+                commit="a" * 40,
+                credential_alias="github-repository-delivery",
+                preview_digest="b" * 64,
+            ),
+        )
+    )
+
+    assert summary["committed"] is True
+    assert summary["pushed"] is True
+    assert summary["delivery_authorization"] == {
+        "branch": "daidala/workflow-1",
+        "commit": "a" * 40,
+    }
+    assert "credential_alias" not in json.dumps(summary)
+    assert "preview_digest" not in json.dumps(summary)
 
 
 def test_approval_review_packet_is_exact_bounded_and_path_free() -> None:

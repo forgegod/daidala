@@ -36,7 +36,9 @@ Daidala adds this missing control layer without replacing Hermes:
 - implementation runs in a detached Daidala-owned worktree;
 - immutable artifacts connect definition, plan, diff, verification, review,
   and delivery;
-- delivery reports evidence but does not commit, push, merge, or deploy.
+- workers record delivery evidence but cannot commit, push, merge, or deploy;
+  after accepted review, a separate attended CLI/dashboard action may commit and
+  push the exact reviewed diff only to `daidala/<workflow-id>`.
 
 The result is not a claim that the model followed every sentence of an active
 skill. It is a reproducible record of the candidates loaded, the task-specific
@@ -61,7 +63,7 @@ scoped work.
 | Security or authentication change | Conditional | Use specialist profiles and independent human review; Daidala does not provide a security sandbox. |
 | Incident response or production repair | Weak | The workflow is intentionally deliberative and has no deployment authority. |
 | Cross-repository migration | Unsupported | A workflow currently owns one target repository and one baseline. |
-| Autonomous release or deployment | Unsupported | Delivery intentionally records `committed: false` and `pushed: false`. |
+| Autonomous release or deployment | Unsupported | Workers cannot commit or push; attended branch delivery cannot merge, release, or deploy. |
 
 The practical rule is simple: autonomy works best when intent is explicit,
 repository context is discoverable, and success is independently testable.
@@ -146,9 +148,9 @@ The verification worker records exact commands, exit codes, and output
 references. The review worker evaluates the captured diff against the goal,
 plan, and verification evidence. Automated review remains advisory: an attended
 actor inspects the exact tuple and accepts delivery, requests a revision, or
-rejects the workflow. Only exact acceptance creates delivery, which reports the
-reviewed paths and evidence while explicitly leaving commit and push to a
-separately authorized operation.
+rejects the workflow. Only exact acceptance creates delivery, which records the
+reviewed paths and evidence. A separately authorized attended CLI/dashboard
+operation may then commit and push only that exact diff to the derived branch.
 
 The useful output is therefore more than “the agent says it is done.” It is a
 chain from requested goal to approved plan to immutable diff to observed checks
@@ -306,7 +308,8 @@ Daidala contributes:
 - clean-baseline enforcement and detached worktrees;
 - plan-digest approval before implementation;
 - immutable diff and evidence capture;
-- no automatic commit, push, merge, or deployment;
+- no worker-initiated commit, push, merge, or deployment; attended delivery is
+  limited to the exact reviewed diff on its derived branch;
 - visible Kanban comments, blocks, assignment, and retries.
 
 Daidala does not currently provide a sandbox, network firewall, secret broker,
@@ -328,7 +331,7 @@ capability.
 | 4. Recover a blocked verification card | Read evidence, comment, reassign, unblock, and confirm the same worktree and thread are reused. | Supported for retry/remediation without code rework |
 | 5. Author a methodology pack | Pin external skills or a bundled adapter and validate a reusable stage mapping. | Supported |
 | 6. Revise a rejected implementation safely | Preview exact attended feedback, preserve rejected evidence, create a revision-addressed Plan card, and require fresh approval. | Supported through native and standalone review commands |
-| 7. Turn a delivery into a pull request | Review evidence, authorize commit/push separately, and preserve provenance in a PR. | Future: authorized integration surface required |
+| 7. Turn a delivered branch into a pull request | Review evidence and use the attended branch-delivery receipt as provenance for a separately created PR. | Supported branch delivery; PR creation remains operator-owned. |
 | 8. Trigger bounded work from issues or schedules | Apply trust filters, budgets, and approval policy before unattended start. | Future: trigger policy and unattended-run controls required |
 | 9. Coordinate a cross-repository migration | Define ordered repository baselines, integration tests, and rollback. | Future: multi-repository workflow required |
 | 10. Measure autonomous-development ROI | Export cycle time, cost, blocks, verification, review, and accepted outcomes. | Future: telemetry and reporting required |
@@ -340,7 +343,7 @@ hidden behind optimistic prose.
 
 | Improvement | User need | Why it matters |
 |---|---|---|
-| Authorized commit/PR handoff | Convert an accepted delivery into normal team review without giving workers uncontrolled push authority. | Current delivery stops before the collaboration surface most teams use. |
+| Pull-request handoff | Convert an attended delivered branch into normal team review without giving workers uncontrolled GitHub authority. | Branch delivery exists; PR creation remains operator-owned. |
 | Trigger admission policy | Start from trusted issue events or schedules with allowlists and explicit approval rules. | Unattended triggers increase prompt-injection and privilege risk. |
 | Per-stage tool and network policy | Give each profile only the capabilities needed for its phase. | Pack skills constrain guidance, not host permissions. |
 | Runtime budgets and loop limits | Bound elapsed time, retries, model spend, and verification attempts. | Long-running and parallel agents make cost and stalled work hard to see. |

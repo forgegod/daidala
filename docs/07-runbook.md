@@ -153,10 +153,12 @@ ID, phase, packet digest, and `verified` packet state without source paths or
 bytes. Approval binds that packet as well as the current plan and constraint
 tuple.
 
-Delivery remains uncommitted and unpushed. If an operator chooses to continue,
-create one separately authorized direct child commit containing only the
-delivered diff and the allowed `done (daidala:<workflow-id>:<delivery-digest>)`
-phase-status projection. Then admit the next pending phase from the child commit
+Accepted review can be delivered only through the separately previewed,
+explicitly confirmed `daidala/<workflow-id>` branch transaction described below.
+If an operator chooses to continue the Git-pinned phase sequence, they still
+create and authorize the next direct child checkpoint containing the accepted
+changes and allowed `done (daidala:<workflow-id>:<delivery-digest>)`
+phase-status projection. Then admit the next pending phase from that child commit
 with a new workflow ID and `--predecessor-workflow-id <prior-workflow-id>`.
 The prior approval cannot authorize that new packet or baseline.
 
@@ -288,6 +290,40 @@ Preview is non-mutating. Apply re-reads the current tuple; stale review or
 preview digests fail before mutation. Successful acceptance creates exactly one
 `deliver` card. Blocking findings cannot be overridden.
 
+## Reviewed branch delivery
+
+After accepted review creates the activated Deliver card, preview the exact
+reviewed diff, branch, release policy, and credential readiness. Delivery never
+accepts a token, remote, branch, worktree path, or changed path from the
+operator:
+
+```bash
+hermes daidala deliver <workflow-id>
+hermes daidala deliver <workflow-id> --apply \
+  --expected-preview-digest <preview-digest> --confirm
+```
+
+The preview is non-mutating. Apply repeats every check and commits only the
+captured reviewed paths to `daidala/<workflow-id>`, then pushes only that exact
+commit and verifies the remote ref. It fails closed for a missing explicit
+`github-repository-delivery` credential binding/value, false committed release
+flags, stale review or diff evidence, changed registration/remote, an existing
+conflicting branch, or a stale preview. A valid retry resumes the same recorded
+commit/push transaction; do not create or push the branch manually. The checkout
+must still use its exact registered remote. Git transport uses the canonical
+GitHub HTTPS endpoint derived from the same registration (rather than reusing an
+SSH checkout URL) so the dedicated PAT remains isolated in temporary askpass
+state. Before retry recovery releases an owned worktree, Daidala reads the live
+Deliver card's single completed run and requires its exact non-secret
+`daidala.delivery/v1` branch and commit receipt; a done card with unrelated or
+missing run metadata remains blocked for attended investigation.
+
+On success Daidala records the branch/commit receipt, completes the Deliver card,
+and releases only its owned worktree. It does not open a pull request, merge,
+touch a default branch, create a release, or publish. In the dashboard open the
+workflow detail, use **Preview branch delivery**, inspect the path-free evidence,
+tick the literal confirmation, and choose **Confirm commit and push branch**.
+
 If reviewer judgment is disputed but captured code need not change, use the
 board and review-card ID from `review show`:
 
@@ -372,6 +408,11 @@ confirmed revision request are retryable with the same exact review and preview
 digests. The persisted request and progress markers prevent duplicate authority;
 do not cancel or manually rewind merely because one host mutation failed.
 
+A failed branch-delivery retry must use the same displayed preview digest only
+when the review and recorded evidence remain current. The delivery service
+revalidates the branch, commit, and remote ref; do not reset the owned worktree,
+force-push, or manually create the Daidala branch.
+
 Legacy ledgers without structured review fields remain readable, but `review
 show`, disposition, and delivery fail closed. Never infer acceptance from a
 historical `review.md`. Resume the current review worker so it records supported
@@ -383,9 +424,9 @@ new workflow under the current contract.
 The optional **Daidala → Config → Runbook** panel links each runbook operation
 to its bounded browser surface: initialization preview/apply and prerequisite
 diagnosis, pack inspection, workflow supervision/resume, exact-plan approval,
-review disposition, and cancellation. Browser workflow selection only reopens an
-existing workflow for read-only polling; it never starts another graph or
-scheduler.
+review disposition, branch-delivery preview/confirmation, and cancellation.
+Browser workflow selection only reopens an existing workflow for read-only
+polling; it never starts another graph or scheduler.
 
 Install, enable, upgrade, plugin removal, gateway lifecycle, and standalone
 diagnostics remain native CLI operations. The dashboard renders their exact
@@ -414,6 +455,8 @@ hermes daidala status <workflow-id>
 daidala status <workflow-id>
 hermes daidala review show <workflow-id>
 daidala review show <workflow-id>
+hermes daidala deliver <workflow-id>
+daidala deliver <workflow-id>
 hermes daidala artifacts list <workflow-id> --json
 daidala artifacts list <workflow-id> --json
 hermes daidala artifacts show <workflow-id> <artifact-id>
@@ -422,9 +465,9 @@ hermes daidala artifacts export <workflow-id> <artifact-id> --output <path>
 daidala artifacts export <workflow-id> <artifact-id> --output <path>
 ```
 
-Replacing the `hermes daidala` prefix with `daidala` in either `review decide`
-preview/apply example above is also equivalent; both forms share one parser and
-dispatch path.
+Replacing the `hermes daidala` prefix with `daidala` in the `review decide` and
+`deliver` preview/apply examples above is also equivalent; both forms share one
+parser and dispatch path.
 
 Use the native form operationally. The standalone executable exists for package
 smoke tests and diagnostics, not as a separate orchestration runtime.

@@ -51,7 +51,6 @@ def test_register_exposes_tool_and_namespaced_skill_source() -> None:
         "daidala_capture_implementation",
         "daidala_record_skill_activation",
         "daidala_record_verification",
-        "daidala_deliver",
     ]
     assert all(tool["toolset"] == "daidala" for tool in ctx.tools)
     assert [name for name, _ in ctx.skills] == ["aidlc-adapter", "orchestrate", "setup"]

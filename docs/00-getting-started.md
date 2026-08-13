@@ -269,9 +269,21 @@ hermes daidala review decide first-workflow accept-delivery \
   --expected-preview-digest <preview-digest>
 ```
 
-Only this attended acceptance creates `deliver`. Delivery records reviewed
-references with `committed: false` and `pushed: false`; it does not commit or
-push the target repository.
+Only this attended acceptance creates `deliver`. No Kanban worker can commit or
+push; an operator must use the separate attended delivery surface to preview and
+explicitly confirm one exact commit/push to the derived branch:
+
+```bash
+hermes daidala deliver first-workflow
+hermes daidala deliver first-workflow --apply \
+  --expected-preview-digest <preview-digest> --confirm
+```
+
+Preview and apply revalidate the trusted registration, committed release policy,
+accepted review, owned worktree, captured diff and changed paths, and dedicated
+credential availability. Delivery cannot update the default branch, create a
+pull request, merge, deploy, publish, or prompt for a token. It records the
+branch/commit receipt before completing `deliver` and releasing the worktree.
 
 If captured code, verification scope, or the implementation approach must
 change, preview and apply `request-revision` with the same exact-digest pattern:
@@ -301,7 +313,8 @@ cancel` remains the explicit cancellation path outside a current review gate.
 
 These service and CLI operations are current. The optional authenticated
 dashboard renders the same source-bound review evidence and preview-confirm
-accept-delivery, request-revision, and reject-workflow controls.
+accept-delivery, request-revision, reject-workflow, and reviewed branch-delivery
+controls.
 
 ## 7. Start a Git-pinned phase
 

@@ -2,8 +2,8 @@
 
 This document covers the plugin, policy ledger, Kanban graph contract,
 executable worktree, worker handoff recovery, and pinned external-skill
-installation boundary. Daidala provides no scheduler and no commit or push
-surface. Hermes Cron and webhooks may admit work through the composition
+installation boundary. Daidala provides no scheduler. Its attended branch-delivery
+surface is the only target commit/push authority. Hermes Cron and webhooks may admit work through the composition
 documented in [Autonomous triggering](13-autonomous-triggering.md) without
 weakening Daidala's approval gate. A separate opt-in public-CLI boundary may
 register one script-only/no-agent Hermes Cron job for deterministic artifact
@@ -30,9 +30,10 @@ require a separate trust opt-in according to the
 [official plugin documentation](https://hermes-agent.nousresearch.com/docs/user-guide/features/plugins).
 Review the repository and package provenance before enabling Daidala.
 
-Daidala's standalone CLI resolves pack source `HEAD` and can invoke explicit
+Daidala's standalone CLI resolves pack source `HEAD`, can invoke explicit
 `hermes skills install … --yes` commands after an unblocked plan. It does not
-access a model, open sockets, start services, commit, or push. Hermes loads
+access a model or start services. Its explicit `deliver` command can commit and
+push only after the separate delivery authorization checks below. Hermes loads
 skills and produces artifacts; normal Hermes tools perform implementation and
 verification in the Daidala-owned detached worktree.
 
@@ -66,6 +67,22 @@ verification in the Daidala-owned detached worktree.
 - Workflow IDs are validated before they can influence runtime paths.
 - Delivery uses the changed-path snapshot captured before verification, so test
   byproducts cannot silently expand reviewed scope.
+- Branch delivery revalidates one unique trusted registration, its configured
+  origin, the baseline's committed manifest, accepted non-blocking review,
+  activated Deliver card, owned worktree, captured binary diff, changed paths,
+  and `release.allow_commit`/`release.allow_push` before deriving only
+  `daidala/<workflow-id>`.
+- The delivery credential resolver accepts only the explicit
+  `github-repository-delivery` binding. A resolved value enters a temporary
+  `GIT_ASKPASS` environment for bounded Git remote inspection/push; it is never
+  placed in a URL, argument, Git config, receipt, browser response, or log.
+- The logical binding alias remains inside the canonical delivery authorization
+  identity, but the CLI and dashboard preview projection exposes only credential
+  availability; it never returns the alias itself.
+- Delivery rejects a conflicting local/remote branch and verifies the pushed
+  remote ref equals the recorded reviewed commit. Retry resumes only that exact
+  preview-bound transaction; it never force-pushes, merges, opens a pull request,
+  updates a default branch, releases, or publishes.
 - Registration uses documented Hermes plugin APIs rather than Hermes internals.
 - `daidala.archive_io` accepts only caller-authorized roots and explicit relative
   regular-file members. It bounds archive size, rejects traversal and links,
@@ -162,8 +179,10 @@ It reads repository metadata through the host's existing read-only GitHub CLI
 authentication and writes only non-secret profile-local registration records
 after an exact preview digest and literal confirmation. Dashboard requests never
 carry a token, alias, environment-variable name, controller path, or checkout
-path. A future delivery credential remains separate authority and cannot be
-granted by registration.
+path. The implemented delivery credential remains separate authority and cannot
+be granted by registration. It is a logical profile-local binding resolved by
+Hermes into the canonical process environment; Daidala neither detects nor
+invokes password-manager tools.
 
 The repository must not contain live Kanban or policy-ledger state, target
 worktrees, SQLite databases, model transcripts, generated workspaces, or
@@ -206,8 +225,9 @@ being converted into warnings or undocumented exceptions.
 ## Remaining execution requirements
 
 Current execution proves exact approval, the approval-gated Kanban graph,
-isolation, blocking verification, uncommitted delivery, rollback cleanup, and
-release-content checks. Controls that remain host-owned or unavailable are:
+isolation, blocking verification, exact reviewed branch delivery, rollback
+cleanup, and release-content checks. Controls that remain host-owned or
+unavailable are:
 
 - command execution follows normal Hermes approval and tool-dispatch paths;
 - model/tool secrets are not copied into artifacts or logs by host-owned calls;
@@ -226,6 +246,7 @@ of these surfaces exists.
 - Policy ledger and persistence: `daidala/state.py`, `daidala/workflow.py`,
   `daidala/store.py`
 - Worktree and artifact isolation: `daidala/execution.py`
+- Reviewed branch delivery: `daidala/delivery.py`
 - Verified archive transport: `daidala/archive_io.py`
 - Kanban graph adapter: `daidala/service.py`, `daidala/kanban.py`
 - Tool error boundary: `daidala/tools.py`
@@ -237,4 +258,7 @@ of these surfaces exists.
   - Persistence, artifact recovery, and executable path: `tests/test_store.py`,
     `tests/test_execution.py`
   - Verified archive creation and restore: `tests/test_archive_io.py`
+  - Branch delivery: `tests/test_delivery.py`, `tests/test_cli.py`,
+    `tests/test_dashboard.py`, `tests/test_dashboard_api.py`, and
+    `tests/test_dashboard_assets.py`
 - Host plugin trust model: [official Hermes plugin documentation](https://hermes-agent.nousresearch.com/docs/user-guide/features/plugins)

@@ -60,12 +60,21 @@ class FakeKanbanHost:
         if name == "kanban_show":
             task_id = str(args["task_id"])
             task = {**self.cards[task_id], "comments": self.comments.get(task_id, [])}
-            return json.dumps({"ok": True, "task": task})
+            return json.dumps(
+                {
+                    "ok": True,
+                    "task": task,
+                    "runs": self.cards[task_id].get("runs", []),
+                }
+            )
         if name == "kanban_complete":
             task_id = str(args["task_id"])
             self.cards[task_id]["status"] = "done"
             self.cards[task_id]["completion_summary"] = args.get("summary")
             self.cards[task_id]["completion_metadata"] = args.get("metadata")
+            self.cards[task_id]["runs"] = [
+                {"outcome": "completed", "metadata": args.get("metadata")}
+            ]
             return json.dumps({"ok": True, "task_id": task_id, "status": "done"})
         if name == "kanban_comment":
             task_id = str(args["task_id"])

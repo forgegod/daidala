@@ -19,12 +19,12 @@ Contributors changing material behavior start with the affected
 |---|---|---|
 | [Getting started](00-getting-started.md) | Native first-workflow path verified on Hermes v0.18.2, v0.19.0, and v0.20.0 (`v2026.8.3`) | Isolated native lifecycle probe and CLI tests |
 | [Architecture](01-architecture.md) | In-process policy adapter and Kanban authority split implemented | Runtime modules, graph tests, and isolated Hermes probes |
-| [Policy ledger](02-workflow-state.md) | Status-free ledger, immutable artifact identity, active/archive availability, and combined live Kanban diagnostics implemented | State, store, artifact-access, curator, Kanban, and persistence tests |
+| [Policy ledger](02-workflow-state.md) | Status-free ledger, immutable artifact identity, active/archive availability, combined live Kanban diagnostics, and preview-bound delivery receipts implemented | State, store, artifact-access, curator, Kanban, persistence, and delivery tests |
 | [Pack reference](03-pack-reference.md) | Schema-v1 providers and required/conditional activation implemented | Pack loader, bundled YAML, and pack tests |
 | [Authoring packs](04-authoring-packs.md) | Pack-neutral mapping and activation authoring implemented | Pack loader and cross-pack tests |
 | [Lifecycle stages](05-lifecycle-stages.md) | Approval graph, structured review, attended disposition, terminal artifact eligibility, revision recovery, host-bound activation, and fail-closed evidence gates implemented | Graph, curator, review-disposition, revision-retry, activation, and worker-contract tests |
-| [Security](06-security.md) | Approval, activation, worktree, artifact archive/recovery, secrets, Cron, and supply-chain boundaries implemented | Runtime, curator, and release-content tests |
-| [Runbook](07-runbook.md) | Native lifecycle, exact artifact review/export/archive/restore, attended review decisions, plan revision, curation scheduling, and normal Kanban recovery commands verified | Shared CLI tests, isolated artifact/Cron probes, and Hermes lifecycle/review probes |
+| [Security](06-security.md) | Approval, activation, worktree, exact branch-delivery, artifact archive/recovery, secrets, Cron, and supply-chain boundaries implemented | Runtime, delivery, curator, and release-content tests |
+| [Runbook](07-runbook.md) | Native lifecycle, exact artifact review/export/archive/restore, attended review decisions, reviewed branch delivery, plan revision, curation scheduling, and normal Kanban recovery commands verified | Shared CLI, delivery, isolated artifact/Cron, and Hermes lifecycle/review probes |
 | [Hermes integration](08-hermes-integration.md) | Exact Hermes v0.18.2, v0.19.0, and v0.20.0 hosts supported within `>=0.18.2,<0.21.0` | Isolated repeated exact-wheel probes, v0.20.0 (`v2026.8.3`) public-Git smoke, compatible comparisons, and release-only compatibility regression |
 | [Pack adapters](09-pack-adapters.md) | Addyosmani and AI-DLC mappings and activation modes implemented | Pack YAML, bundled adapter, and cross-pack execution tests |
 | [Autonomous development use cases](10-autonomous-development-use-cases.md) | Current use cases, activation handoffs, user controls, tutorial ideas, and unsupported opportunities documented | Runtime contracts plus external agent-development research |
@@ -34,9 +34,9 @@ Contributors changing material behavior start with the affected
 | [Workflow constraints](14-workflow-constraints.md) | Implemented; workflow-scoped policy invariants, approval binding, replacement, and exact skill-backed reusable sources | `daidala/constraints.py`, `daidala/service.py`, and constraint regressions |
 | [Autonomous self-improvement flow](15-self-improvement.md) | Phases 1-4 implemented and repository-tested, including prerequisite diagnosis, admission coordination, evaluator/comparison evidence, and increment reconciliation; project onboarding, live adapters, attended cycle, retention, and publication remain blocked | Pure and fake-boundary tests, local evaluator fixtures, versioned result, and both implementation plans |
 | [Self-improvement environment prerequisites](16-self-improvement-setup.md) | Complete reproducible setup/configuration and remediation guide with stable check IDs; retained prerequisites remain available, while v0.20.0 controller enablement and fresh native diagnosis are blocked | CLI parity and fail-closed tests, current non-secret host inventory, retained setup evidence, and official Hermes, GitHub CLI, and Docker documentation |
-| [Product capabilities](product/README.md) | Three source-and-test-backed baseline capabilities implemented | Runtime modules, executable tests, and CAP-linked dashboard wireframe |
+| [Product capabilities](product/README.md) | Five source-and-test-backed capabilities implemented | Runtime modules, executable tests, and CAP-linked dashboard wireframes |
 | [Change records](changes/README.md) | Adopted as the sole future material-progress authority | Record checker and archived implementation receipts |
-| Target commit/push | Not part of Daidala runtime | Delivery records both flags as false |
+| Target branch commit/push | Attended preview-confirm delivery only | Exact reviewed branch, credential, remote-ref, and receipt checks |
 
 “Implemented” means present in this repository. Compatibility claims are limited
 to the host version and discovery paths in the
@@ -74,11 +74,12 @@ runs ready cards; Daidala adds no scheduler, daemon, dashboard server, or
 polling loop. `/daidala` is an optional extension of the existing Hermes
 dashboard. Generic Kanban unblock is interaction, not plan authorization.
 Automated review is evidence, not delivery authority. A delivery card exists
-only after an attended actor accepts the exact current review tuple. A revision
-request preserves the rejected evidence, creates a revision-addressed Plan card,
-and requires a newly recorded plan plus fresh exact approval before implementation.
-The dashboard and verified native/standalone CLI expose the same preview-confirm
-review authority; the dashboard renders source-bound evidence as literal text.
+only after an attended actor accepts the exact current review tuple. The separate
+native/standalone and dashboard delivery surface requires a fresh preview and
+literal confirmation before it can commit/push only `daidala/<workflow-id>`.
+A revision request preserves the rejected evidence, creates a revision-addressed
+Plan card, and requires a newly recorded plan plus fresh exact approval before
+implementation. The dashboard renders source-bound evidence as literal text.
 
 Every executable card loads the complete exact pack-stage candidate set. After
 `kanban_show`, its worker must persist a finalized, unblocked activation manifest
@@ -124,6 +125,7 @@ CAP, and the sole active CHG before the detailed contracts below.
 | Who owns status and retries? | [Policy ledger](02-workflow-state.md) |
 | Why is Kanban unblock not approval? | [Security](06-security.md#human-approval-boundary) |
 | How do I inspect review evidence, accept delivery, request a revision, or reject a workflow? | [Operator runbook: Review disposition](07-runbook.md#review-disposition) |
+| How do I preview and confirm the reviewed GitHub branch commit/push? | [Operator runbook: Reviewed branch delivery](07-runbook.md#reviewed-branch-delivery) |
 | How do I challenge reviewer judgment without changing captured code? | [Getting started: Review and attended disposition](00-getting-started.md#6-review-and-attended-disposition) |
 | What must each worker record? | [Lifecycle stages](05-lifecycle-stages.md) |
 | Why is a loaded skill not necessarily active? | [Skill usage and user control](11-skill-usage-and-user-control.md#what-using-a-skill-means) |

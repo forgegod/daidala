@@ -340,7 +340,7 @@ store, or default pack. Promotion is a later `improve` cycle.
 | Verify -> review | Verifier | Declared suites complete | Immutable verification evidence | Test-case/run identity | Recovery receipt | `blocked` or `incomparable`. |
 | Review -> decision | Reviewer/Daidala | Frozen scope and complete evidence | Review and comparison | Evidence digests | Decision request | `rejected` or `incomparable`. |
 | Decision -> retention | Authorized human | All required metrics pass, no protected regression | Retention decision | Exact comparison identity | Completion receipt | `retained`, `reverted`, or `no-change`. |
-| Delivered -> completed | Authorized human/Daidala | Done current cards, accepted review and delivery, passing verification, released worktree, no commit/push, exact claim owner and fresh preview digest | Remote completion receipt, attended receipt, immutable completion record | Completion preview digest | `cycle-completed` receipt | `blocked` on drift or uncertain ownership. |
+| Delivered -> completed | Authorized human/Daidala | Done current cards, accepted review and attended delivery, passing verification, released worktree, exact claim owner and fresh preview digest; this controller's committed manifest still denies commit/push | Remote completion receipt, attended receipt, immutable completion record | Completion preview digest | `cycle-completed` receipt | `blocked` on drift or uncertain ownership. |
 | Finding -> external | Findings adapter | Separate publication approval | Returned remote ID and URL | Stable finding ID | Publication receipt | Pending on outage. |
 | Active -> archived | Authorized operator | No uncertain ownership | Archive fact, preserved evidence | Project/cycle identity | Archive receipt | `blocked` if active ownership exists. |
 
@@ -521,7 +521,7 @@ flowchart TD
     Claim -->|"expired"| Proof{"Ledger and board prove no owner?"}
     Proof -->|"no"| Quarantine["Keep blocked"]
     Proof -->|"yes"| Admit
-    Admit --> Notify{"Attended delivery receipt?"}
+    Admit --> Notify{"Attended gateway notification receipt?"}
     Notify -->|"no"| Pause["Pause reconciliation"]
     Notify -->|"yes"| Done["Persist receipt"]
 ```

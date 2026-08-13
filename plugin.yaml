@@ -17,7 +17,6 @@ provides_tools:
   - daidala_capture_implementation
   - daidala_record_skill_activation
   - daidala_record_verification
-  - daidala_deliver
 provides_skills:
   - aidlc-adapter
   - orchestrate

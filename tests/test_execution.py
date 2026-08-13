@@ -95,14 +95,6 @@ class FixtureWorkflowService(WorkflowService):
             **kwargs,
         )
 
-    def deliver(self, workflow_id: str, **kwargs):
-        return super().deliver(
-            workflow_id,
-            **self._current_context(workflow_id, WorkflowStage.DELIVER),
-            **kwargs,
-        )
-
-
 def record_stage_activation(
     service: FixtureWorkflowService,
     workflow_id: str,
@@ -763,27 +755,14 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
         if row.action_kind == "deliver_reviewed_diff"
     )
     assert delivery_recommendation.evidence_ref == review.digest
-    worktree_head = subprocess.run(
-        ["git", "-C", str(worktree), "rev-parse", "HEAD"],
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
     record_stage_activation(service, workflow_id, WorkflowStage.DELIVER)
-    completed = service.deliver(workflow_id)
-
-    delivery = completed.artifact_for(WorkflowStage.DELIVER)
-    assert delivery is not None
-    assert artifact_relative_path(service, workflow_id, delivery.path) == (
-        "artifacts/policy-0000/plan-0000/delivery.json"
-    )
-    complete_stage(WorkflowStage.DELIVER, delivery.digest)
-    payload = json.loads(Path(delivery.path).read_text(encoding="utf-8"))
-    assert payload["changed_paths"] == ["calculator.py", "notes.txt"]
-    assert payload["verification"][0]["exit_code"] == 0
-    assert payload["committed"] is False
-    assert payload["pushed"] is False
-    assert not worktree.exists()
+    pending_delivery = service.status(workflow_id)
+    assert pending_delivery.artifact_for(WorkflowStage.DELIVER) is None
+    assert pending_delivery.committed is False
+    assert pending_delivery.pushed is False
+    assert pending_delivery.worktree_owned is True
+    assert pending_delivery.worktree_path == str(worktree)
+    assert worktree.is_dir()
 
     assert "return 1" in (target_repository / "calculator.py").read_text(encoding="utf-8")
     target_head = subprocess.run(
@@ -792,27 +771,27 @@ def test_thin_workflow_delivers_verified_uncommitted_diff(
         capture_output=True,
         text=True,
     ).stdout.strip()
-    assert target_head == worktree_head == baseline
+    assert target_head == baseline
 
     assert len(fake_kanban_host.cards) == 6
-    assert all(card["status"] == "done" for card in fake_kanban_host.cards.values())
     for stage in (
         WorkflowStage.DEFINE,
         WorkflowStage.PLAN,
         WorkflowStage.IMPLEMENT,
         WorkflowStage.VERIFY,
         WorkflowStage.REVIEW,
-        WorkflowStage.DELIVER,
     ):
-        card = completed.card_for(stage)
+        card = pending_delivery.card_for(stage)
         assert card is not None
+        assert fake_kanban_host.cards[card.task_id]["status"] == "done"
         assert fake_kanban_host.cards[card.task_id]["completion_metadata"]["schema"] == (
             "daidala.handoff/v1"
         )
+    assert fake_kanban_host.cards[deliver_card.task_id]["status"] == "ready"
 
     categories = {
         decision["category"]
-        for reference in completed.activation_manifests
+        for reference in pending_delivery.activation_manifests
         for decision in json.loads(Path(reference.path).read_text(encoding="utf-8"))[
             "decisions"
         ]

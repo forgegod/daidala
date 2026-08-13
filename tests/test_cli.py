@@ -12,6 +12,7 @@ import pytest
 from daidala import cli
 from daidala.adapters import NotificationReceipt
 from daidala.cycles import CycleMode
+from daidala.delivery import DeliveryPreview
 from daidala.evaluation import EvaluatorIsolationEvidence
 from daidala.reconciliation import (
     ReconciliationOutcome,
@@ -1063,6 +1064,94 @@ def test_review_decision_rejects_unsafe_rationale_files(
 def test_review_cli_exposes_no_direct_phase_rewind() -> None:
     with pytest.raises(SystemExit):
         _host_args(["review", "move", "wf-1", "plan"])
+
+
+def test_delivery_cli_has_exact_preview_apply_and_native_parity(capsys) -> None:
+    calls: list[tuple[str, str, dict[str, object]]] = []
+    expected_preview = DeliveryPreview(
+        workflow_id="wf-1",
+        project_id="project-1",
+        branch="daidala/wf-1",
+        baseline_commit="a" * 40,
+        manifest_digest="b" * 64,
+        registration_digest="c" * 64,
+        credential_alias="github-repository-delivery",
+        credential_available=True,
+        review_digest="d" * 64,
+        implementation_digest="e" * 64,
+        verification_digests=("f" * 64,),
+        plan_digest="0" * 64,
+        plan_revision=1,
+        changed_paths=("daidala/service.py",),
+    )
+
+    class Delivery:
+        def preview(self, workflow_id: str) -> DeliveryPreview:
+            calls.append(("preview", workflow_id, {}))
+            return expected_preview
+
+        def apply(self, workflow_id: str, **kwargs: object) -> FakeState:
+            calls.append(("apply", workflow_id, kwargs))
+            return FakeState(workflow_id=workflow_id)
+
+    standalone = Delivery()
+    native = Delivery()
+
+    def factory(delivery: Delivery) -> cli.DeliveryFactory:
+        def build(_service: object) -> Delivery:
+            return delivery
+
+        return cast(cli.DeliveryFactory, build)
+
+    preview_code = cli.main(
+        ["deliver", "wf-1"],
+        service_factory=_factory(FakeService()),
+        delivery_factory=factory(standalone),
+    )
+    preview = json.loads(capsys.readouterr().out)
+    native_preview_code = cli.run_command(
+        _host_args(["deliver", "wf-1"]),
+        service_factory=_factory(FakeService()),
+        delivery_factory=factory(native),
+    )
+    native_preview = json.loads(capsys.readouterr().out)
+
+    assert preview_code == native_preview_code == 0
+    assert preview == native_preview
+    assert calls == [("preview", "wf-1", {}), ("preview", "wf-1", {})]
+    assert preview["dry_run"] is True
+    assert "credential_alias" not in json.dumps(preview)
+
+    missing_code = cli.main(
+        ["deliver", "wf-1", "--apply"],
+        service_factory=_factory(FakeService()),
+        delivery_factory=factory(Delivery()),
+    )
+    missing = json.loads(capsys.readouterr().out)
+    assert missing_code == 1
+    assert "requires --expected-preview-digest" in missing["message"]
+
+    apply_code = cli.main(
+        [
+            "deliver",
+            "wf-1",
+            "--apply",
+            "--expected-preview-digest",
+            expected_preview.digest,
+            "--confirm",
+        ],
+        service_factory=_factory(FakeService()),
+        delivery_factory=factory(standalone),
+    )
+    applied = json.loads(capsys.readouterr().out)
+
+    assert apply_code == 0
+    assert calls[-1] == (
+        "apply",
+        "wf-1",
+        {"expected_preview_digest": expected_preview.digest, "confirm": True},
+    )
+    assert applied["dry_run"] is False
 
 
 def test_init_is_dry_run_by_default(tmp_path: Path, monkeypatch, capsys) -> None:

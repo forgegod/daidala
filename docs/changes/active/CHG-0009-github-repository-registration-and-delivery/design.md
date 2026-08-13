@@ -1,6 +1,6 @@
-# GitHub repository registration and delivery — proposed design
+# GitHub repository registration and delivery — approved design rationale
 
-**Status:** proposed — review-only; no runtime implementation is authorized
+**Status:** implemented — current behavior is owned by CAP-0004, CAP-0005, and the linked runtime contracts
 **Governing change:** [CHG-0009](../CHG-0009-github-repository-registration-and-delivery.md)
 **Design artifacts:** [`repository-registration-and-delivery.pen`](wireframes/repository-registration-and-delivery.pen), [registration PNG](wireframes/exports/repository-registration.png), and [delivery PNG](wireframes/exports/delivery-authority.png)
 **External basis:** [Hermes Secrets](https://hermes-agent.nousresearch.com/docs/user-guide/secrets/)
@@ -16,19 +16,32 @@
 | Credential aliases | Keep Daidala's explicit logical alias → canonical environment-variable binding. | Daidala needs deterministic, non-secret capability metadata; Hermes owns resolution. |
 | Secret source | Daidala never calls a vault. Hermes hydrates secret sources at process startup; zero configured sources is a valid but delivery-blocked state. | Keeps credentials outside Daidala code, records, dashboard, and artifacts. |
 | PAT | One dedicated fine-grained PAT per repository/environment, stored in Hermes's secret source, with `Contents: read and write` only. | Limits blast radius and separates delivery authority from intake/findings authority. |
-| Delivery | Commit/push is a separate future capability with preview, digest, review, release-flag, branch, and human confirmation gates. | Registration must never confer write authority. |
+| Delivery | Commit/push is a separately attended capability with preview, digest, review, release-flag, derived-branch, and literal-confirmation gates. | Registration must never confer write authority. |
 
 ## Current state and boundary
 
-Daidala currently has profile-local manual registration records, strict credential alias bindings, and a dashboard that exposes configuration guidance. It does not expose `project register`, does not accept GitHub repository URLs, and does not commit or push a target repository. The project manifest intentionally retains `release.allow_commit: false` and `release.allow_push: false`.
+Daidala has profile-local registration records, strict credential alias bindings,
+`project register` CLI preview/apply, Config → Repositories dashboard adapters,
+and an attended branch-delivery CLI/dashboard adapter. The adapter is inert for
+the repository's current `release.allow_commit: false` and
+`release.allow_push: false` manifest policy, and fails closed without a trusted
+registration, current review evidence, an explicit credential binding, a fresh
+preview, and literal confirmation.
 
-This document designs future behavior only. It neither authorizes nor changes a Hermes secret source, `HERMES_HOME`, Daidala registration, token, CLI command, dashboard route, manifest, branch, GitHub repository, commit, or push.
+This document records the approved rationale. It does not authorize a Hermes
+secret source, alter `HERMES_HOME`, create a token or a credential binding, or
+perform an external repository write. Current operator behavior is specified by
+[CAP-0004](../../../product/capabilities/CAP-0004-github-repository-registration.md),
+[CAP-0005](../../../product/capabilities/CAP-0005-reviewed-github-branch-delivery.md),
+and the linked architecture, security, and runbook contracts.
 
 ## Approved wireframe-structure preparation
 
-The approved preparation is limited to the existing product-wireframe generator: it now holds a plural current-CAP inventory and renders every listed entry. Regeneration preserves CAP-0003's HTML, manifest, index, and PNG byte-for-byte. This is preparation for the later registration and delivery slices, not a migration of proposed content into the current-product inventory.
-
-The review-only Pencil source and PNGs remain under this CHG. CAP-0004 and CAP-0005 remain unallocated, and no planned HTML/PNG screen is listed under `docs/product/wireframes/`. When the registration slice is separately approved, it creates CAP-0004, adds its final screen definition to the generator, regenerates the product outputs, and links them with runtime behavior tests. The later delivery slice follows the same sequence for CAP-0005.
+The product-wireframe generator now owns current entries for CAP-0003, CAP-0004,
+and CAP-0005. Its generated HTML, manifest/index inventory, and 1440 × 960 PNG
+exports are linked from the respective CAP records and tested with the dashboard
+assets. The review-only Pencil source and PNGs remain CHG provenance; they are
+not a current-product wireframe source.
 
 ## Terminology
 
@@ -39,7 +52,7 @@ The review-only Pencil source and PNGs remain under this CHG. CAP-0004 and CAP-0
 | Secret profile aliasing | Hermes startup behavior that hydrates a canonical credential-shaped environment variable from a matching profile-suffixed secret when enabled. | Hermes |
 | Daidala credential alias | A non-secret slug in `credential-bindings.yaml`, mapped explicitly to one canonical environment variable. | Daidala |
 | Secret source | Bitwarden, 1Password, or a configured command helper that Hermes runs during startup. | Hermes |
-| Delivery credential | The future dedicated PAT for one repository's bounded commit/push adapter. | Operator and Hermes secret source |
+| Delivery credential | Dedicated PAT for one repository's bounded commit/push adapter. | Operator and Hermes secret source |
 
 The first two rows are deliberately distinct. This design uses **secret profile aliasing**, not `hermes profile alias` wrapper scripts. A profile wrapper alias must not alter credential selection, and a secret-profile alias must not redirect profile-local Daidala state.
 
@@ -88,13 +101,16 @@ next: add --apply --expected-preview-digest 6f12…9c80 --confirm register-repos
 
 `--apply` must re-fetch and revalidate before atomically persisting the displayed records. It requires `--expected-preview-digest` and a literal `--confirm register-repository`; it must not use a generic yes/no flag. It does not clone a target checkout, create GitHub Projects, configure Hermes secrets, write credentials, change a manifest, commit, push, or create a pull request.
 
-No future CLI option may accept a PAT value, secret reference value, vault password, bootstrap token, or profile filesystem path. In particular, there is no `--token`, `--pat`, `--secret`, `--secret-profile-alias`, or `--hermes-home` option.
+No CLI option accepts a PAT value, secret reference value, vault password,
+bootstrap token, or profile filesystem path. In particular, there is no
+`--token`, `--pat`, `--secret`, `--secret-profile-alias`, or `--hermes-home`
+option.
 
 ## Hermes secrets and profile aliasing
 
-### Proposed environment contract
+### Environment contract
 
-The future profile-local credential binding uses a canonical credential-shaped name such as:
+The profile-local credential binding uses the canonical credential-shaped name:
 
 ```yaml
 schema: daidala.credential-bindings/v1
@@ -140,11 +156,16 @@ Do not add KeePass CLI orchestration to Daidala. A long unlock/prompt/script seq
 
 Hermes loads `.env`/shell values first, then secret sources. Mapped sources outrank bulk sources, and first source wins within the same shape. Source configuration can elect to override existing values; one source cannot replace another source's bootstrap token. The design relies on Hermes for these rules and adds no Daidala precedence.
 
-Hermes startup does not fail merely because a source is unavailable. The future Daidala delivery preflight must therefore explicitly resolve the named logical credential and fail closed with `delivery credential unavailable`. It must not reuse a stale value, substitute a different profile's credential, or infer a vault item from a logical alias.
+Hermes startup does not fail merely because a source is unavailable. The delivery
+preflight therefore resolves the named logical credential at operation time and
+fails closed with `delivery credential unavailable`. It does not reuse a stale
+value, substitute a different profile's credential, or infer a vault item from a
+logical alias.
 
 ## Dashboard interaction design
 
-The review-only Pencil screens show the proposed user interface.
+The review-only Pencil screens preserve the reviewed interaction rationale.
+Current product screens are the CAP-linked generated wireframes.
 
 ### Config → Repositories
 
@@ -159,24 +180,33 @@ The primary interaction is a GitHub.com URL field and `Inspect repository`. A su
 
 A profile picker does not expose wrapper aliases or secret names. It labels each selectable profile by its actual Hermes profile name and an availability state; it rejects missing/untrusted profiles and requires a fresh inspection after a profile change.
 
-The review screen keeps two operator-instruction cards visible beside the registration preview. **Required GitHub access rights** says that a future branch-delivery credential must be a fine-grained PAT restricted to the selected repository with `Contents: read and write` only; it must not grant organization, Administration, Projects, Workflows, or default-branch authority, and it needs expiration, rotation, and revocation. **Store a token for the selected profile** says that the operator configures a Hermes-supported secret source outside Daidala, binds it to the displayed Hermes profile, and follows the [official Hermes Secrets guide](https://hermes-agent.nousresearch.com/docs/user-guide/secrets/). It explicitly states that neither the dashboard nor the CLI accepts or displays the value, that Daidala retains only a logical reference, and that Hermes resolves the value only for a bounded delivery operation.
+The review screen keeps two operator-instruction cards visible beside the registration preview. **Required GitHub access rights** says that a branch-delivery credential must be a fine-grained PAT restricted to the selected repository with `Contents: read and write` only; it must not grant organization, Administration, Projects, Workflows, or default-branch authority, and it needs expiration, rotation, and revocation. **Store a token for the selected profile** says that the operator configures a Hermes-supported secret source outside Daidala, binds it to the displayed Hermes profile, and follows the [official Hermes Secrets guide](https://hermes-agent.nousresearch.com/docs/user-guide/secrets/). It explicitly states that neither the dashboard nor the CLI accepts or displays the value, that Daidala retains only a logical reference, and that Hermes resolves the value only for a bounded delivery operation.
 
 ### Delivery panel
 
-The panel is a future disabled surface until its CAP and runtime service exist. It shows the selected controller profile and safe secret state, then requires accepted review, a fresh diff identity, release flags, an allowed Daidala branch, and an exact delivery preview. The future confirmation text says exactly what branch will be committed and pushed. It has no token field, no source configuration action, no default-branch option, no pull-request action, and no bypass for missing secret authority.
+The delivered panel shows safe credential state, accepted review evidence, current
+diff identity, release flags, the derived Daidala branch, and an exact delivery
+preview. Its confirmation says exactly what branch will be committed and pushed.
+It has no token field, source configuration action, default-branch option,
+pull-request action, or bypass for missing secret authority.
 
 The disabled credential gate repeats the least-rights and selected-profile storage instructions with the official Hermes Secrets URL, so an unavailable delivery state gives an operator a safe next step without exposing a credential or turning registration into credential setup.
 
 ## Delivery transaction concept
 
-A future delivery request contains only non-secret identifiers: project, selected profile, reviewed workflow/cycle, target Daidala branch, release-policy snapshot, and preview digest. The adapter resolves `github-repository-delivery` only immediately before its bounded Git action. The value must never be included in a subprocess argument, remote URL, Git config, browser response, exception, receipt, trace, telemetry field, or artifact.
+A delivery request contains only non-secret identifiers: project, selected profile,
+reviewed workflow/cycle, target Daidala branch, release-policy snapshot, and
+preview digest. The adapter resolves `github-repository-delivery` only immediately
+before its bounded Git action. The value must never be included in a subprocess
+argument, remote URL, Git config, browser response, exception, receipt, trace,
+telemetry field, or artifact.
 
-The executable transaction is deliberately deferred. It must be implemented only after registration has a tested vertical slice and after separate approval of the following checks:
+The implemented transaction requires all of the following checks:
 
 1. exact accepted review disposition and evidence;
 2. clean, currently reviewed worktree and changed-path identity;
 3. committed manifest permits commit and push;
-4. protected target branch matches `daidala/<cycle-id>`;
+4. derived target branch matches `daidala/<workflow-id>`;
 5. selected profile equals the preview-bound profile;
 6. logical alias has a single explicit canonical binding;
 7. Hermes has supplied a non-empty credential to that canonical variable;
@@ -195,17 +225,22 @@ The executable transaction is deliberately deferred. It must be implemented only
 | A malicious URL changes checkout or remote identity | Strict parse; fetched manifest and allowed remote validate canonical identity; no browser-supplied paths. |
 | Cross-profile filesystem access | Existing-profile validation and Hermes-resolved profile roots only; no arbitrary root/path option. |
 
-## Documentation and implementation sequence
+## Implemented sequence
 
-1. Review this document, its Pencil screens, and CHG-0009. Approve or amend the secret-source decision and selected-profile behavior.
-2. Before runtime work, enable and independently verify a Hermes secret source only if delivery will be implemented. The source is not a registration prerequisite.
-3. Implement one registration-only vertical slice: service, URL parser, profile validation, CLI preview/apply, dashboard route, tests, CAP-0004, and its current-state product wireframe.
-4. Re-review delivery scope after registration evidence exists. Add CAP-0005, a current-state wireframe, delivery authority, bounded Git adapter, secrets/readiness tests, and exact approval gates only with a separate approval.
+1. The reviewed CHG, Pencil screens, secret-source recommendation, and
+   controller-profile behavior established the authority boundary.
+2. The registration vertical slice added service, URL parser, profile validation,
+   CLI/dashboard preview/apply, tests, CAP-0004, and its generated wireframe.
+3. The delivery vertical slice added CAP-0005, its generated wireframe, the
+   bounded Git adapter, exact CLI/dashboard preview/apply gates, and credential
+   readiness/retry/redaction coverage.
+4. Hermes secret-source configuration remains an explicit operator prerequisite
+   for a real delivery; no runtime setup process was changed by this CHG.
 
 ## Out of scope
 
 - configuring a Hermes secret source, Bitwarden machine account, 1Password account, or KeePass helper;
 - changing a profile wrapper alias or disabling/enabling Hermes secret profile aliasing;
 - reading or creating any PAT, bootstrap token, vault entry, `.env` file, or credential binding;
-- target repository checkout creation, commit, push, pull request, merge, release, publish, or GitHub App installation;
-- runtime CLI/parser, dashboard route, browser asset, schema, test, CAP, or current-state product-wireframe implementation.
+- default-branch writes, pull requests, merge, releases, publishing, or GitHub App installation;
+- broader credential-manager integration, deployment, or a worker-facing commit/push tool.

@@ -22,6 +22,17 @@
         "width": 1440,
         "height": 960
       }
+    },
+    {
+      "capability": "CAP-0005",
+      "slug": "CAP-0005-reviewed-github-branch-delivery",
+      "title": "Reviewed GitHub branch delivery",
+      "html": "html/CAP-0005-reviewed-github-branch-delivery.html",
+      "png": "exports/CAP-0005-reviewed-github-branch-delivery.png",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      }
     }
   ]
 }

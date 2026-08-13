@@ -14,6 +14,7 @@ from typing import NoReturn, cast
 
 from .artifact_curator import CuratorPolicy
 from .cycles import CycleMode
+from .delivery import BranchDeliveryService
 from .evaluation import EvaluatorIsolationEvidence
 from .initialization import apply_initialization, preview_initialization
 from .kanban import KanbanGraphAdapter
@@ -51,6 +52,7 @@ ContainerRequestRunner = Callable[
 ]
 ProjectCycleFactory = Callable[[], ProjectCycleOperator]
 RepositoryRegistrationFactory = Callable[[Path, str], RepositoryRegistrationService]
+DeliveryFactory = Callable[[WorkflowService], BranchDeliveryService]
 
 
 def register_cli(parser: argparse.ArgumentParser) -> None:
@@ -363,6 +365,14 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     review_decide.add_argument("--expected-review-digest")
     review_decide.add_argument("--expected-preview-digest")
 
+    deliver = sub.add_parser(
+        "deliver", help="Preview or commit and push one reviewed Daidala branch"
+    )
+    deliver.add_argument("workflow_id")
+    deliver.add_argument("--apply", action="store_true")
+    deliver.add_argument("--expected-preview-digest")
+    deliver.add_argument("--confirm", action="store_true")
+
     cancel = sub.add_parser(
         "cancel", help="Archive workflow cards and clean the Daidala-owned worktree"
     )
@@ -475,6 +485,7 @@ def main(
     project_cycle_factory: ProjectCycleFactory | None = None,
     plan_source_admitter: PlanSourceAdmitter | None = None,
     repository_registration_factory: RepositoryRegistrationFactory | None = None,
+    delivery_factory: DeliveryFactory | None = None,
 ) -> int:
     args = build_parser().parse_args(argv)
     return run_command(
@@ -492,6 +503,7 @@ def main(
         project_cycle_factory=project_cycle_factory,
         plan_source_admitter=plan_source_admitter,
         repository_registration_factory=repository_registration_factory,
+        delivery_factory=delivery_factory,
     )
 
 
@@ -511,6 +523,7 @@ def run_command(
     project_cycle_factory: ProjectCycleFactory | None = None,
     plan_source_admitter: PlanSourceAdmitter | None = None,
     repository_registration_factory: RepositoryRegistrationFactory | None = None,
+    delivery_factory: DeliveryFactory | None = None,
 ) -> int:
     """Execute one parsed command and return its process exit code."""
     try:
@@ -544,6 +557,13 @@ def run_command(
                 or (lambda root, profile: RepositoryRegistrationService(root, profile)),
                 command_runner or _run_command,
             )
+        if args.command == "deliver":
+            service = (
+                service_factory
+                or (lambda: _default_service(command_runner=command_runner))
+            )()
+            delivery = (delivery_factory or _default_delivery_factory)(service)
+            return _run_delivery(args, delivery)
         if args.command in {
             "start",
             "start-from-plan",
@@ -1029,6 +1049,44 @@ def _run_lifecycle(
     else:
         state = service.cancel(args.workflow_id, reason=args.reason)
     _print({"success": True, "operation": args.command, "workflow": state.to_dict()})
+    return 0
+
+
+def _default_delivery_factory(service: WorkflowService) -> BranchDeliveryService:
+    return BranchDeliveryService(service, profile_root=resolve_data_root())
+
+
+def _run_delivery(args: argparse.Namespace, delivery: BranchDeliveryService) -> int:
+    if args.apply:
+        if args.expected_preview_digest is None:
+            raise ValueError("--apply requires --expected-preview-digest")
+        if args.confirm is not True:
+            raise ValueError("--apply requires --confirm")
+        workflow = delivery.apply(
+            args.workflow_id,
+            expected_preview_digest=args.expected_preview_digest,
+            confirm=True,
+        )
+        _print(
+            {
+                "success": True,
+                "operation": "deliver",
+                "dry_run": False,
+                "workflow": workflow.to_dict(),
+            }
+        )
+        return 0
+    if args.expected_preview_digest is not None or args.confirm:
+        raise ValueError("--expected-preview-digest and --confirm require --apply")
+    preview = delivery.preview(args.workflow_id)
+    _print(
+        {
+            "success": True,
+            "operation": "deliver",
+            "dry_run": True,
+            "preview": preview.to_dict(),
+        }
+    )
     return 0
 
 
