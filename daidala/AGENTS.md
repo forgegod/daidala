@@ -27,6 +27,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `checkout_root.py` | Strict checkout-root configuration, derived registration-path validation, and owned-checkout collision safety. |
 | `checkouts.py` | Bounded NUL-status checkout inspection; receipt-TTL preview/confirm lifecycle actions; clone-validate-swap rollback; archive-backed backup-then-wipe; clean unowned adoption; and backup/policy inventory over the checkout-root store. |
 | `github_project_links.py` | Strict GitHub Projects v2 link storage and credential-minimal verification derived from trusted registration and prerequisite evidence; unavailable private inputs become bounded link errors. |
+| `repository_registration.py` | Preview-confirmed GitHub repository registration from a canonical remote and committed manifest, with strict profile-local defaults and non-secret two-record apply. |
 | `initialization.py` | Frozen non-mutating policy-ledger previews and literal-confirmed, stale-digest-rejecting profile-local schema initialization. |
 | `credentials.py` | Strict alias-to-environment credential bindings with no secret values or resolver inference. |
 | `prerequisites.py` | Stable self-improvement checklist registry, retained capability evidence, bounded probes, terminal-record-aware active ownership, and strict prerequisite reports. |

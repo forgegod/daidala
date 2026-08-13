@@ -1,0 +1,276 @@
+from __future__ import annotations
+
+import base64
+import json
+import stat
+from collections.abc import Mapping
+from pathlib import Path
+
+import pytest
+import yaml
+
+from daidala.credentials import parse_credential_bindings
+from daidala.errors import PolicyViolationError
+from daidala.registrations import parse_controller_registration
+from daidala.repository_registration import (
+    DELIVERY_CREDENTIAL_ALIAS,
+    RepositoryRegistrationError,
+    RepositoryRegistrationService,
+    parse_github_repository_url,
+    parse_registration_defaults,
+    resolve_profile_root,
+)
+
+REPOSITORY = Path(__file__).parents[1]
+MANIFEST = (REPOSITORY / ".daidala" / "project.yaml").read_text(encoding="utf-8")
+
+
+def defaults_payload() -> dict[str, object]:
+    return {
+        "schema": "daidala.repository-registration-defaults/v1",
+        "board": "daidala-forgegod-daidala",
+        "credentials": {
+            "intake": {
+                "alias": "github-daidala-read-issues",
+                "resolver": "environment",
+                "environment_variable": "DAIDALA_GITHUB_INTAKE_TOKEN",
+            },
+            "findings": {
+                "alias": "github-daidala-write-issues",
+                "resolver": "environment",
+                "environment_variable": "DAIDALA_GITHUB_FINDINGS_TOKEN",
+            },
+        },
+        "approval": {"maintainers": ["forgegod"]},
+        "notifications": {
+            "adapter": "hermes-gateway",
+            "target": "attended-daidala",
+            "destination": "telegram:-1001234567890:17585",
+        },
+        "evaluator": {
+            "backend": "restricted-container",
+            "network": "denied-by-default",
+        },
+        "limits": {
+            "active_cycles": 1,
+            "goal_turns": 12,
+            "delegated_workers": 3,
+            "research_query_batches": 3,
+            "extracted_sources": 3,
+            "wall_clock_seconds": 3600,
+        },
+    }
+
+
+def write_defaults(root: Path) -> None:
+    root.mkdir(parents=True, exist_ok=True)
+    path = root / "repository-registration-defaults.yaml"
+    path.write_text(yaml.safe_dump(defaults_payload(), sort_keys=False), encoding="utf-8")
+    path.chmod(0o600)
+
+
+class GitHubRunner:
+    def __init__(self, manifest: str = MANIFEST) -> None:
+        self.manifest = manifest
+        self.commands: list[tuple[str, ...]] = []
+        self.environments: list[dict[str, str]] = []
+
+    def __call__(
+        self, command: tuple[str, ...], environment: Mapping[str, str]
+    ) -> tuple[int, str]:
+        self.commands.append(command)
+        self.environments.append(dict(environment))
+        if command == ("gh", "api", "repos/forgegod/daidala"):
+            return 0, json.dumps(
+                {
+                    "full_name": "forgegod/daidala",
+                    "ssh_url": "git@github.com:forgegod/daidala.git",
+                    "clone_url": "https://github.com/forgegod/daidala.git",
+                }
+            )
+        if command == (
+            "gh",
+            "api",
+            "repos/forgegod/daidala/contents/.daidala/project.yaml",
+        ):
+            content = self.manifest.encode("utf-8")
+            return 0, json.dumps(
+                {
+                    "type": "file",
+                    "encoding": "base64",
+                    "size": len(content),
+                    "content": base64.b64encode(content).decode("ascii"),
+                }
+            )
+        return 1, "private error that must not be surfaced"
+
+
+@pytest.mark.parametrize(
+    "value",
+    (
+        "https://github.com/forgegod/daidala",
+        "https://github.com/forgegod/daidala.git",
+        "ssh://git@github.com/forgegod/daidala.git",
+        "git@github.com:forgegod/daidala.git",
+        "github.com/forgegod/daidala",
+    ),
+)
+def test_github_repository_urls_normalize_page_and_clone_forms(value: str) -> None:
+    assert parse_github_repository_url(value) == "forgegod/daidala"
+
+
+@pytest.mark.parametrize(
+    "value",
+    (
+        "/private/repository",
+        "https://gitlab.com/forgegod/daidala",
+        "http://github.com/forgegod/daidala",
+        "https://token@github.com/forgegod/daidala",
+        "https://github.com/forgegod/daidala/issues/1",
+        "https://github.com/forgegod/daidala?tab=readme",
+        "https://github.com/forgegod/daidala#readme",
+    ),
+)
+def test_github_repository_urls_reject_unsafe_or_non_repository_forms(value: str) -> None:
+    with pytest.raises(RepositoryRegistrationError):
+        parse_github_repository_url(value)
+
+
+def test_registration_defaults_are_strict_and_validate_private_authority() -> None:
+    payload = defaults_payload()
+    defaults = parse_registration_defaults(yaml.safe_dump(payload, sort_keys=False))
+
+    assert defaults.board == "daidala-forgegod-daidala"
+    assert defaults.notification_destination.startswith("telegram:")
+    payload["unknown"] = True
+    with pytest.raises(PolicyViolationError, match="unknown"):
+        parse_registration_defaults(yaml.safe_dump(payload, sort_keys=False))
+
+
+def test_preview_is_path_secret_and_private_destination_free(tmp_path: Path) -> None:
+    root = (tmp_path / "controller").resolve()
+    write_defaults(root)
+    runner = GitHubRunner()
+    service = RepositoryRegistrationService(
+        root,
+        "daidala-self-improvement",
+        runner=runner,
+        environ={"PATH": "/usr/bin", "GH_TOKEN": "must-not-reach-preview"},
+    )
+
+    preview = service.preview("https://github.com/forgegod/daidala")
+    payload = preview.to_dict()
+    rendered = json.dumps(payload)
+
+    assert payload["repository"] == "forgegod/daidala"
+    assert payload["project_id"] == "forgegod-daidala"
+    assert payload["writes"] == {
+        "record_count": 2,
+        "registration": True,
+        "credential_bindings": True,
+    }
+    assert payload["release"] == {
+        "allow_commit": False,
+        "allow_push": False,
+        "allow_publish": False,
+    }
+    assert str(root) not in rendered
+    assert "telegram:" not in rendered
+    assert "environment_variable" not in rendered
+    assert "GH_TOKEN" not in runner.environments[0]
+    assert runner.environments[0]["GH_PROMPT_DISABLED"] == "1"
+
+
+def test_apply_reinspects_and_writes_exactly_two_private_records(tmp_path: Path) -> None:
+    root = (tmp_path / "controller").resolve()
+    write_defaults(root)
+    runner = GitHubRunner()
+    service = RepositoryRegistrationService(
+        root, "daidala-self-improvement", runner=runner, environ={"PATH": "/usr/bin"}
+    )
+    url = "https://github.com/forgegod/daidala"
+    preview = service.preview(url)
+
+    applied = service.apply(
+        url,
+        expected_preview_digest=preview.digest,
+        confirmation="register-repository",
+    )
+
+    project_root = root / "projects" / "forgegod-daidala"
+    assert applied.digest == preview.digest
+    assert sorted(path.name for path in project_root.iterdir()) == [
+        "credential-bindings.yaml",
+        "registration.yaml",
+    ]
+    registration_file = project_root / "registration.yaml"
+    bindings_file = project_root / "credential-bindings.yaml"
+    registration = parse_controller_registration(registration_file.read_text(encoding="utf-8"))
+    bindings = parse_credential_bindings(bindings_file.read_text(encoding="utf-8"))
+    assert registration.repository_canonical == "forgegod/daidala"
+    assert registration.checkout == str(root / "work" / "forgegod-daidala")
+    assert [row.alias for row in bindings.bindings] == [
+        "github-daidala-read-issues",
+        "github-daidala-write-issues",
+        DELIVERY_CREDENTIAL_ALIAS,
+    ]
+    assert stat.S_IMODE(registration_file.stat().st_mode) == 0o600
+    assert stat.S_IMODE(bindings_file.stat().st_mode) == 0o600
+    assert len(runner.commands) == 4
+
+
+def test_apply_rejects_stale_digest_without_writing(tmp_path: Path) -> None:
+    root = (tmp_path / "controller").resolve()
+    write_defaults(root)
+    service = RepositoryRegistrationService(
+        root,
+        "daidala-self-improvement",
+        runner=GitHubRunner(),
+        environ={"PATH": "/usr/bin"},
+    )
+
+    with pytest.raises(RepositoryRegistrationError, match="stale"):
+        service.apply(
+            "https://github.com/forgegod/daidala",
+            expected_preview_digest="0" * 64,
+            confirmation="register-repository",
+        )
+
+    assert not (root / "projects").exists()
+
+
+def test_manifest_identity_and_allowed_remote_are_fail_closed(tmp_path: Path) -> None:
+    root = (tmp_path / "controller").resolve()
+    write_defaults(root)
+    mismatched = (
+        MANIFEST.replace("canonical: forgegod/daidala", "canonical: other/daidala")
+        .replace("git@github.com:forgegod/daidala.git", "git@github.com:other/daidala.git")
+    )
+    service = RepositoryRegistrationService(
+        root,
+        "daidala-self-improvement",
+        runner=GitHubRunner(mismatched),
+        environ={"PATH": "/usr/bin"},
+    )
+    with pytest.raises(RepositoryRegistrationError, match="canonical identity"):
+        service.preview("https://github.com/forgegod/daidala")
+
+    disallowed = MANIFEST.replace(
+        "git@github.com:forgegod/daidala.git", "git@github.com:other/daidala.git"
+    )
+    service.runner = GitHubRunner(disallowed)
+    with pytest.raises(PolicyViolationError, match="allowed remote URLs"):
+        service.preview("https://github.com/forgegod/daidala")
+
+
+def test_profile_root_resolves_only_from_hermes_profile_show(tmp_path: Path) -> None:
+    root = (tmp_path / "profile").resolve()
+    root.mkdir()
+    commands: list[tuple[str, ...]] = []
+
+    def run(command: tuple[str, ...]) -> tuple[int, str]:
+        commands.append(command)
+        return 0, f"Profile: controller\nPath: {root}\nModel: configured"
+
+    assert resolve_profile_root("controller", run) == root
+    assert commands == [("hermes", "profile", "show", "controller")]

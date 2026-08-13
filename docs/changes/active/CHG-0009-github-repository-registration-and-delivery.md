@@ -1,10 +1,10 @@
 # CHG-0009: GitHub repository registration and delivery authority
 
-**Status:** pending
+**Status:** in-progress
 **Source request:** Direct operator request: "According to the skills create the CHR and design as proposed including the CLI and dashboard support. Do not execute before approval. In order to secure the PAT make a recommendation how to store the PAT in a secure way"; clarification: "I mean CHG"
 **Affected capabilities:** CAP-0003
 **Created:** 2026-08-11
-**Scope amendment:** Add Hermes secret-source and secret profile-aliasing design, explicit controller-profile selection in CLI/dashboard concepts, and review-only Pencil wireframes; do not implement or configure any runtime surface.
+**Scope amendment:** The approved scope includes Hermes secret-source and secret profile-aliasing design, explicit controller-profile selection in CLI/dashboard concepts, and review-only Pencil wireframes. Phase entry found that a repository URL and committed manifest cannot supply the board, intake/findings aliases, maintainer identities, attended destination, evaluator policy, or limits required by the strict controller-registration record. The registration slice therefore adds one strict profile-local `repository-registration-defaults.yaml` prerequisite. Preview reads that record without exposing private values; apply still writes exactly the two approved project-local records and blocks when the prerequisite is missing or invalid.
 
 ## Outcome
 
@@ -19,6 +19,7 @@ Current behavior remains unchanged: registration is manual, the dashboard is rea
 - Make preview read the repository metadata and committed `.daidala/project.yaml` through the host's existing read-only GitHub CLI authentication. Preview must fail closed for an inaccessible repository, malformed/missing manifest, canonical identity mismatch, allowed-remote mismatch, duplicate project ID, or stale confirmation digest.
 - Keep checkout paths, controller data roots, environment-variable names, credential values, GitHub Project node IDs, and target worktree content outside browser requests and responses. The UI may show an explicit Hermes profile and safe secret-alias/readiness state, but never a secret value, vault item, bootstrap token, or source command. The one intentional browser input is the GitHub.com link; after inspection the UI presents its derived `owner/repository` identity rather than treating a pasted remote as configuration authority.
 - Persist only strict non-secret registration and credential-binding records after an exact preview digest and explicit confirmation. A static registration may remain diagnostically blocked while its real credentials are not available; it must not fabricate prerequisite evidence.
+- Read controller authority from a strict profile-local `repository-registration-defaults.yaml` prerequisite because those values are neither repository policy nor safe browser inputs. Registration never creates or edits that prerequisite and browser responses expose readiness booleans rather than its private destination or environment bindings.
 - Design, but do not implement, a separate delivery-authority record and explicit commit/push transaction. It must require accepted review, an exact current diff, `release.allow_commit: true`, `release.allow_push: true`, fresh attended confirmation, a dedicated delivery credential, and an allowed `daidala/<cycle-id>` branch.
 - Exclude default-branch pushes, pull-request creation, merge, release, publication, GitHub App support, direct password-manager invocation from Daidala, credential-manager auto-detection, and any token input in the dashboard.
 - Do not modify runtime Python, CLI registration, dashboard routes/assets, project manifests, credentials, release flags, or current CAP records before human approval.
@@ -80,7 +81,7 @@ The planned Delivery panel is unavailable until a future delivery capability is 
 
 ### Capability and wireframe boundary
 
-CAP-0003 is the current dashboard baseline and is the only valid affected CAP while this CHG is pending. CAP-0004 (GitHub repository registration) and CAP-0005 (reviewed GitHub delivery) are intentionally not created yet: product CAPs must describe implemented, test-backed current behavior. Creating CAP-linked product wireframes now would falsely present these unimplemented surfaces as current and fails the product-record contract. The review-only Pencil package in [`design.md`](CHG-0009-github-repository-registration-and-delivery/design.md) is therefore governed by this CHG, not the product-wireframe manifest.
+CAP-0003 is the current dashboard baseline and remains the only valid affected CAP while the registration core has no CLI/dashboard surface. CAP-0004 (GitHub repository registration) and CAP-0005 (reviewed GitHub delivery) remain intentionally absent until their respective runtime surfaces and test evidence exist: product CAPs must describe implemented, test-backed current behavior. The review-only Pencil package in [`design.md`](CHG-0009-github-repository-registration-and-delivery/design.md) remains CHG-owned provenance rather than a product-wireframe source.
 
 When implementation is approved, the first registration vertical slice must create CAP-0004 plus its generated HTML/PNG wireframe before runtime UI work. The later delivery slice must create CAP-0005 plus its generated HTML/PNG wireframe. As defined by the repository-owned [capability-wireframes skill](../../../skills/software-development/capability-wireframes/SKILL.md), `docs/product/wireframes/generate.mjs` is the editable source that generates the `html/CAP-NNNN-<slug>.html` screen, `manifest.json`, and `index.html`; it then renders the matching `exports/CAP-NNNN-<slug>.png`. Both CAP screen pairs will be added in the same slice as runtime source and executable tests.
 
@@ -92,13 +93,14 @@ The approved preparation is deliberately narrower than a content migration: the 
 |---|---|---|
 | Wireframe generator preparation | done (`node docs/product/wireframes/generate.mjs --render`; CAP-0003 outputs byte-identical) | The generator supports multiple current CAP entries without creating planned entries. |
 | Approval boundary | done (direct operator approval: "Approve CHG-0009") | Direct operator approval of this CHG scope, Hermes secret-source/profile-aliasing approach, review wireframes, and branch-only delivery rule. |
-| Repository registration vertical slice | pending | Focused URL/manifest/registration CLI and dashboard tests; generated CAP-0004 wireframe; `python scripts/check_records.py .`; `python scripts/check_md_links.py .`. |
+| Repository registration vertical slice | in-progress | Registration core policy and tests are in progress; completing the slice requires CLI/dashboard adapters, generated CAP-0004 wireframe, and focused end-to-end tests; `python scripts/check_records.py .`; `python scripts/check_md_links.py .`. |
 | Delivery authority and branch publish vertical slice | pending | Focused credential-boundary, preview/apply, branch-only Git, retry, and dashboard-state tests; generated CAP-0005 wireframe; full affected repository gate. |
 | Closeout | pending | Current CAPs, architecture/security/setup documentation, CHG evidence, full repository gate, and human review are complete before archival. |
 
 ## Decisions
 
 - Use one deterministic repository-registration service for CLI and dashboard adapters. This prevents CLI/dashboard policy drift and avoids a nested command bridge.
+- Keep non-repository controller authority in one strict profile-local defaults record that registration reads but never mutates. This resolves values that cannot be derived safely while preserving the one-link browser input and exact two-record apply boundary.
 - Treat a pasted link as an untrusted identity claim. Canonical identity and manifest policy are derived and revalidated by the service before a profile write.
 - Keep registration and content delivery as different authorities. Registering a repository cannot grant commit or push authority.
 - For delivery V1, prefer a dedicated GitHub fine-grained PAT restricted to one repository with `Contents: read and write` only. Do not reuse the intake or findings tokens, and do not grant administration, issues, pull-request, workflow, deployment, release, package, or broad `repo` authority.
