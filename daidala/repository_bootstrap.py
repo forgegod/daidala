@@ -27,12 +27,14 @@ from .repository_registration import (
 )
 
 BOOTSTRAP_PREVIEW_SCHEMA = "daidala.repository-bootstrap-preview/v1"
-BOOTSTRAP_BRANCH = "daidala/bootstrap"
+# Conventional Commits–style branch name (type/description), not a commit message.
+BOOTSTRAP_BRANCH = "chore/daidala-bootstrap-project-policy"
 BOOTSTRAP_CONFIRMATION = "bootstrap-repository"
 PROJECT_POLICY_PATH = ".daidala/project.yaml"
 CONSTRAINTS_PATH = ".daidala/constraints.yaml"
 _SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,127}$")
 _REPOSITORY = re.compile(r"^[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}$")
+_BRANCH = re.compile(r"^[A-Za-z0-9._/-]{1,200}$")
 
 
 class RepositoryBootstrapError(PolicyViolationError):
@@ -87,6 +89,11 @@ class BootstrapPreview:
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
     def to_dict(self) -> dict[str, object]:
+        links = bootstrap_github_links(
+            repository_canonical=self.repository_canonical,
+            target_branch=self.target_branch,
+            default_branch=self.default_branch,
+        )
         return {
             "schema": self.schema,
             "valid": True,
@@ -101,14 +108,16 @@ class BootstrapPreview:
             "files": [row.to_dict() for row in self.files],
             "manifest_digest": self.manifest_digest,
             "preview_digest": self.digest,
+            "links": links,
             "writes": {
                 "branch": self.target_branch,
                 "file_count": len(self.files),
                 "registration": False,
                 "default_branch": False,
+                "pull_request": False,
             },
             "next_step": (
-                "Merge the bootstrap branch into the default branch outside Daidala, "
+                "Open the compare/pull-request link, merge on GitHub outside Daidala, "
                 "then inspect and register the repository."
             ),
         }
@@ -362,6 +371,41 @@ class RepositoryBootstrapService:
         if not isinstance(payload, dict):
             raise RepositoryBootstrapError(f"GitHub repository {label} response must be an object")
         return payload
+
+
+def bootstrap_github_links(
+    *,
+    repository_canonical: str,
+    target_branch: str,
+    default_branch: str,
+) -> dict[str, str]:
+    """Build public GitHub browser URLs for operator follow-up outside Daidala."""
+
+    if not isinstance(repository_canonical, str) or not _REPOSITORY.fullmatch(
+        repository_canonical
+    ):
+        raise RepositoryBootstrapError("bootstrap repository identity is invalid")
+    if (
+        not isinstance(target_branch, str)
+        or not isinstance(default_branch, str)
+        or not _BRANCH.fullmatch(target_branch)
+        or not _BRANCH.fullmatch(default_branch)
+        or target_branch == default_branch
+    ):
+        raise RepositoryBootstrapError("bootstrap branch identities are invalid")
+    root = f"https://github.com/{repository_canonical}"
+    # GitHub accepts slash-containing branch names as path segments in tree/compare URLs.
+    return {
+        "branch": f"{root}/tree/{target_branch}",
+        "daidala_tree": f"{root}/tree/{target_branch}/.daidala",
+        "compare_pull_request": (
+            f"{root}/compare/{default_branch}...{target_branch}"
+            "?expand=1"
+            "&title=chore%3A%20bootstrap%20Daidala%20project%20policy"
+            "&body=Adds%20conservative%20.daidala%20policy%20generated%20by%20Daidala%20bootstrap."
+            "%20Review%20and%20merge%20to%20enable%20registration."
+        ),
+    }
 
 
 def build_bootstrap_files(canonical: str) -> tuple[BootstrapFile, ...]:

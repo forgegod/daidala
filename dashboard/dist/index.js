@@ -2544,9 +2544,13 @@
       setBusy(true); setMessage("");
       applyRepositoryBootstrap(githubUrl.trim(), bootstrapPreview.controller_profile, bootstrapPreview.preview_digest).then(function (result) {
         setBootstrapPreview(result); setConfirmed(false);
+        var pr = result && result.links && result.links.compare_pull_request
+          ? result.links.compare_pull_request
+          : "";
         setMessage(
           "Bootstrap branch published: " + (result.branch || bootstrapPreview.target_branch) +
-          ". Merge it into the default branch outside Daidala, then inspect and register."
+          ". Open the compare/pull-request link on GitHub to merge, then inspect and register." +
+          (pr ? " " + pr : "")
         );
       }).catch(function (caught) {
         setMessage("Repository bootstrap was not applied: " + errorText(caught));
@@ -2599,8 +2603,19 @@
         createElement("p", null, "Target branch: " + bootstrapPreview.target_branch + " from " + bootstrapPreview.default_branch),
         createElement("p", null, "Files: " + ((bootstrapPreview.files || []).map(function (file) { return file.path; }).join(", ") || "none")),
         createElement("p", null, "Manifest digest: " + bootstrapPreview.manifest_digest),
-        createElement("p", { className: "daidala-workflow-meta" }, bootstrapPreview.next_step || "Merge the bootstrap branch outside Daidala before registration."),
-        createElement("p", { className: "daidala-workflow-meta" }, "Bootstrap does not register the repository, touch the default branch, open a pull request, or store a token."),
+        createElement("p", { className: "daidala-workflow-meta" }, bootstrapPreview.next_step || "Open the compare/pull-request link, merge on GitHub, then register."),
+        createElement("p", { className: "daidala-workflow-meta" }, "Bootstrap does not register the repository, touch the default branch, create a pull request via API, or store a token."),
+        bootstrapPreview.links ? createElement("ul", { className: "daidala-list" },
+          bootstrapPreview.links.branch ? createElement("li", { key: "branch" },
+            createElement("a", { href: bootstrapPreview.links.branch, target: "_blank", rel: "noreferrer" }, "Open bootstrap branch")
+          ) : null,
+          bootstrapPreview.links.daidala_tree ? createElement("li", { key: "tree" },
+            createElement("a", { href: bootstrapPreview.links.daidala_tree, target: "_blank", rel: "noreferrer" }, "Open .daidala on bootstrap branch")
+          ) : null,
+          bootstrapPreview.links.compare_pull_request ? createElement("li", { key: "pr" },
+            createElement("a", { href: bootstrapPreview.links.compare_pull_request, target: "_blank", rel: "noreferrer" }, "Open compare / create pull request on GitHub")
+          ) : null
+        ) : null,
         createElement("code", null, bootstrapPreview.preview_digest),
         createElement("label", { className: "daidala-pack-confirm" },
           createElement("input", { type: "checkbox", checked: confirmed, onChange: function (event) { setConfirmed(event.target.checked); } }),

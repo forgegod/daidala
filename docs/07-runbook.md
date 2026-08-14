@@ -57,7 +57,7 @@ then tick the explicit confirmation before registering.
 
 If inspect classifies the repository as `needs-bootstrap` (no committed
 `.daidala/project.yaml`), publish conservative policy on branch
-`daidala/bootstrap` first:
+`chore/daidala-bootstrap-project-policy` first:
 
 ```bash
 daidala project bootstrap --github-url https://github.com/acme/site \
@@ -68,9 +68,10 @@ daidala project bootstrap --github-url https://github.com/acme/site \
 ```
 
 Bootstrap uses host `gh` authentication, never updates the default branch, never
-opens a pull request, and never writes registration records. Merge
-`daidala/bootstrap` into the default branch outside Daidala, then run
-`project register` again.
+creates a pull request via API, and never writes registration records. The
+preview/apply JSON includes GitHub links for the branch, the `.daidala` tree on
+that branch, and a compare/open-pull-request page. Open that compare link on
+GitHub, merge, then run `project register` again.
 
 ## Diagnose prerequisites
 

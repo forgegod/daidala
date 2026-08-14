@@ -106,6 +106,22 @@ def test_bootstrap_preview_and_apply_publish_non_default_branch(tmp_path: Path) 
     assert payload["classification"] == CLASSIFICATION_NEEDS_BOOTSTRAP
     assert payload["writes"]["registration"] is False
     assert payload["writes"]["default_branch"] is False
+    assert payload["writes"]["pull_request"] is False
+    assert payload["links"] == {
+        "branch": "https://github.com/forgegod/orphan/tree/chore/daidala-bootstrap-project-policy",
+        "daidala_tree": (
+            "https://github.com/forgegod/orphan/tree/"
+            "chore/daidala-bootstrap-project-policy/.daidala"
+        ),
+        "compare_pull_request": (
+            "https://github.com/forgegod/orphan/compare/"
+            "main...chore/daidala-bootstrap-project-policy"
+            "?expand=1"
+            "&title=chore%3A%20bootstrap%20Daidala%20project%20policy"
+            "&body=Adds%20conservative%20.daidala%20policy%20generated%20by%20Daidala%20bootstrap."
+            "%20Review%20and%20merge%20to%20enable%20registration."
+        ),
+    }
     assert "private" not in json.dumps(payload)
 
     applied = service.apply(

@@ -19,14 +19,20 @@ repository or touching the default branch.
   `.daidala/constraints.yaml` content with release flags false, pinned pack
   digests from the running Daidala install, and a derived project ID.
 - Preview binds profile, canonical repository, base commit, target branch
-  `daidala/bootstrap`, and file digests. Apply requires the exact preview digest
-  and literal confirmation `bootstrap-repository`.
+  `chore/daidala-bootstrap-project-policy` (Conventional Commits–style
+  `type/description` branch naming), and file digests. Apply requires the exact
+  preview digest and literal confirmation `bootstrap-repository`.
 - Apply creates blobs/tree/commit through host `gh` Git Data API calls and
-  creates only `refs/heads/daidala/bootstrap`. It never updates the default
-  branch, opens a pull request, merges, stores a token, or writes registration
-  or credential-binding records.
-- After apply, the operator merges the bootstrap branch outside Daidala, then
-  uses CAP-0004 registration against the default-branch manifest.
+  creates only that branch ref. It never updates the default branch, creates a
+  pull request via API, merges, stores a token, or writes registration or
+  credential-binding records.
+- Preview and apply responses include public GitHub convenience links for the
+  bootstrap branch, the `.daidala` tree on that branch, and GitHub’s
+  compare/open-pull-request page (`expand=1`). Merge remains an operator action
+  on GitHub outside Daidala.
+- After the operator merges the bootstrap branch (typically via the linked
+  compare/PR page), they use CAP-0004 registration against the default-branch
+  manifest.
 
 ## Evidence
 
@@ -52,5 +58,6 @@ repository or touching the default branch.
 ## Links
 
 - [CHG-0010](../../changes/archive/CHG-0010-non-daidala-repository-bootstrap.md)
+- [CHG-0011](../../changes/archive/CHG-0011-bootstrap-branch-links.md)
 - [HTML wireframe](../wireframes/html/CAP-0006-repository-policy-bootstrap.html)
 - [PNG wireframe](../wireframes/exports/CAP-0006-repository-policy-bootstrap.png)
