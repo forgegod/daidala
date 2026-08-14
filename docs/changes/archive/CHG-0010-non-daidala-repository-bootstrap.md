@@ -1,6 +1,6 @@
 # CHG-0010: Non-Daidala repository bootstrap and policy check-in
 
-**Status:** in-progress
+**Status:** done
 **Source request:** Direct operator request: "Based on the analysis the user should have the ability to use a non-daidala repository for the initial setup. Daidala should then integrate daidala as the initial workflow with an checkin. If there are any inconsistencies with this approach, push back with an better suggestion"
 **Affected capabilities:** CAP-0003, CAP-0004, CAP-0006
 **Created:** 2026-08-14
@@ -125,10 +125,10 @@ plan approval, and **not** CAP-0005 reviewed delivery of an implementation diff.
 
 | Phase | Status | Verification gate |
 |---|---|---|
-| Approval boundary | done (direct operator approval: "Approve CHG-0010") | Direct operator approval of this CHG’s pushback, two-stage onboard shape, host-`gh` bootstrap push, non-default branch only, and no auto-register. |
-| Classify + error surfacing | done (focused pytest + ruff on registration/CLI/dashboard paths) | Focused tests prove missing-manifest inspect returns a stable `needs-bootstrap` (or equivalent) classification; dashboard/CLI no longer show only generic preview-unavailable for that case; `pytest` on touched tests and `ruff check` on touched paths exit 0. |
-| Bootstrap preview/apply vertical slice | done (focused bootstrap/registration/CLI/dashboard tests + records/links + wireframe render) | Service+CLI+dashboard bootstrap preview/apply with digest+literal confirm; fake `gh`/git boundary proves branch-only check-in of generated policy files, rejects default-branch target and stale digest; no registration files written; CAP-0006 + wireframe + CAP-0004 classify note + runbook section present; focused pytest + `python scripts/check_records.py .` + `python scripts/check_md_links.py .` exit 0. |
-| Closeout | in-progress | Full repository gate: `python scripts/check_records.py .`; `python scripts/check_md_links.py .`; `lefthook validate`; `pytest`; `ruff check .`; both pack validations; `python -m build`; `python -m twine check dist/*`; `python scripts/check_release_contents.py . --wheel dist/*.whl`. |
+| Approval boundary | done | Direct operator approval: "Approve CHG-0010". |
+| Classify + error surfacing | done | Focused pytest + ruff on registration/CLI/dashboard paths; missing-manifest inspect returns `needs-bootstrap`. |
+| Bootstrap preview/apply vertical slice | done | Bootstrap service/CLI/dashboard tests, CAP-0006 + wireframe, records/links checks. |
+| Closeout | done | Full repository/release gate on 2026-08-14: records, links, lefthook, pytest, ruff, packs, build, twine, release-content. |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate
 passes, `pending` otherwise. Keep exactly one `in-progress` phase while the CHG
@@ -247,6 +247,16 @@ Steps:
   on touched paths passed.
 - Related shipped contracts: CAP-0004, CAP-0005, CHG-0009 decisions on
   registration vs delivery separation.
+- Phase 2 bootstrap vertical slice: `RepositoryBootstrapService` publishes
+  conservative `.daidala/project.yaml` and constraints on `daidala/bootstrap`
+  through host `gh` Git Data API; CLI `project bootstrap`, dashboard bootstrap
+  routes/UI, CAP-0006, wireframe, and runbook section landed in commit
+  `e8b805f`.
+- Closeout full repository/release gate passed on 2026-08-14: records and
+  Markdown links, Lefthook validate, full pytest, Ruff, both pack validations,
+  package build, twine check, and release-content (`300` tracked files,
+  `67` wheel members). No live target-repository bootstrap push was exercised
+  during implementation.
 
 ## Out of scope
 

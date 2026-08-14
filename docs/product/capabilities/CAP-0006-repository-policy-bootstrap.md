@@ -51,6 +51,6 @@ repository or touching the default branch.
 
 ## Links
 
-- [CHG-0010](../../changes/active/CHG-0010-non-daidala-repository-bootstrap.md)
+- [CHG-0010](../../changes/archive/CHG-0010-non-daidala-repository-bootstrap.md)
 - [HTML wireframe](../wireframes/html/CAP-0006-repository-policy-bootstrap.html)
 - [PNG wireframe](../wireframes/exports/CAP-0006-repository-policy-bootstrap.png)
