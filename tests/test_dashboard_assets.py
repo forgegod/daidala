@@ -284,6 +284,10 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
         "Register repository",
         "needs-bootstrap",
         "Bootstrap Daidala policy on a non-default branch",
+        "Bootstrap preview",
+        "Bootstrap repository policy",
+        'API_BASE + "/repository-registration/bootstrap/preview"',
+        'API_BASE + "/repository-registration/bootstrap"',
     )
     for text in required_strings:
         assert text in source, f"missing repository registration UI contract text: {text}"

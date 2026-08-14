@@ -11,6 +11,7 @@ Capability records describe material behavior that is implemented now. They are 
 | [CAP-0003 — Operator dashboard](capabilities/CAP-0003-operator-dashboard.md) | implemented | [wireframe index](wireframes/index.html) |
 | [CAP-0004 — GitHub repository registration](capabilities/CAP-0004-github-repository-registration.md) | implemented | Config → GitHub Repositories ([wireframe](wireframes/index.html)) |
 | [CAP-0005 — Reviewed GitHub branch delivery](capabilities/CAP-0005-reviewed-github-branch-delivery.md) | implemented | Workflow detail → Branch delivery ([wireframe](wireframes/index.html)) |
+| [CAP-0006 — Repository policy bootstrap](capabilities/CAP-0006-repository-policy-bootstrap.md) | implemented | Config → GitHub Repositories bootstrap ([wireframe](wireframes/index.html)) |
 
 ## Capability contract
 

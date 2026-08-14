@@ -180,6 +180,22 @@
     });
   }
 
+  function previewRepositoryBootstrap(githubUrl, controllerProfile) {
+    return postJson(API_BASE + "/repository-registration/bootstrap/preview", {
+      github_url: githubUrl,
+      controller_profile: controllerProfile
+    });
+  }
+
+  function applyRepositoryBootstrap(githubUrl, controllerProfile, previewDigest) {
+    return postJson(API_BASE + "/repository-registration/bootstrap", {
+      github_url: githubUrl,
+      controller_profile: controllerProfile,
+      preview_digest: previewDigest,
+      confirm: true
+    });
+  }
+
   function applyRepositoryRegistration(githubUrl, controllerProfile, previewDigest) {
     return postJson(API_BASE + "/repository-registration", {
       github_url: githubUrl,
@@ -2435,6 +2451,9 @@
     var previewState = useState(null);
     var preview = previewState[0];
     var setPreview = previewState[1];
+    var bootstrapPreviewState = useState(null);
+    var bootstrapPreview = bootstrapPreviewState[0];
+    var setBootstrapPreview = bootstrapPreviewState[1];
     var confirmedState = useState(false);
     var confirmed = confirmedState[0];
     var setConfirmed = confirmedState[1];
@@ -2481,6 +2500,7 @@
       var selected = event.target.value;
       setControllerProfile(selected);
       setPreview(null);
+      setBootstrapPreview(null);
       setConfirmed(false);
       setMessage("Selected profile changed; it requires a fresh inspection.");
       refreshRegistrations(selected).catch(function () {});
@@ -2488,9 +2508,15 @@
 
     function inspect() {
       if (!githubUrl.trim() || !controllerProfile) return;
-      setBusy(true); setMessage(""); setPreview(null); setConfirmed(false);
+      setBusy(true); setMessage(""); setPreview(null); setBootstrapPreview(null); setConfirmed(false);
       previewRepositoryRegistration(githubUrl.trim(), controllerProfile).then(function (result) {
-        if (!result || result.valid === false || result.classification === "needs-bootstrap" || result.classification === "already-registered" || result.classification === "blocked") {
+        if (result && result.classification === "needs-bootstrap") {
+          setMessage(repositoryInspectionMessage(result));
+          return previewRepositoryBootstrap(githubUrl.trim(), controllerProfile).then(function (bootstrap) {
+            setBootstrapPreview(bootstrap);
+          });
+        }
+        if (!result || result.valid === false || result.classification === "already-registered" || result.classification === "blocked") {
           setPreview(null);
           setMessage(repositoryInspectionMessage(result));
           return;
@@ -2510,6 +2536,20 @@
         refreshRegistrations(preview.controller_profile).catch(function () {});
       }).catch(function (caught) {
         setMessage("Repository was not registered: " + errorText(caught));
+      }).finally(function () { setBusy(false); });
+    }
+
+    function applyBootstrap() {
+      if (!bootstrapPreview || !confirmed) return;
+      setBusy(true); setMessage("");
+      applyRepositoryBootstrap(githubUrl.trim(), bootstrapPreview.controller_profile, bootstrapPreview.preview_digest).then(function (result) {
+        setBootstrapPreview(result); setConfirmed(false);
+        setMessage(
+          "Bootstrap branch published: " + (result.branch || bootstrapPreview.target_branch) +
+          ". Merge it into the default branch outside Daidala, then inspect and register."
+        );
+      }).catch(function (caught) {
+        setMessage("Repository bootstrap was not applied: " + errorText(caught));
       }).finally(function () { setBusy(false); });
     }
 
@@ -2548,10 +2588,26 @@
         createElement("input", {
           value: githubUrl,
           placeholder: "github.com/owner/repository",
-          onChange: function (event) { setGithubUrl(event.target.value); setPreview(null); setConfirmed(false); }
+          onChange: function (event) { setGithubUrl(event.target.value); setPreview(null); setBootstrapPreview(null); setConfirmed(false); }
         })
       ),
       createElement("button", { type: "button", disabled: busy || !githubUrl.trim() || !controllerProfile, onClick: inspect }, busy ? "Inspecting…" : "Inspect repository"),
+      bootstrapPreview ? createElement("section", { className: "daidala-github-link-preview" },
+        createElement("h3", null, "Bootstrap preview"),
+        createElement("p", null, "Repository: " + bootstrapPreview.repository + " · Project: " + bootstrapPreview.project_id),
+        createElement("p", null, "Profile: " + bootstrapPreview.controller_profile),
+        createElement("p", null, "Target branch: " + bootstrapPreview.target_branch + " from " + bootstrapPreview.default_branch),
+        createElement("p", null, "Files: " + ((bootstrapPreview.files || []).map(function (file) { return file.path; }).join(", ") || "none")),
+        createElement("p", null, "Manifest digest: " + bootstrapPreview.manifest_digest),
+        createElement("p", { className: "daidala-workflow-meta" }, bootstrapPreview.next_step || "Merge the bootstrap branch outside Daidala before registration."),
+        createElement("p", { className: "daidala-workflow-meta" }, "Bootstrap does not register the repository, touch the default branch, open a pull request, or store a token."),
+        createElement("code", null, bootstrapPreview.preview_digest),
+        createElement("label", { className: "daidala-pack-confirm" },
+          createElement("input", { type: "checkbox", checked: confirmed, onChange: function (event) { setConfirmed(event.target.checked); } }),
+          " I confirm publishing bootstrap policy on branch " + bootstrapPreview.target_branch
+        ),
+        createElement("button", { type: "button", disabled: busy || !confirmed, onClick: applyBootstrap }, "Bootstrap repository policy")
+      ) : null,
       preview ? createElement("section", { className: "daidala-github-link-preview" },
         createElement("h3", null, "Registration preview"),
         createElement("p", null, "Repository: " + preview.repository + " · Project: " + preview.project_id),

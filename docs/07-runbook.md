@@ -53,6 +53,25 @@ push, publish, or grant delivery authority. In the dashboard use **Config →
 Repositories**: paste only the GitHub.com repository link, inspect the preview,
 then tick the explicit confirmation before registering.
 
+### Bootstrap policy for a non-Daidala repository
+
+If inspect classifies the repository as `needs-bootstrap` (no committed
+`.daidala/project.yaml`), publish conservative policy on branch
+`daidala/bootstrap` first:
+
+```bash
+daidala project bootstrap --github-url https://github.com/acme/site \
+  --profile controller
+daidala project bootstrap --github-url https://github.com/acme/site \
+  --profile controller --apply --expected-preview-digest <preview-digest> \
+  --confirm bootstrap-repository
+```
+
+Bootstrap uses host `gh` authentication, never updates the default branch, never
+opens a pull request, and never writes registration records. Merge
+`daidala/bootstrap` into the default branch outside Daidala, then run
+`project register` again.
+
 ## Diagnose prerequisites
 
 ```bash

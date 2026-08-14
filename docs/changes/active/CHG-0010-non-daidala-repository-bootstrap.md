@@ -2,7 +2,7 @@
 
 **Status:** in-progress
 **Source request:** Direct operator request: "Based on the analysis the user should have the ability to use a non-daidala repository for the initial setup. Daidala should then integrate daidala as the initial workflow with an checkin. If there are any inconsistencies with this approach, push back with an better suggestion"
-**Affected capabilities:** CAP-0003, CAP-0004
+**Affected capabilities:** CAP-0003, CAP-0004, CAP-0006
 **Created:** 2026-08-14
 **Depends on:** CHG-0009 closeout should finish or remain non-conflicting; this CHG must not reopen delivery/PR scope rejected in CHG-0009 without explicit amendment.
 
@@ -127,8 +127,8 @@ plan approval, and **not** CAP-0005 reviewed delivery of an implementation diff.
 |---|---|---|
 | Approval boundary | done (direct operator approval: "Approve CHG-0010") | Direct operator approval of this CHG’s pushback, two-stage onboard shape, host-`gh` bootstrap push, non-default branch only, and no auto-register. |
 | Classify + error surfacing | done (focused pytest + ruff on registration/CLI/dashboard paths) | Focused tests prove missing-manifest inspect returns a stable `needs-bootstrap` (or equivalent) classification; dashboard/CLI no longer show only generic preview-unavailable for that case; `pytest` on touched tests and `ruff check` on touched paths exit 0. |
-| Bootstrap preview/apply vertical slice | in-progress | Service+CLI+dashboard bootstrap preview/apply with digest+literal confirm; fake `gh`/git boundary proves branch-only check-in of generated policy files, rejects default-branch target and stale digest; no registration files written; CAP-0006 + wireframe + CAP-0004 classify note + runbook section present; focused pytest + `python scripts/check_records.py .` + `python scripts/check_md_links.py .` exit 0. |
-| Closeout | pending | Full repository gate: `python scripts/check_records.py .`; `python scripts/check_md_links.py .`; `lefthook validate`; `pytest`; `ruff check .`; both pack validations; `python -m build`; `python -m twine check dist/*`; `python scripts/check_release_contents.py . --wheel dist/*.whl`. |
+| Bootstrap preview/apply vertical slice | done (focused bootstrap/registration/CLI/dashboard tests + records/links + wireframe render) | Service+CLI+dashboard bootstrap preview/apply with digest+literal confirm; fake `gh`/git boundary proves branch-only check-in of generated policy files, rejects default-branch target and stale digest; no registration files written; CAP-0006 + wireframe + CAP-0004 classify note + runbook section present; focused pytest + `python scripts/check_records.py .` + `python scripts/check_md_links.py .` exit 0. |
+| Closeout | in-progress | Full repository gate: `python scripts/check_records.py .`; `python scripts/check_md_links.py .`; `lefthook validate`; `pytest`; `ruff check .`; both pack validations; `python -m build`; `python -m twine check dist/*`; `python scripts/check_release_contents.py . --wheel dist/*.whl`. |
 
 Mark a phase `in-progress` while running it, `done (<evidence>)` once its gate
 passes, `pending` otherwise. Keep exactly one `in-progress` phase while the CHG

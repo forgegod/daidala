@@ -33,6 +33,17 @@
         "width": 1440,
         "height": 960
       }
+    },
+    {
+      "capability": "CAP-0006",
+      "slug": "CAP-0006-repository-policy-bootstrap",
+      "title": "Repository policy bootstrap",
+      "html": "html/CAP-0006-repository-policy-bootstrap.html",
+      "png": "exports/CAP-0006-repository-policy-bootstrap.png",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      }
     }
   ]
 }

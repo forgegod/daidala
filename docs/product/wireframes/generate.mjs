@@ -38,6 +38,14 @@ const SCREENS = [
     png: "exports/CAP-0005-reviewed-github-branch-delivery.png",
     viewport: { width: 1440, height: 960 },
   },
+  {
+    capability: "CAP-0006",
+    slug: "CAP-0006-repository-policy-bootstrap",
+    title: "Repository policy bootstrap",
+    html: "html/CAP-0006-repository-policy-bootstrap.html",
+    png: "exports/CAP-0006-repository-policy-bootstrap.png",
+    viewport: { width: 1440, height: 960 },
+  },
 ];
 
 function buildRepositoryRegistrationHtml(screen) {
@@ -96,9 +104,40 @@ function buildReviewedBranchDeliveryHtml(screen) {
 </body></html>`;
 }
 
+function buildRepositoryPolicyBootstrapHtml(screen) {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${screen.capability} — ${screen.title}</title>
+  <style>
+    :root { color-scheme: dark; --bg:#001f1d; --panel:#032725; --soft:#082f2c; --line:#244845; --text:#f4ead8; --muted:#8fa6a1; --cream:#ffe6ca; --ink:#102321; --amber:#ffc933; --green:#42ea92; }
+    * { box-sizing:border-box; } body { margin:0; width:1440px; min-height:960px; overflow:hidden; background:var(--bg); color:var(--text); font:14px/1.4 Inter,ui-sans-serif,system-ui,sans-serif; }
+    .profile { height:38px; padding:10px 18px; color:var(--amber); background:#2c2500; border-bottom:1px solid #675700; }
+    .shell { display:grid; grid-template-columns:268px 1fr; min-height:922px; } aside { padding:22px 16px; border-right:1px solid var(--line); } .brand { font-size:19px; font-weight:800; letter-spacing:.12em; } nav { margin-top:30px; display:grid; gap:4px; } nav div { padding:9px 12px; color:var(--muted); font-size:11px; letter-spacing:.1em; text-transform:uppercase; } nav .active { color:var(--cream); background:#29413f; font-weight:800; }
+    main { min-width:0; } header { height:86px; padding:24px 34px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); } h1,h2,h3,p { margin-top:0; } h1 { font-size:20px; letter-spacing:.08em; text-transform:uppercase; } .tabs { display:flex; } .tab { padding:11px 22px; border:1px solid var(--line); color:var(--muted); font-size:11px; letter-spacing:.1em; text-transform:uppercase; } .tab.active { color:var(--ink); background:var(--cream); border-color:var(--cream); font-weight:800; }
+    .workspace { padding:32px 34px; } .crumb { color:var(--amber); font-size:11px; letter-spacing:.1em; text-transform:uppercase; } .intro { max-width:820px; color:var(--muted); } .card { max-width:1060px; padding:24px; border:1px solid var(--line); background:var(--panel); } .field { display:grid; grid-template-columns:1fr 164px; gap:10px; margin:20px 0 10px; } input,select { padding:13px; border:1px solid var(--line); background:#001a18; color:var(--cream); } button { border:1px solid var(--cream); background:var(--cream); color:var(--ink); font-weight:800; letter-spacing:.06em; text-transform:uppercase; } .hint { color:var(--muted); font-size:12px; }
+    .preview { display:grid; grid-template-columns:1fr 1fr; gap:1px; margin-top:24px; border:1px solid var(--line); background:var(--line); } .preview section { min-height:168px; padding:18px; background:var(--soft); } .label { color:var(--muted); font-size:10px; letter-spacing:.11em; text-transform:uppercase; } .value { margin:5px 0 16px; color:var(--cream); font-size:17px; font-weight:700; } .ok { color:var(--green); } .warn { color:var(--amber); } code { color:var(--green); font-size:12px; } .confirm { margin-top:22px; padding:16px; border:1px solid var(--amber); background:#182c28; } .confirm label { display:block; margin-bottom:12px; color:var(--cream); } .confirm button { padding:12px 20px; } .note { margin-top:20px; max-width:1060px; padding:14px 16px; border:1px dashed #496763; color:var(--muted); } .annotation { position:fixed; right:14px; bottom:11px; color:#617b77; font-size:10px; }
+  </style>
+</head>
+<body>
+  <div class="profile">needs-bootstrap: committed project policy is missing. Bootstrap publishes branch-only policy.</div>
+  <div class="shell"><aside><div class="brand">HERMES<br>AGENT</div><nav><div>Chat</div><div>Sessions</div><div>Kanban</div><div>Skills</div><div>Plugins</div><div class="active">Daidala</div></nav></aside>
+  <main><header><h1>Daidala</h1><div class="tabs"><div class="tab">Workflows</div><div class="tab">Artifacts</div><div class="tab active">Config</div></div></header>
+    <section class="workspace"><p class="crumb">Config / GitHub Repositories</p><h2>Bootstrap Daidala policy</h2><p class="intro">When a repository has no committed .daidala/project.yaml, publish conservative policy on branch daidala/bootstrap. Merge outside Daidala, then register.</p>
+      <section class="card"><h3>Bootstrap preview</h3><div class="field"><select aria-label="Selected Hermes profile"><option>demo-controller</option></select><button>Inspect repository</button></div><p class="hint">Repository: acme/site · classification needs-bootstrap</p>
+        <div class="preview"><section><p class="label">Target branch</p><p class="value">daidala/bootstrap</p><p class="label">From default branch</p><p class="value">main</p><p class="label">Files</p><code>.daidala/project.yaml<br>.daidala/constraints.yaml</code></section><section><p class="label">Policy posture</p><p class="ok">✓ Release commit off</p><p class="ok">✓ Release push off</p><p class="warn">! No registration write</p><p class="hint">Host gh publishes the branch only.</p></section></div>
+        <div class="confirm"><label><input type="checkbox"> I confirm publishing bootstrap policy on branch daidala/bootstrap</label><button>Bootstrap repository policy</button></div>
+      </section><p class="note">Bootstrap does not register the repository, update the default branch, open a pull request, or store a token.</p>
+    </section></main></div><div class="annotation">Static capability wireframe · synthetic data · no runtime authority</div>
+</body></html>`;
+}
+
 function buildHtml(screen) {
   if (screen.capability === "CAP-0004") return buildRepositoryRegistrationHtml(screen);
   if (screen.capability === "CAP-0005") return buildReviewedBranchDeliveryHtml(screen);
+  if (screen.capability === "CAP-0006") return buildRepositoryPolicyBootstrapHtml(screen);
   return `<!doctype html>
 <html lang="en">
 <head>

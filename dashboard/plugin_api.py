@@ -130,6 +130,10 @@ from daidala.registrations import (
     list_controller_registrations,
     registration_path,
 )
+from daidala.repository_bootstrap import (
+    RepositoryBootstrapError,
+    RepositoryBootstrapService,
+)
 from daidala.repository_registration import (
     RepositoryRegistrationError,
     RepositoryRegistrationService,
@@ -366,6 +370,16 @@ def _repository_registration_service(
     """Bind a registration preview to one validated existing Hermes profile."""
 
     return RepositoryRegistrationService(
+        _repository_registration_profile_root(controller_profile), controller_profile
+    )
+
+
+def _repository_bootstrap_service(
+    controller_profile: str,
+) -> RepositoryBootstrapService:
+    """Bind a bootstrap preview to one validated existing Hermes profile."""
+
+    return RepositoryBootstrapService(
         _repository_registration_profile_root(controller_profile), controller_profile
     )
 
@@ -656,6 +670,35 @@ def repository_registration_preview(payload: dict[str, object]) -> dict[str, obj
 
     github_url, controller_profile, _ = _repository_registration_request(payload, apply=False)
     return _repository_registration_service(controller_profile).classify(github_url).to_dict()
+
+
+@router.post("/repository-registration/bootstrap/preview")
+def repository_bootstrap_preview(payload: dict[str, object]) -> dict[str, object]:
+    """Preview conservative Daidala policy on a non-default branch without writing."""
+
+    github_url, controller_profile, _ = _repository_registration_request(payload, apply=False)
+    try:
+        return _repository_bootstrap_service(controller_profile).preview(github_url).to_dict()
+    except (RepositoryBootstrapError, RepositoryRegistrationError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@router.post("/repository-registration/bootstrap")
+def repository_bootstrap_apply(payload: dict[str, object]) -> dict[str, object]:
+    """Publish conservative Daidala policy on a non-default branch after confirmation."""
+
+    github_url, controller_profile, digest = _repository_registration_request(payload, apply=True)
+    assert digest is not None
+    try:
+        return _repository_bootstrap_service(controller_profile).apply(
+            github_url,
+            expected_preview_digest=digest,
+            confirmation="bootstrap-repository",
+        ).to_dict()
+    except (RepositoryBootstrapError, RepositoryRegistrationError) as error:
+        raise HTTPException(
+            status_code=409, detail="repository bootstrap could not be applied"
+        ) from error
 
 
 @router.post("/repository-registration")

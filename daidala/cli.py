@@ -24,6 +24,7 @@ from .plan_admission import admit_plan_source
 from .prerequisites import DoctorRunner, run_prerequisite_diagnosis
 from .project_cycles import ProjectCycleOperator
 from .reconciliation import ReconciliationPreview, ReconciliationResult
+from .repository_bootstrap import RepositoryBootstrapService
 from .repository_registration import (
     RepositoryRegistrationService,
     resolve_profile_root,
@@ -52,6 +53,7 @@ ContainerRequestRunner = Callable[
 ]
 ProjectCycleFactory = Callable[[], ProjectCycleOperator]
 RepositoryRegistrationFactory = Callable[[Path, str], RepositoryRegistrationService]
+RepositoryBootstrapFactory = Callable[[Path, str], RepositoryBootstrapService]
 DeliveryFactory = Callable[[WorkflowService], BranchDeliveryService]
 
 
@@ -196,6 +198,20 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     project_register.add_argument(
         "--confirm",
         help="Literal confirmation token required by --apply: register-repository",
+    )
+    project_bootstrap = project_sub.add_parser(
+        "bootstrap",
+        help="Preview or publish conservative Daidala policy on a non-default branch",
+    )
+    project_bootstrap.add_argument("--github-url", required=True)
+    project_bootstrap.add_argument(
+        "--profile", required=True, help="Existing Hermes controller profile"
+    )
+    project_bootstrap.add_argument("--apply", action="store_true")
+    project_bootstrap.add_argument("--expected-preview-digest")
+    project_bootstrap.add_argument(
+        "--confirm",
+        help="Literal confirmation token required by --apply: bootstrap-repository",
     )
 
     start = sub.add_parser("start", help="Validate inputs and create the initial Kanban graph")
@@ -485,6 +501,7 @@ def main(
     project_cycle_factory: ProjectCycleFactory | None = None,
     plan_source_admitter: PlanSourceAdmitter | None = None,
     repository_registration_factory: RepositoryRegistrationFactory | None = None,
+    repository_bootstrap_factory: RepositoryBootstrapFactory | None = None,
     delivery_factory: DeliveryFactory | None = None,
 ) -> int:
     args = build_parser().parse_args(argv)
@@ -503,6 +520,7 @@ def main(
         project_cycle_factory=project_cycle_factory,
         plan_source_admitter=plan_source_admitter,
         repository_registration_factory=repository_registration_factory,
+        repository_bootstrap_factory=repository_bootstrap_factory,
         delivery_factory=delivery_factory,
     )
 
@@ -523,6 +541,7 @@ def run_command(
     project_cycle_factory: ProjectCycleFactory | None = None,
     plan_source_admitter: PlanSourceAdmitter | None = None,
     repository_registration_factory: RepositoryRegistrationFactory | None = None,
+    repository_bootstrap_factory: RepositoryBootstrapFactory | None = None,
     delivery_factory: DeliveryFactory | None = None,
 ) -> int:
     """Execute one parsed command and return its process exit code."""
@@ -551,10 +570,12 @@ def run_command(
             )
             return _run_project_cycle(args, selected_project_cycle_factory)
         if args.command == "project":
-            return _run_project_registration(
+            return _run_project_command(
                 args,
                 repository_registration_factory
                 or (lambda root, profile: RepositoryRegistrationService(root, profile)),
+                repository_bootstrap_factory
+                or (lambda root, profile: RepositoryBootstrapService(root, profile)),
                 command_runner or _run_command,
             )
         if args.command == "deliver":
@@ -821,6 +842,21 @@ def _run_project_cycle(
     return 0
 
 
+def _run_project_command(
+    args: argparse.Namespace,
+    registration_factory: RepositoryRegistrationFactory,
+    bootstrap_factory: RepositoryBootstrapFactory,
+    command_runner: CommandRunner,
+) -> int:
+    """Expose repository registration and bootstrap through preview-confirm boundaries."""
+
+    if args.project_command == "register":
+        return _run_project_registration(args, registration_factory, command_runner)
+    if args.project_command == "bootstrap":
+        return _run_project_bootstrap(args, bootstrap_factory, command_runner)
+    raise ValueError(f"unsupported project command: {args.project_command}")
+
+
 def _run_project_registration(
     args: argparse.Namespace,
     factory: RepositoryRegistrationFactory,
@@ -828,8 +864,6 @@ def _run_project_registration(
 ) -> int:
     """Expose repository registration through the shared preview-confirm boundary."""
 
-    if args.project_command != "register":
-        raise ValueError(f"unsupported project command: {args.project_command}")
     if args.apply and args.expected_preview_digest is None:
         raise ValueError("--apply requires --expected-preview-digest")
     if not args.apply and (
@@ -870,6 +904,50 @@ def _run_project_registration(
         payload["message"] = classification.reason
     _print(payload)
     return 0 if classification.status == "registerable" else 1
+
+
+def _run_project_bootstrap(
+    args: argparse.Namespace,
+    factory: RepositoryBootstrapFactory,
+    command_runner: CommandRunner,
+) -> int:
+    """Expose branch-only policy bootstrap through the shared preview-confirm boundary."""
+
+    if args.apply and args.expected_preview_digest is None:
+        raise ValueError("--apply requires --expected-preview-digest")
+    if not args.apply and (
+        args.expected_preview_digest is not None or args.confirm is not None
+    ):
+        raise ValueError("--expected-preview-digest and --confirm require --apply")
+    root = resolve_profile_root(args.profile, command_runner)
+    service = factory(root, args.profile)
+    if args.apply:
+        assert isinstance(args.expected_preview_digest, str)
+        assert isinstance(args.confirm, str)
+        result = service.apply(
+            args.github_url,
+            expected_preview_digest=args.expected_preview_digest,
+            confirmation=args.confirm,
+        )
+        _print(
+            {
+                "success": True,
+                "operation": "project-bootstrap",
+                "dry_run": False,
+                "result": result.to_dict(),
+            }
+        )
+        return 0
+    preview = service.preview(args.github_url)
+    _print(
+        {
+            "success": True,
+            "operation": "project-bootstrap",
+            "dry_run": True,
+            "preview": preview.to_dict(),
+        }
+    )
+    return 0
 
 
 def _reconciliation_output(
