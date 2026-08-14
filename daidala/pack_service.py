@@ -16,7 +16,7 @@ from typing import Any, Protocol
 import yaml
 
 from .locations import resolve_data_root
-from .packs import SkillRef, WorkflowPack, load_pack
+from .packs import SkillRef, WorkflowPack, external_skill_install_target, load_pack
 from .profile_files import ProfileFileError, atomic_write_private_text, read_private_text
 from .skills import (
     InstallAction,
@@ -499,7 +499,9 @@ class PackService:
             activations=tuple(skill.activation.value for _stage, skill in declarations),
             bundled=first.bundled is not None,
             external=first.is_external,
-            install_target=first.install,
+            install_target=(
+                external_skill_install_target(pack, first) if first.is_external else None
+            ),
             source_url=_skill_source_url(pack, first),
             expected_digest=expected_digest,
             observed_digest=observed_digest,
@@ -616,11 +618,7 @@ class PackService:
         verified = self.check(name)
         projections = _skill_projections(verified)
         if action is SkillAction.INSTALL:
-            converged = all(
-                projections[skill].installed
-                and projections[skill].observed_digest == projections[skill].expected_digest
-                for skill in preview.skills
-            )
+            converged = all(projections[skill].installed for skill in preview.skills)
         else:
             expected_enabled = action is SkillAction.ENABLE
             converged = all(
@@ -683,7 +681,11 @@ def _validation(pack: WorkflowPack) -> PackValidation:
                     activation=skill.activation.value,
                     bundled=skill.bundled is not None,
                     external=skill.is_external,
-                    install_target=skill.install,
+                    install_target=(
+                        external_skill_install_target(pack, skill)
+                        if skill.is_external
+                        else None
+                    ),
                     source_url=_skill_source_url(pack, skill),
                     expected_digest=digests[skill.name],
                     observed_digest=(digests[skill.name] if skill.bundled is not None else None),
@@ -790,16 +792,7 @@ def _digest(payload: dict[str, Any]) -> str:
 
 
 def _resolve_revision(pack: WorkflowPack) -> str:
-    completed = subprocess.run(
-        ("git", "ls-remote", pack.source, "HEAD"),
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    revision = completed.stdout.strip().split("\t", 1)[0]
-    if completed.returncode != 0 or not re.fullmatch(r"[0-9a-f]{40}", revision):
-        raise PackServiceError(f"could not resolve source revision for pack {pack.name!r}")
-    return revision
+    return pack.source_revision
 
 
 def _resolve_hermes_version(runner: CommandRunner) -> str:

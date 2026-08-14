@@ -1,7 +1,7 @@
 schema_version: 1
 name: addyosmani
-source: https://github.com/addyosmani/agent-skills
-source_revision: 7ce442de03ddc1b72480c3b48d55c62880ea2a90
+source: https://github.com/forgegod/addyosmani-agent-skills
+source_revision: 8a63e3bfb6da979e5073939e1c4458ad99b93c83
 hermes_version_constraint: ">=0.18.2,<0.21.0"
 lifecycle:
   human_gate_after: plan
@@ -10,95 +10,95 @@ lifecycle:
       skills:
         - name: interview-me
           activation: conditional
-          install: addyosmani/agent-skills/skills/interview-me
+          install: forgegod/addyosmani-agent-skills/skills/interview-me
           content_digest: f271a5931d374e3ab970c79e0461a30b741123271519e599b5b9a29b8db2ffaf
         - name: idea-refine
           activation: conditional
-          install: addyosmani/agent-skills/skills/idea-refine
-          content_digest: c999f1db0b62f00962cd1028b66554614f27a33134ee84506df466b17dd27372
+          install: forgegod/addyosmani-agent-skills/skills/idea-refine
+          content_digest: d134901c97dc2c1fc77f10d483ca9e7bcefc02d258ca66c3936572bf5696a2ba
         - name: spec-driven-development
           activation: required
-          install: addyosmani/agent-skills/skills/spec-driven-development
+          install: forgegod/addyosmani-agent-skills/skills/spec-driven-development
           content_digest: 7d440cf6f43157587e98f66120baf698d4e0b7e6c8d97fcf13eb30db2799a0b8
     - id: plan
       skills:
         - name: planning-and-task-breakdown
           activation: required
-          install: addyosmani/agent-skills/skills/planning-and-task-breakdown
-          content_digest: 35d6ad92f1b734eb4080d61cc879f8629158c964c8684c615d31058def648f51
+          install: forgegod/addyosmani-agent-skills/skills/planning-and-task-breakdown
+          content_digest: 55ae75c78c86c26b4b413d06c1a66dc1b723ae46b3e6fa80ed51ef2ee4b11268
     - id: implement
       skills:
         - name: incremental-implementation
           activation: conditional
-          install: addyosmani/agent-skills/skills/incremental-implementation
-          content_digest: a7250b11ae5155c397e5c9919baea166386856c89339c0b79021482aee546775
+          install: forgegod/addyosmani-agent-skills/skills/incremental-implementation
+          content_digest: 114ebb8c5dd1c5a60907a8bb34c7cb600ba5ec02a0879ccdbe7eff4da5b2a819
         - name: test-driven-development
           activation: conditional
-          install: addyosmani/agent-skills/skills/test-driven-development
-          content_digest: 6c8e03bc2f631799c1c3c29f9f525193596781213f7fd24ece5a8ddf6a8d773e
+          install: forgegod/addyosmani-agent-skills/skills/test-driven-development
+          content_digest: aab2edcc3496fdd5236d0b321db217a3683304e1576269b6f8d8f75ffae96f13
         - name: source-driven-development
           activation: conditional
-          install: addyosmani/agent-skills/skills/source-driven-development
+          install: forgegod/addyosmani-agent-skills/skills/source-driven-development
           content_digest: 4b9caeb329c2fcad7f5fbfff1b16d094d378e6c34d631d6fe488835c111375ac
         - name: doubt-driven-development
           activation: conditional
-          install: addyosmani/agent-skills/skills/doubt-driven-development
-          content_digest: 09368d9d07fa0b8e16bbcc8994fb953e1b1df8f8a5cab719b968d8e566bc0265
+          install: forgegod/addyosmani-agent-skills/skills/doubt-driven-development
+          content_digest: 46b0bd0c68cc9a3edca7466a0752d85222b432a7678f9fa8298d4ebf74aa4a02
     - id: verify
       skills:
         - name: test-driven-development
           activation: conditional
-          install: addyosmani/agent-skills/skills/test-driven-development
-          content_digest: 6c8e03bc2f631799c1c3c29f9f525193596781213f7fd24ece5a8ddf6a8d773e
+          install: forgegod/addyosmani-agent-skills/skills/test-driven-development
+          content_digest: aab2edcc3496fdd5236d0b321db217a3683304e1576269b6f8d8f75ffae96f13
         - name: debugging-and-error-recovery
           activation: conditional
-          install: addyosmani/agent-skills/skills/debugging-and-error-recovery
-          content_digest: 6629c6617563b5a3e0f44e9c29af7b428e40e21edc3fae1ad13dc6a3574c20c4
+          install: forgegod/addyosmani-agent-skills/skills/debugging-and-error-recovery
+          content_digest: a6ee749adf81c762712ffd4b8fad16e965b59fce42af9c5df47f3482bf18280b
         - name: browser-testing-with-devtools
           activation: conditional
-          install: addyosmani/agent-skills/skills/browser-testing-with-devtools
-          content_digest: 73640726c8afa212289ca2fb1dfaa2f73eec968d717b1f78448a4fd74d717272
+          install: forgegod/addyosmani-agent-skills/skills/browser-testing-with-devtools
+          content_digest: fa80ec56e7f359ea1e0cdbdc1c736d8954dd8e508a86541e246b74bd8167f1ef
     - id: review
       skills:
         - name: code-review-and-quality
           activation: required
-          install: addyosmani/agent-skills/skills/code-review-and-quality
-          content_digest: 3f95ead8f0280222927dd32f2b5369fc4fb85e781f7e7c156102b5730369a20d
+          install: forgegod/addyosmani-agent-skills/skills/code-review-and-quality
+          content_digest: 59123fd416083b33446cdc1240e914b3711ff3f9a912c66eb8541142bbd63c2c
         - name: code-simplification
           activation: conditional
-          install: addyosmani/agent-skills/skills/code-simplification
-          content_digest: a6d4aba8358a46634487e1c4b612cd021a41f3227fbe0b131270e2ebaaea8440
+          install: forgegod/addyosmani-agent-skills/skills/code-simplification
+          content_digest: 0121d212db04cf3d0fbe3a1246e0834fff53d16a59dde72df9db0a98a55de966
         - name: security-and-hardening
           activation: conditional
-          install: addyosmani/agent-skills/skills/security-and-hardening
-          content_digest: 05bc67d417db252f0a1fa6b3edeb892036dad685c8aa39e4c08c8e5be5b719d0
+          install: forgegod/addyosmani-agent-skills/skills/security-and-hardening
+          content_digest: 86420fb4b1a7d0edcfd95c58d618a0db0f9c49414e19ef3bf44b84fd3ceaa503
         - name: performance-optimization
           activation: conditional
-          install: addyosmani/agent-skills/skills/performance-optimization
-          content_digest: 68a3955228f705bcb96344c7d65d4f4e3717720fce64f0c45181393fcd0b4154
+          install: forgegod/addyosmani-agent-skills/skills/performance-optimization
+          content_digest: 47b58454c50195a5fd8fb408f3866c1b5a33a64e0b62a5942aa7c343c9c98d20
     - id: deliver
       skills:
         - name: git-workflow-and-versioning
           activation: conditional
-          install: addyosmani/agent-skills/skills/git-workflow-and-versioning
+          install: forgegod/addyosmani-agent-skills/skills/git-workflow-and-versioning
           content_digest: 584a72ac5669e474e5b1552a0ec704b95a03c4056965f80d8cf74aa22668af63
         - name: ci-cd-and-automation
           activation: conditional
-          install: addyosmani/agent-skills/skills/ci-cd-and-automation
+          install: forgegod/addyosmani-agent-skills/skills/ci-cd-and-automation
           content_digest: 706d42c02e056cfd0509172fa294ecbdec8509aac9dc25862310800892709d9d
         - name: documentation-and-adrs
           activation: conditional
-          install: addyosmani/agent-skills/skills/documentation-and-adrs
-          content_digest: c0075d076299d574ce31d925493130c61c5fe50a45e0facbdd912c8e2e52bf6b
+          install: forgegod/addyosmani-agent-skills/skills/documentation-and-adrs
+          content_digest: 44803c80627104509efa95b5cdc52702bfa490a5ce9f44220f82707698e47985
         - name: observability-and-instrumentation
           activation: conditional
-          install: addyosmani/agent-skills/skills/observability-and-instrumentation
-          content_digest: ee68531648f0c6d60f8a51c948ed8515bda084a52502f871f22ca1bd31e4b301
+          install: forgegod/addyosmani-agent-skills/skills/observability-and-instrumentation
+          content_digest: bb593daded4943c1534bc4dccf18c72c9f467fb496f4ffb7affc96d83267216d
         - name: shipping-and-launch
           activation: conditional
-          install: addyosmani/agent-skills/skills/shipping-and-launch
-          content_digest: a3323267f360a83dbb1bc873adbb12b4a7e7ffceb9666618c16ebd7a993a4781
+          install: forgegod/addyosmani-agent-skills/skills/shipping-and-launch
+          content_digest: 0a4dec74de37160cc0bfb9854092d76dc9cfcbf8f67f5a4e00c497d35b9c7253
         - name: deprecation-and-migration
           activation: conditional
-          install: addyosmani/agent-skills/skills/deprecation-and-migration
+          install: forgegod/addyosmani-agent-skills/skills/deprecation-and-migration
           content_digest: e965a8acab9e6004749f0e70374cc9a5f7c1b3953d9e78e6e8aef8bdd3743f73

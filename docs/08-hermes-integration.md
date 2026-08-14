@@ -59,6 +59,16 @@ The Python entry point must resolve to the `daidala` module, not directly to
 `daidala:register`, because Hermes loads the entry point and then looks for a
 module-level `register(ctx)` function.
 
+## External skill installation
+
+Daidala delegates every external-skill mutation to `hermes skills install` with
+an immutable raw GitHub `SKILL.md` URL at the pack's declared revision. It does
+not use a second installer or copy unsupported companion files. Readiness compares
+the complete bundle Hermes installed with the declared digest. A mismatch remains
+visible as `revision_mismatches` and `ready with warnings`, but it does not block
+installation or workflow start. Missing or profile-disabled exact skill names
+remain blocking because Hermes cannot load them for a worker.
+
 ## Isolated directory verification
 
 The following development procedure is the directory-install path exercised in

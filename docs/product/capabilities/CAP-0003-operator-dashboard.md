@@ -28,11 +28,18 @@ An authenticated operator can inspect workflow state and evidence, perform bound
 - Approval, review disposition, card remediation, cancellation, setup, and curator mutations use preview/confirm or exact-identity requests; the server derives authoritative workflow, board, repository, and worktree facts.
 - Artifact views expose ledger-bound metadata, bounded literal text, digest-verified downloads, and closed curator actions without accepting filesystem paths.
 - Config → Packs renders bounded literal skill text only for bundled or installed
-  skills, identifies uninstalled external skills with their exact install targets,
-  links every declaration to its source, and shows installed and enabled state.
+  skills, identifies uninstalled external skills with their immutable
+  source-revision install targets, links every declaration to its source, and
+  shows installed and enabled state. External installation uses Hermes only;
+  readiness hashes the complete bundle Hermes installs and excludes unsupported
+  upstream files. An observed digest mismatch is an explicit warning rather than
+  an installation or workflow blocker; missing and disabled exact skills remain
+  blocking.
   Individual and pack-wide install, enable, and disable actions require a fresh
   digest-bound preview plus explicit confirmation. Disable updates the active
   profile's Hermes availability state without removing shared skill content.
+  Selecting a skill moves keyboard focus and scrolls the viewport to that skill's
+  bounded content/install panel, including its digest warning when present.
   Start workflow keeps packs selectable for inspection while naming
   installation-required, blocked, and unavailable readiness states explicitly.
 - The dashboard includes explicit loading, empty, unavailable, validation, and destructive-confirmation states and uses the host Hermes theme and authenticated SDK boundaries.
@@ -67,3 +74,4 @@ An authenticated operator can inspect workflow state and evidence, perform bound
 - [PNG wireframe](../wireframes/exports/CAP-0003-operator-dashboard.png)
 - [Wireframe index](../wireframes/index.html)
 - [Initial records-adoption receipt](../../changes/archive/CHG-0001-adopt-application-records.md)
+- [Pinned Hermes pack installation receipt](../../changes/archive/CHG-0012-pin-hermes-pack-skill-installation.md)

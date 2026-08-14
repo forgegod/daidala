@@ -76,7 +76,7 @@ lifecycle:
 | `lifecycle.stages[].skills[].name` | string | Required lowercase slug and exact installed name. |
 | `lifecycle.stages[].skills[].activation` | string | Required `required` or `conditional`; there is no compatibility default. |
 | `lifecycle.stages[].skills[].install` | string or omitted | External provider; must begin with the source publisher/repository and end with `name`. Mutually exclusive with `bundled`. |
-| `lifecycle.stages[].skills[].content_digest` | string or omitted | Required with `install`: SHA-256 of the complete canonical skill directory. Forbidden with `bundled`. |
+| `lifecycle.stages[].skills[].content_digest` | string or omitted | Required with `install`: SHA-256 of the complete canonical bundle produced by Hermes installation. Upstream files Hermes does not install are excluded. Forbidden with `bundled`. |
 | `lifecycle.stages[].skills[].bundled` | string or omitted | Plugin-bundled provider; must exactly equal `name`. Mutually exclusive with `install`. |
 
 The required lifecycle is:
@@ -126,11 +126,15 @@ preserved and must not be treated as supported extensions.
 `daidala packs validate <pack>` proves pack shape only.
 
 `daidala packs install <pack>` defaults to a mutation-free plan that resolves
-source `HEAD`, checks the bounded Hermes version, scans profile-local installed
-names, verifies complete-directory digests, and prints every intended
-`hermes skills install … --yes` mutation. `--apply` executes only an unblocked
-plan and post-verifies disk state. Revision or digest mismatch blocks workflow
-start and requires `update-plan`; active workflows are never silently updated.
+each compact GitHub declaration to an immutable raw `SKILL.md` URL at the
+declared `source_revision`, checks the bounded Hermes version, scans
+profile-local installed names, verifies Hermes-installed-bundle digests, and
+prints every intended `hermes skills install … --yes` mutation. `--apply`
+executes only an unblocked plan and post-verifies that each declared name became
+installed. Missing or disabled skills block workflow start. A digest mismatch is
+reported in `revision_mismatches` as an integrity warning, but does not block
+installation, pack use, or workflow start; Daidala never silently replaces the
+installed skill.
 
 The supported pack-installation contract accepts only the required pinned
 subset. `--recursive` is therefore a refused capability, not a local glob
@@ -138,9 +142,9 @@ expansion.
 
 ## Implemented pack
 
-`addyosmani` maps the six stages to
-[addyosmani/agent-skills](https://github.com/addyosmani/agent-skills), pinned at
-the commit and per-skill digests declared in
+`addyosmani` maps the six stages to the self-contained
+[forgegod/addyosmani-agent-skills](https://github.com/forgegod/addyosmani-agent-skills)
+fork, pinned at the commit and per-skill digests declared in
 `daidala/packs/addyosmani.yaml`. The mapping remains data, not a Python
 special case. `aidlc` maps the same stages to the packaged
 `daidala:aidlc-adapter` skill because stable AI-DLC v1.0.1 publishes editor

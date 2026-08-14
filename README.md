@@ -171,7 +171,7 @@ and activation policy:
 | Pack | Source | When to choose it |
 |---|---|---|
 | `aidlc` | [AWS Labs AI-DLC workflows](https://github.com/awslabs/aidlc-workflows) v1.0.1 | The bundled first-run default. Daidala supplies one required `daidala:aidlc-adapter` skill for every stage, so no separate skill installation is needed once `packs check` passes. |
-| `addyosmani` | [Addy Osmani's agent-skills](https://github.com/addyosmani/agent-skills) | A finer-grained engineering-methodology pack. It pins distinct required and conditional external skills for specification, planning, implementation, verification, review, and delivery. Install its exact pinned skills before use: |
+| `addyosmani` | [Daidala's Addyosmani skill fork](https://github.com/forgegod/addyosmani-agent-skills) | A finer-grained engineering-methodology pack based on Addy Osmani's agent-skills. The fork keeps Hermes support files inside each owning skill. It pins distinct required and conditional external skills for specification, planning, implementation, verification, review, and delivery. Install its exact pinned skills before use: |
 
 ```bash
 hermes daidala packs install addyosmani

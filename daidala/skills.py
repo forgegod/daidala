@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Protocol
 
 from .errors import WorkflowError
-from .packs import SkillRef, WorkflowPack
+from .packs import SkillRef, WorkflowPack, external_skill_install_target
 
 
 class SkillInventoryError(WorkflowError):
@@ -24,10 +24,11 @@ class SkillInventoryError(WorkflowError):
 class MissingSkillsError(SkillInventoryError):
     """Raised when one or more exact pack skills are unavailable."""
 
-    def __init__(self, missing: tuple[SkillRef, ...]) -> None:
+    def __init__(self, pack: WorkflowPack, missing: tuple[SkillRef, ...]) -> None:
         self.missing = missing
         details = "; ".join(
-            f"{skill.name} (install: hermes skills install {skill.install} --yes)"
+            f"{skill.name} (install: hermes skills install "
+            f"{external_skill_install_target(pack, skill)} --yes)"
             for skill in missing
         )
         super().__init__(f"missing required skills: {details}")
@@ -145,7 +146,7 @@ class PackInstallPlan:
 
     @property
     def ready_to_apply(self) -> bool:
-        return not self.blockers and not self.revision_mismatches
+        return not self.blockers
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -218,30 +219,7 @@ def require_pack_skills(
     installed = inventory.installed_names()
     missing = tuple(skill for skill in requirements if skill.name not in installed)
     if missing:
-        raise MissingSkillsError(missing)
-    return requirements
-
-
-def require_pack_skill_revisions(
-    pack: WorkflowPack,
-    registry: SkillContentRegistry,
-) -> tuple[SkillRef, ...]:
-    """Require installed content to match every pinned directory digest."""
-    mismatches: list[str] = []
-    requirements = required_skills(pack)
-    for skill in requirements:
-        observed = registry.content_digest(skill.name)
-        if observed != skill.content_digest:
-            mismatches.append(
-                f"{skill.name} (expected {skill.content_digest}, "
-                f"observed {observed or 'missing'})"
-            )
-    if mismatches:
-        raise SkillRevisionError(
-            "skill revision mismatch: "
-            + "; ".join(mismatches)
-            + f". Plan a controlled update: daidala packs update-plan {pack.name}"
-        )
+        raise MissingSkillsError(pack, missing)
     return requirements
 
 
@@ -261,7 +239,9 @@ def plan_pack_install(
     blockers: list[str] = []
     for skill in required_skills(pack):
         if skill.name not in installed:
-            actions.append(InstallAction(skill.name, skill.install))
+            actions.append(
+                InstallAction(skill.name, external_skill_install_target(pack, skill))
+            )
             continue
         if registry.content_digest(skill.name) != skill.content_digest:
             mismatches.append(skill.name)
@@ -283,8 +263,6 @@ def plan_pack_install(
             "Hermes 0.18.2 has no recursive skill-install capability; "
             "install the required subset"
         )
-    if mismatches:
-        blockers.append("installed skill revisions require a controlled update plan")
     return PackInstallPlan(
         pack=pack.name,
         source=pack.source,

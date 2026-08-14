@@ -3059,6 +3059,10 @@
     var documentState = useState(null);
     var documentView = documentState[0];
     var setDocumentView = documentState[1];
+    var skillDocumentRef = useRef(null);
+    var documentFocusState = useState(0);
+    var documentFocusRequest = documentFocusState[0];
+    var setDocumentFocusRequest = documentFocusState[1];
     var confirmedState = useState(false);
     var confirmed = confirmedState[0];
     var setConfirmed = confirmedState[1];
@@ -3111,7 +3115,9 @@
         ? "Checking readiness"
         : "Not checked"
       : check.ready
-        ? "Ready"
+        ? check.revision_mismatches.length
+          ? "Ready with warnings"
+          : "Ready"
         : check.installable && check.actions.length > 0
           ? "Installation required"
           : "Blocked";
@@ -3131,6 +3137,12 @@
         });
       return function () { cancelled = true; };
     }, [pack.name]);
+
+    useEffect(function () {
+      if (!documentFocusRequest || !skillDocumentRef.current) return;
+      skillDocumentRef.current.focus({ preventScroll: true });
+      skillDocumentRef.current.scrollIntoView({ block: "start" });
+    }, [documentFocusRequest]);
 
     function run(action, successMessage) {
       setBusy(true);
@@ -3200,6 +3212,7 @@
       )
         .then(function (value) {
           setDocumentView(value);
+          setDocumentFocusRequest(function (current) { return current + 1; });
           setMessage(value.available
             ? "Loaded exact declared skill content."
             : "Loaded installation details."
@@ -3297,7 +3310,11 @@
       documentView
         ? createElement(
             "section",
-            { className: "daidala-skill-document", "data-testid": "daidala-skill-content" },
+            {
+              className: "daidala-skill-document",
+              "data-testid": "daidala-skill-content",
+              ref: skillDocumentRef, tabIndex: -1
+            },
             createElement("h4", null, documentView.skill + " · " + (
               documentView.available
                 ? documentView.content_origin === "bundled"
@@ -3330,6 +3347,12 @@
                   }, documentActionLabel)
                 : null
             ),
+            documentView.installed && documentView.observed_digest &&
+              documentView.observed_digest !== documentView.expected_digest
+              ? createElement("div", { className: "daidala-banner daidala-banner-warning" },
+                  "Digest mismatch warning: the installed skill remains available to Daidala."
+                )
+              : null,
             documentView.available
               ? createElement("pre", null, documentView.content)
               : createElement("div", { className: "daidala-banner daidala-banner-warning" },

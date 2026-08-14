@@ -61,7 +61,6 @@ from .skills import (
     SkillContentRegistry,
     SkillInventory,
     pack_skill_digests,
-    require_pack_skill_revisions,
     require_pack_skills,
 )
 from .state import (
@@ -295,7 +294,6 @@ class WorkflowService:
         """Validate every non-mutating start prerequisite exactly once."""
         pack = load_pack(pack_name)
         require_pack_skills(pack, self._skill_inventory)
-        require_pack_skill_revisions(pack, self._skill_content_registry)
         constraint_input = self._resolve_constraint_input(
             content=constraints_content,
             skill_name=constraints_skill,

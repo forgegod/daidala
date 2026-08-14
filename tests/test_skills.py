@@ -60,7 +60,10 @@ def test_missing_exact_name_reports_actionable_install_target() -> None:
 
     assert [skill.name for skill in captured.value.missing] == ["interview-me"]
     assert "interview-me" in str(captured.value)
-    assert "addyosmani/agent-skills/skills/interview-me" in str(captured.value)
+    assert (
+        f"raw.githubusercontent.com/forgegod/addyosmani-agent-skills/{pack.source_revision}/"
+        "skills/interview-me/SKILL.md"
+    ) in str(captured.value)
 
 
 def test_complete_inventory_passes_without_mutation() -> None:
@@ -149,5 +152,47 @@ def test_missing_skill_blocks_tool_start_without_creating_state(
 
     assert result["success"] is False
     assert result["error"] == "MissingSkillsError"
-    assert "addyosmani/agent-skills/skills/interview-me" in result["message"]
+    assert (
+        f"raw.githubusercontent.com/forgegod/addyosmani-agent-skills/{pack.source_revision}/"
+        "skills/interview-me/SKILL.md"
+    ) in result["message"]
     assert service.store.list_all() == ()
+
+
+def test_digest_mismatch_does_not_block_start_preflight(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pack = load_pack("addyosmani")
+    requirements = required_skills(pack)
+    digests = {
+        skill.name: skill.content_digest
+        for skill in requirements
+        if skill.content_digest is not None
+    }
+    digests["idea-refine"] = "f" * 64
+    target = tmp_path / "target"
+    target.mkdir()
+
+    class FakeKanban:
+        def validate_assignees(self, board_slug: str, profiles: list[str]) -> None:
+            assert board_slug == "daidala-test"
+            assert profiles
+
+    monkeypatch.setattr(
+        "daidala.service._inspect_repository",
+        lambda _target: ("a" * 40, True),
+    )
+    service = WorkflowService(
+        WorkflowStore(tmp_path / "data"),
+        skill_inventory=inventory_from_names(skill.name for skill in requirements),
+        skill_content_registry=content_registry_from_digests(digests),
+        kanban=FakeKanban(),  # type: ignore[arg-type]
+    )
+
+    preflight = service.validate_start_preflight(
+        board_slug="daidala-test",
+        target_repository=str(target),
+        stage_profiles=STAGE_PROFILES,
+    )
+
+    assert preflight.pack.name == "addyosmani"

@@ -152,7 +152,7 @@ def activation_manifest() -> ActivationManifest:
         policy_revision=1,
         constraints_digest="e" * 64,
         pack="addyosmani",
-        pack_source_revision="7ce442de03ddc1b72480c3b48d55c62880ea2a90",
+        pack_source_revision="8a63e3bfb6da979e5073939e1c4458ad99b93c83",
         sequence=1,
         supersedes_digest=None,
         decisions=(

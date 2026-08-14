@@ -51,7 +51,7 @@ Put these in YAML:
 
 - upstream source identity;
 - source revision and Hermes compatibility range;
-- per-skill complete-directory digests;
+- per-skill digests of the complete bundle Hermes installs;
 - external-versus-bundled skill provider selection;
 - required-versus-conditional activation policy;
 - stage-to-skill mappings;
@@ -76,13 +76,14 @@ not prove that:
 
 - the upstream repository or skill path exists;
 - the install target is accepted by the live Hermes CLI;
-- the resolved upstream `HEAD` still equals the pinned revision;
+- the pinned source revision remains available from the upstream host;
 - all required skills are installed in a profile;
 - the mapped skills produce compatible artifacts.
 
 Do not present validation as installation or readiness. Use `packs install` for
 the dry-run mutation plan and `packs check` for installed-name, source,
-compatibility, and content verification.
+compatibility, and content comparison. A content mismatch is advisory; missing
+or disabled exact skill names remain blocking.
 
 ## Fixture requirements
 

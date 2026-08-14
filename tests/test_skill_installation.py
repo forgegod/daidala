@@ -10,7 +10,6 @@ from daidala.cli import main
 from daidala.packs import load_pack
 from daidala.skills import (
     ProfileSkillContentRegistry,
-    SkillRevisionError,
     content_registry_from_digests,
     hash_skill_directory,
     inventory_from_names,
@@ -62,6 +61,24 @@ def test_install_plan_blocks_source_content_host_and_recursive_drift() -> None:
     assert any("source revision mismatch" in blocker for blocker in plan.blockers)
     assert any("does not satisfy" in blocker for blocker in plan.blockers)
     assert any("recursive" in blocker for blocker in plan.blockers)
+    assert not any("controlled update" in blocker for blocker in plan.blockers)
+
+
+def test_install_plan_treats_digest_mismatch_as_warning() -> None:
+    pack = load_pack("addyosmani")
+    installed_skill = required_skills(pack)[0]
+    plan = plan_pack_install(
+        pack,
+        inventory_from_names([installed_skill.name]),
+        content_registry_from_digests({installed_skill.name: "f" * 64}),
+        resolved_revision=pack.source_revision,
+        hermes_version="0.18.2",
+    )
+
+    assert plan.ready_to_apply is True
+    assert plan.revision_mismatches == (installed_skill.name,)
+    assert len(plan.actions) == 19
+    assert plan.blockers == ()
 
 
 def test_version_constraint_has_exact_bounded_semantics() -> None:
@@ -96,16 +113,24 @@ def test_cli_install_defaults_to_complete_dry_run_without_mutation(
     assert result == 0
     assert payload["success"] is True
     assert payload["dry_run"] is True
-    assert payload["source"] == "https://github.com/addyosmani/agent-skills"
+    assert payload["source"] == "https://github.com/forgegod/addyosmani-agent-skills"
     assert payload["pinned_revision"] == pack.source_revision
     assert len(payload["actions"]) == 20
     assert payload["actions"][0]["command"] == [
         "hermes",
         "skills",
         "install",
-        "addyosmani/agent-skills/skills/interview-me",
+        (
+            "https://raw.githubusercontent.com/forgegod/addyosmani-agent-skills/"
+            f"{pack.source_revision}/skills/interview-me/SKILL.md"
+        ),
         "--yes",
     ]
+
+    idea_refine = next(skill for skill in required_skills(pack) if skill.name == "idea-refine")
+    assert idea_refine.content_digest == (
+        "d134901c97dc2c1fc77f10d483ca9e7bcefc02d258ca66c3936572bf5696a2ba"
+    )
     assert commands == []
 
 
@@ -134,7 +159,7 @@ def test_cli_apply_uses_fake_hermes_boundary_and_post_verifies(
     commands: list[tuple[str, ...]] = []
 
     def run(command: tuple[str, ...]) -> tuple[int, str]:
-        name = command[3].rsplit("/", 1)[-1]
+        name = command[3].removesuffix("/SKILL.md").rsplit("/", 1)[-1]
         commands.append(command)
         inventory.names.add(name)
         registry.values[name] = digests[name]
@@ -178,7 +203,7 @@ def test_cli_recursive_request_fails_without_mutation(
     assert any("recursive" in blocker for blocker in payload["blockers"])
 
 
-def test_cli_check_blocks_revision_mismatch_and_update_plan_never_mutates(
+def test_cli_check_warns_on_revision_mismatch_and_update_plan_never_mutates(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     pack = load_pack("addyosmani")
@@ -204,23 +229,10 @@ def test_cli_check_blocks_revision_mismatch_and_update_plan_never_mutates(
     )
     update = json.loads(capsys.readouterr().out)
 
-    assert check_result == 1
-    assert check["success"] is False
+    assert check_result == 0
+    assert check["success"] is True
     assert check["revision_mismatches"] == ["idea-refine"]
     assert update_result == 0
     assert update["success"] is True
     assert update["dry_run"] is True
     assert any("source revision mismatch" in blocker for blocker in update["blockers"])
-
-
-def test_revision_error_is_actionable() -> None:
-    pack = load_pack("addyosmani")
-    registry = content_registry_from_digests({})
-
-    with pytest.raises(
-        SkillRevisionError,
-        match="daidala packs update-plan addyosmani",
-    ):
-        from daidala.skills import require_pack_skill_revisions
-
-        require_pack_skill_revisions(pack, registry)

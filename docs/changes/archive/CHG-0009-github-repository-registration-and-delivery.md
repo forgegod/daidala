@@ -1,6 +1,6 @@
 # CHG-0009: GitHub repository registration and delivery authority
 
-**Status:** in-progress
+**Status:** done
 **Source request:** Direct operator request: "According to the skills create the CHR and design as proposed including the CLI and dashboard support. Do not execute before approval. In order to secure the PAT make a recommendation how to store the PAT in a secure way"; clarification: "I mean CHG"
 **Affected capabilities:** CAP-0003, CAP-0004, CAP-0005
 **Created:** 2026-08-11
@@ -111,11 +111,11 @@ remains provenance; it is not a product-wireframe source.
 
 | Phase | Status | Verification gate |
 |---|---|---|
-| Wireframe generator preparation | done (`node docs/product/wireframes/generate.mjs --render`; CAP-0003 outputs byte-identical) | The generator supports multiple current CAP entries without creating planned entries. |
-| Approval boundary | done (direct operator approval: "Approve CHG-0009") | Direct operator approval of this CHG scope, Hermes secret-source/profile-aliasing approach, review wireframes, and branch-only delivery rule. |
-| Repository registration vertical slice | done (`.venv/bin/pytest -q tests/test_repository_registration.py tests/test_cli.py tests/test_dashboard_api.py tests/test_dashboard_assets.py`; `.venv/bin/ruff check .`; `.venv/bin/python scripts/check_records.py .`; `.venv/bin/python scripts/check_md_links.py .`; `.venv/bin/daidala packs validate addyosmani`; `.venv/bin/daidala packs validate aidlc`) | CLI/dashboard adapters, CAP-0004 wireframe, and focused end-to-end tests passed. |
-| Delivery authority and branch publish vertical slice | done (`tests/test_delivery.py`, dashboard/API/assets, execution/tool/plugin/worker-contract suites; `python scripts/check_records.py .`; `python scripts/check_md_links.py .`; `lefthook validate`; `pytest`; `ruff check .`; both pack validations; `python -m build`; `twine check dist/*`; release-content check) | The implementation and complete repository gate passed. No external credential, target repository commit, or GitHub push was exercised. |
-| Closeout | in-progress | Final security/integration review remediation is complete: a failed controller-registration publish removes only the newly created credential-binding record, and every browser registration projection omits credential aliases. Injected-failure and projection coverage passed; `check_records`, Markdown links, `lefthook validate`, 744 tests, Ruff, both pack validations, build, Twine, and release-content checks passed. Direct operator acceptance remains required before archiving the CHG. |
+| Wireframe generator preparation | done | `node docs/product/wireframes/generate.mjs --render` passed with byte-identical CAP-0003 outputs; the generator supports multiple current CAP entries without creating planned entries. |
+| Approval boundary | done | Direct operator approval ("Approve CHG-0009") covered this CHG scope, Hermes secret-source/profile-aliasing approach, review wireframes, and branch-only delivery rule. |
+| Repository registration vertical slice | done | CLI/dashboard adapters, CAP-0004 wireframe, and focused end-to-end tests passed, including repository registration, CLI, dashboard API/assets, Ruff, records, links, and both pack validations. |
+| Delivery authority and branch publish vertical slice | done | The delivery, dashboard, execution, tool, plugin, worker-contract, and complete repository gates passed. No external credential, target repository commit, or GitHub push was exercised. |
+| Closeout | done | Final security/integration review remediation and the complete repository gate passed. The operator accepted the completed change for archival on 2026-08-14. |
 
 ## Decisions
 
@@ -198,3 +198,6 @@ remains provenance; it is not a product-wireframe source.
   tab and panel are named **GitHub Repositories**, distinguishing them from the
   separate **GitHub Projects** link configuration. The tab route remains
   `repositories`; no configuration authority or request contract changed.
+- Final operator acceptance on 2026-08-14: "Authorize both push and CHG-0009
+  acceptance/archive (recommended)". This closes the human acceptance gate and
+  authorizes archival; it grants no new runtime or external-delivery authority.

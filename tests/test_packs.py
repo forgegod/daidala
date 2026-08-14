@@ -228,6 +228,35 @@ def test_skill_install_target_must_match_name() -> None:
         validate_pack(raw)
 
 
+def test_skill_install_target_rejects_unsafe_path_segments() -> None:
+    raw = {
+        "schema_version": 1,
+        "name": "broken",
+        "source": "https://github.com/owner/repo",
+        "source_revision": "a" * 40,
+        "lifecycle": {
+            "human_gate_after": "plan",
+            "stages": [
+                {
+                    "id": stage,
+                    "skills": [
+                        {
+                            "name": "skill",
+                            "activation": "required",
+                            "install": "owner/repo/x/../skill",
+                            "content_digest": "b" * 64,
+                        }
+                    ],
+                }
+                for stage in ("define", "plan", "implement", "verify", "review", "deliver")
+            ],
+        },
+    }
+
+    with pytest.raises(PackError, match="lowercase slug path segments"):
+        validate_pack(raw)
+
+
 def test_gate_cannot_be_after_implementation() -> None:
     raw = {
         "schema_version": 1,

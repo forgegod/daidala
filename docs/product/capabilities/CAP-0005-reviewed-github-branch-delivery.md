@@ -67,6 +67,6 @@ commit, and receive a path-free branch/commit receipt.
 
 ## Links
 
-- [CHG-0009](../../changes/active/CHG-0009-github-repository-registration-and-delivery.md)
+- [CHG-0009](../../changes/archive/CHG-0009-github-repository-registration-and-delivery.md)
 - [HTML wireframe](../wireframes/html/CAP-0005-reviewed-github-branch-delivery.html)
 - [PNG wireframe](../wireframes/exports/CAP-0005-reviewed-github-branch-delivery.png)

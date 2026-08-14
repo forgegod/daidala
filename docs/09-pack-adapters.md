@@ -8,9 +8,9 @@ pinned stage skills, activation policy, and methodology judgment differ.
 
 ## Implemented adapters
 
-| Pack | Upstream source | Pinned revision | Human gates |
+| Pack | Pack source | Pinned revision | Human gates |
 |---|---|---|---|
-| `addyosmani` | `https://github.com/addyosmani/agent-skills` | `7ce442de03ddc1b72480c3b48d55c62880ea2a90` | Exact plan approval; exact attended review disposition |
+| `addyosmani` | `https://github.com/forgegod/addyosmani-agent-skills` | `8a63e3bfb6da979e5073939e1c4458ad99b93c83` | Exact plan approval; exact attended review disposition |
 | `aidlc` | `https://github.com/awslabs/aidlc-workflows` | `e49341dbeb8af82758dd85e96ed7fe9bcf38a447` (`v1.0.1`) | Exact plan approval; exact attended review disposition |
 
 ## Addyosmani mapping
@@ -33,11 +33,15 @@ cannot demote a required entry. It classifies each conditional entry from the
 pinned skill criteria and current card evidence, then persists the exact decision
 before Daidala accepts stage evidence.
 
-Every install target is fully qualified as
-`addyosmani/agent-skills/skills/<exact-name>`. A similar name does not satisfy
-the requirement. Missing requirements block workflow creation and list their
-install targets. Pack installation dry-runs missing-skill mutations by default
-and requires exact complete-directory digests before workflow start.
+Every manifest install declaration is fully qualified as
+`forgegod/addyosmani-agent-skills/skills/<exact-name>`. Daidala resolves it to an
+immutable raw GitHub `SKILL.md` URL at the declared source revision before
+emitting `hermes skills install`; no second installer participates. A similar
+name does not satisfy the requirement. Missing requirements block workflow
+creation and list their immutable install targets. Pack installation dry-runs
+missing-skill mutations by default and compares exact digests of the complete
+bundle Hermes installs. A mismatch is a warning and does not block installation
+or workflow start; missing and disabled exact names remain blockers.
 
 Config → Packs exposes an Addyosmani `SKILL.md` only after that exact external
 skill is installed. Before installation, the dashboard shows the exact install
@@ -45,7 +49,9 @@ target and pinned source link and blocks workflow preview/start without
 substituting source text for installed readiness. Individual and pack-wide
 install, enable, and disable actions require a fresh preview digest, explicit
 confirmation, and post-action verification. Disable updates the active profile's
-Hermes `skills.disabled` list; it does not delete shared skill files.
+Hermes `skills.disabled` list; it does not delete shared skill files. Selecting a
+skill moves focus and the viewport to the information/install panel, where an
+observed digest mismatch is rendered as a warning.
 
 ## Adapter and engine boundary
 
@@ -95,10 +101,13 @@ The same temporary-repository fixture executes both packs through
 ## Current limitations
 
 - Publisher signatures are not available; integrity is commit and content-hash based.
+- Hermes may reject an upstream skill whose references are outside its supported
+  bundle layout or whose security scan blocks installation. Daidala does not
+  bypass that decision; post-install verification leaves the skill missing.
 - The supported pack-installation contract refuses `--recursive` and installs
   only the required pinned subset.
-- Updates are plans only when installed content differs; Daidala never
-  silently replaces a skill during an active workflow.
+- Installed content differences are advisory and never trigger silent
+  replacement during an active workflow.
 - Stable AI-DLC rules are adapted, not copied wholesale; upstream methodology
   changes require an explicit pinned adapter update.
 

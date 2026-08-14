@@ -18,8 +18,8 @@ workflow-pack adapters, and bundled orchestration skills.
 | `locations.py` | Profile-aware data-root resolution; never hard-codes `~/.hermes`. |
 | `store.py` | SQLite-backed policy-ledger persistence with optimistic concurrency and explicit read-only opening for mutation-free previews. |
 | `service.py` | Repository preflight, approval-gated graph, artifact and changed-path evidence reads, structured-review, attended-disposition, retryable plan-revision, worktree, and ledger coordination. |
-| `skills.py` | Exact installed-skill inventory, content-digest verification, and mutation-free install planning. |
-| `pack_service.py` | Typed pack validation, readiness, bounded declared-skill content and source links, enabled-state projection, and preview-confirmed install/enable/disable service shared by CLI and dashboard adapters. |
+| `skills.py` | Exact installed-skill inventory, advisory content-digest comparison, and mutation-free install planning. |
+| `pack_service.py` | Typed pack validation, readiness and digest-warning projection, bounded declared-skill content and immutable install/source links, enabled-state projection, and preview-confirmed install/enable/disable service shared by CLI and dashboard adapters. |
 | `constraints.py` | Strict workflow-constraint YAML parsing, canonicalization, bounds, digest identity, and the runtime starter template. |
 | `projects.py` | Strict committed project-manifest parsing, canonical identity, verification declarations, and mutation policy. |
 | `registrations.py` | Trusted profile-local project registration v2, exact attended-delivery destination, limits, manifest binding, and storage path. |
@@ -80,7 +80,10 @@ workflow-pack adapters, and bundled orchestration skills.
 - The activation tool authorizes from `HERMES_KANBAN_BOARD` and
   `HERMES_KANBAN_TASK` against the ledger's current stage card; handler `task_id`
   is turn isolation and never grants workflow authority.
-- External packs pin a Git source revision, bounded Hermes version, and complete-directory digest per required skill.
+- External packs install only through Hermes, pin immutable Git-revision targets
+  and a bounded Hermes version, and compare digests of the complete bundle Hermes
+  installs. Missing and disabled skills remain blockers; digest mismatches remain
+  visible warnings but do not block install actions or workflow start.
 - Standalone profile-backed pack inventory comes from the resolved profile skill directory; bundled `packs list` and `packs validate` read packaged definitions without resolving a profile root. The CLI never imports Hermes runtime internals.
 - Native and standalone operator commands share one parser and dispatch layer;
   setup, external installation, evaluator probes, and project-cycle admission
@@ -135,7 +138,9 @@ workflow-pack adapters, and bundled orchestration skills.
   Enable/disable persists Hermes `skills.disabled` through bounded atomic
   profile-config replacement while preserving unrelated keys. External names
   stay bare; bundled names use the `daidala:<name>` host identifier. Disable
-  never deletes shared skill content.
+  never deletes shared skill content. Install post-verification requires the
+  declared name to become installed; an observed digest mismatch is reported but
+  does not turn a successful Hermes installation into a failed action.
 - `project-cycle admit --apply` requires the exact cycle ID and canonical intake
   digest returned by a fresh dry-run. The apply path reruns live prerequisites
   and rejects changed issue, manifest, pack, constraints, baseline, registration,

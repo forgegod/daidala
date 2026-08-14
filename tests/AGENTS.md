@@ -55,13 +55,16 @@ completeness without touching a real Hermes profile.
   binding, two-phase fresh-approval chains, and dirty/path/symlink/binary/
   tampered-evidence fail-closed behavior without mutating the operator checkout.
 - Fake-inventory tests for exact external-skill prerequisites and host errors.
-- Fake command/registry tests for dry-run installation, pinned revisions, content digests, post-apply verification, and refused recursive installation.
+- Fake command/registry tests for Hermes-only dry-run installation, immutable
+  revision targets, Hermes-installed-bundle digest warnings, name-based
+  post-apply convergence, and refused recursive installation.
 - Pack-service and dashboard-route tests prove declared-skill-only bounded
   installed/bundled content, exact source links, explicit unavailable state for
   uninstalled external skills, host-qualified enabled state, atomic profile-config
   persistence, validation/check parity, individual and pack-wide canonical action
   previews, stale-preview rejection, literal confirmation, and post-action
-  verification.
+  verification. Dashboard asset coverage also pins focus-and-scroll navigation
+  from a selected skill to its content/install panel.
 - Dashboard review-route, GitHub Project link, and asset tests prove path-free exact evidence,
   server-derived attended identity, literal diff rendering, preview/apply parity,
   single-ledger plan/review snapshot binding, stale or unchecked rejection, and

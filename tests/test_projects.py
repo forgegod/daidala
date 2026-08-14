@@ -67,7 +67,7 @@ def test_mapping_order_and_yaml_style_do_not_change_manifest_identity() -> None:
         ),
         (
             manifest_content().replace(
-                "content_digest: 915da76417dbd9ddaee76a4da08ca46e96e72165d99949bbab3937c5dbca2551",
+                f"content_digest: {pack_content_digest('addyosmani')}",
                 "content_digest: BAD",
             ),
             "SHA-256",

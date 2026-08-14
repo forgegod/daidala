@@ -14,6 +14,7 @@ import yaml
 
 __version__ = "0.2.0"
 _REQUIRED_LIFECYCLE = ("define", "plan", "implement", "verify", "review", "deliver")
+_LOWERCASE_SLUG_RE = re.compile(r"[a-z0-9][a-z0-9-]*")
 
 
 class PackError(ValueError):
@@ -81,6 +82,27 @@ def pack_content_digest(name: str) -> str:
     if not resource.is_file():
         raise PackError(f"unknown bundled pack: {name!r}")
     return hashlib.sha256(resource.read_bytes()).hexdigest()
+
+
+def external_skill_install_target(pack: WorkflowPack, skill: SkillRef) -> str:
+    """Resolve one external skill to its immutable Hermes install URL."""
+    if skill.install is None:
+        raise PackError(f"skill {skill.name!r} is not external")
+    owner_repo = _github_owner_repo(pack.source)
+    prefix = f"{owner_repo}/"
+    if not skill.install.startswith(prefix):
+        raise PackError(
+            f"skill {skill.name!r} install target is outside pack source {owner_repo!r}"
+        )
+    relative_path = skill.install.removeprefix(prefix)
+    if any(_LOWERCASE_SLUG_RE.fullmatch(part) is None for part in relative_path.split("/")):
+        raise PackError(
+            f"skill {skill.name!r} install target must use lowercase slug path segments"
+        )
+    return (
+        f"https://raw.githubusercontent.com/{owner_repo}/"
+        f"{pack.source_revision}/{relative_path}/SKILL.md"
+    )
 
 
 def validate_pack(raw: Any) -> WorkflowPack:
@@ -155,7 +177,7 @@ def _validate_skill(stage_id: str, raw: Any, source_owner_repo: str) -> SkillRef
     if not isinstance(raw, dict):
         raise PackError(f"stage {stage_id!r} contains a non-mapping skill")
     name = _required_text(raw, "name")
-    if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", name):
+    if _LOWERCASE_SLUG_RE.fullmatch(name) is None:
         raise PackError(
             f"stage {stage_id!r} skill name must be a lowercase slug: {name!r}"
         )
@@ -193,6 +215,12 @@ def _validate_skill(stage_id: str, raw: Any, source_owner_repo: str) -> SkillRef
         raise PackError(
             f"stage {stage_id!r} skill {name!r} install target must start with "
             f"{source_owner_repo!r}"
+        )
+    relative_path = install.removeprefix(f"{source_owner_repo}/")
+    if any(_LOWERCASE_SLUG_RE.fullmatch(part) is None for part in relative_path.split("/")):
+        raise PackError(
+            f"stage {stage_id!r} skill {name!r} install target must use "
+            "lowercase slug path segments"
         )
     if install.rsplit("/", 1)[-1] != name:
         raise PackError(

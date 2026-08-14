@@ -98,21 +98,26 @@ hermes daidala packs check addyosmani
 
 Installation is also dry-run by default. Review every proposed `hermes skills
 install` command before using `--apply`. Recursive installation is refused by
-the verified Hermes baseline.
+the verified Hermes baseline. `revision_mismatches` are warnings: they do not
+block `--apply`, `packs check`, or workflow start. A missing or disabled exact
+skill name remains blocking.
 
 In the dashboard, **Config → Packs** renders bounded literal `SKILL.md` text only
-for bundled or installed skills. Select a declaration to open its exact source
-link and use its applicable **Install skill**, **Enable skill**, or **Disable
-skill** action. **Install all**, **Enable all**, and **Disable all** target every
+for bundled or installed skills. Select a declaration to move keyboard focus and
+the viewport to its information panel, open its exact source link, and use its
+applicable **Install skill**, **Enable skill**, or **Disable skill** action. A
+digest mismatch is shown there as a warning while the installed skill remains
+available. **Install all**, **Enable all**, and **Disable all** target every
 applicable declared skill in the pack. Review the affected names and preview
 digest, tick the confirmation box, then apply; Daidala rejects stale previews and
-verifies installation, content digest, or enabled state afterward. Disable is a
+verifies installation presence or enabled state afterward. Disable is a
 reversible update to `skills.disabled` for the active profile, not an uninstall.
 
 Uninstalled Addyosmani skills remain labeled `installation required` with their
-exact install targets. Installed but disabled skills are also not ready. Start
-workflow keeps the pack selectable for inspection but disables preview/start
-until its readiness state is `ready`.
+exact install targets. Installed but disabled skills are also not ready. An
+installed digest mismatch yields `ready with warnings` rather than a blocker.
+Start workflow keeps a blocked pack selectable for inspection but disables
+preview/start until every exact skill name is installed and enabled.
 
 ## Start and resume a workflow
 

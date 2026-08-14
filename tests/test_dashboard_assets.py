@@ -214,6 +214,8 @@ def test_bundle_exposes_pack_inventory_content_and_confirmed_skill_actions() -> 
         "enabled",
         "expected ",
         "observed ",
+        "Ready with warnings",
+        "Digest mismatch warning: the installed skill remains available to Daidala.",
         "I confirm this exact pack skill action",
         '"/skills/action/preview"',
         '"/skills/action"',
@@ -224,6 +226,9 @@ def test_bundle_exposes_pack_inventory_content_and_confirmed_skill_actions() -> 
     assert 'data-testid": "daidala-pack"' in source
     assert 'data-testid": "daidala-skill-content"' in source
     assert 'data-testid": "daidala-pack-preview"' in source
+    assert "skillDocumentRef.current.focus({ preventScroll: true })" in source
+    assert 'skillDocumentRef.current.scrollIntoView({ block: "start" })' in source
+    assert 'ref: skillDocumentRef, tabIndex: -1' in source
     assert "pinned source SKILL.md" not in source
     assert '"pinned-source"' not in source
     assert '"/dispatch"' not in source.lower()

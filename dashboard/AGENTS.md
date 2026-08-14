@@ -110,7 +110,9 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   their installation requirement, exact install target, and pinned source link.
   Individual and pack-wide install, enable, and disable apply require a fresh
   matching action preview digest, literal confirmation, and post-action
-  verification. Disable is never presented as uninstall or deletion.
+  verification. Digest mismatches render as warnings and do not block skill use
+  or install actions. Selecting a skill focuses and scrolls its content/install
+  panel into view. Disable is never presented as uninstall or deletion.
 - Preview and declined setup must not mutate; start requires a literal checked confirmation.
 - Start-workflow management links preserve the browser-local draft while opening
   their exact Config tab above it. After a routed tab renders, the Config section

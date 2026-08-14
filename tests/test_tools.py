@@ -960,12 +960,12 @@ def test_pack_info_is_strict_and_reports_valid_pack() -> None:
     result = call(tools.pack_info, {"pack": "addyosmani"})
     assert result["success"] is True
     assert result["pack"] == "addyosmani"
-    assert result["source_revision"] == "7ce442de03ddc1b72480c3b48d55c62880ea2a90"
+    assert result["source_revision"] == "8a63e3bfb6da979e5073939e1c4458ad99b93c83"
     assert result["skills"]["define"][0] == {
         "name": "interview-me",
         "provider": {
             "kind": "external",
-            "reference": "addyosmani/agent-skills/skills/interview-me",
+            "reference": "forgegod/addyosmani-agent-skills/skills/interview-me",
         },
         "content_digest": {
             "sha256": "f271a5931d374e3ab970c79e0461a30b741123271519e599b5b9a29b8db2ffaf",

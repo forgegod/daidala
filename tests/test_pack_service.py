@@ -153,7 +153,11 @@ def test_content_rejects_undeclared_and_hides_uninstalled_external_document() ->
     assert document["skill"] == "interview-me"
     assert document["stages"] == ["define"]
     assert document["activation"] == ["conditional"]
-    assert document["install_target"] == expected.install
+    assert document["install_target"] == (
+        "https://raw.githubusercontent.com/forgegod/addyosmani-agent-skills/"
+        + load_pack("addyosmani").source_revision
+        + "/skills/interview-me/SKILL.md"
+    )
     assert document["expected_digest"] == expected.content_digest
     assert document["observed_digest"] is None
     assert document["installed"] is False
@@ -166,7 +170,7 @@ def test_content_rejects_undeclared_and_hides_uninstalled_external_document() ->
     assert document["unavailable_reason"] == "skill is not installed"
     assert document["enabled"] is None
     assert document["source_url"] == (
-        "https://github.com/addyosmani/agent-skills/tree/"
+        "https://github.com/forgegod/addyosmani-agent-skills/tree/"
         + load_pack("addyosmani").source_revision
         + "/skills/interview-me"
     )
@@ -287,7 +291,8 @@ def test_individual_install_only_applies_and_verifies_selected_skill() -> None:
 
     def run(command: tuple[str, ...]) -> tuple[int, str]:
         commands.append(command)
-        skill = required[command[3].rsplit("/", 1)[-1]]
+        name = command[3].removesuffix("/SKILL.md").rsplit("/", 1)[-1]
+        skill = required[name]
         assert skill.content_digest is not None
         registry.digests[skill.name] = skill.content_digest
         registry.documents[skill.name] = f"# {skill.name}\n"
@@ -313,10 +318,57 @@ def test_individual_install_only_applies_and_verifies_selected_skill() -> None:
             "hermes",
             "skills",
             "install",
-            "addyosmani/agent-skills/skills/interview-me",
+            (
+                "https://raw.githubusercontent.com/forgegod/addyosmani-agent-skills/"
+                f"{pack.source_revision}/skills/interview-me/SKILL.md"
+            ),
             "--yes",
         )
     ]
+
+
+def test_individual_install_accepts_digest_mismatch_as_a_warning() -> None:
+    registry = MutableRegistry()
+
+    def run(command: tuple[str, ...]) -> tuple[int, str]:
+        name = command[3].removesuffix("/SKILL.md").rsplit("/", 1)[-1]
+        registry.digests[name] = "f" * 64
+        registry.documents[name] = f"# {name}\n"
+        return 0, "installed"
+
+    service = build_service(registry, runner=run)
+    preview = service.preview_action("addyosmani", SkillAction.INSTALL, skill_name="interview-me")
+
+    result = service.apply_action(
+        "addyosmani",
+        SkillAction.INSTALL,
+        skill_name="interview-me",
+        expected_preview_digest=preview.preview_digest,
+        confirm=True,
+    ).to_dict()
+
+    assert result["affected"] == ["interview-me"]
+    pack_result = result["pack"]
+    assert isinstance(pack_result, dict)
+    assert pack_result["revision_mismatches"] == ["interview-me"]
+    assert not any("controlled update" in blocker for blocker in pack_result["blockers"])
+
+
+def test_digest_mismatch_warns_without_blocking_pack_readiness() -> None:
+    pack = load_pack("addyosmani")
+    digests = {
+        skill.name: skill.content_digest
+        for skill in required_skills(pack)
+        if skill.content_digest is not None
+    }
+    digests["idea-refine"] = "f" * 64
+
+    check = build_service(MutableRegistry(digests=digests)).check("addyosmani").to_dict()
+
+    assert check["ready"] is True
+    assert check["installable"] is True
+    assert check["revision_mismatches"] == ["idea-refine"]
+    assert check["blockers"] == []
 
 
 def test_oversized_document_returns_metadata_without_partial_content() -> None:
@@ -372,7 +424,7 @@ def test_confirmed_install_executes_exact_actions_and_post_verifies() -> None:
 
     def run(command: tuple[str, ...]) -> tuple[int, str]:
         commands.append(command)
-        name = command[3].rsplit("/", 1)[-1]
+        name = command[3].removesuffix("/SKILL.md").rsplit("/", 1)[-1]
         assert required[name].content_digest is not None
         registry.digests[name] = required[name].content_digest
         registry.documents[name] = f"# {name}\n"

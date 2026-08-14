@@ -1548,12 +1548,15 @@ def _run_pack_operation(
 
     selected_registry = registry or ProfileSkillContentRegistry(resolve_data_root() / "skills")
     selected_inventory = inventory or cast(SkillInventory, selected_registry)
-    resolver = revision_resolver or _resolve_revision
     runner = command_runner or _run_command
     service = PackService(
         inventory=selected_inventory,
         registry=selected_registry,
-        revision_resolver=lambda pack: resolver(pack.source),
+        revision_resolver=(
+            (lambda pack: revision_resolver(pack.source))
+            if revision_resolver is not None
+            else (lambda pack: pack.source_revision)
+        ),
         hermes_version_resolver=lambda: hermes_version or _resolve_hermes_version(),
         command_runner=runner,
     )
@@ -1740,20 +1743,6 @@ def _check_payload(
         **payload,
         "ready_to_apply": check.installable,
     }
-
-
-def _resolve_revision(source: str) -> str:
-    completed = subprocess.run(
-        ["git", "ls-remote", source, "HEAD"],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    revision = completed.stdout.strip().split("\t", 1)[0]
-    if completed.returncode != 0 or not re.fullmatch(r"[0-9a-f]{40}", revision):
-        detail = completed.stderr.strip() or completed.stdout.strip() or "unknown error"
-        raise RuntimeError(f"could not resolve {source} HEAD: {detail}")
-    return revision
 
 
 def _resolve_hermes_version() -> str:

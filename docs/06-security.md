@@ -43,7 +43,7 @@ verification in the Daidala-owned detached worktree.
   inside the installed `daidala` package.
 - YAML is parsed with `yaml.safe_load()`.
 - Pack structure, stage order, source publisher/repository, full commit,
-  bounded Hermes version, per-skill complete-directory digest,
+  bounded Hermes version, per-skill Hermes-installed-bundle digest,
   skill-name/install-target agreement, and gate placement are validated before
   a runtime pack object is returned.
 - Runtime pack dataclasses are frozen.
@@ -135,12 +135,13 @@ cancelled; prose artifacts are never migrated into authority.
 ## External skills and supply chain
 
 The Addyosmani pack pins its GitHub repository, full commit, bounded Hermes host
-range, exact install targets, and SHA-256 digest of every complete required
-skill directory. Dry-run is the default and displays every intended mutation.
-Apply uses Hermes' installer, then re-reads profile-local directories and fails
-unless names and digests match. Source, version, or content drift blocks
-workflow start. Digest mismatches produce update plans; they are never silently
-replaced during an active workflow. Kanban cards pin the pack's exact
+range, exact install targets, and SHA-256 digest of every Hermes-installed skill
+bundle. Dry-run is the default and displays every intended mutation. Apply uses
+Hermes' installer, then re-reads profile-local directories and requires each
+declared name to be installed. Source/version blockers and missing or disabled
+skills remain fail-closed. Content drift is an explicit integrity warning: it
+does not block installation or workflow start and never triggers silent
+replacement. Kanban cards pin the pack's exact
 implementation skill names. Hermes owns loading those names for the assigned
 profile; missing context fails closed rather than being substituted.
 

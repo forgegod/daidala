@@ -96,7 +96,8 @@ approval, worktree isolation, evidence, and conservative delivery.
 The upstream collection is a capability library, not one authoritative workflow.
 Daidala must select which skills are required or conditional and own their
 stage mapping. Similar names are not sufficient: exact installed names,
-repository paths, revisions, and complete-directory digests remain necessary.
+repository paths, revisions, and Hermes-installed-bundle digests remain
+necessary.
 
 ### Daidala decision
 

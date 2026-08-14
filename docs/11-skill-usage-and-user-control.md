@@ -119,8 +119,9 @@ proof that each skill had a distinct effect.
 
 All named skills must already be installed and loadable in the assignee profile.
 The dispatcher does not install missing skills at runtime. Daidala's readiness
-checks exist so a missing exact name or mismatched external skill digest stops
-the workflow instead of silently running with a partial methodology.
+checks stop a missing or disabled exact name from silently running with a partial
+methodology. An external skill digest mismatch is reported as an integrity
+warning but does not stop installation or workflow start.
 
 An installed but profile-disabled required skill is also not loadable. Operators
 repair availability under **Config → Packs** with preview-confirmed individual or
@@ -503,8 +504,8 @@ audit trail while changing human input or worker capability.
 A user who needs a different stable methodology can author a pack that maps
 external or bundled skills to the six executable stages. This is the supported
 way to change skill composition while retaining validation and provenance.
-External skills require exact install targets and complete-directory digests;
-bundled adapters ship with the plugin.
+External skills require immutable exact install targets and digests of the
+complete bundle Hermes installs; bundled adapters ship with the plugin.
 
 ## What the user cannot select per run
 
@@ -512,7 +513,7 @@ bundled adapters ship with the plugin.
 |---|---|
 | Add or remove one stage skill at workflow start | Unsupported; there is no `--stage-skill` override. |
 | Substitute a similarly named installed skill | Rejected; matching uses exact canonical names. |
-| Edit an external skill without changing the pack | Rejected by the pinned complete-directory digest. |
+| Edit an installed external-skill bundle without changing the pack | Rejected by the pinned Hermes-installed-bundle digest. |
 | Ask a worker to discover a better skill | Forbidden by the worker contract; the card mapping is authoritative. |
 | Assign priorities or weights to skills on one card | Unsupported as a user override; the worker records contiguous attention ranks for applicable skills in the immutable manifest. |
 | Change the pack after workflow start | Unsupported as an in-place operator action. |
@@ -576,6 +577,6 @@ approval or the evidence required for completion.
 - Hermes task-skill loading:
   [Kanban — Pinning extra skills to a specific task](https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban#pinning-extra-skills-to-a-specific-task)
 - Addyosmani activation criteria:
-  [Agent Skills catalog at the pinned pack revision](https://github.com/addyosmani/agent-skills/blob/7ce442de03ddc1b72480c3b48d55c62880ea2a90/README.md#all-24-skills)
+  [Agent Skills catalog at the pinned pack revision](https://github.com/forgegod/addyosmani-agent-skills/blob/8a63e3bfb6da979e5073939e1c4458ad99b93c83/README.md#all-24-skills)
 - Hermes runtime context hooks:
   [Hooks](https://hermes-agent.nousresearch.com/docs/user-guide/features/hooks)

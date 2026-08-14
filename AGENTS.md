@@ -116,7 +116,10 @@ Project-wide durable preferences (style, workflow, conventions) live in user mem
 - Keep deterministic policy checks and validation in Python; keep operational
   lifecycle state in Hermes Kanban and judgment in skills or host-owned
   structured LLM calls.
-- External skills are referenced by fully qualified install target and validated by exact name.
+- External skills install only through Hermes from source-revision-pinned targets,
+  are validated by exact name, and compare digests of the Hermes-installed bundle.
+  Missing or disabled skills block use; digest mismatches are explicit warnings
+  and never block installation or workflow start.
 - Plugin tool handlers accept `args: dict, **kwargs` and always return a JSON string.
 - The directory-plugin entry point exposes its implementation package as
   `daidala` so dashboard backend imports match pip installations.
