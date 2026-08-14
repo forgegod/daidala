@@ -19,7 +19,7 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   catalog/text/download reads, and digest-confirmed curator controls.
 - `dist/index.js` renders Workflows, Artifacts, and Config primary views;
   workflow progress; the inventory-backed Start workflow
-  wizard, Config → Repositories registration, Config → Packs readiness/content,
+  wizard, Config → GitHub Repositories registration, Config → Packs readiness/content,
   GitHub Projects v2 links,
   constraint source selection and schema-aware authoring, read-only configuration
   verification, initialization preview/apply, prerequisite diagnosis, operator-runbook

@@ -1,7 +1,7 @@
 # CAP-0004: GitHub repository registration
 
 **Status:** implemented
-**Primary surface:** Daidala Config → Repositories
+**Primary surface:** Daidala Config → GitHub Repositories
 
 ## Outcome
 
@@ -19,7 +19,7 @@ credential alias, environment-variable name, or token to Daidala.
 - Apply re-inspects the repository and accepts only the exact preview digest
   plus the literal `register-repository` confirmation. It writes only the
   controller registration and credential-bindings records.
-- Config → Repositories lists the selected existing Hermes profile's repository
+- Config → GitHub Repositories lists the selected existing Hermes profile's repository
   identities and refreshes that list when the operator changes profile. It shows
   no profile root, checkout, credential alias, environment-variable name, or
   secret metadata.
@@ -42,7 +42,7 @@ credential alias, environment-variable name, or token to Daidala.
 - [`daidala/repository_registration.py`](../../../daidala/repository_registration.py) — canonical GitHub URL validation, preview digest, prerequisite validation, and atomic two-record write.
 - [`daidala/cli.py`](../../../daidala/cli.py) — standalone and native CLI preview/apply adapter.
 - [`dashboard/plugin_api.py`](../../../dashboard/plugin_api.py) — exact path-free dashboard request boundary.
-- [`dashboard/dist/index.js`](../../../dashboard/dist/index.js) — Config → Repositories preview and explicit confirmation UI.
+- [`dashboard/dist/index.js`](../../../dashboard/dist/index.js) — Config → GitHub Repositories preview and explicit confirmation UI.
 
 ### Tests
 

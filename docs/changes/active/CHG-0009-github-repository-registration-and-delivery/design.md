@@ -21,7 +21,7 @@
 ## Current state and boundary
 
 Daidala has profile-local registration records, strict credential alias bindings,
-`project register` CLI preview/apply, Config → Repositories dashboard adapters,
+`project register` CLI preview/apply, Config → GitHub Repositories dashboard adapters,
 and an attended branch-delivery CLI/dashboard adapter. The adapter is inert for
 the repository's current `release.allow_commit: false` and
 `release.allow_push: false` manifest policy, and fails closed without a trusted
@@ -167,7 +167,7 @@ logical alias.
 The review-only Pencil screens preserve the reviewed interaction rationale.
 Current product screens are the CAP-linked generated wireframes.
 
-### Config → Repositories
+### Config → GitHub Repositories
 
 The registration screen has four persistent facts at the top:
 

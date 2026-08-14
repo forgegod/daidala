@@ -1777,7 +1777,7 @@
           type: "button", role: "tab", "aria-selected": tab === "repositories",
           className: tab === "repositories" ? "is-selected" : "",
           onClick: function () { setTab("repositories"); }
-        }, "Repositories"),
+        }, "GitHub Repositories"),
         createElement("button", {
           type: "button", role: "tab", "aria-selected": tab === "github-projects",
           className: tab === "github-projects" ? "is-selected" : "",
@@ -2489,7 +2489,7 @@
     return createElement("section", { className: "daidala-config", "data-testid": "daidala-repository-registration" },
       createElement("header", { className: "daidala-config-header" },
         createElement("div", null,
-          createElement("h2", null, "Repositories"),
+          createElement("h2", null, "GitHub Repositories"),
           createElement("p", { className: "daidala-workflow-meta" },
             "Register a GitHub repository into one existing Hermes profile. Daidala does not accept credentials."
           )

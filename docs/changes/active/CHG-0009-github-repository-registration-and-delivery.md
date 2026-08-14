@@ -16,7 +16,7 @@ branch/commit receipt evidence before it releases the owned worktree.
 
 ## Scope
 
-- Design one deterministic `daidala project register` preview/apply workflow and one Config → Repositories dashboard workflow backed by the same Python service. The dashboard must not start a nested CLI process.
+- Design one deterministic `daidala project register` preview/apply workflow and one Config → GitHub Repositories dashboard workflow backed by the same Python service. The dashboard must not start a nested CLI process.
 - Accept only pasteable GitHub.com repository page or clone URLs, normalize them to `owner/repository`, and reject credentials, local paths, non-GitHub hosts, query/fragment strings, and repository sub-resource URLs.
 - Make preview read the repository metadata and committed `.daidala/project.yaml` through the host's existing read-only GitHub CLI authentication. Preview must fail closed for an inaccessible repository, malformed/missing manifest, canonical identity mismatch, allowed-remote mismatch, duplicate project ID, or stale confirmation digest.
 - Keep checkout paths, controller data roots, environment-variable names, credential values, GitHub Project node IDs, and target worktree content outside browser requests and responses. The UI may show and select an existing Hermes profile plus safe secret-alias/readiness state, but never a secret value, vault item, bootstrap token, or source command. The only browser inputs are the selected existing profile name and GitHub.com link; after inspection the UI presents its derived `owner/repository` identity rather than treating a pasted remote as configuration authority.
@@ -50,12 +50,12 @@ next: repeat with --apply --expected-preview-digest 6f12…9c80 --confirm regist
 
 `--apply` repeats inspection and validation before the profile-local atomic write. It does not clone a target checkout, create a GitHub Project, commit, push, or accept a credential value. A private repository that the host GitHub CLI cannot read reports a sanitized blocked result and directs the operator to authenticate the host outside Daidala.
 
-### Dashboard: Config → Repositories
+### Dashboard: Config → GitHub Repositories
 
 The primary registration screen reuses the existing dark teal, cream, amber, and green Hermes dashboard language. It is a three-state wizard, not a repository editor. It identifies the selected Hermes profile and shows only boolean credential-availability readiness. It never exposes a profile wrapper alias, raw secret name, source command, vault item, or token.
 
 ```text
-CONFIG / REPOSITORIES                                             [Refresh]
+CONFIG / GITHUB REPOSITORIES                                      [Refresh]
 
 REGISTER A GITHUB REPOSITORY
 Paste a GitHub.com repository link. Daidala inspects the committed project
@@ -194,3 +194,7 @@ remains provenance; it is not a product-wireframe source.
   dashboard now expose only boolean `credential_available` readiness. The
   delivery credential alias and source/value-check details remain inside the
   digest-bound profile-local records and are absent from browser-visible output.
+- Configuration terminology remediation: the separate repository-registration
+  tab and panel are named **GitHub Repositories**, distinguishing them from the
+  separate **GitHub Projects** link configuration. The tab route remains
+  `repositories`; no configuration authority or request contract changed.

@@ -270,7 +270,7 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
         'API_BASE + "/repository-registration"',
         'API_BASE + "/repository-registration/profiles"',
         'API_BASE + "/repository-registration/registrations?controller_profile="',
-        "Repositories",
+        "GitHub Repositories",
         "Selected Hermes profile",
         "requires a fresh inspection",
         "GitHub repository link",
@@ -286,6 +286,11 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
     for text in required_strings:
         assert text in source, f"missing repository registration UI contract text: {text}"
 
+    configuration_panel = source[
+        source.index("function ConfigurationPanel") : source.index("function configurationStatus")
+    ]
+    assert '}, "GitHub Repositories"),' in configuration_panel
+    assert '}, "GitHub Projects"),' in configuration_panel
     assert 'data-testid": "daidala-repository-registration"' in source
     assert "checkout_path" not in source
     assert "repository_path" not in source
