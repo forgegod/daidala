@@ -9,8 +9,10 @@ from pathlib import Path
 import pytest
 import yaml
 
+import daidala.repository_registration as repository_registration_module
 from daidala.credentials import parse_credential_bindings
 from daidala.errors import PolicyViolationError
+from daidala.profile_files import ProfileFileError
 from daidala.registrations import parse_controller_registration
 from daidala.repository_registration import (
     DELIVERY_CREDENTIAL_ALIAS,
@@ -288,6 +290,38 @@ def test_apply_reinspects_and_writes_exactly_two_private_records(tmp_path: Path)
     assert stat.S_IMODE(registration_file.stat().st_mode) == 0o600
     assert stat.S_IMODE(bindings_file.stat().st_mode) == 0o600
     assert len(runner.commands) == 4
+
+
+def test_apply_removes_new_bindings_when_registration_publish_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = (tmp_path / "controller").resolve()
+    write_defaults(root)
+    service = RepositoryRegistrationService(
+        root, "daidala-self-improvement", runner=GitHubRunner(), environ={"PATH": "/usr/bin"}
+    )
+    original_write = repository_registration_module.atomic_write_private_text
+
+    def fail_registration_write(path: Path, content: str, *, label: str) -> None:
+        if label == "controller registration":
+            raise ProfileFileError("injected registration write failure")
+        original_write(path, content, label=label)
+
+    monkeypatch.setattr(
+        repository_registration_module, "atomic_write_private_text", fail_registration_write
+    )
+
+    preview = service.preview("https://github.com/forgegod/daidala")
+    with pytest.raises(ProfileFileError, match="injected registration write failure"):
+        service.apply(
+            "https://github.com/forgegod/daidala",
+            expected_preview_digest=preview.digest,
+            confirmation="register-repository",
+        )
+
+    project_root = root / "projects" / "forgegod-daidala"
+    assert not (project_root / "registration.yaml").exists()
+    assert not (project_root / "credential-bindings.yaml").exists()
 
 
 def test_apply_rejects_stale_digest_without_writing(tmp_path: Path) -> None:

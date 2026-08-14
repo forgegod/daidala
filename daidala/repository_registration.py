@@ -515,6 +515,7 @@ class RepositoryRegistrationService:
             default_flow_style=False,
             sort_keys=False,
         )
+        bindings_created = False
         if bindings_file.exists():
             try:
                 current = read_private_text(
@@ -532,9 +533,21 @@ class RepositoryRegistrationService:
             atomic_write_private_text(
                 bindings_file, bindings_content, label="credential bindings"
             )
-        atomic_write_private_text(
-            registration_file, registration_content, label="controller registration"
-        )
+            bindings_created = True
+        try:
+            atomic_write_private_text(
+                registration_file, registration_content, label="controller registration"
+            )
+        except ProfileFileError:
+            if not bindings_created:
+                raise
+            try:
+                bindings_file.unlink()
+            except OSError as error:
+                raise RepositoryRegistrationError(
+                    "registration failed and new credential bindings could not be removed"
+                ) from error
+            raise
         return preview
 
     def _blocked(

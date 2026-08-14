@@ -590,7 +590,6 @@ def registrations() -> dict[str, Any]:
                 "board": row.board,
                 "repository_canonical": row.repository_canonical,
                 "verified_remote": row.verified_remote,
-                "intake_credential": row.intake_credential,
                 "notification_adapter": row.notification_adapter,
                 "notification_target": row.notification_target,
                 "evaluator_backend": row.evaluator_backend,

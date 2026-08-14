@@ -2917,7 +2917,6 @@
         createElement("dl", null,
           createElement("div", null, createElement("dt", null, "Repository"), createElement("dd", null, registration.repository_canonical)),
           createElement("div", null, createElement("dt", null, "Verified remote"), createElement("dd", null, registration.verified_remote)),
-          createElement("div", null, createElement("dt", null, "Intake alias"), createElement("dd", null, registration.intake_credential)),
           createElement("div", null, createElement("dt", null, "Checkout configuration"), createElement("dd", null,
             registration.checkout_match ? "Matches registration" : "Does not match registration"
           ))

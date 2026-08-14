@@ -250,7 +250,6 @@ def test_bundle_exposes_path_free_github_project_link_management() -> None:
         "linkIssueMessage",
         "payload.detail",
         "checkout_match",
-        "intake_credential",
         "project_node_id",
     )
     for text in required_strings:
@@ -260,6 +259,7 @@ def test_bundle_exposes_path_free_github_project_link_management() -> None:
     assert 'data-testid": "daidala-github-project-link"' in source
     assert "checkout_path" not in source
     assert "repository_path" not in source
+    assert "intake_credential" not in source
 
 
 def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:

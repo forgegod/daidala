@@ -1547,7 +1547,6 @@ def test_registration_projection_is_path_free_for_project_link_ui(
             "board": "daidala",
             "repository_canonical": "forgegod/daidala",
             "verified_remote": "git@github.com:forgegod/daidala.git",
-            "intake_credential": "github-daidala-read",
             "notification_adapter": "hermes-gateway",
             "notification_target": "attended-daidala",
             "evaluator_backend": "restricted-container",
@@ -1556,6 +1555,7 @@ def test_registration_projection_is_path_free_for_project_link_ui(
         }
     ]
     assert registration.checkout not in json.dumps(payload)
+    assert registration.intake_credential not in json.dumps(payload)
 
 
 def test_configuration_route_delegates_to_the_profile_safe_backend() -> None:
