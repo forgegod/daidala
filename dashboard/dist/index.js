@@ -2544,13 +2544,9 @@
       setBusy(true); setMessage("");
       applyRepositoryBootstrap(githubUrl.trim(), bootstrapPreview.controller_profile, bootstrapPreview.preview_digest).then(function (result) {
         setBootstrapPreview(result); setConfirmed(false);
-        var pr = result && result.links && result.links.compare_pull_request
-          ? result.links.compare_pull_request
-          : "";
         setMessage(
           "Bootstrap branch published: " + (result.branch || bootstrapPreview.target_branch) +
-          ". Open the compare/pull-request link on GitHub to merge, then inspect and register." +
-          (pr ? " " + pr : "")
+          ". Open a pull request, merge it on GitHub, then inspect and register."
         );
       }).catch(function (caught) {
         setMessage("Repository bootstrap was not applied: " + errorText(caught));
@@ -2612,8 +2608,13 @@
           bootstrapPreview.links.daidala_tree ? createElement("li", { key: "tree" },
             createElement("a", { href: bootstrapPreview.links.daidala_tree, target: "_blank", rel: "noreferrer" }, "Open .daidala on bootstrap branch")
           ) : null,
-          bootstrapPreview.links.compare_pull_request ? createElement("li", { key: "pr" },
-            createElement("a", { href: bootstrapPreview.links.compare_pull_request, target: "_blank", rel: "noreferrer" }, "Open compare / create pull request on GitHub")
+          bootstrapPreview.applied && bootstrapPreview.links.compare_pull_request ? createElement("li", { key: "pr" },
+            createElement("button", {
+              type: "button",
+              onClick: function () {
+                window.open(bootstrapPreview.links.compare_pull_request, "_blank", "noopener,noreferrer");
+              }
+            }, "Open a pull request")
           ) : null
         ) : null,
         createElement("code", null, bootstrapPreview.preview_digest),

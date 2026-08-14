@@ -290,7 +290,7 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
         'API_BASE + "/repository-registration/bootstrap"',
         "Open bootstrap branch",
         "Open .daidala on bootstrap branch",
-        "Open compare / create pull request on GitHub",
+        "Open a pull request",
     )
     for text in required_strings:
         assert text in source, f"missing repository registration UI contract text: {text}"
@@ -305,6 +305,12 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
     assert "repository_path" not in source
     assert "token:" not in source.lower()
     assert "delivery_credential_alias" not in source
+    assert (
+        'window.open(bootstrapPreview.links.compare_pull_request, "_blank", '
+        '"noopener,noreferrer")' in source
+    )
+    assert "Open compare / create pull request on GitHub" not in source
+    assert '(pr ? " " + pr : "")' not in source
 
 
 def test_bundle_exposes_confirmed_path_free_checkout_lifecycle_actions() -> None:
