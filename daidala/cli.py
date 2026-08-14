@@ -846,17 +846,30 @@ def _run_project_registration(
             expected_preview_digest=args.expected_preview_digest,
             confirmation=args.confirm,
         )
+        _print(
+            {
+                "success": True,
+                "operation": "project-register",
+                "dry_run": False,
+                "preview": preview.to_dict(),
+            }
+        )
+        return 0
+    classification = service.classify(args.github_url)
+    payload = {
+        "success": classification.status == "registerable",
+        "operation": "project-register",
+        "dry_run": True,
+        "classification": classification.to_dict(),
+    }
+    if classification.status == "registerable":
+        assert classification.preview is not None
+        payload["preview"] = classification.preview.to_dict()
     else:
-        preview = service.preview(args.github_url)
-    _print(
-        {
-            "success": True,
-            "operation": "project-register",
-            "dry_run": not args.apply,
-            "preview": preview.to_dict(),
-        }
-    )
-    return 0
+        payload["error"] = "RepositoryRegistrationError"
+        payload["message"] = classification.reason
+    _print(payload)
+    return 0 if classification.status == "registerable" else 1
 
 
 def _reconciliation_output(

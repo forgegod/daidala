@@ -524,6 +524,23 @@ class FakeRepositoryRegistrationService:
         self.calls: list[tuple[str, object]] = []
         self.preview_result = FakeRepositoryRegistrationPreview()
 
+    def classify(self, github_url: str) -> object:
+        self.calls.append(("classify", github_url))
+
+        class Result:
+            status = "registerable"
+            reason = "committed project policy is ready to register"
+            preview = self.preview_result
+
+            def to_dict(self_inner) -> dict[str, object]:
+                payload = dict(self.preview_result.to_dict())
+                payload["classification"] = "registerable"
+                payload["next_action"] = "register"
+                payload["reason"] = "committed project policy is ready to register"
+                return payload
+
+        return Result()
+
     def preview(self, github_url: str) -> FakeRepositoryRegistrationPreview:
         self.calls.append(("preview", github_url))
         return self.preview_result
@@ -756,12 +773,20 @@ def test_project_register_preview_and_apply_have_native_cli_parity(
     native_payload = json.loads(capsys.readouterr().out)
 
     assert standalone_code == native_code == 0
-    assert standalone.calls == native.calls == [("preview", "https://github.com/forgegod/daidala")]
+    assert standalone.calls == native.calls == [("classify", "https://github.com/forgegod/daidala")]
+    expected_preview = standalone.preview_result.to_dict()
+    expected_classification = {
+        **expected_preview,
+        "classification": "registerable",
+        "next_action": "register",
+        "reason": "committed project policy is ready to register",
+    }
     assert standalone_payload == native_payload == {
         "success": True,
         "operation": "project-register",
         "dry_run": True,
-        "preview": standalone.preview_result.to_dict(),
+        "classification": expected_classification,
+        "preview": expected_preview,
     }
 
     applied_code = cli.main(

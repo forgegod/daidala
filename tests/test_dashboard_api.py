@@ -1606,23 +1606,29 @@ def test_configuration_route_delegates_to_the_profile_safe_backend() -> None:
 
 def test_repository_registration_routes_use_the_explicit_selected_profile() -> None:
     api = load_api()
-    preview = types.SimpleNamespace(
-        to_dict=lambda: {
-            "valid": True,
-            "repository": "forgegod/daidala",
-            "project_id": "forgegod-daidala",
-            "controller_profile": "controller",
-            "preview_digest": "f" * 64,
-            "readiness": {"board_selected": True, "credential_available": False},
-            "writes": {"record_count": 2},
-        }
-    )
+    preview_payload = {
+        "valid": True,
+        "repository": "forgegod/daidala",
+        "project_id": "forgegod-daidala",
+        "controller_profile": "controller",
+        "preview_digest": "f" * 64,
+        "readiness": {"board_selected": True, "credential_available": False},
+        "writes": {"record_count": 2},
+        "classification": "registerable",
+        "next_action": "register",
+        "reason": "committed project policy is ready to register",
+    }
+    preview = types.SimpleNamespace(to_dict=lambda: dict(preview_payload))
     calls: list[tuple[object, ...]] = []
 
+    class Classification:
+        def to_dict(self) -> dict[str, object]:
+            return dict(preview_payload)
+
     class Service:
-        def preview(self, github_url: str) -> object:
-            calls.append(("preview", github_url))
-            return preview
+        def classify(self, github_url: str) -> object:
+            calls.append(("classify", github_url))
+            return Classification()
 
         def apply(self, github_url: str, **kwargs: object) -> object:
             calls.append(("apply", github_url, kwargs))
@@ -1647,11 +1653,11 @@ def test_repository_registration_routes_use_the_explicit_selected_profile() -> N
         }
     )
 
-    assert inspected == preview.to_dict()
-    assert applied == preview.to_dict()
+    assert inspected == preview_payload
+    assert applied == preview_payload
     assert calls == [
         ("service", "daidala-self-improvement"),
-        ("preview", "https://github.com/forgegod/daidala"),
+        ("classify", "https://github.com/forgegod/daidala"),
         ("service", "daidala-self-improvement"),
         (
             "apply",
@@ -1729,24 +1735,72 @@ def test_repository_registration_rows_reject_unknown_profile_before_resolution()
 def test_repository_registration_preview_names_duplicate_registration_safely() -> None:
     api = load_api()
 
+    class Classification:
+        def to_dict(self) -> dict[str, object]:
+            return {
+                "schema": "daidala.repository-registration-classification/v1",
+                "valid": False,
+                "status": "already-registered",
+                "classification": "already-registered",
+                "controller_profile": "daidala-self-improvement",
+                "repository": "forgegod/daidala",
+                "project_id": "forgegod-daidala",
+                "reason": "repository is already registered for selected profile",
+                "next_action": "none",
+            }
+
     class Service:
-        def preview(self, _github_url: str) -> object:
-            raise api.RepositoryRegistrationError(
-                "project ID is already registered in this profile"
-            )
+        def classify(self, _github_url: str) -> object:
+            return Classification()
 
     api.__dict__["_repository_registration_service"] = lambda _profile: Service()
 
-    with pytest.raises(api.HTTPException) as raised:
-        api.repository_registration_preview(
-            {
-                "github_url": "https://github.com/forgegod/daidala",
-                "controller_profile": "daidala-self-improvement",
-            }
-        )
+    payload = api.repository_registration_preview(
+        {
+            "github_url": "https://github.com/forgegod/daidala",
+            "controller_profile": "daidala-self-improvement",
+        }
+    )
 
-    assert raised.value.status_code == 409
-    assert raised.value.detail == "repository is already registered for selected profile"
+    assert payload["classification"] == "already-registered"
+    assert payload["reason"] == "repository is already registered for selected profile"
+    assert payload["valid"] is False
+
+
+def test_repository_registration_preview_classifies_missing_policy_as_needs_bootstrap() -> None:
+    api = load_api()
+
+    class Classification:
+        def to_dict(self) -> dict[str, object]:
+            return {
+                "schema": "daidala.repository-registration-classification/v1",
+                "valid": False,
+                "status": "needs-bootstrap",
+                "classification": "needs-bootstrap",
+                "controller_profile": "daidala-dashboard",
+                "repository": "forgegod/durchsieben.de",
+                "project_id": None,
+                "reason": "committed project policy is missing",
+                "next_action": "bootstrap",
+            }
+
+    class Service:
+        def classify(self, _github_url: str) -> object:
+            return Classification()
+
+    api.__dict__["_repository_registration_service"] = lambda _profile: Service()
+
+    payload = api.repository_registration_preview(
+        {
+            "github_url": "https://github.com/forgegod/durchsieben.de",
+            "controller_profile": "daidala-dashboard",
+        }
+    )
+
+    assert payload["classification"] == "needs-bootstrap"
+    assert payload["next_action"] == "bootstrap"
+    assert payload["reason"] == "committed project policy is missing"
+    assert "preview unavailable" not in json.dumps(payload).lower()
 
 
 def test_project_link_verify_returns_only_sanitized_session_result(tmp_path: Path) -> None:

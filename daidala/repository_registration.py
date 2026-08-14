@@ -43,12 +43,19 @@ from .registrations import (
 
 REGISTRATION_DEFAULTS_SCHEMA = "daidala.repository-registration-defaults/v1"
 REGISTRATION_PREVIEW_SCHEMA = "daidala.repository-registration-preview/v1"
+REGISTRATION_CLASSIFICATION_SCHEMA = "daidala.repository-registration-classification/v1"
 REGISTRATION_DEFAULTS_FILENAME = "repository-registration-defaults.yaml"
 DELIVERY_CREDENTIAL_ALIAS = "github-repository-delivery"
 DELIVERY_ENVIRONMENT_VARIABLE = "DAIDALA_GITHUB_DELIVERY_TOKEN"
 MAX_REGISTRATION_DEFAULTS_BYTES = 32_768
 MAX_GITHUB_OUTPUT_BYTES = 1_048_576
 _CONFIRMATION = "register-repository"
+CLASSIFICATION_NEEDS_BOOTSTRAP = "needs-bootstrap"
+CLASSIFICATION_REGISTERABLE = "registerable"
+CLASSIFICATION_ALREADY_REGISTERED = "already-registered"
+CLASSIFICATION_BLOCKED = "blocked"
+MISSING_PROJECT_POLICY = "committed project policy is missing"
+ALREADY_REGISTERED = "project ID is already registered in this profile"
 _REPOSITORY = re.compile(r"^[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}$")
 _SCP_GITHUB = re.compile(
     r"^git@github\.com:(?P<owner>[A-Za-z0-9_.-]{1,100})/"
@@ -207,6 +214,67 @@ class RegistrationDefaults:
 
 
 @dataclass(frozen=True)
+class RepositoryClassification:
+    """Path-free inspect outcome before registration or bootstrap apply."""
+
+    status: str
+    controller_profile: str
+    reason: str
+    next_action: str
+    repository: str | None = None
+    project_id: str | None = None
+    preview: RegistrationPreview | None = field(default=None, repr=False)
+    schema: str = REGISTRATION_CLASSIFICATION_SCHEMA
+
+    def __post_init__(self) -> None:
+        if self.schema != REGISTRATION_CLASSIFICATION_SCHEMA:
+            raise RepositoryRegistrationError(
+                f"registration classification schema must be {REGISTRATION_CLASSIFICATION_SCHEMA!r}"
+            )
+        if self.status not in {
+            CLASSIFICATION_NEEDS_BOOTSTRAP,
+            CLASSIFICATION_REGISTERABLE,
+            CLASSIFICATION_ALREADY_REGISTERED,
+            CLASSIFICATION_BLOCKED,
+        }:
+            raise RepositoryRegistrationError("registration classification status is invalid")
+        expected_next = {
+            CLASSIFICATION_NEEDS_BOOTSTRAP: "bootstrap",
+            CLASSIFICATION_REGISTERABLE: "register",
+            CLASSIFICATION_ALREADY_REGISTERED: "none",
+            CLASSIFICATION_BLOCKED: "none",
+        }[self.status]
+        if self.next_action != expected_next:
+            raise RepositoryRegistrationError("registration classification next action is invalid")
+        if self.status == CLASSIFICATION_REGISTERABLE and self.preview is None:
+            raise RepositoryRegistrationError("registerable classification requires a preview")
+        if self.status != CLASSIFICATION_REGISTERABLE and self.preview is not None:
+            raise RepositoryRegistrationError(
+                "non-registerable classification cannot carry a preview"
+            )
+
+    def to_dict(self) -> dict[str, object]:
+        if self.status == CLASSIFICATION_REGISTERABLE:
+            assert self.preview is not None
+            payload = self.preview.to_dict()
+            payload["classification"] = self.status
+            payload["next_action"] = self.next_action
+            payload["reason"] = self.reason
+            return payload
+        return {
+            "schema": self.schema,
+            "valid": False,
+            "status": self.status,
+            "classification": self.status,
+            "controller_profile": self.controller_profile,
+            "repository": self.repository,
+            "project_id": self.project_id,
+            "reason": self.reason,
+            "next_action": self.next_action,
+        }
+
+
+@dataclass(frozen=True)
 class RegistrationPreview:
     """Safe public projection plus the exact private records bound by its digest."""
 
@@ -285,76 +353,136 @@ class RepositoryRegistrationService:
         self.data_root = self.data_root.resolve()
         _require_slug(self.controller_profile, "repository registration profile")
 
-    def preview(self, github_url: str) -> RegistrationPreview:
-        claimed_repository = parse_github_repository_url(github_url)
-        metadata = self._github_json(("gh", "api", f"repos/{claimed_repository}"), "metadata")
-        canonical, ssh_url, clone_url = _repository_metadata(metadata)
-        manifest = self._fetch_manifest(canonical)
-        if manifest.repository.canonical != canonical:
-            raise RepositoryRegistrationError(
-                "committed project manifest canonical identity does not match GitHub"
+    def classify(self, github_url: str) -> RepositoryClassification:
+        """Classify one GitHub URL without writing profile-local registration state."""
+
+        try:
+            claimed_repository = parse_github_repository_url(github_url)
+        except RepositoryRegistrationError as error:
+            return self._blocked(str(error))
+        try:
+            metadata = self._github_json(
+                ("gh", "api", f"repos/{claimed_repository}"), "metadata"
             )
-        allowed = set(manifest.repository.allowed_remote_urls)
-        verified_remote = (
-            ssh_url
-            if ssh_url in allowed
-            else clone_url
-            if clone_url in allowed
-            else None
-        )
-        if verified_remote is None:
-            raise RepositoryRegistrationError(
-                "GitHub clone URLs are not allowed by the committed project manifest"
+            canonical, ssh_url, clone_url = _repository_metadata(metadata)
+        except RepositoryRegistrationError as error:
+            return self._blocked(str(error), repository=claimed_repository)
+        try:
+            manifest = self._fetch_manifest(canonical)
+        except RepositoryRegistrationError as error:
+            if str(error) == MISSING_PROJECT_POLICY:
+                return RepositoryClassification(
+                    status=CLASSIFICATION_NEEDS_BOOTSTRAP,
+                    controller_profile=self.controller_profile,
+                    repository=canonical,
+                    reason=MISSING_PROJECT_POLICY,
+                    next_action="bootstrap",
+                )
+            return self._blocked(str(error), repository=canonical)
+        try:
+            if manifest.repository.canonical != canonical:
+                raise RepositoryRegistrationError(
+                    "committed project manifest canonical identity does not match GitHub"
+                )
+            allowed = set(manifest.repository.allowed_remote_urls)
+            verified_remote = (
+                ssh_url
+                if ssh_url in allowed
+                else clone_url
+                if clone_url in allowed
+                else None
             )
-        if any(
-            row.project_id == manifest.project_id
-            for row in list_controller_registrations(self.data_root)
-        ):
-            raise RepositoryRegistrationError("project ID is already registered in this profile")
-        defaults = load_registration_defaults(self.data_root)
-        checkout = checkout_path(CheckoutRootStore(self.data_root).read().root, manifest.project_id)
-        registration = ControllerRegistration(
-            project_id=manifest.project_id,
-            checkout=str(checkout),
-            controller_profile=self.controller_profile,
-            board=defaults.board,
-            repository_canonical=canonical,
-            verified_remote=verified_remote,
-            intake_credential=defaults.intake_binding.alias,
-            findings_credential=defaults.findings_binding.alias,
-            maintainers=defaults.maintainers,
-            notification_adapter=defaults.notification_adapter,
-            notification_target=defaults.notification_target,
-            notification_destination=defaults.notification_destination,
-            evaluator_backend=defaults.evaluator_backend,
-            evaluator_network=defaults.evaluator_network,
-            limits=defaults.limits,
-        )
-        registration.validate_manifest(manifest)
-        bindings = CredentialBindings(
-            project_id=manifest.project_id,
-            bindings=(
-                defaults.intake_binding,
-                defaults.findings_binding,
-                CredentialBinding(
-                    alias=DELIVERY_CREDENTIAL_ALIAS,
-                    resolver="environment",
-                    environment_variable=DELIVERY_ENVIRONMENT_VARIABLE,
+            if verified_remote is None:
+                raise RepositoryRegistrationError(
+                    "GitHub clone URLs are not allowed by the committed project manifest"
+                )
+            if any(
+                row.project_id == manifest.project_id
+                for row in list_controller_registrations(self.data_root)
+            ):
+                raise RepositoryRegistrationError(ALREADY_REGISTERED)
+            defaults = load_registration_defaults(self.data_root)
+            checkout = checkout_path(
+                CheckoutRootStore(self.data_root).read().root, manifest.project_id
+            )
+            registration = ControllerRegistration(
+                project_id=manifest.project_id,
+                checkout=str(checkout),
+                controller_profile=self.controller_profile,
+                board=defaults.board,
+                repository_canonical=canonical,
+                verified_remote=verified_remote,
+                intake_credential=defaults.intake_binding.alias,
+                findings_credential=defaults.findings_binding.alias,
+                maintainers=defaults.maintainers,
+                notification_adapter=defaults.notification_adapter,
+                notification_target=defaults.notification_target,
+                notification_destination=defaults.notification_destination,
+                evaluator_backend=defaults.evaluator_backend,
+                evaluator_network=defaults.evaluator_network,
+                limits=defaults.limits,
+            )
+            registration.validate_manifest(manifest)
+            bindings = CredentialBindings(
+                project_id=manifest.project_id,
+                bindings=(
+                    defaults.intake_binding,
+                    defaults.findings_binding,
+                    CredentialBinding(
+                        alias=DELIVERY_CREDENTIAL_ALIAS,
+                        resolver="environment",
+                        environment_variable=DELIVERY_ENVIRONMENT_VARIABLE,
+                    ),
                 ),
-            ),
-        )
-        return RegistrationPreview(
-            repository_canonical=canonical,
-            project_id=manifest.project_id,
+            )
+            preview = RegistrationPreview(
+                repository_canonical=canonical,
+                project_id=manifest.project_id,
+                controller_profile=self.controller_profile,
+                manifest_digest=manifest.digest,
+                allow_commit=manifest.allow_commit,
+                allow_push=manifest.allow_push,
+                allow_publish=manifest.allow_publish,
+                registration=registration,
+                credential_bindings=bindings,
+                defaults_digest=defaults.digest,
+            )
+        except RepositoryRegistrationError as error:
+            if str(error) == ALREADY_REGISTERED:
+                return RepositoryClassification(
+                    status=CLASSIFICATION_ALREADY_REGISTERED,
+                    controller_profile=self.controller_profile,
+                    repository=canonical,
+                    project_id=manifest.project_id,
+                    reason="repository is already registered for selected profile",
+                    next_action="none",
+                )
+            return self._blocked(
+                str(error),
+                repository=canonical,
+                project_id=manifest.project_id,
+            )
+        except PolicyViolationError as error:
+            return self._blocked(
+                str(error),
+                repository=canonical,
+                project_id=getattr(manifest, "project_id", None),
+            )
+        return RepositoryClassification(
+            status=CLASSIFICATION_REGISTERABLE,
             controller_profile=self.controller_profile,
-            manifest_digest=manifest.digest,
-            allow_commit=manifest.allow_commit,
-            allow_push=manifest.allow_push,
-            allow_publish=manifest.allow_publish,
-            registration=registration,
-            credential_bindings=bindings,
-            defaults_digest=defaults.digest,
+            repository=canonical,
+            project_id=manifest.project_id,
+            reason="committed project policy is ready to register",
+            next_action="register",
+            preview=preview,
         )
+
+    def preview(self, github_url: str) -> RegistrationPreview:
+        classification = self.classify(github_url)
+        if classification.status != CLASSIFICATION_REGISTERABLE or classification.preview is None:
+            raise RepositoryRegistrationError(classification.reason)
+        return classification.preview
 
     def apply(
         self,
@@ -409,6 +537,22 @@ class RepositoryRegistrationService:
         )
         return preview
 
+    def _blocked(
+        self,
+        reason: str,
+        *,
+        repository: str | None = None,
+        project_id: str | None = None,
+    ) -> RepositoryClassification:
+        return RepositoryClassification(
+            status=CLASSIFICATION_BLOCKED,
+            controller_profile=self.controller_profile,
+            repository=repository,
+            project_id=project_id,
+            reason=reason,
+            next_action="none",
+        )
+
     def _fetch_manifest(self, canonical: str) -> ProjectManifest:
         payload = self._github_json(
             ("gh", "api", f"repos/{canonical}/contents/.daidala/project.yaml"),
@@ -452,6 +596,12 @@ class RepositoryRegistrationService:
             or len(output.encode("utf-8")) > MAX_GITHUB_OUTPUT_BYTES
             or code != 0
         ):
+            if (
+                label == "manifest"
+                and isinstance(output, str)
+                and _github_output_is_not_found(output)
+            ):
+                raise RepositoryRegistrationError(MISSING_PROJECT_POLICY)
             raise RepositoryRegistrationError(
                 f"GitHub repository {label} is unavailable through the host authentication"
             )
@@ -570,6 +720,28 @@ def _repository_metadata(payload: dict[str, object]) -> tuple[str, str, str]:
     ):
         raise RepositoryRegistrationError("GitHub repository metadata response is invalid")
     return canonical, ssh_url, clone_url
+
+
+def _github_output_is_not_found(output: str) -> bool:
+    """Return True when host gh reports a missing GitHub object without private detail."""
+
+    stripped = output.strip()
+    if not stripped:
+        return False
+    try:
+        payload = json.loads(stripped)
+    except json.JSONDecodeError:
+        lowered = stripped.lower()
+        return "404" in lowered and "not found" in lowered
+    if not isinstance(payload, dict):
+        return False
+    message = payload.get("message")
+    status = payload.get("status")
+    if isinstance(status, str) and status == "404":
+        return True
+    if isinstance(status, int) and status == 404:
+        return True
+    return isinstance(message, str) and message.lower() == "not found"
 
 
 def _ensure_private_directory(path: Path) -> None:

@@ -2395,6 +2395,30 @@
     );
   }
 
+  function repositoryInspectionMessage(result) {
+    if (!result || typeof result !== "object") {
+      return "Repository inspection unavailable.";
+    }
+    var classification = result.classification || result.status || "";
+    var reason = typeof result.reason === "string" && result.reason
+      ? result.reason
+      : "Repository inspection is blocked.";
+    var repository = typeof result.repository === "string" && result.repository
+      ? result.repository + ": "
+      : "";
+    if (classification === "needs-bootstrap") {
+      return repository + reason +
+        " Bootstrap Daidala policy on a non-default branch, merge it to the default branch, then inspect again.";
+    }
+    if (classification === "already-registered") {
+      return repository + reason;
+    }
+    if (classification === "blocked") {
+      return repository + reason;
+    }
+    return repository + reason;
+  }
+
   function RepositoryRegistrationPanel() {
     var profilesState = useState(undefined);
     var profiles = profilesState[0];
@@ -2466,6 +2490,11 @@
       if (!githubUrl.trim() || !controllerProfile) return;
       setBusy(true); setMessage(""); setPreview(null); setConfirmed(false);
       previewRepositoryRegistration(githubUrl.trim(), controllerProfile).then(function (result) {
+        if (!result || result.valid === false || result.classification === "needs-bootstrap" || result.classification === "already-registered" || result.classification === "blocked") {
+          setPreview(null);
+          setMessage(repositoryInspectionMessage(result));
+          return;
+        }
         setPreview(result);
       }).catch(function (caught) {
         setMessage("Repository inspection unavailable: " + errorText(caught));

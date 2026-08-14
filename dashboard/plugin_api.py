@@ -655,17 +655,7 @@ def repository_registration_preview(payload: dict[str, object]) -> dict[str, obj
     """Inspect one GitHub repository without creating profile-local records."""
 
     github_url, controller_profile, _ = _repository_registration_request(payload, apply=False)
-    try:
-        return _repository_registration_service(controller_profile).preview(github_url).to_dict()
-    except RepositoryRegistrationError as error:
-        detail = (
-            "repository is already registered for selected profile"
-            if str(error) == "project ID is already registered in this profile"
-            else "repository registration preview unavailable"
-        )
-        raise HTTPException(
-            status_code=409, detail=detail
-        ) from error
+    return _repository_registration_service(controller_profile).classify(github_url).to_dict()
 
 
 @router.post("/repository-registration")

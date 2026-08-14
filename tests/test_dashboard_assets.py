@@ -282,6 +282,8 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
         "This action does not commit, push, create a GitHub Project, or store a token.",
         "I confirm registering this exact repository",
         "Register repository",
+        "needs-bootstrap",
+        "Bootstrap Daidala policy on a non-default branch",
     )
     for text in required_strings:
         assert text in source, f"missing repository registration UI contract text: {text}"

@@ -55,11 +55,13 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   GitHub Project node ID. Repository-registration profile inventory returns only
   Hermes-validated profile names and the dashboard default. Registration-list
   requests carry one such selected name; preview accepts exactly
-  `{github_url, controller_profile}` and apply additionally requires a SHA-256
-  `preview_digest` and `confirm: true`. Every selected name is revalidated and
-  re-resolved through Hermes before the deterministic registration service reads
-  profile-local state; preview readiness exposes only boolean credential
-  availability.
+  `{github_url, controller_profile}` and returns a path-free classification:
+  `registerable` (registration preview fields), `needs-bootstrap`,
+  `already-registered`, or `blocked` with stable `reason`/`next_action`. Apply
+  additionally requires a SHA-256 `preview_digest` and `confirm: true`. Every
+  selected name is revalidated and re-resolved through Hermes before the
+  deterministic registration service reads profile-local state; preview readiness
+  exposes only boolean credential availability.
 - Checkout lifecycle routes derive the registration and checkout from a project ID.
   Refresh, clean-unowned adoption, backup pruning, and policy replacement each
   recompute a preview and require its exact digest plus `confirm: true`; browser

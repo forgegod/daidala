@@ -16,6 +16,11 @@ credential alias, environment-variable name, or token to Daidala.
 - Preview inspects the canonical GitHub identity and committed project policy,
   reports the derived project ID, release flags, safe readiness state, two
   proposed non-secret writes, and a digest bound to the profile and proposal.
+- Inspect classifies a repository before registration: missing committed
+  `.daidala/project.yaml` returns a path-free `needs-bootstrap` result with
+  `next_action: bootstrap`; an already-registered project ID returns
+  `already-registered`; other blocked causes return `blocked` with a stable
+  reason. Only `registerable` yields a registration preview.
 - Apply re-inspects the repository and accepts only the exact preview digest
   plus the literal `register-repository` confirmation. It writes only the
   controller registration and credential-bindings records.
@@ -60,5 +65,6 @@ credential alias, environment-variable name, or token to Daidala.
 ## Links
 
 - [CHG-0009](../../changes/active/CHG-0009-github-repository-registration-and-delivery.md)
+- [CHG-0010](../../changes/active/CHG-0010-non-daidala-repository-bootstrap.md)
 - [HTML wireframe](../wireframes/html/CAP-0004-github-repository-registration.html)
 - [PNG wireframe](../wireframes/exports/CAP-0004-github-repository-registration.png)

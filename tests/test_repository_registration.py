@@ -151,6 +151,51 @@ def test_registration_defaults_are_strict_and_validate_private_authority() -> No
         parse_registration_defaults(yaml.safe_dump(payload, sort_keys=False))
 
 
+def test_classify_missing_manifest_is_needs_bootstrap(tmp_path: Path) -> None:
+    root = (tmp_path / "controller").resolve()
+    write_defaults(root)
+
+    class MissingManifestRunner(GitHubRunner):
+        def __call__(
+            self, command: tuple[str, ...], environment: Mapping[str, str]
+        ) -> tuple[int, str]:
+            self.commands.append(command)
+            self.environments.append(dict(environment))
+            if command == ("gh", "api", "repos/forgegod/orphan"):
+                return 0, json.dumps(
+                    {
+                        "full_name": "forgegod/orphan",
+                        "ssh_url": "git@github.com:forgegod/orphan.git",
+                        "clone_url": "https://github.com/forgegod/orphan.git",
+                    }
+                )
+            if command == (
+                "gh",
+                "api",
+                "repos/forgegod/orphan/contents/.daidala/project.yaml",
+            ):
+                return 1, json.dumps({"message": "Not Found", "status": "404"})
+            return 1, "private error that must not be surfaced"
+
+    service = RepositoryRegistrationService(
+        root,
+        "daidala-dashboard",
+        runner=MissingManifestRunner(),
+        environ={"PATH": "/usr/bin"},
+    )
+
+    classification = service.classify("https://github.com/forgegod/orphan")
+    payload = classification.to_dict()
+
+    assert classification.status == "needs-bootstrap"
+    assert classification.next_action == "bootstrap"
+    assert classification.reason == "committed project policy is missing"
+    assert payload["classification"] == "needs-bootstrap"
+    assert payload["repository"] == "forgegod/orphan"
+    assert payload["valid"] is False
+    assert "private error" not in json.dumps(payload)
+
+
 def test_preview_is_path_secret_and_private_destination_free(tmp_path: Path) -> None:
     root = (tmp_path / "controller").resolve()
     write_defaults(root)
