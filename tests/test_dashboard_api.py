@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import importlib.util
 import json
 import subprocess
@@ -14,6 +15,7 @@ from typing import Any
 import pytest
 
 from daidala.delivery import DeliveryPreview
+from daidala.pack_service import PackInstallResult
 from daidala.state import ReviewOutcome
 
 ROOT = Path(__file__).parents[1]
@@ -57,14 +59,35 @@ class FakeResponse:
         self.headers = headers
 
 
+class FakeStreamingResponse:
+    def __init__(
+        self,
+        content,
+        *,
+        media_type: str,
+        headers: dict[str, str],
+    ) -> None:
+        async def iterate():
+            for chunk in content:
+                yield chunk.encode("utf-8") if isinstance(chunk, str) else chunk
+
+        self.body_iterator = iterate()
+        self.media_type = media_type
+        self.headers = headers
+
+
 def load_api():
     fake = types.ModuleType("fastapi")
+    fake_responses = types.ModuleType("fastapi.responses")
     fake.__dict__["APIRouter"] = FakeRouter
     fake.__dict__["HTTPException"] = FakeHTTPException
     fake.__dict__["Request"] = FakeRequest
     fake.__dict__["Response"] = FakeResponse
+    fake_responses.__dict__["StreamingResponse"] = FakeStreamingResponse
     original = sys.modules.get("fastapi")
+    original_responses = sys.modules.get("fastapi.responses")
     sys.modules["fastapi"] = fake
+    sys.modules["fastapi.responses"] = fake_responses
     try:
         spec = importlib.util.spec_from_file_location("daidala_dashboard_api_test", MODULE)
         assert spec and spec.loader
@@ -76,6 +99,10 @@ def load_api():
             sys.modules.pop("fastapi", None)
         else:
             sys.modules["fastapi"] = original
+        if original_responses is None:
+            sys.modules.pop("fastapi.responses", None)
+        else:
+            sys.modules["fastapi.responses"] = original_responses
 
 
 def test_router_exports_all_phase_two_routes() -> None:
@@ -124,6 +151,7 @@ def test_router_exports_all_phase_two_routes() -> None:
         "pack_skill_content",
         "pack_install_preview",
         "pack_install",
+        "pack_install_stream",
         "workflows",
         "workflow_detail",
         "approval_review",
@@ -374,10 +402,13 @@ class APIRouter:
         return lambda function: function
 
 fake_fastapi = types.ModuleType("fastapi")
+fake_fastapi_responses = types.ModuleType("fastapi.responses")
 fake_fastapi.APIRouter = APIRouter
 fake_fastapi.HTTPException = type("HTTPException", (Exception,), {{}})
 fake_fastapi.Response = type("Response", (), {{}})
+fake_fastapi_responses.StreamingResponse = type("StreamingResponse", (), {{}})
 sys.modules["fastapi"] = fake_fastapi
+sys.modules["fastapi.responses"] = fake_fastapi_responses
 
 root_spec = importlib.util.spec_from_file_location(
     "daidala_directory_plugin_test",
@@ -417,6 +448,7 @@ def test_router_source_exposes_only_closed_mutation_routes() -> None:
     assert "kanban.db" not in source
     assert "DashboardBackend" in source
     assert '@router.post("/packs/{pack_name}/install")' in source
+    assert '@router.post("/packs/{pack_name}/install/stream")' in source
     assert '@router.post("/constraints/replace")' in source
     assert '@router.get("/workflows/{workflow_id}/approval-review")' in source
     assert '@router.post("/workflows/{workflow_id}/approve")' in source
@@ -1265,6 +1297,101 @@ def test_partial_pack_install_maps_bounded_receipt_to_conflict() -> None:
         "message": "pack installation failed for 1 skill(s)",
         "receipt": receipt,
     }
+
+
+def test_pack_install_stream_emits_bounded_progress_and_complete_events() -> None:
+    api = load_api()
+
+    class Check:
+        def to_dict(self) -> dict[str, object]:
+            return {"name": "addyosmani", "ready": True, "actions": []}
+
+    result = PackInstallResult(
+        applied_preview_digest="a" * 64,
+        executed=(),
+        pack=Check(),
+    )
+
+    class PackService:
+        def install_events(self, *_args, **_kwargs):
+            yield api.PackInstallEvent.progress(position=1, total=2, skill="first-skill")
+            yield api.PackInstallEvent.progress(position=2, total=2, skill="second-skill")
+            yield api.PackInstallEvent.complete(result)
+
+    api.__dict__["pack_service_factory"] = PackService
+    response = api.pack_install_stream(
+        "addyosmani", {"preview_digest": "a" * 64, "confirm": True}
+    )
+
+    async def collect() -> list[dict[str, object]]:
+        content = b""
+        async for chunk in response.body_iterator:
+            content += chunk if isinstance(chunk, bytes) else chunk.encode("utf-8")
+        return [json.loads(line) for line in content.decode("utf-8").splitlines()]
+
+    events = asyncio.run(collect())
+
+    assert response.media_type == "application/x-ndjson"
+    assert response.headers["Cache-Control"] == "no-store"
+    assert events == [
+        {
+            "event": "progress",
+            "position": 1,
+            "total": 2,
+            "skill": "first-skill",
+        },
+        {
+            "event": "progress",
+            "position": 2,
+            "total": 2,
+            "skill": "second-skill",
+        },
+        {
+            "event": "complete",
+            "result": {
+                "applied_preview_digest": "a" * 64,
+                "pack": {"name": "addyosmani", "ready": True, "actions": []},
+                "success": True,
+            },
+        },
+    ]
+
+
+def test_pack_install_stream_emits_bounded_partial_failure_without_commands() -> None:
+    api = load_api()
+    receipt = {
+        "pack": "addyosmani",
+        "source_revision": "b" * 40,
+        "attempted": 2,
+        "succeeded": ["first-skill"],
+        "failed": ["second-skill"],
+        "executed": [{"name": "first-skill", "command": ["hidden"], "exit_code": 0}],
+        "pack_state": {"name": "addyosmani", "actions": [{"name": "second-skill"}]},
+    }
+
+    class PackService:
+        def install_events(self, *_args, **_kwargs):
+            yield api.PackInstallEvent.progress(position=1, total=2, skill="first-skill")
+            raise api.PackInstallError("pack installation failed for 1 skill(s)", receipt=receipt)
+
+    api.__dict__["pack_service_factory"] = PackService
+    response = api.pack_install_stream(
+        "addyosmani", {"preview_digest": "a" * 64, "confirm": True}
+    )
+
+    async def collect() -> list[dict[str, object]]:
+        content = b""
+        async for chunk in response.body_iterator:
+            content += chunk if isinstance(chunk, bytes) else chunk.encode("utf-8")
+        return [json.loads(line) for line in content.decode("utf-8").splitlines()]
+
+    events = asyncio.run(collect())
+    error = events[-1]["error"]
+
+    assert events[0]["skill"] == "first-skill"
+    assert error["code"] == "pack_install_failed"
+    assert error["receipt"]["failed"] == ["second-skill"]
+    assert "executed" not in error["receipt"]
 
 
 def test_unconfirmed_pack_install_does_not_construct_service() -> None:

@@ -194,7 +194,7 @@ def test_bundle_exposes_catalog_first_pack_inventory_and_confirmed_pack_actions(
         'API_BASE + "/packs"',
         '"/check"',
         '"/install/preview"',
-        '"/install"',
+        '"/install/stream"',
         '"/skills/"',
         "Configuration",
         "Workflow packs",
@@ -209,6 +209,11 @@ def test_bundle_exposes_catalog_first_pack_inventory_and_confirmed_pack_actions(
         "Successful installs remain",
         "retry offers only missing targets",
         "View failure receipt",
+        "Installing skill ",
+        '"aria-live": "polite"',
+        "installProgress.skill",
+        "installProgress.position",
+        "installProgress.total",
         "Confirm profile-local change",
         "Installation and every other Hermes profile remain unchanged.",
         "Install this skill through the pack-wide action.",
@@ -231,6 +236,9 @@ def test_bundle_exposes_catalog_first_pack_inventory_and_confirmed_pack_actions(
     assert 'data-testid": "daidala-skill-content"' in source
     assert 'data-testid": "daidala-pack-preview"' in source
     assert 'data-testid": "daidala-pack-install-preview"' in source
+    assert 'data-testid": "daidala-pack-install-progress"' in source
+    assert "SDK.authedFetch" in source
+    assert "TextDecoder" in source
     assert 'role: "dialog"' in source
     assert '"aria-modal": "true"' in source
     assert 'event.key === "Escape"' in source

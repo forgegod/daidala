@@ -33,8 +33,11 @@ An authenticated operator can inspect workflow state and evidence, perform bound
   bindings, and active profile; its searchable inventory labels stage roles and
   catalog-only members without assigning them invented lifecycle ownership.
 - The browser exposes installation only through one complete-pack preview and
-  confirmation. A partial Hermes failure remains explicit and the next fresh
-  preview retries only missing catalog entries. Individual skill details expose
+  confirmation. During apply, an authenticated request-scoped stream shows the
+  current declared skill name and one-based `position / total`; progress is a
+  polite live status and exposes no command output or filesystem path. A partial
+  Hermes failure remains explicit and the next fresh preview retries only missing
+  catalog entries. Individual skill details expose
   status, source, expected and observed digests, literal bounded `SKILL.md`
   content when available, and profile-local enable or disable actions, but no
   individual installation control.
@@ -62,8 +65,8 @@ An authenticated operator can inspect workflow state and evidence, perform bound
 
 ### Tests
 
-- [`tests/test_dashboard_api.py`](../../../tests/test_dashboard_api.py) — exact identities, path-free responses, preview/apply gates, and bounded routes.
-- [`tests/test_dashboard_assets.py`](../../../tests/test_dashboard_assets.py) — primary views, states, authenticated SDK use, and host-theme behavior.
+- [`tests/test_dashboard_api.py`](../../../tests/test_dashboard_api.py) — exact identities, path-free responses, preview/apply gates, and bounded routes including installation-progress terminal events.
+- [`tests/test_dashboard_assets.py`](../../../tests/test_dashboard_assets.py) — primary views, states, authenticated SDK and stream use, accessible installation progress, and host-theme behavior.
 - [`tests/test_dashboard_advice.py`](../../../tests/test_dashboard_advice.py) — aggregate snapshot minimization, GitHub and pack-phase readiness requirements, host-model invocation, response bounds, and unavailable behavior.
 - [`tests/test_dashboard.py`](../../../tests/test_dashboard.py) — read-model, timeline, recommendation, and artifact projections.
 

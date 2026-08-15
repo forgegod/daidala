@@ -67,7 +67,7 @@ import json
 import math
 import re
 import subprocess
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from functools import lru_cache
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -75,6 +75,7 @@ from threading import Lock
 from typing import Any, NoReturn
 
 from fastapi import APIRouter, HTTPException, Response
+from fastapi.responses import StreamingResponse
 
 from daidala.artifact_access import ArtifactAccessError, ArtifactFailureReason
 from daidala.artifact_curator import CuratorError
@@ -117,6 +118,7 @@ from daidala.pack_service import (
     PackActionError,
     PackConfirmationError,
     PackInstallError,
+    PackInstallEvent,
     PackService,
     PackServiceError,
     SkillAction,
@@ -1138,15 +1140,20 @@ def pack_install_preview(pack_name: str) -> dict[str, Any]:
     return pack_check(pack_name)
 
 
-@router.post("/packs/{pack_name}/install")
-def pack_install(pack_name: str, payload: dict[str, Any]) -> dict[str, Any]:
-    """Apply only the exact reviewed preview after literal confirmation."""
-
+def _pack_install_request(payload: dict[str, Any]) -> str:
     if payload.get("confirm") is not True:
         raise HTTPException(status_code=400, detail="explicit confirmation is required")
     preview_digest = payload.get("preview_digest")
     if not isinstance(preview_digest, str) or not preview_digest.strip():
         raise HTTPException(status_code=400, detail="preview_digest is required")
+    return preview_digest.strip()
+
+
+@router.post("/packs/{pack_name}/install")
+def pack_install(pack_name: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Apply only the exact reviewed preview after literal confirmation."""
+
+    preview_digest = _pack_install_request(payload)
     try:
         return pack_service_factory().install(
             pack_name,
@@ -1161,6 +1168,92 @@ def pack_install(pack_name: str, payload: dict[str, Any]) -> dict[str, Any]:
         raise HTTPException(status_code=409, detail=error.to_dict()) from error
     except (PackError, PackServiceError) as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+def _pack_install_line(payload: dict[str, object]) -> str:
+    return json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n"
+
+
+def _pack_install_failure(error: PackInstallError) -> dict[str, object]:
+    failure = error.to_dict()
+    receipt = failure.get("receipt")
+    if isinstance(receipt, dict):
+        failure["receipt"] = {key: value for key, value in receipt.items() if key != "executed"}
+    return failure
+
+
+def _pack_install_stream(
+    service: PackService,
+    pack_name: str,
+    preview_digest: str,
+) -> Iterator[str]:
+    try:
+        events: Iterator[PackInstallEvent] = service.install_events(
+            pack_name,
+            expected_preview_digest=preview_digest,
+            confirm=True,
+        )
+        for event in events:
+            if event.event == "progress":
+                yield _pack_install_line(
+                    {
+                        "event": "progress",
+                        "position": event.position,
+                        "total": event.total,
+                        "skill": event.skill,
+                    }
+                )
+                continue
+            if event.event != "complete" or event.result is None:
+                raise PackServiceError("pack installation emitted an invalid terminal event")
+            yield _pack_install_line(
+                {
+                    "event": "complete",
+                    "result": {
+                        "success": True,
+                        "applied_preview_digest": event.result.applied_preview_digest,
+                        "pack": event.result.pack.to_dict(),
+                    },
+                }
+            )
+    except PackInstallError as error:
+        yield _pack_install_line({"event": "error", "error": _pack_install_failure(error)})
+    except StalePackPreviewError as error:
+        yield _pack_install_line(
+            {
+                "event": "error",
+                "error": {"code": "stale_preview", "message": str(error)},
+            }
+        )
+    except PackConfirmationError as error:
+        yield _pack_install_line(
+            {
+                "event": "error",
+                "error": {"code": "confirmation_required", "message": str(error)},
+            }
+        )
+    except (PackError, PackServiceError) as error:
+        yield _pack_install_line(
+            {
+                "event": "error",
+                "error": {"code": "pack_install_unavailable", "message": str(error)},
+            }
+        )
+
+
+@router.post("/packs/{pack_name}/install/stream")
+def pack_install_stream(pack_name: str, payload: dict[str, Any]) -> StreamingResponse:
+    """Apply one pack action while streaming bounded per-skill progress."""
+
+    preview_digest = _pack_install_request(payload)
+    return StreamingResponse(
+        _pack_install_stream(pack_service_factory(), pack_name, preview_digest),
+        media_type="application/x-ndjson",
+        headers={
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @router.post("/packs/{pack_name}/skills/action/preview")

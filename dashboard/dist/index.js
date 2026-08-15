@@ -338,14 +338,64 @@
     );
   }
 
-  function applyPackInstall(packName, preview) {
-    return postJson(
-      API_BASE + "/packs/" + encodeURIComponent(packName) + "/install",
-      { preview_digest: preview.preview_digest, confirm: true }
-    );
+  function streamPackInstall(packName, preview, onProgress) {
+    var url = API_BASE + "/packs/" + encodeURIComponent(packName) + "/install/stream";
+    return SDK.authedFetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/x-ndjson" },
+      body: JSON.stringify({ preview_digest: preview.preview_digest, confirm: true })
+    }).then(function (response) {
+      if (!response.ok) {
+        return response.text().then(function (body) {
+          throw new Error(response.status + ":" + body);
+        });
+      }
+      if (!response.body || typeof response.body.getReader !== "function") {
+        throw new Error("pack installation progress stream is unavailable");
+      }
+      var reader = response.body.getReader();
+      var decoder = new TextDecoder();
+      var buffer = "";
+      var result = null;
+
+      function acceptLine(line) {
+        if (!line.trim()) return;
+        var event = JSON.parse(line);
+        if (event.event === "progress") {
+          onProgress(event);
+          return;
+        }
+        if (event.event === "complete") {
+          result = event.result;
+          return;
+        }
+        if (event.event === "error") {
+          var failure = new Error(event.error && event.error.message || "pack installation failed");
+          failure.packInstall = event.error || null;
+          throw failure;
+        }
+        throw new Error("pack installation returned an unknown event");
+      }
+
+      function readNext() {
+        return reader.read().then(function (chunk) {
+          buffer += decoder.decode(chunk.value || new Uint8Array(), { stream: !chunk.done });
+          var lines = buffer.split("\n");
+          buffer = lines.pop();
+          lines.forEach(acceptLine);
+          if (!chunk.done) return readNext();
+          acceptLine(buffer);
+          if (!result) throw new Error("pack installation ended without a result");
+          return result;
+        });
+      }
+
+      return readNext();
+    });
   }
 
   function packInstallFailure(reason) {
+    if (reason && reason.packInstall) return reason.packInstall;
     var message = errorText(reason);
     var objectStart = message.indexOf("{");
     if (objectStart < 0) return null;
@@ -3122,6 +3172,9 @@
     var installPreviewState = useState(null);
     var installPreview = installPreviewState[0];
     var setInstallPreview = installPreviewState[1];
+    var installProgressState = useState(null);
+    var installProgress = installProgressState[0];
+    var setInstallProgress = installProgressState[1];
     var actionPreviewState = useState(null);
     var actionPreview = actionPreviewState[0];
     var setActionPreview = actionPreviewState[1];
@@ -3223,6 +3276,7 @@
       var cancelled = false;
       setBusy(true);
       setReadinessError("");
+      setInstallProgress(null);
       checkPack(pack.name)
         .then(function (value) {
           if (!cancelled) setCheck(value);
@@ -3299,15 +3353,18 @@
       if (!installPreview) return;
       setBusy(true);
       setMessage("");
-      applyPackInstall(pack.name, installPreview)
+      setInstallProgress(null);
+      streamPackInstall(pack.name, installPreview, setInstallProgress)
         .then(function (value) {
           setCheck(value.pack);
           setFailure(null);
           setInstallPreview(null);
+          setInstallProgress(null);
           setMessage("Pack installation applied and post-verified.");
           returnFocus(installInvokerRef);
         })
         .catch(function (caught) {
+          setInstallProgress(null);
           var structured = packInstallFailure(caught);
           if (structured && structured.receipt) {
             setFailure(structured.receipt);
@@ -3447,6 +3504,17 @@
             busy ? "Checking…" : "Refresh readiness"
           )
         ),
+        installProgress ? createElement("div", {
+          className: "daidala-pack-install-progress",
+          role: "status",
+          "aria-live": "polite",
+          "data-testid": "daidala-pack-install-progress"
+        },
+          createElement("strong", null,
+            "Installing skill " + installProgress.position + " / " + installProgress.total
+          ),
+          createElement("span", null, installProgress.skill)
+        ) : null,
         createElement("dl", { className: "daidala-pack-stats" },
           createElement("div", null,
             createElement("dt", null, "Catalog"),

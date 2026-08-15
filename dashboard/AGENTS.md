@@ -35,7 +35,8 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
 
 - Register only documented Hermes dashboard SDK surfaces.
 - Browser JSON requests use the host SDK's authenticated `fetchJSON` helper;
-  verified byte downloads use its authenticated `authedFetch` helper. Browser
+  authenticated response streams and verified byte downloads use its
+  `authedFetch` helper. Browser
   code calls only scoped Daidala routes and never reads the host session token.
 - `plugin_api.py` imports the stable `daidala` package exposed by both pip and
   the repository-root directory entry point.
@@ -111,7 +112,10 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   their installation requirement, exact install target, and pinned source link.
   The browser exposes installation only as one complete-pack action; partial
   failure receipts lead to a fresh retry over the remaining missing catalog
-  entries. Individual and pack-wide enable and disable apply require a fresh
+  entries. Confirmed apply streams ordered NDJSON progress containing only the
+  one-based position, total, and declared skill name, followed by one bounded
+  success or error event; command output and filesystem paths never enter the
+  browser stream. Individual and pack-wide enable and disable apply require a fresh
   matching action preview digest, literal confirmation, and post-action
   verification. Digest mismatches render as warnings and do not block skill use
   or install actions. Selecting a skill opens a keyboard-focused detail drawer;

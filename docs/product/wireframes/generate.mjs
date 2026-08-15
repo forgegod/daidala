@@ -87,22 +87,16 @@ function buildOperatorDashboardHtml(screen) {
 <article class="card"><div class="notice">Digest mismatch warning. The installed skill remains available.</div><div class="inventory-head"><div><h3>Skill inventory</h3><p>20 stage-mapped · 4 catalog-only</p></div><strong>4 of 24 shown</strong></div><div class="filters"><label>Search skills<input placeholder="Search skills or lifecycle stage"></label><button>Catalog-only 4</button></div><table><thead><tr><th style="width:31%">Skill</th><th style="width:22%">Status</th><th style="width:25%">Lifecycle role</th><th>Activation</th><th></th></tr></thead><tbody><tr><td>api-and-interface-design<small>Catalog only</small></td><td class="missing">Not installed</td><td>Available outside lifecycle</td><td>Manual</td><td class="detail">Details</td></tr><tr><td>browser-testing-with-devtools</td><td class="missing">Not installed</td><td>verify</td><td>conditional</td><td class="detail">Details</td></tr><tr><td>code-review-and-quality</td><td class="missing">Not installed</td><td>review</td><td>required</td><td class="detail">Details</td></tr><tr><td>test-driven-development</td><td class="warning">Ready with warning</td><td>implement, verify</td><td>conditional</td><td class="detail">Details</td></tr></tbody></table><button style="width:100%;margin-top:12px">Show all 24 skills</button></article></div></section></main></div><div class="annotation">Static capability wireframe · synthetic data · no runtime authority</div></body></html>`;
 }
 
-function buildCompletePackInstallationHtml(screen) {
-  const dialogStyles = `
-    .install-preview-layer { position:fixed; inset:0; z-index:5; display:grid; place-items:center; padding:40px; background:rgba(0,12,11,.78); }
-    .install-preview { width:720px; padding:24px; border:1px solid var(--line); border-radius:9px; background:var(--panel); box-shadow:0 24px 80px rgba(0,0,0,.55); }
-    .install-preview h2 { margin-bottom:8px; font-size:25px; }
-    .install-preview-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin:18px 0; }
-    .install-preview-grid section { min-height:104px; padding:13px; border:1px solid var(--line); border-radius:6px; background:var(--soft); }
-    .install-preview-grid strong { display:block; margin:5px 0; color:var(--cream); }
-    .install-preview-grid p { margin-bottom:0; color:var(--muted); font-size:12px; }
-    .install-preview-warning { padding:12px 14px; border:1px solid #675700; border-radius:6px; color:var(--amber); background:#2c2500; }
-    .install-preview-actions { display:flex; justify-content:flex-end; gap:9px; margin-top:18px; }
-    .install-preview-actions .confirm { border-color:var(--green); background:var(--green); color:var(--ink); }`;
-  const dialog = `<div class="install-preview-layer"><section class="install-preview" role="dialog" aria-modal="true" aria-labelledby="install-preview-title"><p class="eyebrow">Shared installation preview</p><h2 id="install-preview-title">Install workflow pack?</h2><p class="intro">Install the 23 missing members of the complete 24-skill immutable catalog.</p><div class="install-preview-grid"><section><span class="eyebrow">Immutable source</span><strong>bf223959faae</strong><p>forgegod/addyosmani-agent-skills</p></section><section><span class="eyebrow">Install target</span><strong>23 missing skills</strong><p>Every action uses hermes skills install with a pinned raw URL.</p></section><section><span class="eyebrow">Shared effect</span><strong>Hermes skill store</strong><p>Successful installs become available to every profile using this Hermes home.</p></section><section><span class="eyebrow">Profile effect</span><strong>demo-controller unchanged</strong><p>Existing profile-local enable and disable choices are preserved.</p></section></div><div class="install-preview-warning">Successful installs remain if a later target fails. Retry offers only the fresh missing set.</div><div class="install-preview-actions"><button>Cancel</button><button class="confirm">Confirm shared installation</button></div></section></div>`;
+function buildCompletePackInstallationProgressHtml(screen) {
+  const progressStyles = `
+    .install-progress { display:flex; align-items:baseline; gap:10px; margin:0 0 16px; padding:12px; border:1px solid var(--green); border-radius:6px; background:#06372f; }
+    .install-progress strong { flex:0 0 auto; color:var(--green); white-space:nowrap; }
+    .install-progress span { min-width:0; color:var(--cream); overflow-wrap:anywhere; }`;
+  const progress = `<div class="install-progress" role="status" aria-live="polite"><strong>Installing skill 8 / 23</strong><span>debugging-and-error-recovery</span></div>`;
   return buildOperatorDashboardHtml(screen)
-    .replace("  </style>", `${dialogStyles}\n  </style>`)
-    .replace("</body>", `${dialog}</body>`);
+    .replace("  </style>", `${progressStyles}\n  </style>`)
+    .replace("Retry 23 missing skills", "Installing…")
+    .replace("<div class=\"facts\">", `${progress}<div class="facts">`);
 }
 
 function buildRepositoryRegistrationHtml(screen) {
@@ -196,7 +190,9 @@ function buildHtml(screen) {
   if (screen.capability === "CAP-0004") return buildRepositoryRegistrationHtml(screen);
   if (screen.capability === "CAP-0005") return buildReviewedBranchDeliveryHtml(screen);
   if (screen.capability === "CAP-0006") return buildRepositoryPolicyBootstrapHtml(screen);
-  if (screen.capability === "CAP-0007") return buildCompletePackInstallationHtml(screen);
+  if (screen.capability === "CAP-0007") {
+    return buildCompletePackInstallationProgressHtml(screen);
+  }
   return `<!doctype html>
 <html lang="en">
 <head>

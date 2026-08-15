@@ -1445,6 +1445,25 @@
   justify-content: flex-start;
 }
 
+.daidala-pack-install-progress {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+  color: var(--text-primary, inherit);
+}
+
+.daidala-pack-install-progress span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--daidala-muted);
+}
+
+.daidala-pack-install-progress strong {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 .daidala-pack-primary {
   border-color: var(--pack-accent) !important;
   background: var(--pack-accent-soft) !important;

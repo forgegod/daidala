@@ -6,7 +6,7 @@ import hashlib
 import json
 import re
 import subprocess
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, replace
 from enum import StrEnum
 from importlib import resources
@@ -317,6 +317,23 @@ class PackInstallResult:
             "executed": [row.to_dict() for row in self.executed],
             "pack": self.pack.to_dict(),
         }
+
+
+@dataclass(frozen=True)
+class PackInstallEvent:
+    event: str
+    position: int | None = None
+    total: int | None = None
+    skill: str | None = None
+    result: PackInstallResult | None = None
+
+    @classmethod
+    def progress(cls, *, position: int, total: int, skill: str) -> PackInstallEvent:
+        return cls(event="progress", position=position, total=total, skill=skill)
+
+    @classmethod
+    def complete(cls, result: PackInstallResult) -> PackInstallEvent:
+        return cls(event="complete", result=result)
 
 
 @dataclass(frozen=True)
@@ -663,6 +680,25 @@ class PackService:
         expected_preview_digest: str,
         confirm: bool,
     ) -> PackInstallResult:
+        result: PackInstallResult | None = None
+        for event in self.install_events(
+            name,
+            expected_preview_digest=expected_preview_digest,
+            confirm=confirm,
+        ):
+            if event.result is not None:
+                result = event.result
+        if result is None:
+            raise PackServiceError("pack installation ended without a result")
+        return result
+
+    def install_events(
+        self,
+        name: str,
+        *,
+        expected_preview_digest: str,
+        confirm: bool,
+    ) -> Iterator[PackInstallEvent]:
         if confirm is not True:
             raise PackConfirmationError("explicit installation confirmation is required")
         current = self.check(name)
@@ -674,7 +710,13 @@ class PackService:
             raise PackInstallError("pack installation preview is blocked")
 
         executed: list[ExecutedInstall] = []
-        for action in current.actions:
+        total = len(current.actions)
+        for position, action in enumerate(current.actions, start=1):
+            yield PackInstallEvent.progress(
+                position=position,
+                total=total,
+                skill=action.name,
+            )
             exit_code, _output = self._command_runner(action.command)
             executed.append(ExecutedInstall(action.name, action.command, exit_code))
         verified = self.check(name)
@@ -698,10 +740,12 @@ class PackService:
                     "pack_state": verified.to_dict(),
                 },
             )
-        return PackInstallResult(
-            applied_preview_digest=expected_preview_digest,
-            executed=tuple(executed),
-            pack=verified,
+        yield PackInstallEvent.complete(
+            PackInstallResult(
+                applied_preview_digest=expected_preview_digest,
+                executed=tuple(executed),
+                pack=verified,
+            )
         )
 
 

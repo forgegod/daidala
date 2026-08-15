@@ -11,7 +11,8 @@ An operator can inspect and install a workflow pack's complete immutable skill c
 
 - Pack schema version 2 declares each unique provider and expected content digest once in a top-level catalog; lifecycle stages bind only catalog names and required or conditional activation.
 - The Addyosmani pack pins all 24 skills at one immutable scanner-clean fork revision. Twenty skills are stage-bound; four catalog-only skills remain installable, inspectable, and readiness-controlled without being loaded onto worker cards.
-- Pack installation is a dry run by default and expands the missing catalog into deterministic `hermes skills install <immutable-raw-url> --yes` actions. Apply requires explicit confirmation and verifies installed names afterward.
+- Pack installation is a dry run by default and expands the missing catalog into deterministic `hermes skills install <immutable-raw-url> --yes` actions. Apply requires explicit confirmation, emits one ordered bounded progress event before each action with its one-based position, total, and declared skill name, then verifies installed names afterward.
+- Config → Packs consumes the authenticated NDJSON apply stream and renders the current `position / total` and skill name in a polite live region. The stream ends with one bounded success or error event and never exposes command output or filesystem paths.
 - Pack readiness requires every catalog member to be installed and enabled. Installation preserves existing profile-local disabled state, and content-digest differences remain visible non-blocking warnings.
 - Bundled and installed catalog skills expose bounded `SKILL.md` content. Uninstalled external skills expose installation and pinned-source metadata without substituting remote source text.
 
@@ -21,17 +22,19 @@ An operator can inspect and install a workflow pack's complete immutable skill c
 
 - [`daidala/packs.py`](../../../daidala/packs.py) — strict schema-v2 catalog and stage-binding model.
 - [`daidala/skills.py`](../../../daidala/skills.py) — catalog-wide inventory, immutable Hermes actions, and installed-bundle digest comparison.
-- [`daidala/pack_service.py`](../../../daidala/pack_service.py) — shared validation, readiness, content, and preview-confirmed mutation service.
+- [`daidala/pack_service.py`](../../../daidala/pack_service.py) — shared validation, readiness, content, and preview-confirmed mutation service with ordered installation events.
 - [`daidala/packs/addyosmani.yaml`](../../../daidala/packs/addyosmani.yaml) — immutable 24-skill catalog and 20-skill lifecycle binding.
-- [`dashboard/dist/index.js`](../../../dashboard/dist/index.js) — complete-pack preview, explicit shared-store confirmation, and missing-only retry surface.
+- [`dashboard/plugin_api.py`](../../../dashboard/plugin_api.py) — bounded authenticated installation-progress stream and terminal receipt adapter.
+- [`dashboard/dist/index.js`](../../../dashboard/dist/index.js) — complete-pack preview, explicit shared-store confirmation, current-skill progress, and missing-only retry surface.
 
 ### Tests
 
 - [`tests/test_packs.py`](../../../tests/test_packs.py) — strict schema-v2 separation and fail-closed catalog references.
 - [`tests/test_skill_installation.py`](../../../tests/test_skill_installation.py) — 24 deterministic Hermes actions and post-apply convergence.
-- [`tests/test_pack_service.py`](../../../tests/test_pack_service.py) — catalog-only content, readiness, disabled-state preservation, and action previews.
+- [`tests/test_pack_service.py`](../../../tests/test_pack_service.py) — catalog-only content, readiness, disabled-state preservation, action previews, and ordered progress.
 - [`tests/test_worker_contract.py`](../../../tests/test_worker_contract.py) — stage bindings remain the exact worker-card skill set.
-- [`tests/test_dashboard_assets.py`](../../../tests/test_dashboard_assets.py) — pack-only installation, confirmation, receipt, and responsive inventory contracts.
+- [`tests/test_dashboard_api.py`](../../../tests/test_dashboard_api.py) — bounded NDJSON progress plus terminal success and partial-failure events.
+- [`tests/test_dashboard_assets.py`](../../../tests/test_dashboard_assets.py) — pack-only installation, confirmation, accessible progress, receipt, and responsive inventory contracts.
 
 ## Contracts
 
@@ -42,5 +45,5 @@ An operator can inspect and install a workflow pack's complete immutable skill c
 ## Links
 
 - [Complete pack installation and Packs UI change](../../changes/archive/CHG-0013-complete-pack-installation-and-packs-ui.md)
-- [HTML wireframe](../wireframes/html/CAP-0007-complete-workflow-pack-installation.html)
-- [PNG wireframe](../wireframes/exports/CAP-0007-complete-workflow-pack-installation.png)
+- [Progress-state HTML wireframe](../wireframes/html/CAP-0007-complete-workflow-pack-installation.html)
+- [Progress-state PNG wireframe](../wireframes/exports/CAP-0007-complete-workflow-pack-installation.png)

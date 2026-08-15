@@ -9,6 +9,7 @@ from daidala.pack_service import (
     MAX_SKILL_DOCUMENT_BYTES,
     PackConfirmationError,
     PackInstallError,
+    PackInstallEvent,
     PackService,
     ProfileSkillAvailabilityState,
     SkillAction,
@@ -465,6 +466,40 @@ def test_confirmed_install_executes_exact_actions_and_post_verifies() -> None:
     assert len(commands) == 24
     assert result["pack"]["ready"] is True
     assert result["pack"]["actions"] == []
+
+
+def test_confirmed_install_events_name_each_current_skill_in_order() -> None:
+    pack = load_pack("addyosmani")
+    required = {skill.name: skill for skill in required_skills(pack)}
+    registry = MutableRegistry()
+
+    def run(command: tuple[str, ...]) -> tuple[int, str]:
+        name = command[3].removesuffix("/SKILL.md").rsplit("/", 1)[-1]
+        skill = required[name]
+        assert skill.content_digest is not None
+        registry.digests[name] = skill.content_digest
+        return 0, "installed"
+
+    service = build_service(registry, runner=run)
+    preview = service.check("addyosmani")
+
+    events = list(
+        service.install_events(
+            "addyosmani",
+            expected_preview_digest=preview.preview_digest,
+            confirm=True,
+        )
+    )
+
+    progress = [event for event in events if event.event == "progress"]
+    assert all(isinstance(event, PackInstallEvent) for event in events)
+    assert [(event.position, event.total, event.skill) for event in progress] == [
+        (position, len(required), name)
+        for position, name in enumerate(required, start=1)
+    ]
+    assert events[-1].event == "complete"
+    assert events[-1].result is not None
+    assert events[-1].result.pack.ready is True
 
 
 def test_confirmed_install_attempts_every_target_and_returns_a_fresh_partial_receipt() -> None:
