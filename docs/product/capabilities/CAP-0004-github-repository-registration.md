@@ -69,6 +69,6 @@ credential alias, environment-variable name, or token to Daidala.
 
 - [CHG-0009](../../changes/archive/CHG-0009-github-repository-registration-and-delivery.md)
 - [CHG-0010](../../changes/archive/CHG-0010-non-daidala-repository-bootstrap.md)
-- [CHG-0015](../../changes/active/CHG-0015-all-profile-repository-inventory.md)
+- [CHG-0015](../../changes/archive/CHG-0015-all-profile-repository-inventory.md)
 - [HTML wireframe](../wireframes/html/CAP-0004-github-repository-registration.html)
 - [PNG wireframe](../wireframes/exports/CAP-0004-github-repository-registration.png)

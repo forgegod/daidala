@@ -1,6 +1,6 @@
 # CHG-0015: All-profile GitHub repository inventory
 
-**Status:** in-progress
+**Status:** done
 **Source request:** Direct operator request: "(1) The GitHub Repositories tab in "Config" of Daidala shoud be reworked, so that all profiles and their repositories are visible at once. (2) for a profile with a set repository the repo and the slug have to be shown, where the edit field is filled with the repository"
 **Affected capabilities:** CAP-0004, CAP-0006
 **Created:** 2026-08-15
@@ -56,7 +56,7 @@ files. Do not mark a phase done until its gate command exits 0.
 |---|---|---|
 | Operator approval | done | 2026-08-15: operator selected “Approve CHG-0015 and execute”. |
 | Vertical slice | done | `python -m pytest tests/test_dashboard_api.py tests/test_dashboard_assets.py -q` passed; `python scripts/check_records.py .` and `python scripts/check_md_links.py .` passed. |
-| Closeout | in-progress | Repository verification in root `AGENTS.md` exits 0, including `python -m pytest`. |
+| Closeout | done | `python -m pytest` passed; `lefthook validate`, `ruff check .`, both pack validations, `python -m build`, `python -m twine check dist/*`, and `python scripts/check_release_contents.py . --wheel dist/*.whl` passed. |
 
 Mark a phase `in-progress` while running it, `done` once its gate passes
 (record evidence), `pending` otherwise. A pending CHG has no `in-progress`
@@ -123,9 +123,9 @@ PROFILE  daidala-dashboard
 - CAP-0004 and CAP-0006 wireframes were regenerated and visually reviewed:
   both profiles are visible, the registered field is prefilled, the empty
   profile stays empty, and no clipping or overlap was observed.
-- `python -m pytest tests/test_dashboard_api.py tests/test_dashboard_assets.py -q`
-  passed. `python scripts/check_records.py .` and
-  `python scripts/check_md_links.py .` passed.
+- `python -m pytest` passed. `lefthook validate`, `ruff check .`, both pack
+  validations, `python -m build`, `python -m twine check dist/*`, and
+  `python scripts/check_release_contents.py . --wheel dist/*.whl` passed.
 
 ## Execution notes
 
