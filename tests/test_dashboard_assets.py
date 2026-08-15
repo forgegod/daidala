@@ -186,37 +186,41 @@ def test_bundle_exposes_schema_aware_constraint_authoring_and_source_selection()
     assert "constraints/sources/{path}" not in source
 
 
-def test_bundle_exposes_pack_inventory_content_and_confirmed_skill_actions() -> None:
+def test_bundle_exposes_catalog_first_pack_inventory_and_confirmed_pack_actions() -> None:
     source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+    styles = (DASHBOARD / "dist" / "style.css").read_text(encoding="utf-8")
 
     required_strings = (
         'API_BASE + "/packs"',
-        '"/validate"',
         '"/check"',
+        '"/install/preview"',
+        '"/install"',
         '"/skills/"',
         "Configuration",
-        "Packs",
-        "Validate",
-        "Check readiness",
-        "Install all",
-        "Enable all",
-        "Disable all",
-        "Install skill",
-        "Enable skill",
-        "Disable skill",
-        "installed SKILL.md",
-        "not installed",
-        "disabled",
-        "View source",
-        "Loaded installation details.",
-        "content_origin",
+        "Workflow packs",
+        "Install a complete immutable catalog once",
+        "Catalog-only",
+        "Stage bindings select activation; the catalog owns installation.",
+        "Skill inventory",
+        "Install workflow pack?",
+        "Confirm shared installation",
+        "shared Hermes skill store",
+        "Profile effect",
+        "Successful installs remain",
+        "retry offers only missing targets",
+        "View failure receipt",
+        "Confirm profile-local change",
+        "Installation and every other Hermes profile remain unchanged.",
+        "Install this skill through the pack-wide action.",
+        "Open immutable source",
         "source_url",
         "enabled",
-        "expected ",
-        "observed ",
         "Ready with warnings",
-        "Digest mismatch warning: the installed skill remains available to Daidala.",
-        "I confirm this exact pack skill action",
+        "Digest mismatch warning. The installed skill remains available.",
+        "Search skills or lifecycle stage",
+        "Show all ",
+        "trapDialogFocus",
+        "returnFocus",
         '"/skills/action/preview"',
         '"/skills/action"',
     )
@@ -226,9 +230,29 @@ def test_bundle_exposes_pack_inventory_content_and_confirmed_skill_actions() -> 
     assert 'data-testid": "daidala-pack"' in source
     assert 'data-testid": "daidala-skill-content"' in source
     assert 'data-testid": "daidala-pack-preview"' in source
-    assert "skillDocumentRef.current.focus({ preventScroll: true })" in source
-    assert 'skillDocumentRef.current.scrollIntoView({ block: "start" })' in source
-    assert 'ref: skillDocumentRef, tabIndex: -1' in source
+    assert 'data-testid": "daidala-pack-install-preview"' in source
+    assert 'role: "dialog"' in source
+    assert '"aria-modal": "true"' in source
+    assert 'event.key === "Escape"' in source
+    assert 'event.key !== "Tab"' in source
+    assert "event.currentTarget.querySelector('[role=\"dialog\"]')" in source
+    assert '"[tabindex=\\"-1\\"], button:not([disabled])' in source
+    assert "documentView && !actionPreview" in source
+    assert "actionReturnsToDetailRef" in source
+    assert "var visibleSkillCount =" in source
+    assert 'visibleSkillCount + " of " + filteredSkills.length + " shown"' in source
+    assert 'className: "sr-only"' not in source
+    assert 'createElement("span", null, "Search skills")' in source
+    assert 'className: "daidala-skill-name"' in source
+    assert source.count("loadContent(event, skill.name)") == 1
+    assert "documentView.activation.join" in source
+    assert "documentView.activations" not in source
+    assert 'runActionPreview("install"' not in source
+    assert 'documentAction = "install"' not in source
+    assert "Install skill above" not in source
+    assert ".daidala-pack-workspace" in styles
+    assert ".daidala-pack-disclosure" in styles
+    assert "@media (max-width: 48rem)" in styles
     assert "pinned source SKILL.md" not in source
     assert '"pinned-source"' not in source
     assert '"/dispatch"' not in source.lower()

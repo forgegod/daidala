@@ -53,7 +53,18 @@ class StalePackPreviewError(PackServiceError):
 
 
 class PackInstallError(PackServiceError):
-    """Raised when a confirmed installation cannot complete and verify."""
+    """Raised with a bounded receipt when installation cannot fully converge."""
+
+    def __init__(self, message: str, *, receipt: dict[str, object] | None = None) -> None:
+        super().__init__(message)
+        self.receipt = receipt
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "code": "pack_install_failed",
+            "message": str(self),
+            "receipt": self.receipt,
+        }
 
 
 class PackActionError(PackServiceError):
@@ -665,15 +676,28 @@ class PackService:
         executed: list[ExecutedInstall] = []
         for action in current.actions:
             exit_code, _output = self._command_runner(action.command)
-            row = ExecutedInstall(action.name, action.command, exit_code)
-            executed.append(row)
-            if exit_code != 0:
-                raise PackInstallError(
-                    f"skill installation failed for {action.name!r} with exit {exit_code}"
-                )
+            executed.append(ExecutedInstall(action.name, action.command, exit_code))
         verified = self.check(name)
-        if verified.actions:
-            raise PackInstallError("pack installation did not pass post-install verification")
+        failed = tuple(
+            dict.fromkeys(
+                [row.name for row in executed if row.exit_code != 0]
+                + [action.name for action in verified.actions]
+            )
+        )
+        if failed:
+            succeeded = tuple(row.name for row in executed if row.name not in failed)
+            raise PackInstallError(
+                f"pack installation failed for {len(failed)} skill(s)",
+                receipt={
+                    "pack": name,
+                    "source_revision": verified.validation.source_revision,
+                    "attempted": len(executed),
+                    "succeeded": list(succeeded),
+                    "failed": list(failed),
+                    "executed": [row.to_dict() for row in executed],
+                    "pack_state": verified.to_dict(),
+                },
+            )
         return PackInstallResult(
             applied_preview_digest=expected_preview_digest,
             executed=tuple(executed),

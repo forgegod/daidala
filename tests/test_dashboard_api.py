@@ -1174,8 +1174,11 @@ def test_pack_routes_use_one_typed_service_projection() -> None:
             return Result({"success": True, "affected": [skill_name] if skill_name else []})
 
     api.__dict__["pack_service_factory"] = PackService
+    api.__dict__["_dashboard_identity"] = lambda: {"profile": "operator"}
 
-    assert [row["name"] for row in api.packs()["packs"]] == ["addyosmani", "aidlc"]
+    pack_inventory = api.packs()
+    assert pack_inventory["profile"] == "operator"
+    assert [row["name"] for row in pack_inventory["packs"]] == ["addyosmani", "aidlc"]
     assert api.pack_validate("aidlc")["valid"] is True
     assert api.pack_check("addyosmani")["preview_digest"] == "a" * 64
     assert api.pack_skill_content("aidlc", "aidlc-adapter")["content"] == "# exact\n"
@@ -1226,7 +1229,42 @@ def test_pack_skill_action_routes_reject_unknown_fields_and_unconfirmed_apply() 
             "aidlc", {"action": "disable", "preview_digest": "a" * 64}
         )
     assert unconfirmed.value.status_code == 400
+    with pytest.raises(FakeHTTPException) as individual_install:
+        api.pack_skill_action_preview("aidlc", {"action": "install", "skill": "aidlc-adapter"})
+    assert individual_install.value.status_code == 400
+    assert "pack-wide" in individual_install.value.detail
     assert calls == 0
+
+
+def test_partial_pack_install_maps_bounded_receipt_to_conflict() -> None:
+    api = load_api()
+    receipt = {
+        "pack": "addyosmani",
+        "source_revision": "b" * 40,
+        "attempted": 24,
+        "succeeded": ["planning"],
+        "failed": ["context-engineering"],
+        "executed": [],
+        "pack_state": {"name": "addyosmani", "actions": [{"name": "context-engineering"}]},
+    }
+
+    class PackService:
+        def install(self, *_args, **_kwargs):
+            raise api.PackInstallError("pack installation failed for 1 skill(s)", receipt=receipt)
+
+    api.__dict__["pack_service_factory"] = PackService
+
+    with pytest.raises(FakeHTTPException) as raised:
+        api.pack_install(
+            "addyosmani", {"preview_digest": "a" * 64, "confirm": True}
+        )
+
+    assert raised.value.status_code == 409
+    assert raised.value.detail == {
+        "code": "pack_install_failed",
+        "message": "pack installation failed for 1 skill(s)",
+        "receipt": receipt,
+    }
 
 
 def test_unconfirmed_pack_install_does_not_construct_service() -> None:

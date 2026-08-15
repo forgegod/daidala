@@ -19,7 +19,8 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   catalog/text/download reads, and digest-confirmed curator controls.
 - `dist/index.js` renders Workflows, Artifacts, and Config primary views;
   workflow progress; the inventory-backed Start workflow
-  wizard, Config → GitHub Repositories registration, Config → Packs readiness/content,
+  wizard, Config → GitHub Repositories registration, the catalog-first Config →
+  Packs readiness, lifecycle, inventory, and detail workspace,
   GitHub Projects v2 links,
   constraint source selection and schema-aware authoring, read-only configuration
   verification, initialization preview/apply, prerequisite diagnosis, operator-runbook
@@ -108,11 +109,14 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   literal, path-free, and bounded to 1 MiB. Config → Packs renders `SKILL.md`
   content only for bundled or installed skills; uninstalled external skills show
   their installation requirement, exact install target, and pinned source link.
-  Individual and pack-wide install, enable, and disable apply require a fresh
+  The browser exposes installation only as one complete-pack action; partial
+  failure receipts lead to a fresh retry over the remaining missing catalog
+  entries. Individual and pack-wide enable and disable apply require a fresh
   matching action preview digest, literal confirmation, and post-action
   verification. Digest mismatches render as warnings and do not block skill use
-  or install actions. Selecting a skill focuses and scrolls its content/install
-  panel into view. Disable is never presented as uninstall or deletion.
+  or install actions. Selecting a skill opens a keyboard-focused detail drawer;
+  narrow inventory renders four rows before explicit progressive disclosure.
+  Disable is never presented as uninstall or deletion.
 - Preview and declined setup must not mutate; start requires a literal checked confirmation.
 - Start-workflow management links preserve the browser-local draft while opening
   their exact Config tab above it. After a routed tab renders, the Config section

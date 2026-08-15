@@ -8,6 +8,7 @@ import yaml
 from daidala.pack_service import (
     MAX_SKILL_DOCUMENT_BYTES,
     PackConfirmationError,
+    PackInstallError,
     PackService,
     ProfileSkillAvailabilityState,
     SkillAction,
@@ -464,6 +465,88 @@ def test_confirmed_install_executes_exact_actions_and_post_verifies() -> None:
     assert len(commands) == 24
     assert result["pack"]["ready"] is True
     assert result["pack"]["actions"] == []
+
+
+def test_confirmed_install_attempts_every_target_and_returns_a_fresh_partial_receipt() -> None:
+    pack = load_pack("addyosmani")
+    required = {skill.name: skill for skill in required_skills(pack)}
+    failed = {"frontend-ui-engineering", "context-engineering", "using-agent-skills"}
+    registry = MutableRegistry()
+    commands: list[tuple[str, ...]] = []
+
+    def run(command: tuple[str, ...]) -> tuple[int, str]:
+        commands.append(command)
+        name = command[3].removesuffix("/SKILL.md").rsplit("/", 1)[-1]
+        if name in failed:
+            return 1, "blocked"
+        digest = required[name].content_digest
+        assert digest is not None
+        registry.digests[name] = digest
+        registry.documents[name] = f"# {name}\n"
+        return 0, "installed"
+
+    service = build_service(registry, runner=run)
+    preview = service.check("addyosmani")
+
+    with pytest.raises(PackInstallError) as raised:
+        service.install(
+            "addyosmani",
+            expected_preview_digest=preview.preview_digest,
+            confirm=True,
+        )
+
+    receipt = raised.value.to_dict()["receipt"]
+    assert isinstance(receipt, dict)
+    assert len(commands) == 24
+    assert receipt["attempted"] == 24
+    assert set(receipt["failed"]) == failed
+    assert len(receipt["succeeded"]) == 21
+    pack_state = receipt["pack_state"]
+    assert isinstance(pack_state, dict)
+    assert pack_state["ready"] is False
+    assert {action["name"] for action in pack_state["actions"]} == failed
+
+
+def test_confirmed_install_receipt_includes_a_newly_missing_catalog_skill() -> None:
+    pack = load_pack("addyosmani")
+    required = {skill.name: skill for skill in required_skills(pack)}
+    missing = "api-and-interface-design"
+    newly_missing = "browser-testing-with-devtools"
+    registry = MutableRegistry(
+        digests={
+            name: skill.content_digest
+            for name, skill in required.items()
+            if name != missing and skill.content_digest is not None
+        }
+    )
+
+    def run(command: tuple[str, ...]) -> tuple[int, str]:
+        name = command[3].removesuffix("/SKILL.md").rsplit("/", 1)[-1]
+        assert name == missing
+        registry.digests.pop(newly_missing)
+        digest = required[name].content_digest
+        assert digest is not None
+        registry.digests[name] = digest
+        return 0, "installed"
+
+    service = build_service(registry, runner=run)
+    preview = service.check("addyosmani")
+
+    with pytest.raises(PackInstallError) as raised:
+        service.install(
+            "addyosmani",
+            expected_preview_digest=preview.preview_digest,
+            confirm=True,
+        )
+
+    receipt = raised.value.to_dict()["receipt"]
+    assert isinstance(receipt, dict)
+    assert receipt["attempted"] == 1
+    assert receipt["succeeded"] == [missing]
+    assert receipt["failed"] == [newly_missing]
+    assert [row["name"] for row in receipt["pack_state"]["actions"]] == [
+        newly_missing
+    ]
 
 
 def test_install_preserves_preexisting_disabled_catalog_state() -> None:

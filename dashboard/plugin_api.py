@@ -1075,6 +1075,11 @@ def _pack_skill_action_request(
         raise HTTPException(
             status_code=400, detail="action must be install, enable, or disable"
         ) from error
+    if action is SkillAction.INSTALL:
+        raise HTTPException(
+            status_code=400,
+            detail="skill installation is pack-wide; use the pack install preview",
+        )
     skill_name = payload.get("skill")
     if skill_name is not None and (
         not isinstance(skill_name, str) or not skill_name.strip()
@@ -1085,10 +1090,11 @@ def _pack_skill_action_request(
 
 @router.get("/packs")
 def packs() -> dict[str, Any]:
-    """List bundled packs with their validated six-stage declarations."""
+    """List bundled catalogs with lifecycle bindings and safe profile identity."""
 
     service = pack_service_factory()
     return {
+        "profile": _dashboard_identity()["profile"],
         "packs": [service.validate(name).to_dict() for name in service.bundled_names()]
     }
 
@@ -1151,7 +1157,9 @@ def pack_install(pack_name: str, payload: dict[str, Any]) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail=str(error)) from error
     except StalePackPreviewError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
-    except (PackInstallError, PackError, PackServiceError) as error:
+    except PackInstallError as error:
+        raise HTTPException(status_code=409, detail=error.to_dict()) from error
+    except (PackError, PackServiceError) as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
 
 

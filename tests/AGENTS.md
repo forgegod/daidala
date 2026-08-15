@@ -61,11 +61,13 @@ completeness without touching a real Hermes profile.
   and refused recursive installation.
 - Pack-service and dashboard-route tests prove catalog-declared bounded
   installed/bundled content, exact source links, explicit unavailable state for
-  uninstalled external and catalog-only skills, host-qualified enabled state, atomic profile-config
-  persistence, validation/check parity, individual and pack-wide canonical action
-  previews, stale-preview rejection, literal confirmation, and post-action
-  verification. Dashboard asset coverage also pins focus-and-scroll navigation
-  from a selected skill to its content/install panel.
+  uninstalled external and catalog-only skills, host-qualified enabled state,
+  atomic profile-config persistence, validation/check parity, individual and
+  pack-wide canonical service previews, stale-preview rejection, literal
+  confirmation, and post-action verification. Dashboard asset coverage pins the
+  catalog-first pack action, the absence of individual installation, focused
+  skill-detail drawers, dialog focus containment/restoration, and narrow
+  four-row inventory disclosure.
 - Dashboard review-route, GitHub Project link, and asset tests prove path-free exact evidence,
   server-derived attended identity, literal diff rendering, preview/apply parity,
   single-ledger plan/review snapshot binding, stale or unchecked rejection, and

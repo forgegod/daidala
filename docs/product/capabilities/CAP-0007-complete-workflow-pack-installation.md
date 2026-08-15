@@ -1,7 +1,7 @@
 # CAP-0007: Complete workflow-pack installation
 
 **Status:** implemented
-**Primary surface:** none; CLI adapter and future CAP-0003 presentation
+**Primary surface:** Config → Packs through CAP-0003; CLI adapter
 
 ## Outcome
 
@@ -23,6 +23,7 @@ An operator can inspect and install a workflow pack's complete immutable skill c
 - [`daidala/skills.py`](../../../daidala/skills.py) — catalog-wide inventory, immutable Hermes actions, and installed-bundle digest comparison.
 - [`daidala/pack_service.py`](../../../daidala/pack_service.py) — shared validation, readiness, content, and preview-confirmed mutation service.
 - [`daidala/packs/addyosmani.yaml`](../../../daidala/packs/addyosmani.yaml) — immutable 24-skill catalog and 20-skill lifecycle binding.
+- [`dashboard/dist/index.js`](../../../dashboard/dist/index.js) — complete-pack preview, explicit shared-store confirmation, and missing-only retry surface.
 
 ### Tests
 
@@ -30,6 +31,7 @@ An operator can inspect and install a workflow pack's complete immutable skill c
 - [`tests/test_skill_installation.py`](../../../tests/test_skill_installation.py) — 24 deterministic Hermes actions and post-apply convergence.
 - [`tests/test_pack_service.py`](../../../tests/test_pack_service.py) — catalog-only content, readiness, disabled-state preservation, and action previews.
 - [`tests/test_worker_contract.py`](../../../tests/test_worker_contract.py) — stage bindings remain the exact worker-card skill set.
+- [`tests/test_dashboard_assets.py`](../../../tests/test_dashboard_assets.py) — pack-only installation, confirmation, receipt, and responsive inventory contracts.
 
 ## Contracts
 
@@ -39,4 +41,6 @@ An operator can inspect and install a workflow pack's complete immutable skill c
 
 ## Links
 
-- [Complete pack installation and Packs UI change](../../changes/active/CHG-0013-complete-pack-installation-and-packs-ui.md)
+- [Complete pack installation and Packs UI change](../../changes/archive/CHG-0013-complete-pack-installation-and-packs-ui.md)
+- [HTML wireframe](../wireframes/html/CAP-0007-complete-workflow-pack-installation.html)
+- [PNG wireframe](../wireframes/exports/CAP-0007-complete-workflow-pack-installation.png)

@@ -1273,3 +1273,550 @@
     max-height: 24rem;
   }
 }
+
+/* Config → Packs: catalog-first operational workspace. */
+.daidala-pack-workspace {
+  --pack-accent: #35e8b1;
+  --pack-accent-soft: rgba(53, 232, 177, 0.12);
+  --pack-panel: var(--surface-raised, rgba(255, 255, 255, 0.035));
+  max-width: 78rem;
+  margin: 0 auto;
+}
+
+.daidala-pack-workspace .daidala-config-header {
+  align-items: end;
+}
+
+.daidala-pack-selector {
+  display: grid;
+  min-width: 15rem;
+  gap: 0.35rem;
+  color: var(--daidala-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.daidala-pack-selector select,
+.daidala-pack-filters input,
+.daidala-pack-filters button,
+.daidala-pack-command-row button,
+.daidala-pack-state-panel button,
+.daidala-pack-availability button,
+.daidala-pack-modal button,
+.daidala-pack-drawer button,
+.daidala-pack-disclosure {
+  box-sizing: border-box;
+  min-height: 2.5rem;
+  padding: 0.55rem 0.75rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-base, rgba(255, 255, 255, 0.04));
+  color: var(--text-primary, inherit);
+  font: inherit;
+}
+
+.daidala-pack-selector select,
+.daidala-pack-workspace button,
+.daidala-pack-workspace a {
+  cursor: pointer;
+}
+
+.daidala-pack-workspace button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.daidala-pack-loading {
+  min-height: 24rem;
+}
+
+.daidala-pack-loading-summary {
+  min-height: 14rem;
+  border: var(--daidala-border);
+  border-radius: calc(var(--daidala-radius) * 1.5);
+  background: linear-gradient(100deg, transparent 25%, rgba(255, 255, 255, 0.05) 40%, transparent 55%);
+  background-size: 220% 100%;
+  animation: daidala-pack-loading 1.4s ease-in-out infinite;
+}
+
+@keyframes daidala-pack-loading {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .daidala-pack-loading-summary { animation: none; }
+}
+
+.daidala-pack {
+  display: grid;
+  gap: 1rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.daidala-pack-overview,
+.daidala-pack-inventory,
+.daidala-pack-state-panel,
+.daidala-pack-availability {
+  border: var(--daidala-border);
+  border-radius: calc(var(--daidala-radius) * 1.5);
+  background: var(--pack-panel);
+}
+
+.daidala-pack-overview,
+.daidala-pack-inventory {
+  padding: clamp(1rem, 2.4vw, 1.6rem);
+}
+
+.daidala-pack-header,
+.daidala-pack-command-row,
+.daidala-pack-section-heading,
+.daidala-pack-state-panel,
+.daidala-pack-availability,
+.daidala-pack-modal footer,
+.daidala-pack-drawer header,
+.daidala-pack-drawer footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.daidala-pack-header h3,
+.daidala-pack-header p,
+.daidala-pack-section-heading h4,
+.daidala-pack-section-heading p,
+.daidala-pack-state-panel p,
+.daidala-pack-availability p,
+.daidala-pack-drawer h4,
+.daidala-pack-drawer h5,
+.daidala-pack-modal h4,
+.daidala-pack-modal p {
+  margin: 0;
+}
+
+.daidala-pack-header h3 {
+  margin-bottom: 0.25rem;
+  font-size: clamp(1.45rem, 3vw, 2.2rem);
+}
+
+.daidala-pack-status,
+.daidala-skill-status,
+.daidala-catalog-only {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.daidala-pack-status { padding: 0.48rem 0.72rem; }
+.daidala-skill-status,
+.daidala-catalog-only { padding: 0.3rem 0.46rem; }
+
+.daidala-pack-status.is-ready,
+.daidala-skill-status.is-ready {
+  color: var(--pack-accent);
+}
+
+.daidala-pack-status.is-ready-with-warnings,
+.daidala-skill-status.is-ready-with-warning,
+.daidala-skill-status.is-disabled {
+  color: var(--daidala-warning);
+}
+
+.daidala-pack-status.is-action-failed,
+.daidala-pack-status.is-blocked,
+.daidala-skill-status.is-not-installed {
+  color: var(--daidala-error);
+}
+
+.daidala-pack-command-row {
+  margin-top: 1.15rem;
+  justify-content: flex-start;
+}
+
+.daidala-pack-primary {
+  border-color: var(--pack-accent) !important;
+  background: var(--pack-accent-soft) !important;
+  color: var(--pack-accent) !important;
+  font-weight: 750 !important;
+}
+
+.daidala-pack-stats,
+.daidala-pack-preview-grid,
+.daidala-pack-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 1.2rem 0 0;
+}
+
+.daidala-pack-stats > div,
+.daidala-pack-preview-grid > div,
+.daidala-pack-detail-grid > div {
+  min-width: 0;
+  padding: 0.75rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-base, rgba(0, 0, 0, 0.12));
+}
+
+.daidala-pack-stats dt,
+.daidala-pack-preview-grid dt,
+.daidala-pack-detail-grid dt {
+  color: var(--daidala-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.daidala-pack-stats dd,
+.daidala-pack-preview-grid dd,
+.daidala-pack-detail-grid dd {
+  min-width: 0;
+  margin: 0.28rem 0 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.daidala-pack-lifecycle {
+  margin-top: 1.35rem;
+  padding-top: 1.1rem;
+  border-top: var(--daidala-border);
+}
+
+.daidala-pack-section-heading > span,
+.daidala-pack-shown {
+  color: var(--daidala-muted);
+  font-size: 0.78rem;
+}
+
+.daidala-pack-lifecycle ol {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.daidala-pack-lifecycle li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  text-transform: capitalize;
+}
+
+.daidala-pack-lifecycle strong {
+  color: var(--pack-accent);
+}
+
+.daidala-pack-state-panel,
+.daidala-pack-availability {
+  flex-wrap: wrap;
+  padding: 0.9rem 1rem;
+}
+
+.daidala-pack-state-panel.is-failed {
+  border-color: var(--daidala-error);
+  background: rgba(255, 89, 98, 0.08);
+}
+
+.daidala-pack-state-panel.is-unavailable {
+  border-color: var(--daidala-warning);
+}
+
+.daidala-pack-receipt {
+  flex: 1 0 100%;
+  padding-top: 0.75rem;
+  border-top: var(--daidala-border);
+}
+
+.daidala-pack-receipt p { margin: 0.35rem 0; }
+
+.daidala-pack-filters {
+  display: grid;
+  grid-template-columns: minmax(15rem, 1fr) auto;
+  gap: 0.65rem;
+  margin: 1rem 0;
+}
+
+.daidala-pack-filters input {
+  width: 100%;
+}
+
+.daidala-pack-filters button.is-active {
+  border-color: var(--pack-accent);
+  color: var(--pack-accent);
+}
+
+.daidala-pack-shown .is-narrow,
+.daidala-pack-disclosure {
+  display: none;
+}
+
+.daidala-pack-table-wrap {
+  overflow-x: auto;
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+}
+
+.daidala-pack-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+
+.daidala-pack-table-wrap th,
+.daidala-pack-table-wrap td {
+  padding: 0.72rem 0.75rem;
+  border-bottom: var(--daidala-border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.daidala-pack-table-wrap thead th {
+  color: var(--daidala-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.daidala-pack-table-wrap tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.daidala-pack-table-wrap tbody th > button {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 750;
+  text-align: left;
+}
+
+.daidala-catalog-only {
+  margin-top: 0.35rem;
+  color: var(--daidala-muted);
+}
+
+.daidala-row-action {
+  padding: 0.32rem 0.5rem !important;
+  min-height: 0 !important;
+}
+
+.daidala-pack-message {
+  position: sticky;
+  bottom: 0.5rem;
+  z-index: 2;
+  width: fit-content;
+  margin: 0 auto;
+  padding: 0.55rem 0.75rem;
+  border: var(--daidala-border);
+  border-radius: 999px;
+  background: var(--surface-overlay, #171a1f);
+}
+
+.daidala-pack-modal-layer,
+.daidala-pack-drawer-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  background: rgba(5, 7, 10, 0.68);
+}
+
+.daidala-pack-modal-layer {
+  place-items: center;
+  padding: 1rem;
+}
+
+.daidala-pack-modal {
+  display: grid;
+  width: min(40rem, 100%);
+  max-height: min(44rem, calc(100vh - 2rem));
+  gap: 1rem;
+  overflow: auto;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid var(--pack-accent);
+  border-radius: calc(var(--daidala-radius) * 1.5);
+  background: var(--surface-overlay, #161a1f);
+  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.45);
+}
+
+.daidala-pack-modal ul {
+  max-height: 10rem;
+  overflow: auto;
+}
+
+.daidala-pack-drawer-layer {
+  grid-template-columns: minmax(0, 1fr) minmax(22rem, min(42rem, 100%));
+  background: transparent;
+}
+
+.daidala-pack-drawer-backdrop {
+  width: 100%;
+  height: 100%;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: rgba(5, 7, 10, 0.68) !important;
+}
+
+.daidala-pack-drawer {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+  min-width: 0;
+  height: 100vh;
+  overflow: auto;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border-left: 1px solid var(--pack-accent);
+  background: var(--surface-overlay, #161a1f);
+  box-shadow: -1rem 0 3rem rgba(0, 0, 0, 0.32);
+}
+
+.daidala-pack-drawer .daidala-pack-detail-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 0;
+}
+
+.daidala-pack-detail-source,
+.daidala-pack-detail-content {
+  min-width: 0;
+  padding-top: 1rem;
+  border-top: var(--daidala-border);
+}
+
+.daidala-pack-detail-content pre {
+  max-height: 28rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 48rem) {
+  .daidala-pack-workspace .daidala-config-header,
+  .daidala-pack-header,
+  .daidala-pack-command-row,
+  .daidala-pack-section-heading,
+  .daidala-pack-modal footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .daidala-pack-selector {
+    width: 100%;
+  }
+
+  .daidala-pack-stats,
+  .daidala-pack-preview-grid,
+  .daidala-pack-detail-grid,
+  .daidala-pack-drawer .daidala-pack-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .daidala-pack-lifecycle ol {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .daidala-pack-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .daidala-pack-shown .is-wide { display: none; }
+  .daidala-pack-shown .is-narrow,
+  .daidala-pack-disclosure { display: inline-flex; }
+
+  .daidala-pack-table-wrap thead,
+  .daidala-pack-table-wrap tbody tr:nth-child(n + 5) {
+    display: none;
+  }
+
+  .daidala-pack-table-wrap.is-expanded tbody tr {
+    display: grid;
+  }
+
+  .daidala-pack-table-wrap table,
+  .daidala-pack-table-wrap tbody,
+  .daidala-pack-table-wrap tr,
+  .daidala-pack-table-wrap th,
+  .daidala-pack-table-wrap td {
+    display: block;
+    width: auto;
+  }
+
+  .daidala-pack-table-wrap tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.4rem 0.75rem;
+    padding: 0.75rem;
+    border-bottom: var(--daidala-border);
+  }
+
+  .daidala-pack-table-wrap th,
+  .daidala-pack-table-wrap td {
+    padding: 0;
+    border: 0;
+  }
+
+  .daidala-pack-table-wrap td:nth-child(3),
+  .daidala-pack-table-wrap td:nth-child(4) {
+    grid-column: 1 / -1;
+    color: var(--daidala-muted);
+    font-size: 0.78rem;
+  }
+
+  .daidala-pack-table-wrap td:last-child {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .daidala-pack-disclosure {
+    width: 100%;
+    justify-content: center;
+    margin-top: 0.65rem;
+  }
+
+  .daidala-pack-drawer-layer {
+    grid-template-columns: 1fr;
+  }
+
+  .daidala-pack-drawer-backdrop {
+    display: none;
+  }
+
+  .daidala-pack-drawer {
+    border-left: 0;
+  }
+}
+
+@media (max-width: 28rem) {
+  .daidala-pack-stats,
+  .daidala-pack-preview-grid,
+  .daidala-pack-detail-grid,
+  .daidala-pack-drawer .daidala-pack-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .daidala-pack-lifecycle ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

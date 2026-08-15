@@ -1,8 +1,8 @@
 # CHG-0013: Complete pack installation and Packs UI overhaul
 
-**Status:** in-progress
+**Status:** done
 **Source request:** Direct operator request: "create a plan with phased-plan-design skill for the pack installation change as recommended for the correct implementation; the ui need then a overhaul change so create the phased plan first"
-**Affected capabilities:** CAP-0003
+**Affected capabilities:** CAP-0003, CAP-0007
 **Created:** 2026-08-14
 
 ## Outcome
@@ -54,7 +54,8 @@ Packs surface.
 - Make installation, readiness, content lookup, source projection, and pack-wide
   enable/disable operate over the complete catalog. Make worker/card activation
   operate only over stage bindings.
-- Populate the Addyosmani catalog with all 24 skills from commit `9055b8a...` and
+- Populate the Addyosmani catalog with all 24 skills from the scanner-clean commit
+  `bf223959faae96825f78ddf7bc33e114f3303c1e` and
   retain the current 20 stage mappings unless interaction/design review finds a
   methodology reason to change one. A catalog skill without a direct stage
   binding is labeled **catalog-only**, not silently assigned to a stage.
@@ -144,8 +145,8 @@ The visual design phase must resolve this operator flow before runtime code chan
 | Plan approval | done | The operator approved CHG-0013 on 2026-08-14, authorizing only the review-only interaction-design phase. Records and Markdown links passed before approval. |
 | Interaction design and visual approval | done | Seven CHG-local native review artifacts cover normal, partial, warning, failure, confirmation, narrow, and progressive-detail states; interaction audit, rendering, records, and links passed; direct operator approval was recorded on 2026-08-14. |
 | Pack schema and complete-installation vertical slice | done | Scanner-clean revision `bf223959faae96825f78ddf7bc33e114f3303c1e` is remotely verified; a fresh Hermes home records 24 installed directories, 24 CLI inventory entries, 24 install receipts, and zero blocked receipts; schema-v2 parser/model tests, both bundled-pack migrations, the immutable 24-skill catalog, install/content/readiness regressions, CLI tests, full pytest, Ruff, both pack validations, records, and Markdown links pass. |
-| Packs UI vertical slice | in-progress | Backend projections, authenticated routes, browser rendering, focus/keyboard behavior, confirmation/stale/error states, CAP-0003 text and wireframe, dashboard API/assets/browser probes, responsive screenshot review, and focused Ruff/tests pass. |
-| Integration and closeout | pending | `python scripts/check_records.py .`, `lefthook validate`, `pytest`, `ruff check .`, both pack validations, package build, Twine, release-content audit, Markdown links, isolated real-Hermes pack installation, DOX pass, and direct operator acceptance pass before archival. |
+| Packs UI vertical slice | done | Backend projections, authenticated routes, browser rendering, focus/keyboard behavior, confirmation/stale/error states, CAP-0003/CAP-0007 text and wireframes, dashboard API/assets/browser probes, responsive screenshot review, and focused Ruff/tests pass. |
+| Integration and closeout | done | `python scripts/check_records.py .`, `lefthook validate`, `pytest`, `ruff check .`, both pack validations, package build, Twine, release-content audit, Markdown links, isolated real-Hermes pack installation, DOX pass, and direct operator acceptance passed before archival. |
 
 ## Decisions
 
@@ -208,5 +209,28 @@ The visual design phase must resolve this operator flow before runtime code chan
 - [CHG-0012](../archive/CHG-0012-pin-hermes-pack-skill-installation.md)
   remains the receipt for the prior immutable single-skill installation boundary;
   this CHG supersedes its 20-stage-entry inventory shape without rewriting history.
-- The Packs UI vertical slice is active; no UI source changes are included in the
-  schema-v2 checkpoint.
+- 2026-08-15: Config → Packs now renders a catalog-first pack workspace with one
+  complete-pack install/retry action, lifecycle binding summary, searchable
+  inventory, catalog-only labels, progressive narrow disclosure, literal skill
+  detail drawer, digest warnings, and profile-local enable/disable confirmation.
+- 2026-08-15: isolated Hermes dashboard browser verification exercised readiness
+  refresh, install preview, skill search/detail, profile-local action preview,
+  Escape focus restoration, and a 390-pixel viewport with four initial rows and
+  explicit 24-row disclosure. Focused dashboard/API/service tests and Ruff pass;
+  they additionally prove stale-preview rejection, individual-install refusal,
+  structured partial-failure receipts, and fresh missing-only retries.
+- 2026-08-15: CAP-0003 and CAP-0007, dashboard/test DOX ownership, and their
+  generated 1440 × 960 product wireframes describe the implemented overview and
+  shared-install confirmation. Record validation reports seven capabilities,
+  fifteen change records, and five wireframes; Markdown links, generator syntax,
+  and both visual export reviews pass.
+- 2026-08-15: closeout review corrected post-install failure reconciliation,
+  dialog focus containment/restoration, nested drawer dialogs, duplicate row
+  actions, and responsive disclosure counts. The full pytest suite, repository-wide
+  Ruff, Lefthook, both pack validations, package build, Twine, release-content
+  audit, records, links, JavaScript syntax, and whitespace checks pass. A final
+  fresh Hermes home also converged all 24 native installs with no remaining action
+  or blocker.
+- 2026-08-15: direct operator approval — "Approve closeout: archive CHG-0013 and
+  create the semantic commit (recommended)". This accepts the verified Packs UI
+  vertical slice and authorizes its closeout commit without a push.

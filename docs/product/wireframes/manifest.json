@@ -44,6 +44,17 @@
         "width": 1440,
         "height": 960
       }
+    },
+    {
+      "capability": "CAP-0007",
+      "slug": "CAP-0007-complete-workflow-pack-installation",
+      "title": "Complete workflow-pack installation",
+      "html": "html/CAP-0007-complete-workflow-pack-installation.html",
+      "png": "exports/CAP-0007-complete-workflow-pack-installation.png",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      }
     }
   ]
 }

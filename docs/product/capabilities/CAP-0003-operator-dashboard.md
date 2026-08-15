@@ -27,20 +27,26 @@ An authenticated operator can inspect workflow state and evidence, perform bound
   keyboard focus to their exact Config destination.
 - Approval, review disposition, card remediation, cancellation, setup, and curator mutations use preview/confirm or exact-identity requests; the server derives authoritative workflow, board, repository, and worktree facts.
 - Artifact views expose ledger-bound metadata, bounded literal text, digest-verified downloads, and closed curator actions without accepting filesystem paths.
-- Config → Packs renders bounded literal skill text only for bundled or installed
-  skills, identifies uninstalled external skills with their immutable
-  source-revision install targets, links every declaration to its source, and
-  shows installed and enabled state. External installation uses Hermes only;
-  readiness hashes the complete bundle Hermes installs and excludes unsupported
-  upstream files. An observed digest mismatch is an explicit warning rather than
-  an installation or workflow blocker; missing and disabled exact skills remain
-  blocking.
-  Individual and pack-wide install, enable, and disable actions require a fresh
-  digest-bound preview plus explicit confirmation. Disable updates the active
-  profile's Hermes availability state without removing shared skill content.
-  Selecting a skill moves keyboard focus and scrolls the viewport to that skill's
-  bounded content/install panel, including its digest warning when present.
-  Start workflow keeps packs selectable for inspection while naming
+- Config → Packs is a pack-first workspace that separates complete immutable
+  catalog installation from lifecycle-stage activation. Its summary shows source
+  revision, Hermes range, catalog/installed/enabled/warning counts, lifecycle
+  bindings, and active profile; its searchable inventory labels stage roles and
+  catalog-only members without assigning them invented lifecycle ownership.
+- The browser exposes installation only through one complete-pack preview and
+  confirmation. A partial Hermes failure remains explicit and the next fresh
+  preview retries only missing catalog entries. Individual skill details expose
+  status, source, expected and observed digests, literal bounded `SKILL.md`
+  content when available, and profile-local enable or disable actions, but no
+  individual installation control.
+- External installation uses Hermes only. Readiness hashes the complete bundle
+  Hermes installs and excludes unsupported upstream files. An observed digest
+  mismatch is an explicit warning rather than an installation or workflow
+  blocker; missing and disabled exact skills remain blocking. Enable and disable
+  confirmations name the active profile and do not remove shared skill content.
+- Skill details open in a keyboard-focused drawer. Confirmation dialogs trap
+  focus, Escape returns focus to the invoking control, and narrow inventory shows
+  four rows before explicit **Show all** disclosure.
+- Start workflow keeps packs selectable for inspection while naming
   installation-required, blocked, and unavailable readiness states explicitly.
 - The dashboard includes explicit loading, empty, unavailable, validation, and destructive-confirmation states and uses the host Hermes theme and authenticated SDK boundaries.
 

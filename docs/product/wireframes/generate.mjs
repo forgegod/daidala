@@ -46,7 +46,64 @@ const SCREENS = [
     png: "exports/CAP-0006-repository-policy-bootstrap.png",
     viewport: { width: 1440, height: 960 },
   },
+  {
+    capability: "CAP-0007",
+    slug: "CAP-0007-complete-workflow-pack-installation",
+    title: "Complete workflow-pack installation",
+    html: "html/CAP-0007-complete-workflow-pack-installation.html",
+    png: "exports/CAP-0007-complete-workflow-pack-installation.png",
+    viewport: { width: 1440, height: 960 },
+  },
 ];
+
+function buildOperatorDashboardHtml(screen) {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${screen.capability} — ${screen.title}</title>
+  <style>
+    :root { color-scheme:dark; --bg:#001f1d; --panel:#032725; --soft:#082f2c; --line:#244845; --text:#f4ead8; --muted:#8fa6a1; --cream:#ffe6ca; --ink:#102321; --amber:#ffc933; --green:#42ea92; --red:#ff786f; --blue:#5688ff; }
+    * { box-sizing:border-box; } body { margin:0; width:1440px; height:960px; overflow:hidden; background:var(--bg); color:var(--text); font:14px/1.4 Inter,ui-sans-serif,system-ui,sans-serif; }
+    button,input,select { font:inherit; } .shell { display:grid; grid-template-columns:240px 1fr; height:960px; } aside { padding:18px 15px; border-right:1px solid var(--line); display:flex; flex-direction:column; } .brand { font-size:19px; font-weight:800; line-height:1; letter-spacing:.08em; }
+    nav { display:grid; gap:3px; margin-top:25px; } nav div { padding:7px 11px; color:#b8c4c0; font-size:11px; letter-spacing:.13em; text-transform:uppercase; } nav .active { background:#29413f; color:var(--cream); font-weight:800; } .system { margin-top:auto; padding:12px; border:1px solid var(--line); color:var(--muted); font-size:11px; }
+    main { min-width:0; } header { height:72px; padding:18px 28px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); } h1,h2,h3,h4,p { margin-top:0; } h1 { margin:0; font-size:18px; letter-spacing:.09em; } .views { display:flex; } .view { padding:10px 20px; border:1px solid var(--line); color:var(--muted); text-transform:uppercase; font-size:11px; letter-spacing:.1em; } .view.active { color:var(--ink); background:var(--cream); border-color:var(--cream); font-weight:800; }
+    .workspace { padding:20px 28px; } .eyebrow { margin-bottom:5px; color:var(--blue); font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; } .intro { color:var(--muted); } .config-tabs { display:flex; gap:6px; margin:13px 0; } .config-tabs span { padding:8px 12px; border:1px solid var(--line); border-radius:6px; } .config-tabs .active { color:var(--blue); border-color:var(--blue); }
+    .pack-head { display:grid; grid-template-columns:1fr 265px; align-items:end; gap:18px; padding:18px; border:1px solid var(--line); background:var(--panel); } label { display:block; color:var(--muted); font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; } select,input { width:100%; margin-top:7px; padding:11px 12px; border:1px solid var(--line); border-radius:6px; background:#001a18; color:var(--cream); }
+    .layout { display:grid; grid-template-columns:410px 1fr; gap:14px; margin-top:14px; } .card { padding:18px; border:1px solid var(--line); border-radius:8px; background:var(--panel); } .pack-title { display:flex; align-items:start; justify-content:space-between; gap:12px; } .pack-title h3 { margin-bottom:4px; font-size:23px; } .source { color:var(--muted); font-size:12px; overflow-wrap:anywhere; } .badge { display:inline-block; padding:5px 8px; border:1px solid currentColor; border-radius:999px; font-size:10px; font-weight:800; text-transform:uppercase; } .blocked { color:var(--red); }
+    .actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:16px 0; } button { padding:11px; border:1px solid var(--line); border-radius:6px; background:transparent; color:var(--text); font-weight:700; } button.primary { border-color:var(--green); color:var(--green); } .facts { display:grid; grid-template-columns:1fr 1fr; gap:8px; } .fact,.stage { padding:11px; border:1px solid var(--line); border-radius:6px; } .fact span,.stage span { display:block; color:var(--muted); font-size:9px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; } .fact b { display:block; margin-top:5px; font-size:16px; }
+    .lifecycle { margin-top:16px; } .lifecycle p { margin-bottom:9px; color:var(--muted); font-size:12px; } .stages { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; } .stage { display:flex; align-items:center; justify-content:space-between; } .stage b { color:var(--green); }
+    .notice { margin-bottom:12px; padding:10px 12px; border:1px solid #675700; border-radius:6px; color:var(--amber); background:#2c2500; } .inventory-head { display:flex; justify-content:space-between; } .inventory-head p { color:var(--muted); } .filters { display:grid; grid-template-columns:1fr 150px; gap:8px; margin-bottom:12px; } .filters button { margin-top:7px; }
+    table { width:100%; border-collapse:collapse; table-layout:fixed; } th,td { padding:10px 8px; border-top:1px solid var(--line); text-align:left; vertical-align:top; } th { color:var(--muted); font-size:9px; letter-spacing:.08em; text-transform:uppercase; } td:first-child { color:var(--cream); font-weight:700; } td small { display:block; margin-top:4px; color:var(--muted); font-weight:400; } .warning { color:var(--amber); } .missing { color:var(--red); } .detail { color:var(--cream); text-align:right; }
+    .footnote { margin-top:10px; color:var(--muted); font-size:11px; } .annotation { position:fixed; right:14px; bottom:10px; color:#617b77; font-size:10px; }
+  </style>
+</head>
+<body><div class="shell"><aside><div class="brand">HERMES<br>AGENT</div><nav><div>Chat</div><div>Sessions</div><div>Files</div><div>Models</div><div>Logs</div><div>Cron</div><div>Skills</div><div>Plugins</div><div>MCP</div><div>Channels</div><div>Profiles</div><div class="active">Daidala</div></nav><div class="system">Gateway status: Running<br>Active sessions: 0</div></aside>
+<main><header><h1>Daidala</h1><div class="views"><div class="view">Workflows</div><div class="view">Artifacts</div><div class="view active">Config</div></div></header>
+<section class="workspace"><p class="eyebrow">Configuration</p><p class="intro">Profile-local settings use server-derived identity and explicit preview confirmation.</p><div class="config-tabs"><span class="active">Packs</span><span>GitHub Repositories</span><span>GitHub Projects</span><span>Checkouts</span><span>Constraints</span><span>Verification</span><span>Runbook</span></div>
+<section class="pack-head"><div><p class="eyebrow">Configuration</p><h2>Workflow packs</h2><p class="intro">Install a complete immutable catalog once; activate only the skills each lifecycle stage needs.</p></div><label>Pack<select><option>addyosmani</option><option>aidlc</option></select></label></section>
+<div class="layout"><article class="card"><div class="pack-title"><div><p class="eyebrow">Selected workflow pack</p><h3>addyosmani</h3><div class="source">forgegod/addyosmani-agent-skills @ bf223959faae</div></div><span class="badge blocked">Blocked</span></div><div class="actions"><button class="primary">Retry 23 missing skills</button><button>Refresh readiness</button></div><div class="facts"><div class="fact"><span>Catalog</span><b>24 skills</b></div><div class="fact"><span>Installed</span><b>1 / 24</b></div><div class="fact"><span>Active profile</span><b>demo-controller</b></div><div class="fact"><span>Digest warnings</span><b>1</b></div></div><div class="lifecycle"><h4>Lifecycle</h4><p>Stage bindings select activation; the catalog owns installation. 4 catalog-only.</p><div class="stages"><div class="stage"><span>Define</span><b>3</b></div><div class="stage"><span>Plan</span><b>1</b></div><div class="stage"><span>Implement</span><b>4</b></div><div class="stage"><span>Verify</span><b>3</b></div><div class="stage"><span>Review</span><b>4</b></div><div class="stage"><span>Deliver</span><b>6</b></div></div></div><p class="footnote">Install preview names the shared Hermes skill store. Enable and disable confirmations affect only the active profile.</p></article>
+<article class="card"><div class="notice">Digest mismatch warning. The installed skill remains available.</div><div class="inventory-head"><div><h3>Skill inventory</h3><p>20 stage-mapped · 4 catalog-only</p></div><strong>4 of 24 shown</strong></div><div class="filters"><label>Search skills<input placeholder="Search skills or lifecycle stage"></label><button>Catalog-only 4</button></div><table><thead><tr><th style="width:31%">Skill</th><th style="width:22%">Status</th><th style="width:25%">Lifecycle role</th><th>Activation</th><th></th></tr></thead><tbody><tr><td>api-and-interface-design<small>Catalog only</small></td><td class="missing">Not installed</td><td>Available outside lifecycle</td><td>Manual</td><td class="detail">Details</td></tr><tr><td>browser-testing-with-devtools</td><td class="missing">Not installed</td><td>verify</td><td>conditional</td><td class="detail">Details</td></tr><tr><td>code-review-and-quality</td><td class="missing">Not installed</td><td>review</td><td>required</td><td class="detail">Details</td></tr><tr><td>test-driven-development</td><td class="warning">Ready with warning</td><td>implement, verify</td><td>conditional</td><td class="detail">Details</td></tr></tbody></table><button style="width:100%;margin-top:12px">Show all 24 skills</button></article></div></section></main></div><div class="annotation">Static capability wireframe · synthetic data · no runtime authority</div></body></html>`;
+}
+
+function buildCompletePackInstallationHtml(screen) {
+  const dialogStyles = `
+    .install-preview-layer { position:fixed; inset:0; z-index:5; display:grid; place-items:center; padding:40px; background:rgba(0,12,11,.78); }
+    .install-preview { width:720px; padding:24px; border:1px solid var(--line); border-radius:9px; background:var(--panel); box-shadow:0 24px 80px rgba(0,0,0,.55); }
+    .install-preview h2 { margin-bottom:8px; font-size:25px; }
+    .install-preview-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin:18px 0; }
+    .install-preview-grid section { min-height:104px; padding:13px; border:1px solid var(--line); border-radius:6px; background:var(--soft); }
+    .install-preview-grid strong { display:block; margin:5px 0; color:var(--cream); }
+    .install-preview-grid p { margin-bottom:0; color:var(--muted); font-size:12px; }
+    .install-preview-warning { padding:12px 14px; border:1px solid #675700; border-radius:6px; color:var(--amber); background:#2c2500; }
+    .install-preview-actions { display:flex; justify-content:flex-end; gap:9px; margin-top:18px; }
+    .install-preview-actions .confirm { border-color:var(--green); background:var(--green); color:var(--ink); }`;
+  const dialog = `<div class="install-preview-layer"><section class="install-preview" role="dialog" aria-modal="true" aria-labelledby="install-preview-title"><p class="eyebrow">Shared installation preview</p><h2 id="install-preview-title">Install workflow pack?</h2><p class="intro">Install the 23 missing members of the complete 24-skill immutable catalog.</p><div class="install-preview-grid"><section><span class="eyebrow">Immutable source</span><strong>bf223959faae</strong><p>forgegod/addyosmani-agent-skills</p></section><section><span class="eyebrow">Install target</span><strong>23 missing skills</strong><p>Every action uses hermes skills install with a pinned raw URL.</p></section><section><span class="eyebrow">Shared effect</span><strong>Hermes skill store</strong><p>Successful installs become available to every profile using this Hermes home.</p></section><section><span class="eyebrow">Profile effect</span><strong>demo-controller unchanged</strong><p>Existing profile-local enable and disable choices are preserved.</p></section></div><div class="install-preview-warning">Successful installs remain if a later target fails. Retry offers only the fresh missing set.</div><div class="install-preview-actions"><button>Cancel</button><button class="confirm">Confirm shared installation</button></div></section></div>`;
+  return buildOperatorDashboardHtml(screen)
+    .replace("  </style>", `${dialogStyles}\n  </style>`)
+    .replace("</body>", `${dialog}</body>`);
+}
 
 function buildRepositoryRegistrationHtml(screen) {
   return `<!doctype html>
@@ -135,9 +192,11 @@ function buildRepositoryPolicyBootstrapHtml(screen) {
 }
 
 function buildHtml(screen) {
+  if (screen.capability === "CAP-0003") return buildOperatorDashboardHtml(screen);
   if (screen.capability === "CAP-0004") return buildRepositoryRegistrationHtml(screen);
   if (screen.capability === "CAP-0005") return buildReviewedBranchDeliveryHtml(screen);
   if (screen.capability === "CAP-0006") return buildRepositoryPolicyBootstrapHtml(screen);
+  if (screen.capability === "CAP-0007") return buildCompletePackInstallationHtml(screen);
   return `<!doctype html>
 <html lang="en">
 <head>
