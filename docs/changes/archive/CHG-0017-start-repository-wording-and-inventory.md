@@ -1,6 +1,6 @@
 # CHG-0017: Start workflow repository wording and inventory
 
-**Status:** in-progress
+**Status:** done
 **Source request:** Direct operator request: "The wording in the "Start Workflow" the wording is inconsistent and missleading because of "GitHut Projects". "Registered project" is not a "GitHub Project" but the "GitHub Repository". There is also a registered repository in the current hermes installation but is not selectable."
 **Affected capabilities:** CAP-0003, CAP-0004, CAP-0006
 **Created:** 2026-08-15
@@ -35,7 +35,7 @@ still derives board and checkout server-side.
 | Operator approval | done | Operator reported the wording collision and the empty dropdown as the required fix. |
 | Vertical slice | done | 2026-08-15: `python -m pytest tests/test_dashboard_api.py tests/test_dashboard_assets.py -q` 88 passed; `python scripts/check_records.py .` and `python scripts/check_md_links.py .` exit 0; `ruff check dashboard/plugin_api.py tests/test_dashboard_api.py tests/test_dashboard_assets.py` exits 0. |
 | Ineligible inventory | done | 2026-08-15: `python -m pytest tests/test_dashboard_api.py tests/test_dashboard_assets.py -q` 89 passed; `python scripts/check_records.py .` and `python scripts/check_md_links.py .` exit 0; `ruff check dashboard/plugin_api.py tests/test_dashboard_api.py tests/test_dashboard_assets.py` exits 0. |
-| Closeout | in-progress | Repository verification in root `AGENTS.md` exits 0, including `python -m pytest`. |
+| Closeout | done | 2026-08-15: root `AGENTS.md` gate passed — `python scripts/check_records.py .`, `lefthook validate`, `python -m pytest`, `ruff check .`, `daidala packs validate addyosmani`, `daidala packs validate aidlc`, `python -m build`, `python -m twine check dist/*`, and `python scripts/check_release_contents.py . --wheel dist/*.whl` all exit 0. |
 
 ## Decisions
 
@@ -63,4 +63,6 @@ still derives board and checkout server-side.
 - Focused dashboard tests: 88 passed (`tests/test_dashboard_api.py`, `tests/test_dashboard_assets.py`).
 - `python scripts/check_records.py .` passed (7 capabilities, 19 change records, 5 wireframes).
 - `python scripts/check_md_links.py .` passed (109 files).
-- Ineligible inventory: 89 focused dashboard tests passed; record and Markdown-link checks passed. Start also displays the working directory for the chosen workspace.
+- Closeout: root `AGENTS.md` verification passed on 2026-08-15, including
+  `python -m pytest`, `ruff check .`, pack validation, `python -m build`,
+  `python -m twine check dist/*`, and `python scripts/check_release_contents.py .`.

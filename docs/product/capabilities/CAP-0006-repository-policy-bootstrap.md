@@ -60,6 +60,6 @@ repository or touching the default branch.
 - [CHG-0010](../../changes/archive/CHG-0010-non-daidala-repository-bootstrap.md)
 - [CHG-0011](../../changes/archive/CHG-0011-bootstrap-branch-links.md)
 - [CHG-0015](../../changes/archive/CHG-0015-all-profile-repository-inventory.md)
-- [CHG-0017](../../changes/active/CHG-0017-start-repository-wording-and-inventory.md)
+- [CHG-0017](../../changes/archive/CHG-0017-start-repository-wording-and-inventory.md)
 - [HTML wireframe](../wireframes/html/CAP-0006-repository-policy-bootstrap.html)
 - [PNG wireframe](../wireframes/exports/CAP-0006-repository-policy-bootstrap.png)

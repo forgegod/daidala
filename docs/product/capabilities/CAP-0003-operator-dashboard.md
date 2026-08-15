@@ -92,4 +92,4 @@ An authenticated operator can inspect workflow state and evidence, perform bound
 - [Wireframe index](../wireframes/index.html)
 - [Initial records-adoption receipt](../../changes/archive/CHG-0001-adopt-application-records.md)
 - [Pinned Hermes pack installation receipt](../../changes/archive/CHG-0012-pin-hermes-pack-skill-installation.md)
-- [Start repository wording receipt](../../changes/active/CHG-0017-start-repository-wording-and-inventory.md)
+- [Start repository wording receipt](../../changes/archive/CHG-0017-start-repository-wording-and-inventory.md)
