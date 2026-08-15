@@ -21,14 +21,18 @@ An authenticated operator can inspect workflow state and evidence, perform bound
   packs and missing phase skill coverage, and never replaces deterministic
   workflow recommendations or performs an action.
 - Start workflow lists every bundled pack with its readiness state and offers
-  three explicit workspace modes: a registered project (whose bound board is
-  derived server-side), an unregistered board with a clean local Git root, or a
-  fresh local project. Local initialization previews and then creates the Git
-  root, strict default policy, initial commit, and unbound board without a
+  three explicit workspace modes: a registered GitHub repository (whose bound
+  board is derived server-side from that registration, including registrations
+  owned by other Hermes profiles), an unregistered board with a clean local Git
+  root, or a fresh local project. Local initialization previews and then creates
+  the Git root, strict default policy, initial commit, and unbound board without a
   GitHub identity. The browser never receives a checkout path or selects a
-  board for a registered project. Manage packs, Register project, and Manage
-  sources preserve the browser draft while moving visual and keyboard focus to
-  their exact Config destination.
+  board for a registered GitHub repository. Registrations that violate uniqueness
+  or board bind state stay visible outside the dropdown with a reason and
+  conclusion. Start shows the working directory for the selected workspace.
+  Manage packs, Register repository,
+  and Manage sources preserve the browser draft while moving visual and keyboard
+  focus to their exact Config destination.
 - Approval, review disposition, card remediation, cancellation, setup, and curator mutations use preview/confirm or exact-identity requests; the server derives authoritative workflow, board, repository, and worktree facts.
 - Artifact views expose ledger-bound metadata, bounded literal text, digest-verified downloads, and closed curator actions without accepting filesystem paths.
 - Config → Packs is a pack-first workspace that separates complete immutable
@@ -88,3 +92,4 @@ An authenticated operator can inspect workflow state and evidence, perform bound
 - [Wireframe index](../wireframes/index.html)
 - [Initial records-adoption receipt](../../changes/archive/CHG-0001-adopt-application-records.md)
 - [Pinned Hermes pack installation receipt](../../changes/archive/CHG-0012-pin-hermes-pack-skill-installation.md)
+- [Start repository wording receipt](../../changes/active/CHG-0017-start-repository-wording-and-inventory.md)

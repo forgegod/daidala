@@ -1,7 +1,7 @@
 # CAP-0006: Repository policy bootstrap
 
 **Status:** implemented
-**Primary surface:** Daidala Config → Registered projects (bootstrap path)
+**Primary surface:** Daidala Config → GitHub Repositories (bootstrap path)
 
 ## Outcome
 
@@ -13,7 +13,7 @@ repository or touching the default branch.
 ## Behavior
 
 - `daidala project bootstrap --github-url URL --profile NAME` and Config →
-  Registered projects bootstrap use one deterministic bootstrap service.
+  GitHub Repositories bootstrap use one deterministic bootstrap service.
 - Bootstrap is offered only after inspect classification is `needs-bootstrap`.
 - Preview generates strict `.daidala/project.yaml` and
   `.daidala/constraints.yaml` content with release flags false, pinned pack
@@ -41,7 +41,7 @@ repository or touching the default branch.
 - [`daidala/repository_bootstrap.py`](../../../daidala/repository_bootstrap.py) — template generation, digest binding, host-`gh` branch publish.
 - [`daidala/cli.py`](../../../daidala/cli.py) — `project bootstrap` preview/apply adapter.
 - [`dashboard/plugin_api.py`](../../../dashboard/plugin_api.py) — path-free bootstrap preview/apply routes.
-- [`dashboard/dist/index.js`](../../../dashboard/dist/index.js) — bootstrap confirmation UI on Config → Registered projects.
+- [`dashboard/dist/index.js`](../../../dashboard/dist/index.js) — bootstrap confirmation UI on Config → GitHub Repositories.
 
 ### Tests
 
@@ -60,5 +60,6 @@ repository or touching the default branch.
 - [CHG-0010](../../changes/archive/CHG-0010-non-daidala-repository-bootstrap.md)
 - [CHG-0011](../../changes/archive/CHG-0011-bootstrap-branch-links.md)
 - [CHG-0015](../../changes/archive/CHG-0015-all-profile-repository-inventory.md)
+- [CHG-0017](../../changes/active/CHG-0017-start-repository-wording-and-inventory.md)
 - [HTML wireframe](../wireframes/html/CAP-0006-repository-policy-bootstrap.html)
 - [PNG wireframe](../wireframes/exports/CAP-0006-repository-policy-bootstrap.png)

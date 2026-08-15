@@ -2756,7 +2756,7 @@
       },
         createElement("h3", null, name),
         profile.status === "unavailable"
-          ? createElement("p", { className: "daidala-banner daidala-banner-error" }, "Registered projects are unavailable for this profile.")
+          ? createElement("p", { className: "daidala-banner daidala-banner-error" }, "GitHub Repositories are unavailable for this profile.")
           : null,
         rows
       );
@@ -2765,7 +2765,7 @@
     return createElement("section", { className: "daidala-config", "data-testid": "daidala-repository-registration" },
       createElement("header", { className: "daidala-config-header" },
         createElement("div", null,
-          createElement("h2", null, "Registered projects"),
+          createElement("h2", null, "GitHub Repositories"),
           createElement("p", { className: "daidala-workflow-meta" },
             "Every existing Hermes profile and its registered workspace tuples. Daidala does not accept credentials or paths."
           )
@@ -3982,7 +3982,7 @@
     var _i = useState(0), reload = _i[0], setReload = _i[1];
     var _k = useState(""), message = _k[0], setMessage = _k[1];
     var _j = useState({
-      workspace_mode: "registered", project_id: "", unregistered_board_slug: "", local_project_id: "", local_board_name: "", pack: "", board_slug: "", goal: "", worker_default: "",
+      workspace_mode: "registered", project_id: "", controller_profile: "", unregistered_board_slug: "", local_project_id: "", local_board_name: "", pack: "", board_slug: "", goal: "", worker_default: "",
       stage_profiles: {}, constraint_kind: "none", constraints_content: "",
       constraints_skill: "", constraints_skill_digest: "", workflow_id: "",
       board_draft: "", board_name: ""
@@ -4014,10 +4014,15 @@
               ? saved.stage_profiles[stage]
               : worker;
           });
+          var selectedProject = projects.find(function (row) {
+            return row.project_id === (saved.project_id || current.project_id) &&
+              row.controller_profile === (saved.controller_profile || current.controller_profile);
+          }) || projects.find(function (row) {
+            return row.project_id === (saved.project_id || current.project_id);
+          }) || (projects.length === 1 ? projects[0] : null);
           return Object.assign({}, current, {
-            project_id: projects.some(function (row) {
-              return row.project_id === (saved.project_id || current.project_id);
-            }) ? (saved.project_id || current.project_id) : "",
+            project_id: selectedProject ? selectedProject.project_id : "",
+            controller_profile: selectedProject ? selectedProject.controller_profile : "",
             pack: packNames.indexOf(saved.pack || current.pack) >= 0
               ? (saved.pack || current.pack) : packNames[0] || "",
             board_slug: boards.some(function (row) {
@@ -4119,7 +4124,7 @@
       if (form.workspace_mode === "unregistered") {
         return { selection: { mode: "unregistered", board_slug: form.unregistered_board_slug }, request: request };
       }
-      return { selection: { mode: "registered", project_id: form.project_id }, request: request };
+      return { selection: { mode: "registered", project_id: form.project_id, controller_profile: form.controller_profile }, request: request };
     }
 
     function runReadiness() {
@@ -4167,7 +4172,7 @@
       try {
         window.localStorage.setItem("daidala:start-default:v1:" + inventory.controller_profile,
           JSON.stringify({
-            project_id: form.project_id, pack: form.pack, board_slug: form.board_slug,
+            project_id: form.project_id, controller_profile: form.controller_profile, pack: form.pack, board_slug: form.board_slug,
             worker_default: form.worker_default, stage_profiles: form.stage_profiles
           })
         );
@@ -4210,9 +4215,18 @@
 
     var profiles = inventory && Array.isArray(inventory.profiles) ? inventory.profiles : [];
     var projects = inventory && Array.isArray(inventory.projects) ? inventory.projects : [];
+    var ineligible = inventory && Array.isArray(inventory.ineligible_repositories) ? inventory.ineligible_repositories : [];
     var boards = inventory && Array.isArray(inventory.boards) ? inventory.boards : [];
     var packs = inventory && Array.isArray(inventory.pack_options) ? inventory.pack_options : [];
     var policySources = inventory && Array.isArray(inventory.policy_sources) ? inventory.policy_sources : [];
+    var selectedRepository = projects.find(function (row) {
+      return row.project_id === form.project_id && row.controller_profile === form.controller_profile;
+    }) || null;
+    var selectedUnregistered = ((inventory && inventory.unregistered_boards) || []).find(function (row) {
+      return row.slug === form.unregistered_board_slug;
+    }) || null;
+    var localWorkdir = inventory && inventory.checkouts_root && form.local_project_id
+      ? inventory.checkouts_root + "/" + form.local_project_id : "";
     var selectedPack = packs.find(function (option) { return option.name === form.pack; }) || null;
     var hasRequest = selectedPack && selectedPack.status === "ready" &&
       form.pack && form.goal.trim() &&
@@ -4256,25 +4270,41 @@
           ) : null,
           createElement("section", { className: "daidala-wizard-section" },
             createElement("h3", null, "Workspace"),
-            createElement("label", null, createElement("input", { type: "radio", checked: form.workspace_mode === "registered", onChange: function () { change("workspace_mode", "registered"); } }), " Registered project"),
-            createElement("label", null, createElement("input", { type: "radio", checked: form.workspace_mode === "unregistered", onChange: function () { change("workspace_mode", "unregistered"); } }), " Existing unregistered project"),
+            createElement("label", null, createElement("input", { type: "radio", checked: form.workspace_mode === "registered", onChange: function () { change("workspace_mode", "registered"); } }), " Registered GitHub repository"),
+            createElement("label", null, createElement("input", { type: "radio", checked: form.workspace_mode === "unregistered", onChange: function () { change("workspace_mode", "unregistered"); } }), " Existing unregistered repository"),
             createElement("label", null, createElement("input", { type: "radio", checked: form.workspace_mode === "local", onChange: function () { change("workspace_mode", "local"); } }), " Initialize local project"),
-            form.workspace_mode === "registered" ? createElement("div", { className: "daidala-wizard-section-heading" },
-              select("Registered repository", form.project_id, function (value) { change("project_id", value); }, projects.map(function (row) { return { value: row.project_id, label: row.project_id + " · " + row.repository + " · " + row.board }; })),
-              createElement("a", { href: "/daidala?section=runbook&return=start-workflow", onClick: function (event) { navigateDashboard(event, "/daidala?section=runbook&return=start-workflow"); } }, "Register project")
+            form.workspace_mode === "registered" ? createElement("div", null,
+            createElement("div", { className: "daidala-wizard-section-heading" },
+              select("Registered repository", form.controller_profile && form.project_id ? form.controller_profile + ":" + form.project_id : "", function (value) { var separator = value.indexOf(":"); setForm(function (current) { return Object.assign({}, current, { controller_profile: separator > 0 ? value.slice(0, separator) : "", project_id: separator > 0 ? value.slice(separator + 1) : "" }); }); }, projects.map(function (row) { return { value: row.controller_profile + ":" + row.project_id, label: row.repository + " · " + row.controller_profile + " · " + row.board }; })),
+              createElement("a", { href: "/daidala?section=repositories&return=start-workflow", onClick: function (event) { navigateDashboard(event, "/daidala?section=repositories&return=start-workflow"); } }, "Register repository"),
+              selectedRepository && selectedRepository.workdir ? createElement("p", { className: "daidala-workflow-meta" }, "Working directory: " + selectedRepository.workdir) : null
+            ),
+              ineligible.length ? createElement("section", { className: "daidala-wizard-section", "data-testid": "daidala-ineligible-repositories" },
+                createElement("h4", null, "Not selectable"),
+                ineligible.map(function (row) {
+                  return createElement("article", { key: row.controller_profile + ":" + row.project_id },
+                    createElement("p", null, row.repository + " · " + row.controller_profile + " · " + row.board),
+                    createElement("p", { className: "daidala-workflow-meta" }, "Reason: " + row.detail),
+                    createElement("p", { className: "daidala-workflow-meta" }, "Conclusion: " + row.conclusion),
+                    row.workdir ? createElement("p", { className: "daidala-workflow-meta" }, "Working directory: " + row.workdir) : null
+                  );
+                })
+              ) : null
             ) : form.workspace_mode === "unregistered" ? createElement("div", { className: "daidala-wizard-pair" },
               select("Unregistered board", form.unregistered_board_slug, function (value) { change("unregistered_board_slug", value); }, (inventory.unregistered_boards || []).map(function (row) { return { value: row.slug, label: row.name + " · " + row.slug }; })),
-              createElement("p", { className: "daidala-workflow-meta" }, "Only unbound boards with a clean local Git root are listed. Configure a board workdir in Hermes if this list is empty.")
+              createElement("p", { className: "daidala-workflow-meta" }, "Only unbound boards with a clean local Git root are listed. Configure a board workdir in Hermes if this list is empty."),
+              selectedUnregistered && selectedUnregistered.workdir ? createElement("p", { className: "daidala-workflow-meta" }, "Working directory: " + selectedUnregistered.workdir) : null
             ) : createElement("div", { className: "daidala-wizard-pair" },
               createElement("label", { className: "daidala-wizard-field" }, createElement("span", null, "Project slug"), createElement("input", { value: form.local_project_id, onChange: function (event) { change("local_project_id", event.target.value); } })),
               createElement("label", { className: "daidala-wizard-field" }, createElement("span", null, "Board display name"), createElement("input", { value: form.local_board_name, onChange: function (event) { change("local_board_name", event.target.value); } })),
-              createElement("p", { className: "daidala-workflow-meta" }, "Creates a local Git repository, default policy, initial commit, and unbound board. No GitHub repository is created.")
+              createElement("p", { className: "daidala-workflow-meta" }, "Creates a local Git repository, default policy, initial commit, and unbound board. No GitHub repository is created."),
+              localWorkdir ? createElement("p", { className: "daidala-workflow-meta" }, "Working directory: " + localWorkdir) : null
             )
           ),
           createElement("label", { className: "daidala-wizard-field" }, createElement("span", null, "Requested outcome / Prompt"),
             createElement("textarea", { value: form.goal, rows: 3, onChange: function (event) { change("goal", event.target.value); } })
           ),
-          form.workspace_mode === "registered" ? createElement("p", { className: "daidala-workflow-meta" }, "The selected registered project supplies its board. Configure or register projects in Config.") : null,
+          form.workspace_mode === "registered" ? createElement("p", { className: "daidala-workflow-meta" }, projects.length ? "The selected GitHub repository supplies its board. Register repositories in Config → GitHub Repositories." : ineligible.length ? "Registered GitHub repositories exist but none are selectable." : "No GitHub repository is registered in this Hermes installation. Use Register repository.") : null,
           select("Worker profile default", form.worker_default, changeWorker, profiles.map(function (name) { return { value: name, label: name }; })),
           createElement("details", { className: "daidala-wizard-advanced" },
             createElement("summary", null, "Advanced workflow settings"),

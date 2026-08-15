@@ -639,6 +639,42 @@ def _repository_registration_rows(controller_profile: str) -> list[dict[str, str
     ]
 
 
+_WIZARD_INELIGIBILITY = {
+    "duplicate-repository": (
+        "This GitHub repository is registered twice on the same profile.",
+        "One profile cannot register the same repository twice.",
+    ),
+    "in-use": (
+        "Two GitHub repositories share this Hermes board.",
+        "Never. Each GitHub repository needs its own board.",
+    ),
+    "missing": (
+        "The stored board is missing or archived.",
+        "Restore the board in Hermes or register the repository again.",
+    ),
+    "workdir-mismatch": (
+        "The board workdir does not match the registered checkout.",
+        "Fix the board default workdir or register the repository again.",
+    ),
+}
+
+
+def _registration_board_status(
+    registration: ControllerRegistration,
+    *,
+    board: dict[str, Any] | None,
+    board_count: int,
+) -> str:
+    """Return the path-free board bind state used by Config and Start."""
+    if board is None or board.get("archived") is True:
+        return "missing"
+    if board_count != 1:
+        return "in-use"
+    if board.get("default_workdir") != registration.checkout:
+        return "workdir-mismatch"
+    return "bound"
+
+
 def _registered_project_rows(
     registrations: tuple[ControllerRegistration, ...],
     *,
@@ -654,14 +690,11 @@ def _registered_project_rows(
     result: list[dict[str, str]] = []
     for registration in registrations:
         board = boards_by_slug.get(registration.board)
-        if board is None or board.get("archived") is True:
-            board_status = "missing"
-        elif board_counts.get(registration.board, 0) != 1:
-            board_status = "in-use"
-        elif board.get("default_workdir") != registration.checkout:
-            board_status = "workdir-mismatch"
-        else:
-            board_status = "bound"
+        board_status = _registration_board_status(
+            registration,
+            board=board if isinstance(board, dict) else None,
+            board_count=board_counts.get(registration.board, 0),
+        )
         result.append(
             {
                 "project_id": registration.project_id,
@@ -1836,21 +1869,18 @@ def wizard_inventory() -> dict[str, Any]:
             _run_command,
             fallback_name=resolve_data_root().name,
         )
+        boards = list_boards(_run_command)
+        selectable, ineligible = _wizard_repository_rows(_wizard_registrations(), boards)
         return {
             "controller_profile": controller_profile,
-            "boards": list_boards(_run_command),
+            "boards": boards,
             "profiles": list_profiles(_run_command),
             "packs": ["addyosmani", "aidlc"],
             "policy_sources": _profile_policy_sources(),
-            "projects": [
-                {
-                    "project_id": registration.project_id,
-                    "repository": registration.verified_remote,
-                    "board": registration.board,
-                }
-                for registration in _registered_projects(controller_profile).values()
-            ],
+            "projects": selectable,
+            "ineligible_repositories": ineligible,
             "unregistered_boards": _unregistered_boards(),
+            "checkouts_root": _mounted_checkouts_root(),
         }
     except SetupWizardError as error:
         raise HTTPException(status_code=502, detail=str(error)) from error
@@ -2036,21 +2066,131 @@ def _local_setup_preview(local_preview: Any, request: SetupRequest) -> dict[str,
     }
 
 
-def _registered_projects(
-    controller_profile: str | None = None,
-) -> dict[str, ControllerRegistration]:
-    """Read only registrations bound to the mounted controller profile."""
+def _mounted_checkouts_root() -> str | None:
+    """Return the mounted profile checkout root, or None when unset."""
     try:
-        registrations = list_controller_registrations(resolve_data_root().resolve())
-    except ValueError as error:
-        raise SetupWizardError("registered project is invalid") from error
-    if controller_profile is not None:
-        registrations = tuple(
-            registration
-            for registration in registrations
-            if registration.controller_profile == controller_profile
+        return str(CheckoutRootStore(resolve_data_root().resolve()).read().root)
+    except CheckoutRootError:
+        return None
+
+
+def _wizard_registrations() -> tuple[ControllerRegistration, ...]:
+    """Read every Hermes-validated profile's path-free workspace registrations."""
+    rows: list[ControllerRegistration] = []
+    try:
+        profiles = list_profiles(_run_command)
+    except SetupWizardError as error:
+        raise SetupWizardError("registered repository inventory is unavailable") from error
+    for profile in profiles:
+        try:
+            root = resolve_profile_root(profile, _run_command)
+            for registration in list_controller_registrations(root):
+                if registration.controller_profile == profile:
+                    rows.append(registration)
+        except (RepositoryRegistrationError, SetupWizardError, ValueError):
+            continue
+    return tuple(rows)
+
+
+def _wizard_ineligibility(
+    registration: ControllerRegistration,
+    *,
+    board: dict[str, Any] | None,
+    board_count: int,
+    repo_count: int,
+) -> str | None:
+    """Return a finite uniqueness/bind reason, or None when Start may select it."""
+    if repo_count != 1:
+        return "duplicate-repository"
+    status = _registration_board_status(
+        registration, board=board, board_count=board_count
+    )
+    return None if status == "bound" else status
+
+
+def _wizard_repository_projection(registration: ControllerRegistration) -> dict[str, str]:
+    return {
+        "project_id": registration.project_id,
+        "controller_profile": registration.controller_profile,
+        "repository": registration.repository_canonical,
+        "board": registration.board,
+        "workdir": registration.checkout,
+    }
+
+
+def _wizard_repository_rows(
+    registrations: tuple[ControllerRegistration, ...],
+    boards: list[dict[str, Any]],
+) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+    """Split registrations into selectable Start rows and explained ineligible rows."""
+    boards_by_slug = {
+        row.get("slug"): row for row in boards if isinstance(row.get("slug"), str)
+    }
+    board_counts: dict[str, int] = {}
+    repo_counts: dict[tuple[str, str], int] = {}
+    for registration in registrations:
+        board_counts[registration.board] = board_counts.get(registration.board, 0) + 1
+        repo_key = (registration.controller_profile, registration.repository_canonical)
+        repo_counts[repo_key] = repo_counts.get(repo_key, 0) + 1
+    selectable: list[dict[str, str]] = []
+    ineligible: list[dict[str, str]] = []
+    for registration in registrations:
+        board = boards_by_slug.get(registration.board)
+        reason = _wizard_ineligibility(
+            registration,
+            board=board if isinstance(board, dict) else None,
+            board_count=board_counts.get(registration.board, 0),
+            repo_count=repo_counts.get(
+                (registration.controller_profile, registration.repository_canonical), 0
+            ),
         )
-    return {registration.project_id: registration for registration in registrations}
+        row = _wizard_repository_projection(registration)
+        if reason is None:
+            selectable.append(row)
+            continue
+        explanation = _WIZARD_INELIGIBILITY[reason]
+        ineligible.append(
+            {**row, "reason": reason, "detail": explanation[0], "conclusion": explanation[1]}
+        )
+    return selectable, ineligible
+
+
+def _reject_ineligible_registration(registration: ControllerRegistration) -> None:
+    """Refuse Start against a uniqueness or board-bind failure."""
+    selectable, _ineligible = _wizard_repository_rows(
+        _wizard_registrations(), list_boards(_run_command)
+    )
+    if any(
+        row["project_id"] == registration.project_id
+        and row["controller_profile"] == registration.controller_profile
+        for row in selectable
+    ):
+        return
+    raise SetupWizardError("registered repository is not selectable")
+
+
+def _registration_for_start(
+    controller_profile: object, project_id: object
+) -> ControllerRegistration:
+    """Resolve one registration after revalidating the named Hermes profile."""
+    if not isinstance(controller_profile, str) or not controller_profile:
+        raise SetupWizardError("controller_profile is required")
+    if not isinstance(project_id, str) or not project_id:
+        raise SetupWizardError("project_id is required")
+    try:
+        if controller_profile not in list_profiles(_run_command):
+            raise SetupWizardError("unknown registered repository")
+        root = resolve_profile_root(controller_profile, _run_command)
+        registrations = list_controller_registrations(root)
+    except (RepositoryRegistrationError, SetupWizardError, ValueError) as error:
+        raise SetupWizardError("unknown registered repository") from error
+    for registration in registrations:
+        if (
+            registration.project_id == project_id
+            and registration.controller_profile == controller_profile
+        ):
+            return registration
+    raise SetupWizardError("unknown registered repository")
 
 
 def _all_registered_board_slugs() -> frozenset[str]:
@@ -2090,7 +2230,13 @@ def _unregistered_boards() -> list[dict[str, str]]:
         if code != 0 or status:
             continue
         name = board.get("name")
-        eligible.append({"slug": slug, "name": name if isinstance(name, str) else slug})
+        eligible.append(
+            {
+                "slug": slug,
+                "name": name if isinstance(name, str) else slug,
+                "workdir": workdir,
+            }
+        )
     return eligible
 
 
@@ -2113,13 +2259,16 @@ def _resolved_setup_request(payload: dict[str, Any], *, apply: bool) -> tuple[Se
         raise HTTPException(status_code=400, detail="unknown setup request fields")
     mode = selection["mode"]
     try:
-        if mode == "registered" and set(selection) == {"mode", "project_id"}:
-            project_id = selection["project_id"]
-            if not isinstance(project_id, str) or not project_id:
-                raise SetupWizardError("project_id is required")
-            registration = _registered_projects(active_profile(_run_command)).get(project_id)
-            if registration is None:
-                raise SetupWizardError("unknown registered project")
+        if mode == "registered" and set(selection) == {
+            "mode",
+            "project_id",
+            "controller_profile",
+        }:
+            registration = _registration_for_start(
+                selection.get("controller_profile"),
+                selection.get("project_id"),
+            )
+            _reject_ineligible_registration(registration)
             resolved = SetupRequest.from_payload(
                 {
                     **request,
@@ -2147,7 +2296,10 @@ def _resolved_setup_request(payload: dict[str, Any], *, apply: bool) -> tuple[Se
         else:
             raise SetupWizardError("workspace selection is invalid")
     except SetupWizardError as error:
-        status = 404 if str(error) == "unknown registered project" else 400
+        status = {
+            "unknown registered repository": 404,
+            "registered repository is not selectable": 409,
+        }.get(str(error), 400)
         raise HTTPException(status_code=status, detail=str(error)) from error
     return resolved, service_factory()
 

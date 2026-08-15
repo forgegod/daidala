@@ -1,7 +1,7 @@
 # CAP-0004: GitHub repository registration
 
 **Status:** implemented
-**Primary surface:** Daidala Config → Registered projects
+**Primary surface:** Daidala Config → GitHub Repositories
 
 ## Outcome
 
@@ -12,7 +12,7 @@ credential alias, environment-variable name, or token to Daidala.
 ## Behavior
 
 - `daidala project register --github-url URL --profile NAME --board SLUG` and
-  Config → Registered projects use the same deterministic registration service.
+  Config → GitHub Repositories use the same deterministic registration service.
 - Preview inspects the canonical GitHub identity and committed project policy,
   reports the derived project ID, release flags, safe readiness state, two
   proposed non-secret writes, and a digest bound to the profile and proposal.
@@ -26,7 +26,7 @@ credential alias, environment-variable name, or token to Daidala.
   unused board with the derived checkout workdir or creates one with that
   workdir, then writes only controller registration and credential-bindings
   records.
-- Config → Registered projects lists every Hermes-validated profile and its
+- Config → GitHub Repositories lists every Hermes-validated profile and its
   workspace tuples in one inventory. A registered row shows canonical
   repository, project-id slug, board with path-free state (`bound`, `missing`,
   `workdir-mismatch`, or `in-use`), and GitHub Project link state. It fills the
@@ -73,5 +73,6 @@ credential alias, environment-variable name, or token to Daidala.
 - [CHG-0009](../../changes/archive/CHG-0009-github-repository-registration-and-delivery.md)
 - [CHG-0010](../../changes/archive/CHG-0010-non-daidala-repository-bootstrap.md)
 - [CHG-0015](../../changes/archive/CHG-0015-all-profile-repository-inventory.md)
+- [CHG-0017](../../changes/active/CHG-0017-start-repository-wording-and-inventory.md)
 - [HTML wireframe](../wireframes/html/CAP-0004-github-repository-registration.html)
 - [PNG wireframe](../wireframes/exports/CAP-0004-github-repository-registration.png)

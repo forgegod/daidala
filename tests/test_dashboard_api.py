@@ -1537,7 +1537,9 @@ def test_unregistered_board_inventory_is_path_free_and_requires_a_clean_git_root
 
     api.__dict__["_run_command"] = run
 
-    assert api._unregistered_boards() == [{"slug": "available", "name": "Available"}]
+    assert api._unregistered_boards() == [
+        {"slug": "available", "name": "Available", "workdir": str(workdir)}
+    ]
 
 
 def test_registered_wizard_request_derives_board_and_checkout_server_side() -> None:
@@ -1547,12 +1549,17 @@ def test_registered_wizard_request_derives_board_and_checkout_server_side() -> N
         checkout="/private/work/project",
     )
     api.__dict__["active_profile"] = lambda run: "controller"
-    api.__dict__["_registered_projects"] = lambda controller: {"project": registration}
+    api.__dict__["_registration_for_start"] = lambda controller, project: registration
+    api.__dict__["_reject_ineligible_registration"] = lambda found: None
     service = object()
     api.__dict__["service_factory"] = lambda: service
     request, resolved_service = api._resolved_setup_request(
         {
-            "selection": {"mode": "registered", "project_id": "project"},
+            "selection": {
+                "mode": "registered",
+                "project_id": "project",
+                "controller_profile": "controller",
+            },
             "request": {
                 "goal": "Verify the selected tuple.",
                 "stage_profiles": {
@@ -1569,26 +1576,32 @@ def test_registered_wizard_request_derives_board_and_checkout_server_side() -> N
     assert request.target_repository == "/private/work/project"
 
 
-def test_wizard_inventory_exposes_profile_policy_sources_and_only_mounted_registrations(
+def test_wizard_inventory_exposes_profile_policy_sources_and_all_registrations(
     tmp_path: Path,
 ) -> None:
     api = load_api()
     matching = types.SimpleNamespace(
         project_id="matching",
-        verified_remote="git@github.com:forgegod/daidala.git",
+        repository_canonical="forgegod/daidala",
         controller_profile="controller",
         board="daidala-forgegod-daidala",
+        checkout="/private/work/daidala",
     )
     foreign = types.SimpleNamespace(
         project_id="foreign",
-        verified_remote="git@github.com:forgegod/other.git",
+        repository_canonical="forgegod/other",
         controller_profile="other",
         board="daidala-forgegod-other",
+        checkout="/private/work/other",
     )
 
     def run_command(command: tuple[str, ...]) -> tuple[int, str]:
         if command == ("hermes", "kanban", "boards", "list", "--json"):
-            return 0, '[{"slug": "existing"}]'
+            return (
+                0,
+                '[{"slug": "daidala-forgegod-daidala",'
+                '"default_workdir": "/private/work/daidala"}]',
+            )
         return 0, " ◆controller      model      stopped\n  worker           model      stopped"
 
     api.__dict__["_run_command"] = run_command
@@ -1603,11 +1616,7 @@ def test_wizard_inventory_exposes_profile_policy_sources_and_only_mounted_regist
     )
     api.__dict__["resolve_data_root"] = lambda: tmp_path
     api.__dict__["_unregistered_boards"] = lambda: []
-    api.__dict__["_registered_projects"] = lambda controller_profile=None: {
-        item.project_id: item
-        for item in (matching, foreign)
-        if controller_profile is None or item.controller_profile == controller_profile
-    }
+    api.__dict__["_wizard_registrations"] = lambda: (matching, foreign)
 
     payload = api.wizard_inventory()
 
@@ -1615,14 +1624,125 @@ def test_wizard_inventory_exposes_profile_policy_sources_and_only_mounted_regist
     assert payload["projects"] == [
         {
             "project_id": "matching",
-            "repository": "git@github.com:forgegod/daidala.git",
+            "controller_profile": "controller",
+            "repository": "forgegod/daidala",
             "board": "daidala-forgegod-daidala",
+            "workdir": "/private/work/daidala",
+        }
+    ]
+    assert payload["ineligible_repositories"] == [
+        {
+            "project_id": "foreign",
+            "controller_profile": "other",
+            "repository": "forgegod/other",
+            "board": "daidala-forgegod-other",
+            "workdir": "/private/work/other",
+            "reason": "missing",
+            "detail": "The stored board is missing or archived.",
+            "conclusion": "Restore the board in Hermes or register the repository again.",
         }
     ]
     assert payload["policy_sources"] == [
         {"name": "policy-source", "digest": payload["policy_sources"][0]["digest"]}
     ]
     assert len(payload["policy_sources"][0]["digest"]) == 64
+
+
+def test_wizard_repository_rows_explain_uniqueness_and_bind_failures() -> None:
+    api = load_api()
+    shared = types.SimpleNamespace(
+        project_id="alpha",
+        repository_canonical="acme/alpha",
+        controller_profile="controller",
+        board="shared-board",
+        checkout="/private/work/alpha",
+    )
+    shared_other = types.SimpleNamespace(
+        project_id="beta",
+        repository_canonical="acme/beta",
+        controller_profile="other",
+        board="shared-board",
+        checkout="/private/work/beta",
+    )
+    mismatched = types.SimpleNamespace(
+        project_id="gamma",
+        repository_canonical="acme/gamma",
+        controller_profile="controller",
+        board="gamma-board",
+        checkout="/private/work/gamma",
+    )
+    duplicate_a = types.SimpleNamespace(
+        project_id="delta-one",
+        repository_canonical="acme/delta",
+        controller_profile="controller",
+        board="delta-one-board",
+        checkout="/private/work/delta-one",
+    )
+    duplicate_b = types.SimpleNamespace(
+        project_id="delta-two",
+        repository_canonical="acme/delta",
+        controller_profile="controller",
+        board="delta-two-board",
+        checkout="/private/work/delta-two",
+    )
+    boards = [
+        {"slug": "shared-board", "default_workdir": "/private/work/alpha"},
+        {"slug": "gamma-board", "default_workdir": "/private/other/gamma"},
+        {"slug": "delta-one-board", "default_workdir": "/private/work/delta-one"},
+        {"slug": "delta-two-board", "default_workdir": "/private/work/delta-two"},
+    ]
+
+    selectable, ineligible = api._wizard_repository_rows(
+        (shared, shared_other, mismatched, duplicate_a, duplicate_b),
+        boards,
+    )
+
+    assert selectable == []
+    reasons = {row["project_id"]: row["reason"] for row in ineligible}
+    assert reasons == {
+        "alpha": "in-use",
+        "beta": "in-use",
+        "gamma": "workdir-mismatch",
+        "delta-one": "duplicate-repository",
+        "delta-two": "duplicate-repository",
+    }
+    assert all("checkout" not in row for row in ineligible)
+    workdirs = {row["project_id"]: row["workdir"] for row in ineligible}
+    assert workdirs["gamma"] == "/private/work/gamma"
+    assert {row["reason"]: (row["detail"], row["conclusion"]) for row in ineligible}[
+        "in-use"
+    ] == api._WIZARD_INELIGIBILITY["in-use"]
+
+
+def test_registration_for_start_resolves_a_named_profile_not_the_mount(
+    tmp_path: Path,
+) -> None:
+    api = load_api()
+    foreign = types.SimpleNamespace(
+        project_id="forgegod-daidala",
+        controller_profile="daidala-self-improvement",
+        board="daidala-forgegod-daidala",
+        checkout="/private/work/daidala",
+    )
+
+    def run_command(command: tuple[str, ...]) -> tuple[int, str]:
+        return (
+            0,
+            " ◆controller      model      stopped\n"
+            "  daidala-self-improvement  model      stopped",
+        )
+
+    api.__dict__["_run_command"] = run_command
+    api.__dict__["resolve_profile_root"] = lambda name, run: tmp_path
+    api.__dict__["list_controller_registrations"] = lambda root: (foreign,)
+
+    registration = api._registration_for_start(
+        "daidala-self-improvement", "forgegod-daidala"
+    )
+
+    assert registration is foreign
+    with pytest.raises(api.SetupWizardError, match="unknown registered repository"):
+        api._registration_for_start("controller", "forgegod-daidala")
 
 
 def test_constraint_source_routes_expose_only_valid_bounded_policy_skills(

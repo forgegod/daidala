@@ -306,7 +306,7 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
         'API_BASE + "/repository-registration/preview"',
         'API_BASE + "/repository-registration"',
         'API_BASE + "/repository-registration/inventory"',
-        "Registered projects",
+        "GitHub Repositories",
         "Every existing Hermes profile and its registered workspace tuples",
         "Repository",
         "Slug",
@@ -459,8 +459,8 @@ def test_bundle_exposes_the_closed_inventory_backed_start_workflow_wizard() -> N
         'API_BASE + "/wizard/local/start"',
         "Mounted controller profile",
         "Pack · readiness",
-        "Registered repository",
-        "Register project",
+        "Registered GitHub repository",
+        "Register repository",
         "Initialize local project",
         "Project slug",
         "Board display name",
@@ -502,7 +502,16 @@ def test_bundle_exposes_the_closed_inventory_backed_start_workflow_wizard() -> N
     assert 'href: "#cron"' not in source
     assert 'href: "#config-constraints"' not in source
     assert "/daidala?section=constraints&return=start-workflow" in source
-    assert "/daidala?section=runbook&return=start-workflow" in source
+    assert "/daidala?section=repositories&return=start-workflow" in source
+    assert "controller_profile: form.controller_profile" in source
+    assert "Existing unregistered repository" in source
+    assert "No GitHub repository is registered in this Hermes installation" in source
+    assert "inventory.ineligible_repositories" in source
+    assert "Not selectable" in source
+    assert "Reason: " in source
+    assert "Conclusion: " in source
+    assert "Working directory: " in source
+    assert 'data-testid": "daidala-ineligible-repositories"' in source
     assert "window.history.pushState" in source
     assert 'addEventListener("popstate"' in source
     assert "Hermes Cron schedules future admissions only" in source

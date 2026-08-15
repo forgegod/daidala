@@ -127,14 +127,18 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   receives keyboard focus and scrolls to the viewport start so the navigation
   result is immediately visible.
 - Wizard inventory derives the mounted controller profile from Hermes' documented
-  profile inventory and exposes only registrations bound to that profile plus
-  installation-global unregistered boards that resolve to clean Git roots. The
-  runtime-root identity takes precedence only after exact inventory validation;
+  profile inventory and exposes every Hermes-validated profile's registrations
+  plus installation-global unregistered boards that resolve to clean Git roots.
+  The runtime-root identity takes precedence only after exact inventory validation;
   the dashboard's management-profile query never selects the backend controller.
-  Registered selection sends only a project ID; unregistered selection sends
-  only a board slug; local initialization sends only a slug and display name.
-  The server derives board and checkout authority. The browser never sends a
-  controller profile, checkout, credential, or filesystem path.
+  Registered selection sends a project ID and the registration's controller
+  profile name; unregistered selection sends only a board slug; local
+  initialization sends only a slug and display name. The server revalidates the
+  named profile through Hermes and derives board and checkout authority. Only a
+  `bound` registration is selectable. Other registrations appear in
+  `ineligible_repositories` with a finite `reason`, `detail`, and `conclusion`.
+  Start may display the derived working directory for the selected workspace.
+  The browser never sends a checkout, credential, or filesystem path.
 - Constraint preview is non-mutating; replacement requires the displayed current
   digest and explicit invalidation confirmation.
 - Constraint-source list/detail routes accept only exact inventory names. They

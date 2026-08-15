@@ -127,7 +127,7 @@ Project-wide durable preferences (style, workflow, conventions) live in user mem
 - Hermes Kanban boards are installation-global and shared across profiles. A
   controller registration stores the board slug; it never owns or copies the
   board database into the controller profile.
-- Registered projects commit strict `.daidala/project.yaml` policy, while trusted
+- Registered GitHub repositories commit strict `.daidala/project.yaml` policy, while trusted
   checkout, remote, profile, board, credential aliases, attended target, and
   evaluator authority remain profile-local registration data.
 - Credential aliases are logical names, not password-manager integrations. The
