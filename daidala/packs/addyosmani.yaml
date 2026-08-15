@@ -6,37 +6,37 @@ hermes_version_constraint: ">=0.18.2,<0.21.0"
 skills:
   - name: api-and-interface-design
     install: forgegod/addyosmani-agent-skills/skills/api-and-interface-design
-    content_digest: 323281e521320a8dcf8b70db1175da12d2c42c02201ffc1395adeb0503d20e55
+    content_digest: 0f762ddae2eb0c21141536d9fd755e39ce3306095fe8c63c999e1ab542db0f07
   - name: browser-testing-with-devtools
     install: forgegod/addyosmani-agent-skills/skills/browser-testing-with-devtools
-    content_digest: 8ced93fa130554886eb2ff72d6ea5eff7b3eeb02c9a2f2b4a9e1df921018dc39
+    content_digest: 2b41b205c1be3004b9ff104e33d1a6a2742e8d8cb17f18235158732cdb166420
   - name: ci-cd-and-automation
     install: forgegod/addyosmani-agent-skills/skills/ci-cd-and-automation
-    content_digest: b3df7df2a4714778a0a9debc1d486aebda8e15ef863ccfd69a8f423f4055821f
+    content_digest: 706d42c02e056cfd0509172fa294ecbdec8509aac9dc25862310800892709d9d
   - name: code-review-and-quality
     install: forgegod/addyosmani-agent-skills/skills/code-review-and-quality
-    content_digest: f8b8e14719b13bc31532dece30b2707d01a15b7cbf764582c7f38371de8aa1e4
+    content_digest: 93664531cdedb72b79d6a5516d418ec78de4fb8587d7733fb67c49044cb4f757
   - name: code-simplification
     install: forgegod/addyosmani-agent-skills/skills/code-simplification
-    content_digest: d2113a5b5509e2f0fba3a1c239f64d98d964b9f2b5d34fba375107e18c9f915e
+    content_digest: 6ae92ac7a845a415d8d3e5a5c17c61fcf07408d8e203a25bf20e4fe28bccc4e2
   - name: context-engineering
     install: forgegod/addyosmani-agent-skills/skills/context-engineering
-    content_digest: e032d7797bffaf2c436304bb6f95eb586e13d1a6208906902a097843547556ed
+    content_digest: de699fea78a94e0c5df9f5bd6168e7a8fe03a90a62e8b01d24e992145f74fad6
   - name: debugging-and-error-recovery
     install: forgegod/addyosmani-agent-skills/skills/debugging-and-error-recovery
-    content_digest: 6c5a2dc0cfbb1631f09a126abbb9c12fba24e0e29617a4ec2a812e12ece6473e
+    content_digest: 8d5e00468783cfb5d49e41e600d7207bc8adf77ec5da06af1d2467361ba0a197
   - name: deprecation-and-migration
     install: forgegod/addyosmani-agent-skills/skills/deprecation-and-migration
     content_digest: e965a8acab9e6004749f0e70374cc9a5f7c1b3953d9e78e6e8aef8bdd3743f73
   - name: documentation-and-adrs
     install: forgegod/addyosmani-agent-skills/skills/documentation-and-adrs
-    content_digest: fea84ceaf7bde47bcac77bee0344bb2d587d1170897220c91a64680561bfc518
+    content_digest: f1a55efdae3bda6e93068b5ccaf7487e484f627abe40c6c3b0cb9d46d3a21486
   - name: doubt-driven-development
     install: forgegod/addyosmani-agent-skills/skills/doubt-driven-development
-    content_digest: 5fc6e9a7b8b6c2b87a74c48df95f5d11b43d279d342847d4dd9c2238c483b92f
+    content_digest: 875238fd8aa17c47b1343c505fc7e87927014f337a00b2a8841e8b9fcd9717c2
   - name: frontend-ui-engineering
     install: forgegod/addyosmani-agent-skills/skills/frontend-ui-engineering
-    content_digest: 05b12d8af7d1e2ac2710eeb8c6b8fed2d8da722eea2ff1d1a2ab25fcc1756b55
+    content_digest: 82d858a494ddd7d53adc769efbfc4c3b93a5dc593cf59b3406ad205faa986eb3
   - name: git-workflow-and-versioning
     install: forgegod/addyosmani-agent-skills/skills/git-workflow-and-versioning
     content_digest: 584a72ac5669e474e5b1552a0ec704b95a03c4056965f80d8cf74aa22668af63
@@ -45,37 +45,37 @@ skills:
     content_digest: d134901c97dc2c1fc77f10d483ca9e7bcefc02d258ca66c3936572bf5696a2ba
   - name: incremental-implementation
     install: forgegod/addyosmani-agent-skills/skills/incremental-implementation
-    content_digest: 114ebb8c5dd1c5a60907a8bb34c7cb600ba5ec02a0879ccdbe7eff4da5b2a819
+    content_digest: 28e194a0d510481c343fea11278c8244d600dab6e69611777e3c59936bb8a8ce
   - name: interview-me
     install: forgegod/addyosmani-agent-skills/skills/interview-me
     content_digest: f271a5931d374e3ab970c79e0461a30b741123271519e599b5b9a29b8db2ffaf
   - name: observability-and-instrumentation
     install: forgegod/addyosmani-agent-skills/skills/observability-and-instrumentation
-    content_digest: bb593daded4943c1534bc4dccf18c72c9f467fb496f4ffb7affc96d83267216d
+    content_digest: 165ba13413c605959c83b4ab1599c88afc1380761b1d6df2735d1c6fe2b2ef40
   - name: performance-optimization
     install: forgegod/addyosmani-agent-skills/skills/performance-optimization
-    content_digest: 47b58454c50195a5fd8fb408f3866c1b5a33a64e0b62a5942aa7c343c9c98d20
+    content_digest: 3401f70962ffe696eaa743ea2ec5f3a2c4287296906c3d9610eb4613c8cb52af
   - name: planning-and-task-breakdown
     install: forgegod/addyosmani-agent-skills/skills/planning-and-task-breakdown
-    content_digest: 55ae75c78c86c26b4b413d06c1a66dc1b723ae46b3e6fa80ed51ef2ee4b11268
+    content_digest: b84462150ae60f9a12c13211abc722f7570bfcc436cee87e24e86850de710c18
   - name: security-and-hardening
     install: forgegod/addyosmani-agent-skills/skills/security-and-hardening
-    content_digest: 86420fb4b1a7d0edcfd95c58d618a0db0f9c49414e19ef3bf44b84fd3ceaa503
+    content_digest: e7ef5dd2208209efc20c4b95e8e24f37828cfba32d6bb179327cad99f7a95ec1
   - name: shipping-and-launch
     install: forgegod/addyosmani-agent-skills/skills/shipping-and-launch
-    content_digest: 0a4dec74de37160cc0bfb9854092d76dc9cfcbf8f67f5a4e00c497d35b9c7253
+    content_digest: 777074d68686106f5ea91b522fe8f7d5afdb8f55839c0846ed477cd2defe250a
   - name: source-driven-development
     install: forgegod/addyosmani-agent-skills/skills/source-driven-development
-    content_digest: 8be8552cde70228d32a4fc1d0ea437a8cec37038380f2c9ee4dc5cfbe89d493e
+    content_digest: badfd0118466c1d32ce191f1df3ab0f7373eea01ad36b3ce3608ad5a84a279c0
   - name: spec-driven-development
     install: forgegod/addyosmani-agent-skills/skills/spec-driven-development
     content_digest: 7d440cf6f43157587e98f66120baf698d4e0b7e6c8d97fcf13eb30db2799a0b8
   - name: test-driven-development
     install: forgegod/addyosmani-agent-skills/skills/test-driven-development
-    content_digest: aab2edcc3496fdd5236d0b321db217a3683304e1576269b6f8d8f75ffae96f13
+    content_digest: 40ea3a86925fd35375d47a68004ca3243efaaba3ea34f04d5f8c9bb055ce57b9
   - name: using-agent-skills
     install: forgegod/addyosmani-agent-skills/skills/using-agent-skills
-    content_digest: a55d2bfc4a3c468ec8e976d8a40c65572103e1602c513a8f3bc5c02eb507f0cd
+    content_digest: b5bec0e8f554318a47f38c279e6f48cbabd0571bce382f06cddd9df3661570f8
 lifecycle:
   human_gate_after: plan
   stages:
