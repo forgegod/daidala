@@ -89,3 +89,23 @@ def test_project_manifest_rejects_duplicate_pack_identity_and_unallowed_default(
     raw["workflow"]["default_pack"] = "unknown"
     with pytest.raises(PolicyViolationError, match="default pack"):
         ProjectManifest.from_dict(raw)
+
+
+def test_project_manifest_accepts_a_local_only_repository_identity() -> None:
+    raw = yaml.safe_load(manifest_content())
+    raw["project_id"] = "example-app"
+    raw["repository"] = {
+        "forge": "local",
+        "canonical": "local/example-app",
+        "allowed_remote_urls": [],
+    }
+
+    manifest = ProjectManifest.from_dict(raw)
+
+    assert manifest.repository.forge == "local"
+    assert manifest.repository.canonical == "local/example-app"
+    assert manifest.repository.allowed_remote_urls == ()
+
+    raw["repository"]["allowed_remote_urls"] = ["https://github.com/example/app.git"]
+    with pytest.raises(PolicyViolationError, match="local repository cannot declare remote URLs"):
+        ProjectManifest.from_dict(raw)

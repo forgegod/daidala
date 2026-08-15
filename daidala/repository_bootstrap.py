@@ -415,14 +415,9 @@ def build_bootstrap_files(canonical: str) -> tuple[BootstrapFile, ...]:
         raise RepositoryBootstrapError("bootstrap repository identity is invalid")
     owner, name = canonical.split("/", 1)
     project_id = _project_id(owner, name)
-    addy = load_pack("addyosmani")
-    aidlc = load_pack("aidlc")
-    constraints = DEFAULT_CONSTRAINT_TEMPLATE
-    parse_workflow_constraints(constraints)
-    manifest_payload: dict[str, Any] = {
-        "schema": "daidala.project/v1",
-        "project_id": project_id,
-        "repository": {
+    return _build_policy_files(
+        project_id,
+        {
             "forge": "github",
             "canonical": canonical,
             "allowed_remote_urls": [
@@ -430,6 +425,35 @@ def build_bootstrap_files(canonical: str) -> tuple[BootstrapFile, ...]:
                 f"https://github.com/{canonical}.git",
             ],
         },
+    )
+
+
+def build_local_bootstrap_files(project_id: str) -> tuple[BootstrapFile, ...]:
+    """Build conservative committed policy files for a local-only Git repository."""
+
+    if not isinstance(project_id, str) or not _SLUG.fullmatch(project_id):
+        raise RepositoryBootstrapError("local project ID is invalid")
+    return _build_policy_files(
+        project_id,
+        {
+            "forge": "local",
+            "canonical": f"local/{project_id}",
+            "allowed_remote_urls": [],
+        },
+    )
+
+
+def _build_policy_files(
+    project_id: str, repository: dict[str, object]
+) -> tuple[BootstrapFile, ...]:
+    addy = load_pack("addyosmani")
+    aidlc = load_pack("aidlc")
+    constraints = DEFAULT_CONSTRAINT_TEMPLATE
+    parse_workflow_constraints(constraints)
+    manifest_payload: dict[str, Any] = {
+        "schema": "daidala.project/v1",
+        "project_id": project_id,
+        "repository": repository,
         "workflow": {
             "allowed_packs": [
                 {

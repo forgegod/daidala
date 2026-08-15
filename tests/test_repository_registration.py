@@ -5,6 +5,7 @@ import json
 import stat
 from collections.abc import Mapping
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 import yaml
@@ -30,7 +31,6 @@ MANIFEST = (REPOSITORY / ".daidala" / "project.yaml").read_text(encoding="utf-8"
 def defaults_payload() -> dict[str, object]:
     return {
         "schema": "daidala.repository-registration-defaults/v1",
-        "board": "daidala-forgegod-daidala",
         "credentials": {
             "intake": {
                 "alias": "github-daidala-read-issues",
@@ -83,6 +83,12 @@ class GitHubRunner:
     ) -> tuple[int, str]:
         self.commands.append(command)
         self.environments.append(dict(environment))
+        if command == ("hermes", "profile", "list"):
+            return 0, "◆ daidala-self-improvement\n"
+        if command == ("hermes", "kanban", "boards", "list", "--json"):
+            return 0, "[]"
+        if command[:4] == ("hermes", "kanban", "boards", "create"):
+            return 0, "created"
         if command == ("gh", "api", "repos/forgegod/daidala"):
             return 0, json.dumps(
                 {
@@ -146,7 +152,7 @@ def test_registration_defaults_are_strict_and_validate_private_authority() -> No
     payload = defaults_payload()
     defaults = parse_registration_defaults(yaml.safe_dump(payload, sort_keys=False))
 
-    assert defaults.board == "daidala-forgegod-daidala"
+    assert "board" not in defaults.to_dict()
     assert defaults.notification_destination.startswith("telegram:")
     payload["unknown"] = True
     with pytest.raises(PolicyViolationError, match="unknown"):
@@ -215,10 +221,13 @@ def test_preview_is_path_secret_and_private_destination_free(tmp_path: Path) -> 
 
     assert payload["repository"] == "forgegod/daidala"
     assert payload["project_id"] == "forgegod-daidala"
+    assert payload["board"] == "daidala-forgegod-daidala"
+    assert payload["board_action"] == "create"
     assert payload["writes"] == {
         "record_count": 2,
         "registration": True,
         "credential_bindings": True,
+        "board": "create",
     }
     assert payload["release"] == {
         "allow_commit": False,
@@ -289,7 +298,44 @@ def test_apply_reinspects_and_writes_exactly_two_private_records(tmp_path: Path)
     ]
     assert stat.S_IMODE(registration_file.stat().st_mode) == 0o600
     assert stat.S_IMODE(bindings_file.stat().st_mode) == 0o600
-    assert len(runner.commands) == 4
+    assert runner.commands[-1] == (
+        "hermes",
+        "kanban",
+        "boards",
+        "create",
+        "daidala-forgegod-daidala",
+        "--default-workdir",
+        str(root / "work" / "forgegod-daidala"),
+    )
+    assert len(runner.commands) == 9
+
+
+def test_preview_rejects_a_board_registered_by_another_profile(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = (tmp_path / "controller").resolve()
+    other_root = (tmp_path / "other-controller").resolve()
+    write_defaults(root)
+    other_root.mkdir()
+    monkeypatch.setattr(repository_registration_module, "list_profiles", lambda _run: ["other"])
+    monkeypatch.setattr(
+        repository_registration_module, "resolve_profile_root", lambda _profile, _run: other_root
+    )
+    monkeypatch.setattr(
+        repository_registration_module,
+        "list_controller_registrations",
+        lambda path: (SimpleNamespace(board="daidala-forgegod-daidala"),)
+        if path == other_root
+        else (),
+    )
+    service = RepositoryRegistrationService(
+        root, "daidala-self-improvement", runner=GitHubRunner(), environ={"PATH": "/usr/bin"}
+    )
+
+    with pytest.raises(
+        RepositoryRegistrationError, match="already registered by a Daidala project"
+    ):
+        service.preview("https://github.com/forgegod/daidala")
 
 
 def test_apply_removes_new_bindings_when_registration_publish_fails(

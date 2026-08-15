@@ -169,10 +169,11 @@
     });
   }
 
-  function previewRepositoryRegistration(githubUrl, controllerProfile) {
+  function previewRepositoryRegistration(githubUrl, controllerProfile, board) {
     return postJson(API_BASE + "/repository-registration/preview", {
       github_url: githubUrl,
-      controller_profile: controllerProfile
+      controller_profile: controllerProfile,
+      board: board || null
     });
   }
 
@@ -192,11 +193,12 @@
     });
   }
 
-  function applyRepositoryRegistration(githubUrl, controllerProfile, previewDigest) {
+  function applyRepositoryRegistration(githubUrl, controllerProfile, previewDigest, board) {
     return postJson(API_BASE + "/repository-registration", {
       github_url: githubUrl,
       controller_profile: controllerProfile,
       preview_digest: previewDigest,
+      board: board || null,
       confirm: true
     });
   }
@@ -458,6 +460,14 @@
 
   function wizardStart(payload) {
     return postJson(API_BASE + "/wizard/start", payload);
+  }
+
+  function wizardLocalPreview(payload) {
+    return postJson(API_BASE + "/wizard/local/preview", payload);
+  }
+
+  function wizardLocalStart(payload) {
+    return postJson(API_BASE + "/wizard/local/start", payload);
   }
 
   function wizardBoardPreview(payload) {
@@ -2596,7 +2606,7 @@
       if (!preview || !confirmed || !active) return;
       var githubUrl = fieldUrl(active.profile, active.field).trim();
       setBusy(true); setMessage("");
-      applyRepositoryRegistration(githubUrl, preview.controller_profile, preview.preview_digest).then(function (result) {
+      applyRepositoryRegistration(githubUrl, preview.controller_profile, preview.preview_digest, preview.board).then(function (result) {
         setPreview(result); setConfirmed(false);
         setMessage("Repository registered. Refresh Configuration verification before starting a workflow.");
         refreshInventory().catch(function () {});
@@ -2671,6 +2681,7 @@
           createElement("h3", null, "Registration preview"),
           createElement("p", null, "Repository: " + preview.repository + " · Project: " + preview.project_id),
           createElement("p", null, "Profile: " + preview.controller_profile),
+          createElement("p", null, "Board: " + preview.board + " (" + preview.board_action + ")"),
           createElement("p", null, "Manifest digest: " + preview.manifest_digest),
           createElement("p", null, "Release policy: commit " + (preview.release.allow_commit ? "allowed" : "denied") + ", push " + (preview.release.allow_push ? "allowed" : "denied") + ", publish " + (preview.release.allow_publish ? "allowed" : "denied")),
           createElement("p", null, "Readiness: board " + (readiness.board_selected ? "selected" : "missing") + ", attended target " + (readiness.attended_target_configured ? "configured" : "missing") + ", credential " + (readiness.credential_available ? "available" : "not available")),
@@ -2698,6 +2709,14 @@
           createElement("div", null,
             createElement("dt", null, "Slug"),
             createElement("dd", null, registration.project_id)
+          ),
+          createElement("div", null,
+            createElement("dt", null, "Board"),
+            createElement("dd", null, registration.board + " · " + registration.board_status)
+          ),
+          createElement("div", null,
+            createElement("dt", null, "GitHub Project"),
+            createElement("dd", null, registration.github_project_status)
           )
         ) : label === "Register another repository" ? null
           : createElement("p", { className: "daidala-workflow-meta" }, "No repository registered"),
@@ -2746,15 +2765,15 @@
     return createElement("section", { className: "daidala-config", "data-testid": "daidala-repository-registration" },
       createElement("header", { className: "daidala-config-header" },
         createElement("div", null,
-          createElement("h2", null, "GitHub Repositories"),
+          createElement("h2", null, "Registered projects"),
           createElement("p", { className: "daidala-workflow-meta" },
-            "Every existing Hermes profile and its registered repositories. Daidala does not accept credentials."
+            "Every existing Hermes profile and its registered workspace tuples. Daidala does not accept credentials or paths."
           )
         ),
         createElement("button", { type: "button", disabled: busy, onClick: function () { refreshInventory().catch(function () {}); } }, "Refresh profiles")
       ),
       inventory === undefined
-        ? createElement("p", { className: "daidala-workflow-meta" }, "Loading registered repositories…")
+        ? createElement("p", { className: "daidala-workflow-meta" }, "Loading registered projects…")
         : inventory.length === 0
           ? createElement("p", { className: "daidala-workflow-meta" }, "No Hermes profiles are available.")
           : createElement("div", { className: "daidala-repository-profiles" }, inventory.map(renderProfile))
@@ -3963,7 +3982,7 @@
     var _i = useState(0), reload = _i[0], setReload = _i[1];
     var _k = useState(""), message = _k[0], setMessage = _k[1];
     var _j = useState({
-      project_id: "", pack: "", board_slug: "", goal: "", worker_default: "",
+      workspace_mode: "registered", project_id: "", unregistered_board_slug: "", local_project_id: "", local_board_name: "", pack: "", board_slug: "", goal: "", worker_default: "",
       stage_profiles: {}, constraint_kind: "none", constraints_content: "",
       constraints_skill: "", constraints_skill_digest: "", workflow_id: "",
       board_draft: "", board_name: ""
@@ -4083,22 +4102,33 @@
 
     function envelope() {
       var request = {
-        board_slug: form.board_slug,
         goal: form.goal,
         pack: form.pack,
         stage_profiles: form.stage_profiles
       };
+
       if (form.workflow_id.trim()) request.workflow_id = form.workflow_id.trim();
       if (form.constraint_kind === "content") request.constraints_content = form.constraints_content;
       if (form.constraint_kind === "skill") {
         request.constraints_skill = form.constraints_skill;
         request.constraints_skill_digest = form.constraints_skill_digest;
       }
-      return { selection: { project_id: form.project_id }, request: request };
+      if (form.workspace_mode === "local") {
+        return { project_id: form.local_project_id, board_name: form.local_board_name, request: request };
+      }
+      if (form.workspace_mode === "unregistered") {
+        return { selection: { mode: "unregistered", board_slug: form.unregistered_board_slug }, request: request };
+      }
+      return { selection: { mode: "registered", project_id: form.project_id }, request: request };
     }
 
     function runReadiness() {
       setBusy(true); setError("");
+      if (form.workspace_mode === "local") {
+        setError("Local project readiness is validated after its confirmed initialization. Preview first.");
+        setBusy(false);
+        return;
+      }
       wizardReadiness(envelope()).then(function (result) {
         setReadiness(result.readiness); setPreview(null); setConfirmed(false);
       }).catch(function (reason) {
@@ -4108,8 +4138,8 @@
 
     function runPreview() {
       setBusy(true); setError("");
-      wizardPreview(envelope()).then(function (result) {
-        setReadiness(result.readiness); setPreview(result); setConfirmed(false);
+      (form.workspace_mode === "local" ? wizardLocalPreview : wizardPreview)(envelope()).then(function (result) {
+        setReadiness(result.readiness || null); setPreview(result); setConfirmed(false);
       }).catch(function (reason) {
         setPreview(null); setError("Preview could not be created: " + errorText(reason));
       }).finally(function () { setBusy(false); });
@@ -4118,7 +4148,7 @@
     function runStart() {
       if (!preview || !confirmed) return;
       setBusy(true); setError("");
-      wizardStart(Object.assign({}, envelope(), {
+      (form.workspace_mode === "local" ? wizardLocalStart : wizardStart)(Object.assign({}, envelope(), {
         preview_digest: preview.preview_digest, confirm: true
       })).then(function (result) {
         props.onStarted(result.workflow.workflow_id);
@@ -4185,7 +4215,10 @@
     var policySources = inventory && Array.isArray(inventory.policy_sources) ? inventory.policy_sources : [];
     var selectedPack = packs.find(function (option) { return option.name === form.pack; }) || null;
     var hasRequest = selectedPack && selectedPack.status === "ready" &&
-      form.project_id && form.pack && form.board_slug && form.goal.trim() &&
+      form.pack && form.goal.trim() &&
+      (form.workspace_mode === "local"
+        ? form.local_project_id && form.local_board_name.trim()
+        : form.workspace_mode === "unregistered" ? form.unregistered_board_slug : form.project_id) &&
       WIZARD_STAGES.every(function (stage) { return form.stage_profiles[stage]; });
 
     return createElement("section", { className: "daidala-wizard", "data-testid": "daidala-start-workflow" },
@@ -4221,28 +4254,27 @@
                   ? selectedPack.name + " readiness could not be verified. Use Manage packs to retry the check."
                   : selectedPack.name + " is blocked. Use Manage packs to inspect the blockers."
           ) : null,
-          createElement("div", { className: "daidala-wizard-section-heading" },
-            select("Registered repository", form.project_id, function (value) { change("project_id", value); }, projects.map(function (row) { return { value: row.project_id, label: row.project_id + " · " + row.repository }; })),
-            createElement("a", { href: "/daidala?section=runbook&return=start-workflow", onClick: function (event) { navigateDashboard(event, "/daidala?section=runbook&return=start-workflow"); } }, "Register repository")
+          createElement("section", { className: "daidala-wizard-section" },
+            createElement("h3", null, "Workspace"),
+            createElement("label", null, createElement("input", { type: "radio", checked: form.workspace_mode === "registered", onChange: function () { change("workspace_mode", "registered"); } }), " Registered project"),
+            createElement("label", null, createElement("input", { type: "radio", checked: form.workspace_mode === "unregistered", onChange: function () { change("workspace_mode", "unregistered"); } }), " Existing unregistered project"),
+            createElement("label", null, createElement("input", { type: "radio", checked: form.workspace_mode === "local", onChange: function () { change("workspace_mode", "local"); } }), " Initialize local project"),
+            form.workspace_mode === "registered" ? createElement("div", { className: "daidala-wizard-section-heading" },
+              select("Registered repository", form.project_id, function (value) { change("project_id", value); }, projects.map(function (row) { return { value: row.project_id, label: row.project_id + " · " + row.repository + " · " + row.board }; })),
+              createElement("a", { href: "/daidala?section=runbook&return=start-workflow", onClick: function (event) { navigateDashboard(event, "/daidala?section=runbook&return=start-workflow"); } }, "Register project")
+            ) : form.workspace_mode === "unregistered" ? createElement("div", { className: "daidala-wizard-pair" },
+              select("Unregistered board", form.unregistered_board_slug, function (value) { change("unregistered_board_slug", value); }, (inventory.unregistered_boards || []).map(function (row) { return { value: row.slug, label: row.name + " · " + row.slug }; })),
+              createElement("p", { className: "daidala-workflow-meta" }, "Only unbound boards with a clean local Git root are listed. Configure a board workdir in Hermes if this list is empty.")
+            ) : createElement("div", { className: "daidala-wizard-pair" },
+              createElement("label", { className: "daidala-wizard-field" }, createElement("span", null, "Project slug"), createElement("input", { value: form.local_project_id, onChange: function (event) { change("local_project_id", event.target.value); } })),
+              createElement("label", { className: "daidala-wizard-field" }, createElement("span", null, "Board display name"), createElement("input", { value: form.local_board_name, onChange: function (event) { change("local_board_name", event.target.value); } })),
+              createElement("p", { className: "daidala-workflow-meta" }, "Creates a local Git repository, default policy, initial commit, and unbound board. No GitHub repository is created.")
+            )
           ),
           createElement("label", { className: "daidala-wizard-field" }, createElement("span", null, "Requested outcome / Prompt"),
             createElement("textarea", { value: form.goal, rows: 3, onChange: function (event) { change("goal", event.target.value); } })
           ),
-          createElement("div", { className: "daidala-board-control" },
-            select("Board · existing", form.board_slug, function (value) { change("board_slug", value); }, boards.map(function (row) { return { value: row.slug, label: row.name ? row.name + " · " + row.slug : row.slug }; })),
-            createElement("label", { className: "daidala-wizard-field" }, createElement("span", null, "New board slug"),
-              createElement("input", { value: form.board_draft, onChange: function (event) { change("board_draft", event.target.value); } })
-            ),
-            createElement("label", { className: "daidala-wizard-field" }, createElement("span", null, "New board display name"),
-              createElement("input", { value: form.board_name, onChange: function (event) { change("board_name", event.target.value); } })
-            ),
-            createElement("button", { type: "button", disabled: busy || !form.board_draft || !form.board_name.trim(), onClick: previewBoard }, "Create board")
-          ),
-          boardPreview ? createElement("div", { className: "daidala-confirm-box" },
-            createElement("p", null, "Board preview is ready for " + boardPreview.preview.slug + "."),
-            createElement("label", null, createElement("input", { type: "checkbox", checked: boardConfirmed, onChange: function (event) { setBoardConfirmed(event.target.checked); } }), " I confirm creating this exact board"),
-            createElement("button", { type: "button", disabled: busy || !boardConfirmed, onClick: createBoard }, "Create board now")
-          ) : null,
+          form.workspace_mode === "registered" ? createElement("p", { className: "daidala-workflow-meta" }, "The selected registered project supplies its board. Configure or register projects in Config.") : null,
           select("Worker profile default", form.worker_default, changeWorker, profiles.map(function (name) { return { value: name, label: name }; })),
           createElement("details", { className: "daidala-wizard-advanced" },
             createElement("summary", null, "Advanced workflow settings"),

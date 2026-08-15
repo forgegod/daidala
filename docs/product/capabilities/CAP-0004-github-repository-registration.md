@@ -1,7 +1,7 @@
 # CAP-0004: GitHub repository registration
 
 **Status:** implemented
-**Primary surface:** Daidala Config → GitHub Repositories
+**Primary surface:** Daidala Config → Registered projects
 
 ## Outcome
 
@@ -11,8 +11,8 @@ credential alias, environment-variable name, or token to Daidala.
 
 ## Behavior
 
-- `daidala project register --github-url URL --profile NAME` and Config →
-  Repositories use the same deterministic registration service.
+- `daidala project register --github-url URL --profile NAME --board SLUG` and
+  Config → Registered projects use the same deterministic registration service.
 - Preview inspects the canonical GitHub identity and committed project policy,
   reports the derived project ID, release flags, safe readiness state, two
   proposed non-secret writes, and a digest bound to the profile and proposal.
@@ -22,19 +22,22 @@ credential alias, environment-variable name, or token to Daidala.
   `already-registered`; other blocked causes return `blocked` with a stable
   reason. Only `registerable` yields a registration preview.
 - Apply re-inspects the repository and accepts only the exact preview digest
-  plus the literal `register-repository` confirmation. It writes only the
-  controller registration and credential-bindings records.
-- Config → GitHub Repositories lists every Hermes-validated profile and that
-  profile's repository identities in one inventory. A registered row shows
-  the canonical repository and project-id slug, and fills the GitHub repository
-  link field with `github.com/<repository_canonical>`. It shows no profile
-  root, checkout, credential alias, environment-variable name, or secret
-  metadata.
-- The dashboard accepts a GitHub URL and an existing Hermes profile name for
-  preview from the inventory row that owned the inspect action. Apply
-  additionally accepts the digest and `confirm: true`; the server resolves
-  the named profile through Hermes on every request and binds the preview
-  digest to that profile.
+  plus the literal `register-repository` confirmation. It binds an existing
+  unused board with the derived checkout workdir or creates one with that
+  workdir, then writes only controller registration and credential-bindings
+  records.
+- Config → Registered projects lists every Hermes-validated profile and its
+  workspace tuples in one inventory. A registered row shows canonical
+  repository, project-id slug, board with path-free state (`bound`, `missing`,
+  `workdir-mismatch`, or `in-use`), and GitHub Project link state. It fills the
+  GitHub repository link field with `github.com/<repository_canonical>` and
+  never exposes a profile root, checkout, credential alias, environment-variable
+  name, or secret metadata.
+- The dashboard accepts a GitHub URL, existing Hermes profile name, and an
+  optional board slug for preview from the inventory row that owned the inspect
+  action. Apply additionally accepts the digest and `confirm: true`; the server
+  resolves the named profile through Hermes on every request and binds the
+  preview digest to that profile.
 - GitHub Contents API Base64 line wrapping is normalized before strict decoding;
   malformed non-Base64 content remains rejected.
 - Public preview readiness exposes only `credential_available`; credential

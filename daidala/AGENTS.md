@@ -21,7 +21,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `skills.py` | Exact catalog-wide installed-skill inventory, advisory content-digest comparison, and mutation-free install planning. |
 | `pack_service.py` | Typed pack validation, catalog-wide readiness and digest-warning projection, bounded declared-skill content and immutable install/source links, enabled-state projection, and preview-confirmed install with ordered progress plus enable/disable service shared by CLI and dashboard adapters. |
 | `constraints.py` | Strict workflow-constraint YAML parsing, canonicalization, bounds, digest identity, and the runtime starter template. |
-| `projects.py` | Strict committed project-manifest parsing, canonical identity, verification declarations, and mutation policy. |
+| `projects.py` | Strict committed GitHub or local-only project-manifest parsing, canonical identity, verification declarations, and mutation policy. |
 | `registrations.py` | Trusted profile-local project registration v2, exact attended-delivery destination, limits, manifest binding, and storage path. |
 | `profile_files.py` | Atomic mode-`0600` profile-local file replacement without symlink traversal. |
 | `checkout_root.py` | Strict checkout-root configuration, derived registration-path validation, and owned-checkout collision safety. |
@@ -57,7 +57,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `dashboard_backend.py` | Profile-safe dashboard read model, including persisted configuration, live Kanban, single-ledger exact plan/review evidence, path-free artifact catalog/text/download, curator status/action projections, runtime constraint-template and limit projection, constraint previews, and typed compare-and-swap replacement adapters. |
 | `dashboard_advice.py` | Bounded host-model setup-advice request, aggregate path-free readiness snapshot, and strict structured-response normalization. |
 | `recommendations.py` | Pure finite pending-decision and next-action derivation from ledger facts and live Kanban snapshots. |
-| `setup_wizard.py` | Typed setup preview, confirmation gate, and documented Hermes board/profile inventory commands with bounded long-name table parsing. |
+- `setup_wizard.py` | Typed setup preview, confirmation gate, local-project initialization, and documented Hermes board/profile inventory commands with bounded long-name table parsing. |
 | `packs/` | Skill-set-specific lifecycle mappings. |
 | `skills/` | Namespaced read-only orchestration and guided-setup skills bundled with the plugin. |
 
@@ -406,7 +406,8 @@ fails locally rather than in production.
 - Register bundled skills with `ctx.register_skill`; do not copy them into the user's mutable skill store.
 - `daidala:setup` remains dashboard-independent, previews the exact
   `schemas.py::START` request, and requires explicit confirmation before any
-  setup mutation or workflow start.
+  setup mutation or workflow start. The dashboard-only local-project initializer
+  derives a fresh checkout from profile configuration and never accepts a path.
 - Keep third-party attribution and license text beside derived bundled adapters.
 - Use `importlib.resources` so wheel and Git installations behave consistently.
 

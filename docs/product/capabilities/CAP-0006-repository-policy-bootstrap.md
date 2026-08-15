@@ -1,7 +1,7 @@
 # CAP-0006: Repository policy bootstrap
 
 **Status:** implemented
-**Primary surface:** Daidala Config → GitHub Repositories (bootstrap path)
+**Primary surface:** Daidala Config → Registered projects (bootstrap path)
 
 ## Outcome
 
@@ -13,7 +13,7 @@ repository or touching the default branch.
 ## Behavior
 
 - `daidala project bootstrap --github-url URL --profile NAME` and Config →
-  GitHub Repositories bootstrap use one deterministic bootstrap service.
+  Registered projects bootstrap use one deterministic bootstrap service.
 - Bootstrap is offered only after inspect classification is `needs-bootstrap`.
 - Preview generates strict `.daidala/project.yaml` and
   `.daidala/constraints.yaml` content with release flags false, pinned pack
@@ -41,7 +41,7 @@ repository or touching the default branch.
 - [`daidala/repository_bootstrap.py`](../../../daidala/repository_bootstrap.py) — template generation, digest binding, host-`gh` branch publish.
 - [`daidala/cli.py`](../../../daidala/cli.py) — `project bootstrap` preview/apply adapter.
 - [`dashboard/plugin_api.py`](../../../dashboard/plugin_api.py) — path-free bootstrap preview/apply routes.
-- [`dashboard/dist/index.js`](../../../dashboard/dist/index.js) — bootstrap confirmation UI on Config → GitHub Repositories.
+- [`dashboard/dist/index.js`](../../../dashboard/dist/index.js) — bootstrap confirmation UI on Config → Registered projects.
 
 ### Tests
 

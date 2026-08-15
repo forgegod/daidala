@@ -1500,7 +1500,7 @@ def test_wizard_preview_rejects_browser_paths_and_unknown_fields_before_service(
     with pytest.raises(FakeHTTPException) as raised:
         api.wizard_preview(
             {
-                "selection": {"project_id": "project"},
+                "selection": {"mode": "registered", "project_id": "project"},
                 "request": {"target_repository": "/browser/path"},
             }
         )
@@ -1508,6 +1508,65 @@ def test_wizard_preview_rejects_browser_paths_and_unknown_fields_before_service(
     assert raised.value.status_code == 400
     assert "unknown setup request fields" in raised.value.detail
     assert calls == 0
+
+
+def test_unregistered_board_inventory_is_path_free_and_requires_a_clean_git_root(
+    tmp_path: Path,
+) -> None:
+    api = load_api()
+    workdir = (tmp_path / "workspace").resolve()
+    workdir.mkdir()
+    api.__dict__["_all_registered_board_slugs"] = lambda: frozenset({"registered"})
+
+    def run(command: tuple[str, ...]) -> tuple[int, str]:
+        if command == ("hermes", "kanban", "boards", "list", "--json"):
+            return (
+                0,
+                "["
+                '{"slug":"registered","default_workdir":"' + str(workdir) + '"},'
+                '{"slug":"available","name":"Available","default_workdir":"'
+                + str(workdir)
+                + '"}'
+                "]",
+            )
+        if command[-2:] == ("rev-parse", "--show-toplevel"):
+            return 0, f"{workdir}\n"
+        if command[-2:] == ("status", "--porcelain"):
+            return 0, ""
+        raise AssertionError(command)
+
+    api.__dict__["_run_command"] = run
+
+    assert api._unregistered_boards() == [{"slug": "available", "name": "Available"}]
+
+
+def test_registered_wizard_request_derives_board_and_checkout_server_side() -> None:
+    api = load_api()
+    registration = types.SimpleNamespace(
+        board="project-board",
+        checkout="/private/work/project",
+    )
+    api.__dict__["active_profile"] = lambda run: "controller"
+    api.__dict__["_registered_projects"] = lambda controller: {"project": registration}
+    service = object()
+    api.__dict__["service_factory"] = lambda: service
+    request, resolved_service = api._resolved_setup_request(
+        {
+            "selection": {"mode": "registered", "project_id": "project"},
+            "request": {
+                "goal": "Verify the selected tuple.",
+                "stage_profiles": {
+                    stage: "worker"
+                    for stage in ("define", "plan", "implement", "verify", "review", "deliver")
+                },
+            },
+        },
+        apply=False,
+    )
+
+    assert resolved_service is service
+    assert request.board_slug == "project-board"
+    assert request.target_repository == "/private/work/project"
 
 
 def test_wizard_inventory_exposes_profile_policy_sources_and_only_mounted_registrations(
@@ -1518,11 +1577,13 @@ def test_wizard_inventory_exposes_profile_policy_sources_and_only_mounted_regist
         project_id="matching",
         verified_remote="git@github.com:forgegod/daidala.git",
         controller_profile="controller",
+        board="daidala-forgegod-daidala",
     )
     foreign = types.SimpleNamespace(
         project_id="foreign",
         verified_remote="git@github.com:forgegod/other.git",
         controller_profile="other",
+        board="daidala-forgegod-other",
     )
 
     def run_command(command: tuple[str, ...]) -> tuple[int, str]:
@@ -1541,6 +1602,7 @@ def test_wizard_inventory_exposes_profile_policy_sources_and_only_mounted_regist
         encoding="utf-8",
     )
     api.__dict__["resolve_data_root"] = lambda: tmp_path
+    api.__dict__["_unregistered_boards"] = lambda: []
     api.__dict__["_registered_projects"] = lambda controller_profile=None: {
         item.project_id: item
         for item in (matching, foreign)
@@ -1551,7 +1613,11 @@ def test_wizard_inventory_exposes_profile_policy_sources_and_only_mounted_regist
 
     assert payload["controller_profile"] == "controller"
     assert payload["projects"] == [
-        {"project_id": "matching", "repository": "git@github.com:forgegod/daidala.git"}
+        {
+            "project_id": "matching",
+            "repository": "git@github.com:forgegod/daidala.git",
+            "board": "daidala-forgegod-daidala",
+        }
     ]
     assert payload["policy_sources"] == [
         {"name": "policy-source", "digest": payload["policy_sources"][0]["digest"]}
@@ -1792,8 +1858,8 @@ def test_repository_registration_routes_use_the_explicit_selected_profile() -> N
             return dict(preview_payload)
 
     class Service:
-        def classify(self, github_url: str) -> object:
-            calls.append(("classify", github_url))
+        def classify(self, github_url: str, *, board: str | None) -> object:
+            calls.append(("classify", github_url, board))
             return Classification()
 
         def apply(self, github_url: str, **kwargs: object) -> object:
@@ -1808,6 +1874,7 @@ def test_repository_registration_routes_use_the_explicit_selected_profile() -> N
         {
             "github_url": "https://github.com/forgegod/daidala",
             "controller_profile": "daidala-self-improvement",
+            "board": None,
         }
     )
     applied = api.repository_registration_apply(
@@ -1815,6 +1882,7 @@ def test_repository_registration_routes_use_the_explicit_selected_profile() -> N
             "github_url": "https://github.com/forgegod/daidala",
             "controller_profile": "daidala-self-improvement",
             "preview_digest": "f" * 64,
+            "board": None,
             "confirm": True,
         }
     )
@@ -1823,12 +1891,16 @@ def test_repository_registration_routes_use_the_explicit_selected_profile() -> N
     assert applied == preview_payload
     assert calls == [
         ("service", "daidala-self-improvement"),
-        ("classify", "https://github.com/forgegod/daidala"),
+        ("classify", "https://github.com/forgegod/daidala", None),
         ("service", "daidala-self-improvement"),
         (
             "apply",
             "https://github.com/forgegod/daidala",
-            {"expected_preview_digest": "f" * 64, "confirmation": "register-repository"},
+            {
+                "board": None,
+                "expected_preview_digest": "f" * 64,
+                "confirmation": "register-repository",
+            },
         ),
     ]
     assert "token" not in json.dumps(applied).lower()
@@ -1896,6 +1968,8 @@ def test_repository_registration_inventory_projects_every_validated_profile(
         project_id="forgegod-daidala",
         controller_profile="daidala-self-improvement",
         repository_canonical="forgegod/daidala",
+        board="daidala-forgegod-daidala",
+        checkout="/private/checkouts/forgegod-daidala",
     )
     calls: list[str] = []
 
@@ -1916,6 +1990,13 @@ def test_repository_registration_inventory_projects_every_validated_profile(
     api.__dict__["list_controller_registrations"] = lambda root: (
         (registration,) if root == controller_root else ()
     )
+    api.__dict__["list_boards"] = lambda _run: [
+        {
+            "slug": "daidala-forgegod-daidala",
+            "archived": False,
+            "default_workdir": "/private/checkouts/forgegod-daidala",
+        }
+    ]
 
     assert api.repository_registration_inventory() == {
         "selected_profile": "daidala-dashboard",
@@ -1932,6 +2013,9 @@ def test_repository_registration_inventory_projects_every_validated_profile(
                     {
                         "project_id": "forgegod-daidala",
                         "repository_canonical": "forgegod/daidala",
+                        "board": "daidala-forgegod-daidala",
+                        "board_status": "bound",
+                        "github_project_status": "not-linked",
                     }
                 ],
             },
@@ -1952,6 +2036,8 @@ def test_repository_registration_inventory_isolates_one_invalid_store(
         project_id="forgegod-daidala",
         controller_profile="daidala-self-improvement",
         repository_canonical="forgegod/daidala",
+        board="daidala-forgegod-daidala",
+        checkout="/private/checkouts/forgegod-daidala",
     )
 
     api.__dict__["active_profile"] = lambda _run, **_kwargs: "daidala-dashboard"
@@ -1970,6 +2056,13 @@ def test_repository_registration_inventory_isolates_one_invalid_store(
         return (registration,)
 
     api.__dict__["list_controller_registrations"] = list_rows
+    api.__dict__["list_boards"] = lambda _run: [
+        {
+            "slug": "daidala-forgegod-daidala",
+            "archived": False,
+            "default_workdir": "/private/checkouts/forgegod-daidala",
+        }
+    ]
 
     payload = api.repository_registration_inventory()
     serialized = json.dumps(payload)
@@ -1989,6 +2082,9 @@ def test_repository_registration_inventory_isolates_one_invalid_store(
                     {
                         "project_id": "forgegod-daidala",
                         "repository_canonical": "forgegod/daidala",
+                        "board": "daidala-forgegod-daidala",
+                        "board_status": "bound",
+                        "github_project_status": "not-linked",
                     }
                 ],
             },
@@ -2031,7 +2127,8 @@ def test_repository_registration_preview_names_duplicate_registration_safely() -
             }
 
     class Service:
-        def classify(self, _github_url: str) -> object:
+        def classify(self, _github_url: str, *, board: str | None) -> object:
+            assert board is None
             return Classification()
 
     api.__dict__["_repository_registration_service"] = lambda _profile: Service()
@@ -2040,6 +2137,7 @@ def test_repository_registration_preview_names_duplicate_registration_safely() -
         {
             "github_url": "https://github.com/forgegod/daidala",
             "controller_profile": "daidala-self-improvement",
+            "board": None,
         }
     )
 
@@ -2066,7 +2164,8 @@ def test_repository_registration_preview_classifies_missing_policy_as_needs_boot
             }
 
     class Service:
-        def classify(self, _github_url: str) -> object:
+        def classify(self, _github_url: str, *, board: str | None) -> object:
+            assert board is None
             return Classification()
 
     api.__dict__["_repository_registration_service"] = lambda _profile: Service()
@@ -2075,6 +2174,7 @@ def test_repository_registration_preview_classifies_missing_policy_as_needs_boot
         {
             "github_url": "https://github.com/forgegod/durchsieben.de",
             "controller_profile": "daidala-dashboard",
+            "board": None,
         }
     )
 

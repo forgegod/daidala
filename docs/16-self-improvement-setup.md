@@ -103,7 +103,7 @@ in this order; a later step must not be used to waive an earlier blocker.
 | 3 | Provision one attended operator credential and two least-privilege runtime credentials. | Vault and profile environment only. | Operator token is isolated; both runtime read probes and the controlled findings write probe pass. |
 | 4 | Create the controller profile without changing the sticky profile. | Hermes profile. | Pass. |
 | 5 | Install and enable the selected detached Daidala revision. | Controller plugin directory and profile plugin allow-list. | Blocked: exact detached revision `3ce1bfc15c5102d75d54e846ea6ddb8520b6eed8` is installed but not enabled. |
-| 6 | Create the dedicated Kanban board. | Installation-global Hermes board. | Pass. |
+| 6 | Create the dedicated Kanban board. | Installation-global Hermes board. | Pass. The board is the registered project's workspace: its `default_workdir` must equal the profile-local derived checkout, and its slug must not be reused by another Daidala registration. |
 | 7 | Configure and verify the attended gateway target. | Profile gateway/home channel. | Retained pass; the delivery receipt and operator confirmation remain evidence, and rerun follows Step 5. |
 | 8 | Create labels and the user-owned GitHub Project. | GitHub Issues and Projects. | Required projection and optional attended UI auto-add pass. |
 | 9 | Materialize trusted non-secret registration, bindings, and receipts. | Profile-local project files. | Pass; registration v2 binds the exact private attended destination, and bindings plus combined evidence validate strictly. |
@@ -743,6 +743,13 @@ hermes kanban boards show
 
 If the slug already exists with a different description, default workdir, or
 project ownership, stop. Never reuse a board based on display name alone.
+
+For ordinary dashboard workflow start, a registered project derives this board
+and its checkout server-side. An existing unregistered project is eligible only
+when its board workdir is a clean Git root. The dashboard can instead initialize
+a fresh local project from a slug and display name; it derives the checkout,
+commits strict default Daidala policy, and creates an unbound board without a
+GitHub repository or registration.
 
 ## 7. Configure an attended gateway target
 

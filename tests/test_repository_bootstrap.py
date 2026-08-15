@@ -6,11 +6,13 @@ from pathlib import Path
 
 import pytest
 
+from daidala.projects import parse_project_manifest
 from daidala.repository_bootstrap import (
     BOOTSTRAP_BRANCH,
     RepositoryBootstrapError,
     RepositoryBootstrapService,
     build_bootstrap_files,
+    build_local_bootstrap_files,
 )
 from daidala.repository_registration import CLASSIFICATION_NEEDS_BOOTSTRAP
 from tests.test_repository_registration import write_defaults
@@ -84,6 +86,19 @@ def test_build_bootstrap_files_are_strict_and_conservative() -> None:
     assert "allow_push: false" in files[0].content
     assert "forgegod/orphan" in files[0].content
     assert "schema: daidala.workflow-constraints/v1" in files[1].content
+
+
+def test_build_local_bootstrap_files_are_strict_and_have_no_remote() -> None:
+    files = build_local_bootstrap_files("example-app")
+    manifest = parse_project_manifest(files[0].content)
+
+    assert [row.path for row in files] == [".daidala/project.yaml", ".daidala/constraints.yaml"]
+    assert manifest.project_id == "example-app"
+    assert manifest.repository.forge == "local"
+    assert manifest.repository.canonical == "local/example-app"
+    assert manifest.repository.allowed_remote_urls == ()
+    assert manifest.allow_commit is False
+    assert manifest.allow_push is False
 
 
 def test_bootstrap_preview_and_apply_publish_non_default_branch(tmp_path: Path) -> None:

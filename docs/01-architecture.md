@@ -86,6 +86,23 @@ No operational transition requires bidirectional status synchronization.
 Daidala reads Hermes status when presenting a combined view and applies only
 Daidala-owned policy checks before creating or releasing cards.
 
+## Workspace identity
+
+A registered project is one profile-local tuple: a canonical GitHub repository,
+a derived checkout under that profile's configured checkout root, and one
+installation-global Hermes board whose `default_workdir` equals that checkout.
+The registration stores the board slug; it does not own or copy Hermes' board
+database. Board slugs are unique across Daidala registrations, while the same
+GitHub repository may be registered by separate profiles with distinct boards
+and checkouts. A GitHub Project is optional intake metadata on that tuple, not
+its identity or workspace.
+
+An unregistered local board can start an existing clean Git root without GitHub
+authority. A local initializer creates an unbound board and a valid local-only
+manifest (`repository.forge: local`, `local/<project-slug>`, no remote URLs);
+attaching a remote or converting it into a registered tuple is a separate
+operation.
+
 ## Workflow constraint topology
 
 The topology is composition, not a Hermes parent-child hierarchy:

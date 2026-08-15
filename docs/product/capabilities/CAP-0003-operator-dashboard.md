@@ -20,11 +20,15 @@ An authenticated operator can inspect workflow state and evidence, perform bound
   to closed exact dashboard destinations, including Config → Packs for blocked
   packs and missing phase skill coverage, and never replaces deterministic
   workflow recommendations or performs an action.
-- Start workflow lists every bundled pack with its readiness state, links
-  repository registration to path-safe operator guidance, and disables primary
-  views that cannot preserve the open browser draft. Manage packs, Register
-  repository, and Manage sources preserve that draft while moving visual and
-  keyboard focus to their exact Config destination.
+- Start workflow lists every bundled pack with its readiness state and offers
+  three explicit workspace modes: a registered project (whose bound board is
+  derived server-side), an unregistered board with a clean local Git root, or a
+  fresh local project. Local initialization previews and then creates the Git
+  root, strict default policy, initial commit, and unbound board without a
+  GitHub identity. The browser never receives a checkout path or selects a
+  board for a registered project. Manage packs, Register project, and Manage
+  sources preserve the browser draft while moving visual and keyboard focus to
+  their exact Config destination.
 - Approval, review disposition, card remediation, cancellation, setup, and curator mutations use preview/confirm or exact-identity requests; the server derives authoritative workflow, board, repository, and worktree facts.
 - Artifact views expose ledger-bound metadata, bounded literal text, digest-verified downloads, and closed curator actions without accepting filesystem paths.
 - Config → Packs is a pack-first workspace that separates complete immutable

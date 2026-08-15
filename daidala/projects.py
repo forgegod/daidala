@@ -98,19 +98,29 @@ class RepositorySpec:
     allowed_remote_urls: tuple[str, ...]
 
     def __post_init__(self) -> None:
-        if self.forge != "github":
-            raise PolicyViolationError("repository forge must be 'github'")
-        if not isinstance(self.canonical, str) or not _REPOSITORY.fullmatch(self.canonical):
-            raise PolicyViolationError("repository canonical identity must be owner/repository")
-        _require_unique_tuple(self.allowed_remote_urls, "allowed remote URLs", maximum=8)
-        allowed = {
-            f"https://github.com/{self.canonical}.git",
-            f"git@github.com:{self.canonical}.git",
-        }
-        if any(url not in allowed for url in self.allowed_remote_urls):
-            raise PolicyViolationError(
-                "allowed remote URLs must exactly identify the canonical GitHub repository"
-            )
+        if self.forge == "github":
+            if not isinstance(self.canonical, str) or not _REPOSITORY.fullmatch(self.canonical):
+                raise PolicyViolationError("repository canonical identity must be owner/repository")
+            _require_unique_tuple(self.allowed_remote_urls, "allowed remote URLs", maximum=8)
+            allowed = {
+                f"https://github.com/{self.canonical}.git",
+                f"git@github.com:{self.canonical}.git",
+            }
+            if any(url not in allowed for url in self.allowed_remote_urls):
+                raise PolicyViolationError(
+                    "allowed remote URLs must exactly identify the canonical GitHub repository"
+                )
+            return
+        if self.forge == "local":
+            if not isinstance(self.canonical, str) or not self.canonical.startswith("local/"):
+                raise PolicyViolationError(
+                    "local repository canonical identity must be local/project-slug"
+                )
+            _require_slug(self.canonical.removeprefix("local/"), "local repository project slug")
+            if self.allowed_remote_urls:
+                raise PolicyViolationError("local repository cannot declare remote URLs")
+            return
+        raise PolicyViolationError("repository forge must be 'github' or 'local'")
 
     def to_dict(self) -> dict[str, Any]:
         return {

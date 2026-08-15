@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 EXECUTABLE_STAGES = ("define", "plan", "implement", "verify", "review", "deliver")
@@ -132,15 +134,156 @@ def list_boards(run: CommandRunner) -> list[dict[str, Any]]:
     return payload
 
 
-def create_board(run: CommandRunner, *, slug: str, name: str | None = None) -> None:
+def create_board(
+    run: CommandRunner,
+    *,
+    slug: str,
+    name: str | None = None,
+    default_workdir: str | None = None,
+) -> None:
     if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", slug):
         raise SetupWizardError("board slug must be lowercase kebab-case")
     command = ["hermes", "kanban", "boards", "create", slug]
     if name:
         command.extend(("--name", name.strip()))
+    if default_workdir is not None:
+        if not isinstance(default_workdir, str) or not default_workdir.startswith("/"):
+            raise SetupWizardError("board default workdir must be an absolute path")
+        command.extend(("--default-workdir", default_workdir))
     code, _output = run(tuple(command))
     if code != 0:
         raise SetupWizardError("could not create Hermes Kanban board")
+
+
+@dataclass(frozen=True)
+class LocalProjectPreview:
+    """Path-bound but browser-safe proposal for a fresh local workspace."""
+
+    project_id: str
+    board_slug: str
+    board_name: str
+    target_repository: str
+    file_digests: tuple[tuple[str, str], ...]
+
+    @property
+    def digest(self) -> str:
+        payload = {
+            "project_id": self.project_id,
+            "board_slug": self.board_slug,
+            "board_name": self.board_name,
+            "target_repository": self.target_repository,
+            "file_digests": self.file_digests,
+        }
+        return hashlib.sha256(
+            json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "project_id": self.project_id,
+            "board": {"slug": self.board_slug, "name": self.board_name},
+            "files": [{"path": path, "digest": digest} for path, digest in self.file_digests],
+            "mutations": [
+                "git init",
+                "write default .daidala policy",
+                "create the initial commit",
+                "create an unbound Hermes board with this local Git root as default workdir",
+            ],
+            "preview_digest": self.digest,
+        }
+
+
+class LocalProjectInitializer:
+    """Create one fresh local Git workspace from trusted profile configuration."""
+
+    def __init__(self, data_root: Path, run: CommandRunner) -> None:
+        if not isinstance(data_root, Path) or not data_root.is_absolute():
+            raise SetupWizardError("local-project data root must be absolute")
+        self.data_root = data_root.resolve()
+        self.run = run
+
+    def preview(self, project_id: object, board_name: object) -> LocalProjectPreview:
+        from .checkout_root import CheckoutRootStore, checkout_path
+        from .projects import _require_slug
+        from .repository_bootstrap import build_local_bootstrap_files
+
+        if not isinstance(project_id, str):
+            raise SetupWizardError("local project slug must be a string")
+        slug = project_id.strip()
+        try:
+            _require_slug(slug, "local project slug")
+        except ValueError as error:
+            raise SetupWizardError(str(error)) from error
+        if len(slug) > 100:
+            raise SetupWizardError("local project slug exceeds board-name capacity")
+        if not isinstance(board_name, str) or not board_name.strip():
+            raise SetupWizardError("local project board display name is required")
+        target = checkout_path(CheckoutRootStore(self.data_root).read().root, slug)
+        if target.exists() or target.is_symlink():
+            raise SetupWizardError("derived local project directory already exists")
+        board_slug = f"daidala-local-{slug}"
+        boards = list_boards(self.run)
+        if any(row.get("slug") == board_slug for row in boards):
+            raise SetupWizardError("derived local project board already exists")
+        files = build_local_bootstrap_files(slug)
+        return LocalProjectPreview(
+            project_id=slug,
+            board_slug=board_slug,
+            board_name=board_name.strip(),
+            target_repository=str(target),
+            file_digests=tuple((row.path, row.digest) for row in files),
+        )
+
+    def apply(
+        self, project_id: object, board_name: object, preview_digest: object
+    ) -> LocalProjectPreview:
+        if not isinstance(preview_digest, str) or len(preview_digest) != 64:
+            raise SetupWizardError("local project preview digest is required")
+        preview = self.preview(project_id, board_name)
+        if preview.digest != preview_digest:
+            raise SetupWizardError("local project inputs changed after preview")
+        from .repository_bootstrap import build_local_bootstrap_files
+
+        target = Path(preview.target_repository)
+        try:
+            target.parent.mkdir(parents=True, exist_ok=True)
+        except OSError as error:
+            raise SetupWizardError("cannot create local project parent directory") from error
+        self._command(("git", "init", "--quiet", str(target)), "initialize local Git repository")
+        try:
+            policy_root = target / ".daidala"
+            policy_root.mkdir()
+            for file in build_local_bootstrap_files(preview.project_id):
+                (target / file.path).write_text(file.content, encoding="utf-8")
+        except OSError as error:
+            raise SetupWizardError("cannot write local project policy") from error
+        self._command(
+            ("git", "-C", str(target), "add", ".daidala"), "stage local project policy"
+        )
+        self._command(
+            (
+                "git",
+                "-C",
+                str(target),
+                "commit",
+                "--quiet",
+                "-m",
+                "chore: initialize Daidala project",
+            ),
+            "create local project initial commit",
+        )
+        create_board(
+            self.run,
+            slug=preview.board_slug,
+            name=preview.board_name,
+            default_workdir=preview.target_repository,
+        )
+        return preview
+
+    def _command(self, command: tuple[str, ...], action: str) -> None:
+        code, _output = self.run(command)
+        if code != 0:
+            raise SetupWizardError(f"could not {action}")
 
 
 def list_profiles(run: CommandRunner) -> list[str]:

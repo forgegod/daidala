@@ -40,6 +40,7 @@ from .registrations import (
     list_controller_registrations,
     registration_path,
 )
+from .setup_wizard import SetupWizardError, list_profiles
 
 REGISTRATION_DEFAULTS_SCHEMA = "daidala.repository-registration-defaults/v1"
 REGISTRATION_PREVIEW_SCHEMA = "daidala.repository-registration-preview/v1"
@@ -75,7 +76,6 @@ class RepositoryRegistrationError(PolicyViolationError):
 class RegistrationDefaults:
     """Profile-local authority that a repository URL cannot provide."""
 
-    board: str
     intake_binding: CredentialBinding
     findings_binding: CredentialBinding
     maintainers: tuple[str, ...]
@@ -92,7 +92,7 @@ class RegistrationDefaults:
             raise RepositoryRegistrationError(
                 f"registration defaults schema must be {REGISTRATION_DEFAULTS_SCHEMA!r}"
             )
-        _require_slug(self.board, "registration defaults board")
+
         if self.intake_binding.alias == self.findings_binding.alias:
             raise RepositoryRegistrationError(
                 "registration defaults intake and findings aliases must differ"
@@ -138,7 +138,6 @@ class RegistrationDefaults:
     def to_dict(self) -> dict[str, object]:
         return {
             "schema": self.schema,
-            "board": self.board,
             "credentials": {
                 "intake": self.intake_binding.to_dict(),
                 "findings": self.findings_binding.to_dict(),
@@ -169,7 +168,6 @@ class RegistrationDefaults:
             raw,
             {
                 "schema",
-                "board",
                 "credentials",
                 "approval",
                 "notifications",
@@ -200,7 +198,6 @@ class RegistrationDefaults:
             )
         return cls(
             schema=raw["schema"],
-            board=raw["board"],
             intake_binding=CredentialBinding.from_dict(credentials["intake"]),
             findings_binding=CredentialBinding.from_dict(credentials["findings"]),
             maintainers=tuple(maintainers),
@@ -281,6 +278,8 @@ class RegistrationPreview:
     repository_canonical: str
     project_id: str
     controller_profile: str
+    board: str
+    board_action: str
     manifest_digest: str
     allow_commit: bool
     allow_push: bool
@@ -298,6 +297,8 @@ class RegistrationPreview:
                 "repository": self.repository_canonical,
                 "project_id": self.project_id,
                 "controller_profile": self.controller_profile,
+                "board": self.board,
+                "board_action": self.board_action,
                 "manifest_digest": self.manifest_digest,
                 "registration_digest": self.registration.digest,
                 "credential_bindings": self.credential_bindings.to_dict(),
@@ -316,6 +317,8 @@ class RegistrationPreview:
             "repository": self.repository_canonical,
             "project_id": self.project_id,
             "controller_profile": self.controller_profile,
+            "board": self.board,
+            "board_action": self.board_action,
             "manifest_digest": self.manifest_digest,
             "release": {
                 "allow_commit": self.allow_commit,
@@ -323,7 +326,7 @@ class RegistrationPreview:
                 "allow_publish": self.allow_publish,
             },
             "readiness": {
-                "board_selected": True,
+                "board_selected": bool(self.board),
                 "attended_target_configured": True,
                 "credential_available": False,
             },
@@ -331,6 +334,7 @@ class RegistrationPreview:
                 "record_count": 2,
                 "registration": True,
                 "credential_bindings": True,
+                "board": self.board_action,
             },
             "preview_digest": self.digest,
         }
@@ -353,7 +357,9 @@ class RepositoryRegistrationService:
         self.data_root = self.data_root.resolve()
         _require_slug(self.controller_profile, "repository registration profile")
 
-    def classify(self, github_url: str) -> RepositoryClassification:
+    def classify(
+        self, github_url: str, *, board: str | None = None
+    ) -> RepositoryClassification:
         """Classify one GitHub URL without writing profile-local registration state."""
 
         try:
@@ -396,20 +402,25 @@ class RepositoryRegistrationService:
                 raise RepositoryRegistrationError(
                     "GitHub clone URLs are not allowed by the committed project manifest"
                 )
-            if any(
-                row.project_id == manifest.project_id
-                for row in list_controller_registrations(self.data_root)
-            ):
+            registrations = list_controller_registrations(self.data_root)
+            if any(row.project_id == manifest.project_id for row in registrations):
                 raise RepositoryRegistrationError(ALREADY_REGISTERED)
             defaults = load_registration_defaults(self.data_root)
             checkout = checkout_path(
                 CheckoutRootStore(self.data_root).read().root, manifest.project_id
             )
+            selected_board = board or f"daidala-{manifest.project_id}"
+            _require_slug(selected_board, "registration board")
+            if self._board_is_registered(selected_board):
+                raise RepositoryRegistrationError(
+                    "board is already registered by a Daidala project"
+                )
+            board_action = self._board_action(selected_board, checkout)
             registration = ControllerRegistration(
                 project_id=manifest.project_id,
                 checkout=str(checkout),
                 controller_profile=self.controller_profile,
-                board=defaults.board,
+                board=selected_board,
                 repository_canonical=canonical,
                 verified_remote=verified_remote,
                 intake_credential=defaults.intake_binding.alias,
@@ -439,6 +450,8 @@ class RepositoryRegistrationService:
                 repository_canonical=canonical,
                 project_id=manifest.project_id,
                 controller_profile=self.controller_profile,
+                board=selected_board,
+                board_action=board_action,
                 manifest_digest=manifest.digest,
                 allow_commit=manifest.allow_commit,
                 allow_push=manifest.allow_push,
@@ -478,8 +491,8 @@ class RepositoryRegistrationService:
             preview=preview,
         )
 
-    def preview(self, github_url: str) -> RegistrationPreview:
-        classification = self.classify(github_url)
+    def preview(self, github_url: str, *, board: str | None = None) -> RegistrationPreview:
+        classification = self.classify(github_url, board=board)
         if classification.status != CLASSIFICATION_REGISTERABLE or classification.preview is None:
             raise RepositoryRegistrationError(classification.reason)
         return classification.preview
@@ -488,6 +501,7 @@ class RepositoryRegistrationService:
         self,
         github_url: str,
         *,
+        board: str | None = None,
         expected_preview_digest: str,
         confirmation: str,
     ) -> RegistrationPreview:
@@ -495,9 +509,10 @@ class RepositoryRegistrationService:
             raise RepositoryRegistrationError(
                 f"registration requires literal confirmation {_CONFIRMATION!r}"
             )
-        preview = self.preview(github_url)
+        preview = self.preview(github_url, board=board)
         if expected_preview_digest != preview.digest:
             raise RepositoryRegistrationError("repository registration preview is stale")
+        self._apply_board(preview)
         registration_file = registration_path(self.data_root, preview.project_id)
         bindings_file = credential_bindings_path(registration_file)
         project_root = registration_file.parent
@@ -549,6 +564,88 @@ class RepositoryRegistrationService:
                 ) from error
             raise
         return preview
+
+    def _board_action(self, board: str, checkout: Path) -> str:
+        code, output = self.runner(
+            ("hermes", "kanban", "boards", "list", "--json"),
+            safe_runtime_environment(self.environ),
+        )
+        if code != 0 or not isinstance(output, str):
+            raise RepositoryRegistrationError("Hermes board inventory is unavailable")
+        try:
+            rows = json.loads(output)
+        except json.JSONDecodeError as error:
+            raise RepositoryRegistrationError("Hermes board inventory is invalid") from error
+        if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows):
+            raise RepositoryRegistrationError("Hermes board inventory is invalid")
+        selected = next((row for row in rows if row.get("slug") == board), None)
+        if selected is None:
+            return "create"
+        if selected.get("archived") is True:
+            raise RepositoryRegistrationError("selected board is archived")
+        workdir = selected.get("default_workdir")
+        if workdir in {None, ""}:
+            return "bind-and-set-workdir"
+        if workdir == str(checkout):
+            return "bind"
+        raise RepositoryRegistrationError(
+            "selected board workdir does not match the derived checkout"
+        )
+
+    def _board_is_registered(self, board: str) -> bool:
+        """Reject a board slug already bound by any profile-local registration."""
+
+        environment = safe_runtime_environment(self.environ)
+
+        def run(command: tuple[str, ...]) -> tuple[int, str]:
+            return self.runner(command, environment)
+
+        try:
+            profiles = list_profiles(run)
+        except SetupWizardError as error:
+            raise RepositoryRegistrationError("Hermes profile inventory is unavailable") from error
+        for profile in profiles:
+            if profile == self.controller_profile:
+                continue
+            try:
+                root = resolve_profile_root(profile, run)
+                registrations = list_controller_registrations(root)
+            except (RepositoryRegistrationError, ValueError) as error:
+                raise RepositoryRegistrationError(
+                    "Daidala registration inventory is unavailable"
+                ) from error
+            if any(row.board == board for row in registrations):
+                return True
+        return False
+
+    def _apply_board(self, preview: RegistrationPreview) -> None:
+        checkout = preview.registration.checkout
+        if preview.board_action == "create":
+            command = (
+                "hermes",
+                "kanban",
+                "boards",
+                "create",
+                preview.board,
+                "--default-workdir",
+                checkout,
+            )
+        elif preview.board_action == "bind-and-set-workdir":
+            command = (
+                "hermes",
+                "kanban",
+                "boards",
+                "set-default-workdir",
+                preview.board,
+                checkout,
+            )
+        elif preview.board_action == "bind":
+            return
+        else:
+            raise RepositoryRegistrationError("registration board action is invalid")
+        code, _output = self.runner(command, safe_runtime_environment(self.environ))
+        if code != 0:
+            raise RepositoryRegistrationError("Hermes board could not be configured")
 
     def _blocked(
         self,

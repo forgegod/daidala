@@ -57,7 +57,7 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   GitHub Project node ID. Repository-registration inventory returns every
   Hermes-validated profile name with that profile's path-free registrations
   and a finite `ready`/`unavailable` status. Preview accepts exactly
-  `{github_url, controller_profile}` and returns a path-free classification:
+  `{github_url, controller_profile, board}` and returns a path-free classification:
   `registerable` (registration preview fields), `needs-bootstrap`,
   `already-registered`, or `blocked` with stable `reason`/`next_action`. Apply
   additionally requires a SHA-256 `preview_digest` and `confirm: true`. Every
@@ -127,11 +127,14 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   receives keyboard focus and scrolls to the viewport start so the navigation
   result is immediately visible.
 - Wizard inventory derives the mounted controller profile from Hermes' documented
-  profile inventory and exposes only registrations bound to that profile. The
+  profile inventory and exposes only registrations bound to that profile plus
+  installation-global unregistered boards that resolve to clean Git roots. The
   runtime-root identity takes precedence only after exact inventory validation;
   the dashboard's management-profile query never selects the backend controller.
-  The browser selects only a project ID and never sends a controller profile,
-  checkout, credential, or filesystem path.
+  Registered selection sends only a project ID; unregistered selection sends
+  only a board slug; local initialization sends only a slug and display name.
+  The server derives board and checkout authority. The browser never sends a
+  controller profile, checkout, credential, or filesystem path.
 - Constraint preview is non-mutating; replacement requires the displayed current
   digest and explicit invalidation confirmation.
 - Constraint-source list/detail routes accept only exact inventory names. They

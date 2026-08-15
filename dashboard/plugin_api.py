@@ -144,6 +144,7 @@ from daidala.repository_registration import (
 from daidala.revision import MAX_REVIEW_FEEDBACK_BYTES
 from daidala.service import ServiceError
 from daidala.setup_wizard import (
+    LocalProjectInitializer,
     SetupRequest,
     SetupWizardError,
     active_profile,
@@ -638,6 +639,43 @@ def _repository_registration_rows(controller_profile: str) -> list[dict[str, str
     ]
 
 
+def _registered_project_rows(
+    registrations: tuple[ControllerRegistration, ...],
+    *,
+    boards: list[dict[str, Any]],
+    board_counts: dict[str, int],
+    linked_project_ids: set[str],
+) -> list[dict[str, str]]:
+    """Project Config workspace state without exposing local paths."""
+
+    boards_by_slug = {
+        row.get("slug"): row for row in boards if isinstance(row.get("slug"), str)
+    }
+    result: list[dict[str, str]] = []
+    for registration in registrations:
+        board = boards_by_slug.get(registration.board)
+        if board is None or board.get("archived") is True:
+            board_status = "missing"
+        elif board_counts.get(registration.board, 0) != 1:
+            board_status = "in-use"
+        elif board.get("default_workdir") != registration.checkout:
+            board_status = "workdir-mismatch"
+        else:
+            board_status = "bound"
+        result.append(
+            {
+                "project_id": registration.project_id,
+                "repository_canonical": registration.repository_canonical,
+                "board": registration.board,
+                "board_status": board_status,
+                "github_project_status": (
+                    "linked" if registration.project_id in linked_project_ids else "not-linked"
+                ),
+            }
+        )
+    return result
+
+
 @router.get("/repository-registration/registrations")
 def repository_registrations(controller_profile: str) -> dict[str, object]:
     """Project only selected-profile repository identity facts for Config."""
@@ -662,30 +700,65 @@ def repository_registration_inventory() -> dict[str, object]:
             status_code=502, detail="Hermes profile inventory is unavailable"
         ) from error
 
+    try:
+        boards = list_boards(_run_command)
+    except SetupWizardError as error:
+        raise HTTPException(
+            status_code=502, detail="Hermes board inventory is unavailable"
+        ) from error
+
+    resolved: list[tuple[str, Path, tuple[ControllerRegistration, ...]]] = []
     profiles: list[dict[str, object]] = []
     for controller_profile in names:
         try:
-            registrations = _repository_registration_rows(controller_profile)
-            status = "ready"
-        except HTTPException as error:
-            if error.status_code != 409:
-                raise
-            registrations = []
-            status = "unavailable"
+            root = _repository_registration_profile_root(controller_profile)
+            resolved.append((controller_profile, root, list_controller_registrations(root)))
+        except (HTTPException, ValueError):
+            profiles.append(
+                {
+                    "controller_profile": controller_profile,
+                    "status": "unavailable",
+                    "registrations": [],
+                }
+            )
+    board_counts: dict[str, int] = {}
+    for _profile, _root, registrations in resolved:
+        for registration in registrations:
+            board_counts[registration.board] = board_counts.get(registration.board, 0) + 1
+    for controller_profile, root, registrations in resolved:
+        try:
+            links = GitHubProjectLinksStore(root).read(registrations)
+            rows = _registered_project_rows(
+                registrations,
+                boards=boards,
+                board_counts=board_counts,
+                linked_project_ids={link.project_id for link in links},
+            )
+        except GitHubProjectLinkError:
+            profiles.append(
+                {
+                    "controller_profile": controller_profile,
+                    "status": "unavailable",
+                    "registrations": [],
+                }
+            )
+            continue
         profiles.append(
             {
                 "controller_profile": controller_profile,
-                "status": status,
-                "registrations": registrations,
+                "status": "ready",
+                "registrations": rows,
             }
         )
     return {"selected_profile": selected_profile, "profiles": profiles}
 
 
 def _repository_registration_request(
-    payload: dict[str, object], *, apply: bool
-) -> tuple[str, str, str | None]:
+    payload: dict[str, object], *, apply: bool, include_board: bool = False
+) -> tuple[str, str, str | None, str | None]:
     fields = {"github_url", "controller_profile"}
+    if include_board:
+        fields.add("board")
     if apply:
         fields |= {"preview_digest", "confirm"}
     if set(payload) != fields or (apply and payload.get("confirm") is not True):
@@ -702,22 +775,34 @@ def _repository_registration_request(
     digest = payload.get("preview_digest")
     if digest is not None and not _is_sha256(digest):
         raise HTTPException(status_code=400, detail="preview_digest must be a SHA-256 identity")
-    return github_url, controller_profile, digest if isinstance(digest, str) else None
+    board = payload.get("board")
+    if include_board and board is not None and not isinstance(board, str):
+        raise HTTPException(status_code=400, detail="board must be text or null")
+    return (
+        github_url,
+        controller_profile,
+        digest if isinstance(digest, str) else None,
+        board if isinstance(board, str) else None,
+    )
 
 
 @router.post("/repository-registration/preview")
 def repository_registration_preview(payload: dict[str, object]) -> dict[str, object]:
     """Inspect one GitHub repository without creating profile-local records."""
 
-    github_url, controller_profile, _ = _repository_registration_request(payload, apply=False)
-    return _repository_registration_service(controller_profile).classify(github_url).to_dict()
+    github_url, controller_profile, _, board = _repository_registration_request(
+        payload, apply=False, include_board=True
+    )
+    return _repository_registration_service(controller_profile).classify(
+        github_url, board=board
+    ).to_dict()
 
 
 @router.post("/repository-registration/bootstrap/preview")
 def repository_bootstrap_preview(payload: dict[str, object]) -> dict[str, object]:
     """Preview conservative Daidala policy on a non-default branch without writing."""
 
-    github_url, controller_profile, _ = _repository_registration_request(payload, apply=False)
+    github_url, controller_profile, _, _ = _repository_registration_request(payload, apply=False)
     try:
         return _repository_bootstrap_service(controller_profile).preview(github_url).to_dict()
     except (RepositoryBootstrapError, RepositoryRegistrationError) as error:
@@ -728,7 +813,9 @@ def repository_bootstrap_preview(payload: dict[str, object]) -> dict[str, object
 def repository_bootstrap_apply(payload: dict[str, object]) -> dict[str, object]:
     """Publish conservative Daidala policy on a non-default branch after confirmation."""
 
-    github_url, controller_profile, digest = _repository_registration_request(payload, apply=True)
+    github_url, controller_profile, digest, _ = _repository_registration_request(
+        payload, apply=True
+    )
     assert digest is not None
     try:
         return _repository_bootstrap_service(controller_profile).apply(
@@ -746,11 +833,14 @@ def repository_bootstrap_apply(payload: dict[str, object]) -> dict[str, object]:
 def repository_registration_apply(payload: dict[str, object]) -> dict[str, object]:
     """Create only the fresh preview-confirmed profile-local registration records."""
 
-    github_url, controller_profile, digest = _repository_registration_request(payload, apply=True)
+    github_url, controller_profile, digest, board = _repository_registration_request(
+        payload, apply=True, include_board=True
+    )
     assert digest is not None
     try:
         return _repository_registration_service(controller_profile).apply(
             github_url,
+            board=board,
             expected_preview_digest=digest,
             confirmation="register-repository",
         ).to_dict()
@@ -1756,9 +1846,11 @@ def wizard_inventory() -> dict[str, Any]:
                 {
                     "project_id": registration.project_id,
                     "repository": registration.verified_remote,
+                    "board": registration.board,
                 }
                 for registration in _registered_projects(controller_profile).values()
             ],
+            "unregistered_boards": _unregistered_boards(),
         }
     except SetupWizardError as error:
         raise HTTPException(status_code=502, detail=str(error)) from error
@@ -1854,9 +1946,36 @@ def wizard_start(payload: dict[str, Any]) -> dict[str, Any]:
     return {"workflow": ledger.to_dict()}
 
 
+@router.post("/wizard/local/preview")
+def wizard_local_preview(payload: dict[str, Any]) -> dict[str, Any]:
+    """Preview a new local workspace and its subsequent ordinary workflow start."""
+    local_preview, request, _service = _local_setup_request(payload, apply=False)
+    return _local_setup_preview(local_preview, request)
+
+
+@router.post("/wizard/local/start")
+def wizard_local_start(payload: dict[str, Any]) -> dict[str, Any]:
+    """Initialize a fresh local workspace, then delegate to the standard start service."""
+    local_preview, request, service = _local_setup_request(payload, apply=True)
+    preview = _local_setup_preview(local_preview, request)
+    if payload["preview_digest"] != preview["preview_digest"]:
+        raise HTTPException(status_code=409, detail="local project inputs changed after preview")
+    initializer = LocalProjectInitializer(resolve_data_root().resolve(), _run_command)
+    try:
+        initializer.apply(
+            local_preview.project_id,
+            local_preview.board_name,
+            local_preview.digest,
+        )
+        service.validate_start_preflight(**_preflight_kwargs(request))
+        ledger = service.start(**request.start_kwargs())
+    except (ServiceError, MissingSkillsError, SetupWizardError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return {"workflow": ledger.to_dict(), "local_project": local_preview.to_dict()}
+
+
 _SETUP_REQUEST_FIELDS = frozenset(
     {
-        "board_slug",
         "goal",
         "pack",
         "workflow_id",
@@ -1866,6 +1985,55 @@ _SETUP_REQUEST_FIELDS = frozenset(
         "constraints_skill_digest",
     }
 )
+
+
+def _local_setup_request(
+    payload: dict[str, Any], *, apply: bool
+) -> tuple[Any, SetupRequest, Any]:
+    required_fields = {"project_id", "board_name", "request"}
+    if apply:
+        if payload.get("confirm") is not True:
+            raise HTTPException(status_code=400, detail="explicit confirmation is required")
+        digest = payload.get("preview_digest")
+        if not isinstance(digest, str) or len(digest) != 64:
+            raise HTTPException(status_code=400, detail="preview_digest is required")
+        required_fields.update({"preview_digest", "confirm"})
+    if set(payload) != required_fields:
+        raise HTTPException(status_code=400, detail="unknown local-project wizard fields")
+    request_payload = payload.get("request")
+    if not isinstance(request_payload, dict) or set(request_payload) - _SETUP_REQUEST_FIELDS:
+        raise HTTPException(status_code=400, detail="unknown setup request fields")
+    initializer = LocalProjectInitializer(resolve_data_root().resolve(), _run_command)
+    try:
+        local_preview = initializer.preview(payload.get("project_id"), payload.get("board_name"))
+        request = SetupRequest.from_payload(
+            {
+                **request_payload,
+                "board_slug": local_preview.board_slug,
+                "target_repository": local_preview.target_repository,
+            }
+        )
+    except SetupWizardError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return local_preview, request, service_factory()
+
+
+def _local_setup_preview(local_preview: Any, request: SetupRequest) -> dict[str, Any]:
+    """Bind hidden derived paths into the digest without exposing them to the browser."""
+    request_projection = {
+        key: value for key, value in request.start_kwargs().items() if key != "target_repository"
+    }
+    return {
+        "confirmed": False,
+        "local_project": local_preview.to_dict(),
+        "request": request_projection,
+        "preview_digest": _digest(
+            {
+                "local_preview_digest": local_preview.digest,
+                "request": request.start_kwargs(),
+            }
+        ),
+    }
 
 
 def _registered_projects(
@@ -1885,6 +2053,47 @@ def _registered_projects(
     return {registration.project_id: registration for registration in registrations}
 
 
+def _all_registered_board_slugs() -> frozenset[str]:
+    """Read every profile because board slugs are installation-global."""
+    try:
+        slugs: set[str] = set()
+        for profile in list_profiles(_run_command):
+            data_root = resolve_profile_root(profile, _run_command)
+            slugs.update(row.board for row in list_controller_registrations(data_root))
+        return frozenset(slugs)
+    except (RepositoryRegistrationError, SetupWizardError, ValueError) as error:
+        raise SetupWizardError("registered board inventory is unavailable") from error
+
+
+def _unregistered_boards() -> list[dict[str, str]]:
+    """Return only clean-git boards with a non-private browser projection."""
+    registered = _all_registered_board_slugs()
+    eligible: list[dict[str, str]] = []
+    for board in list_boards(_run_command):
+        slug = board.get("slug")
+        workdir = board.get("default_workdir")
+        if (
+            not isinstance(slug, str)
+            or slug in registered
+            or board.get("archived") is True
+            or not isinstance(workdir, str)
+            or not workdir.startswith("/")
+        ):
+            continue
+        worktree = Path(workdir)
+        if worktree.is_symlink() or not worktree.is_dir() or str(worktree.resolve()) != workdir:
+            continue
+        code, top_level = _run_command(("git", "-C", workdir, "rev-parse", "--show-toplevel"))
+        if code != 0 or top_level.strip() != workdir:
+            continue
+        code, status = _run_command(("git", "-C", workdir, "status", "--porcelain"))
+        if code != 0 or status:
+            continue
+        name = board.get("name")
+        eligible.append({"slug": slug, "name": name if isinstance(name, str) else slug})
+    return eligible
+
+
 def _resolved_setup_request(payload: dict[str, Any], *, apply: bool) -> tuple[SetupRequest, Any]:
     required_fields = {"selection", "request"}
     if apply:
@@ -1898,25 +2107,48 @@ def _resolved_setup_request(payload: dict[str, Any], *, apply: bool) -> tuple[Se
         raise HTTPException(status_code=400, detail="unknown wizard envelope fields")
     selection = payload.get("selection")
     request = payload.get("request")
-    if not isinstance(selection, dict) or set(selection) != {"project_id"}:
-        raise HTTPException(status_code=400, detail="selection must contain only project_id")
-    project_id = selection.get("project_id")
-    if not isinstance(project_id, str) or not project_id:
-        raise HTTPException(status_code=400, detail="project_id is required")
+    if not isinstance(selection, dict) or not isinstance(selection.get("mode"), str):
+        raise HTTPException(status_code=400, detail="workspace selection mode is required")
     if not isinstance(request, dict) or set(request) - _SETUP_REQUEST_FIELDS:
         raise HTTPException(status_code=400, detail="unknown setup request fields")
+    mode = selection["mode"]
     try:
-        registration = _registered_projects(active_profile(_run_command)).get(project_id)
+        if mode == "registered" and set(selection) == {"mode", "project_id"}:
+            project_id = selection["project_id"]
+            if not isinstance(project_id, str) or not project_id:
+                raise SetupWizardError("project_id is required")
+            registration = _registered_projects(active_profile(_run_command)).get(project_id)
+            if registration is None:
+                raise SetupWizardError("unknown registered project")
+            resolved = SetupRequest.from_payload(
+                {
+                    **request,
+                    "board_slug": registration.board,
+                    "target_repository": registration.checkout,
+                }
+            )
+        elif mode == "unregistered" and set(selection) == {"mode", "board_slug"}:
+            board_slug = selection["board_slug"]
+            if not isinstance(board_slug, str):
+                raise SetupWizardError("board_slug is required")
+            board = next((row for row in _unregistered_boards() if row["slug"] == board_slug), None)
+            if board is None:
+                raise SetupWizardError("selected unregistered board is unavailable")
+            raw_boards = list_boards(_run_command)
+            workdir = next(
+                row.get("default_workdir")
+                for row in raw_boards
+                if row.get("slug") == board_slug
+            )
+            assert isinstance(workdir, str)
+            resolved = SetupRequest.from_payload(
+                {**request, "board_slug": board_slug, "target_repository": workdir}
+            )
+        else:
+            raise SetupWizardError("workspace selection is invalid")
     except SetupWizardError as error:
-        raise HTTPException(status_code=502, detail=str(error)) from error
-    if registration is None:
-        raise HTTPException(status_code=404, detail="unknown registered project")
-    try:
-        resolved = SetupRequest.from_payload(
-            {**request, "target_repository": registration.checkout}
-        )
-    except SetupWizardError as error:
-        raise HTTPException(status_code=400, detail=str(error)) from error
+        status = 404 if str(error) == "unknown registered project" else 400
+        raise HTTPException(status_code=status, detail=str(error)) from error
     return resolved, service_factory()
 
 

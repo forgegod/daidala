@@ -193,6 +193,11 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     project_register.add_argument(
         "--profile", required=True, help="Existing Hermes controller profile"
     )
+    project_register.add_argument(
+        "--board",
+        required=True,
+        help="Existing unbound board slug, or the new board slug to create",
+    )
     project_register.add_argument("--apply", action="store_true")
     project_register.add_argument("--expected-preview-digest")
     project_register.add_argument(
@@ -877,6 +882,7 @@ def _run_project_registration(
         assert isinstance(args.confirm, str)
         preview = service.apply(
             args.github_url,
+            board=args.board,
             expected_preview_digest=args.expected_preview_digest,
             confirmation=args.confirm,
         )
@@ -889,7 +895,7 @@ def _run_project_registration(
             }
         )
         return 0
-    classification = service.classify(args.github_url)
+    classification = service.classify(args.github_url, board=args.board)
     payload = {
         "success": classification.status == "registerable",
         "operation": "project-register",

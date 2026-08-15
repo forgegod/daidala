@@ -503,6 +503,8 @@ class FakeRepositoryRegistrationPreview:
             "repository": "forgegod/daidala",
             "project_id": "forgegod-daidala",
             "controller_profile": "controller",
+            "board": "daidala-forgegod-daidala",
+            "board_action": "create",
             "manifest_digest": "a" * 64,
             "release": {"allow_commit": False, "allow_push": False, "allow_publish": False},
             "readiness": {
@@ -514,6 +516,7 @@ class FakeRepositoryRegistrationPreview:
                 "record_count": 2,
                 "registration": True,
                 "credential_bindings": True,
+                "board": "create",
             },
             "preview_digest": self.digest,
         }
@@ -524,8 +527,8 @@ class FakeRepositoryRegistrationService:
         self.calls: list[tuple[str, object]] = []
         self.preview_result = FakeRepositoryRegistrationPreview()
 
-    def classify(self, github_url: str) -> object:
-        self.calls.append(("classify", github_url))
+    def classify(self, github_url: str, *, board: str) -> object:
+        self.calls.append(("classify", (github_url, board)))
 
         class Result:
             status = "registerable"
@@ -541,14 +544,21 @@ class FakeRepositoryRegistrationService:
 
         return Result()
 
-    def preview(self, github_url: str) -> FakeRepositoryRegistrationPreview:
-        self.calls.append(("preview", github_url))
+    def preview(self, github_url: str, *, board: str) -> FakeRepositoryRegistrationPreview:
+        self.calls.append(("preview", (github_url, board)))
         return self.preview_result
 
     def apply(
-        self, github_url: str, *, expected_preview_digest: str, confirmation: str
+        self,
+        github_url: str,
+        *,
+        board: str,
+        expected_preview_digest: str,
+        confirmation: str,
     ) -> FakeRepositoryRegistrationPreview:
-        self.calls.append(("apply", (github_url, expected_preview_digest, confirmation)))
+        self.calls.append(
+            ("apply", (github_url, board, expected_preview_digest, confirmation))
+        )
         return self.preview_result
 
 
@@ -755,6 +765,8 @@ def test_project_register_preview_and_apply_have_native_cli_parity(
         "https://github.com/forgegod/daidala",
         "--profile",
         "controller",
+        "--board",
+        "daidala-forgegod-daidala",
     ]
     def runner(_command: tuple[str, ...]) -> tuple[int, str]:
         return 0, f"Path: {tmp_path}"
@@ -773,7 +785,9 @@ def test_project_register_preview_and_apply_have_native_cli_parity(
     native_payload = json.loads(capsys.readouterr().out)
 
     assert standalone_code == native_code == 0
-    assert standalone.calls == native.calls == [("classify", "https://github.com/forgegod/daidala")]
+    assert standalone.calls == native.calls == [
+        ("classify", ("https://github.com/forgegod/daidala", "daidala-forgegod-daidala"))
+    ]
     expected_preview = standalone.preview_result.to_dict()
     expected_classification = {
         **expected_preview,
@@ -805,7 +819,12 @@ def test_project_register_preview_and_apply_have_native_cli_parity(
     assert applied_code == 0
     assert standalone.calls[-1] == (
         "apply",
-        ("https://github.com/forgegod/daidala", "f" * 64, "register-repository"),
+        (
+            "https://github.com/forgegod/daidala",
+            "daidala-forgegod-daidala",
+            "f" * 64,
+            "register-repository",
+        ),
     )
     assert applied_payload == {
         "success": True,

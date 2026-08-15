@@ -50,9 +50,9 @@ then reports safe readiness, release flags, and the two proposed non-secret
 profile-local records. Apply repeats that inspection and rejects stale digests.
 It does not accept or store a token, create a checkout or GitHub Project, commit,
 push, publish, or grant delivery authority. In the dashboard use **Config →
-GitHub Repositories**: every Hermes profile is listed with its registered
-repository and slug. A registered row's link field is prefilled; inspect the
-preview, then tick the explicit confirmation before registering.
+Registered projects**: every Hermes profile is listed with its registered
+repository, slug, board state, and GitHub Project link state. Inspect the
+preview, confirm the named board bind/create action, then register.
 
 ### Bootstrap policy for a non-Daidala repository
 
@@ -121,6 +121,13 @@ Start workflow keeps a blocked pack selectable for inspection but disables
 preview/start until every exact skill name is installed and enabled.
 
 ## Start and resume a workflow
+
+In the dashboard, select exactly one workspace mode. **Registered project**
+derives the tuple's board and checkout server-side. **Existing unregistered
+project** exposes only unbound boards whose configured workdir is a clean Git
+root. **Initialize local project** accepts only a slug and board display name,
+then previews the derived directory, default `.daidala` policy, initial commit,
+and unbound board; it creates no GitHub repository or Project link.
 
 Start explicitly on an existing named board. One default profile is sufficient;
 override only stages that need a different profile:
