@@ -955,7 +955,8 @@
 .daidala-wizard-advanced summary,
 .daidala-back,
 .daidala-cron-link,
-.daidala-wizard-section a {
+.daidala-wizard-section a,
+.daidala-wizard-section-heading a {
   color: var(--daidala-accent);
   cursor: pointer;
 }

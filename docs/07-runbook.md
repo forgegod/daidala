@@ -127,6 +127,9 @@ repository** lists every registered repository in the Hermes installation and
 derives that tuple's board and checkout server-side. Only a bound board is
 selectable; uniqueness or bind failures stay listed with a reason and
 conclusion. Start shows the working directory for the chosen workspace.
+The repository profile owns the registration. Worker profile default assigns
+who runs the cards; a mismatch is allowed and later stages fail if those
+workers cannot use the working directory.
 **Existing unregistered
 repository** exposes only unbound boards whose configured workdir is a clean Git
 root. **Initialize local project** accepts only a slug and board display name,

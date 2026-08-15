@@ -4275,15 +4275,16 @@
             createElement("label", null, createElement("input", { type: "radio", checked: form.workspace_mode === "local", onChange: function () { change("workspace_mode", "local"); } }), " Initialize local project"),
             form.workspace_mode === "registered" ? createElement("div", null,
             createElement("div", { className: "daidala-wizard-section-heading" },
-              select("Registered repository", form.controller_profile && form.project_id ? form.controller_profile + ":" + form.project_id : "", function (value) { var separator = value.indexOf(":"); setForm(function (current) { return Object.assign({}, current, { controller_profile: separator > 0 ? value.slice(0, separator) : "", project_id: separator > 0 ? value.slice(separator + 1) : "" }); }); }, projects.map(function (row) { return { value: row.controller_profile + ":" + row.project_id, label: row.repository + " · " + row.controller_profile + " · " + row.board }; })),
-              createElement("a", { href: "/daidala?section=repositories&return=start-workflow", onClick: function (event) { navigateDashboard(event, "/daidala?section=repositories&return=start-workflow"); } }, "Register repository"),
+              select("Registered repository (<repo> · <board> · <profile>)", form.controller_profile && form.project_id ? form.controller_profile + ":" + form.project_id : "", function (value) { var separator = value.indexOf(":"); setForm(function (current) { return Object.assign({}, current, { controller_profile: separator > 0 ? value.slice(0, separator) : "", project_id: separator > 0 ? value.slice(separator + 1) : "" }); }); }, projects.map(function (row) { return { value: row.controller_profile + ":" + row.project_id, label: row.repository + " · " + row.board + " · " + row.controller_profile }; })),
+              createElement("a", { href: "/daidala?section=repositories&return=start-workflow", onClick: function (event) { navigateDashboard(event, "/daidala?section=repositories&return=start-workflow"); } }, "Register GitHub Repository"),
               selectedRepository && selectedRepository.workdir ? createElement("p", { className: "daidala-workflow-meta" }, "Working directory: " + selectedRepository.workdir) : null
             ),
+            createElement("p", { className: "daidala-workflow-meta" }, projects.length ? "The selected GitHub repository supplies its board. Register repositories in Config → GitHub Repositories." : ineligible.length ? "Registered GitHub repositories exist but none are selectable." : "No GitHub repository is registered in this Hermes installation. Use Register GitHub Repository."),
               ineligible.length ? createElement("section", { className: "daidala-wizard-section", "data-testid": "daidala-ineligible-repositories" },
                 createElement("h4", null, "Not selectable"),
                 ineligible.map(function (row) {
                   return createElement("article", { key: row.controller_profile + ":" + row.project_id },
-                    createElement("p", null, row.repository + " · " + row.controller_profile + " · " + row.board),
+                    createElement("p", null, row.repository + " · " + row.board + " · " + row.controller_profile),
                     createElement("p", { className: "daidala-workflow-meta" }, "Reason: " + row.detail),
                     createElement("p", { className: "daidala-workflow-meta" }, "Conclusion: " + row.conclusion),
                     row.workdir ? createElement("p", { className: "daidala-workflow-meta" }, "Working directory: " + row.workdir) : null
@@ -4304,8 +4305,11 @@
           createElement("label", { className: "daidala-wizard-field" }, createElement("span", null, "Requested outcome / Prompt"),
             createElement("textarea", { value: form.goal, rows: 3, onChange: function (event) { change("goal", event.target.value); } })
           ),
-          form.workspace_mode === "registered" ? createElement("p", { className: "daidala-workflow-meta" }, projects.length ? "The selected GitHub repository supplies its board. Register repositories in Config → GitHub Repositories." : ineligible.length ? "Registered GitHub repositories exist but none are selectable." : "No GitHub repository is registered in this Hermes installation. Use Register repository.") : null,
           select("Worker profile default", form.worker_default, changeWorker, profiles.map(function (name) { return { value: name, label: name }; })),
+          createElement("p", { className: "daidala-workflow-meta" }, "The repository <profile> owns the registration and supplies its board and checkout. Worker profile default assigns who runs every stage. They do not have to match, and Start will not rewrite either. Later stages fail if those workers cannot use the working directory."),
+          form.workspace_mode === "registered" && selectedRepository && form.worker_default && selectedRepository.controller_profile !== form.worker_default
+            ? createElement("p", { className: "daidala-workflow-meta" }, "This repository is owned by " + selectedRepository.controller_profile + ". Workers are " + form.worker_default + ".")
+            : null,
           createElement("details", { className: "daidala-wizard-advanced" },
             createElement("summary", null, "Advanced workflow settings"),
             WIZARD_STAGES.map(function (stage) {

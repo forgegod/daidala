@@ -138,6 +138,9 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   `bound` registration is selectable. Other registrations appear in
   `ineligible_repositories` with a finite `reason`, `detail`, and `conclusion`.
   Start may display the derived working directory for the selected workspace.
+  Start states that the registration profile and Worker profile default are
+  different jobs, that a mismatch is allowed, and that later stages fail if
+  those workers cannot use the working directory.
   The browser never sends a checkout, credential, or filesystem path.
 - Constraint preview is non-mutating; replacement requires the displayed current
   digest and explicit invalidation confirmation.

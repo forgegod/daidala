@@ -460,7 +460,7 @@ def test_bundle_exposes_the_closed_inventory_backed_start_workflow_wizard() -> N
         "Mounted controller profile",
         "Pack · readiness",
         "Registered GitHub repository",
-        "Register repository",
+        "Register GitHub Repository",
         "Initialize local project",
         "Project slug",
         "Board display name",
@@ -504,6 +504,8 @@ def test_bundle_exposes_the_closed_inventory_backed_start_workflow_wizard() -> N
     assert "/daidala?section=constraints&return=start-workflow" in source
     assert "/daidala?section=repositories&return=start-workflow" in source
     assert "controller_profile: form.controller_profile" in source
+    assert "Registered repository (<repo> · <board> · <profile>)" in source
+    assert 'row.repository + " · " + row.board + " · " + row.controller_profile' in source
     assert "Existing unregistered repository" in source
     assert "No GitHub repository is registered in this Hermes installation" in source
     assert "inventory.ineligible_repositories" in source
@@ -511,6 +513,9 @@ def test_bundle_exposes_the_closed_inventory_backed_start_workflow_wizard() -> N
     assert "Reason: " in source
     assert "Conclusion: " in source
     assert "Working directory: " in source
+    assert "The repository <profile> owns the registration" in source
+    assert "They do not have to match, and Start will not rewrite either" in source
+    assert "This repository is owned by " in source
     assert 'data-testid": "daidala-ineligible-repositories"' in source
     assert "window.history.pushState" in source
     assert 'addEventListener("popstate"' in source
@@ -521,13 +526,13 @@ def test_bundle_exposes_the_closed_inventory_backed_start_workflow_wizard() -> N
 
 def test_start_workflow_disables_primary_navigation_that_cannot_preserve_the_draft() -> None:
     source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+    css = (DASHBOARD / "dist" / "style.css").read_text(encoding="utf-8")
 
     assert 'disabled: starting && view.value !== "workflows"' in source
     assert 'title: starting && view.value !== "workflows"' in source
     assert "Finish or close Start workflow before changing views." in source
-    assert ".daidala-primary-nav button:disabled" in (
-        DASHBOARD / "dist" / "style.css"
-    ).read_text(encoding="utf-8")
+    assert ".daidala-primary-nav button:disabled" in css
+    assert ".daidala-wizard-section-heading a" in css
 
 
 def test_routed_start_configuration_is_scrolled_and_focused_after_render() -> None:

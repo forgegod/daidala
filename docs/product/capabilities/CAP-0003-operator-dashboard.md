@@ -30,7 +30,12 @@ An authenticated operator can inspect workflow state and evidence, perform bound
   board for a registered GitHub repository. Registrations that violate uniqueness
   or board bind state stay visible outside the dropdown with a reason and
   conclusion. Start shows the working directory for the selected workspace.
-  Manage packs, Register repository,
+  The registered-repository select is labelled
+  `Registered repository (<repo> · <board> · <profile>)`. Worker profile
+  default assigns who runs every stage and does not have to match the
+  repository `<profile>`. Start states that implication and that later stages
+  fail if those workers cannot use the working directory. Manage packs,
+  Register GitHub Repository,
   and Manage sources preserve the browser draft while moving visual and keyboard
   focus to their exact Config destination.
 - Approval, review disposition, card remediation, cancellation, setup, and curator mutations use preview/confirm or exact-identity requests; the server derives authoritative workflow, board, repository, and worktree facts.
@@ -93,3 +98,4 @@ An authenticated operator can inspect workflow state and evidence, perform bound
 - [Initial records-adoption receipt](../../changes/archive/CHG-0001-adopt-application-records.md)
 - [Pinned Hermes pack installation receipt](../../changes/archive/CHG-0012-pin-hermes-pack-skill-installation.md)
 - [Start repository wording receipt](../../changes/archive/CHG-0017-start-repository-wording-and-inventory.md)
+- [Start select legend receipt](../../changes/archive/CHG-0018-start-select-legend-and-pack-link.md)
