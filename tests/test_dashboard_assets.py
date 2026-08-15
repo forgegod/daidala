@@ -305,11 +305,14 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
     required_strings = (
         'API_BASE + "/repository-registration/preview"',
         'API_BASE + "/repository-registration"',
-        'API_BASE + "/repository-registration/profiles"',
-        'API_BASE + "/repository-registration/registrations?controller_profile="',
+        'API_BASE + "/repository-registration/inventory"',
         "GitHub Repositories",
-        "Selected Hermes profile",
-        "requires a fresh inspection",
+        "Every existing Hermes profile and its registered repositories",
+        "Repository",
+        "Slug",
+        "github.com/",
+        "No repository registered",
+        "Register another repository",
         "GitHub repository link",
         "Inspect repository",
         "Registration preview",
@@ -338,6 +341,8 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
     assert '}, "GitHub Repositories"),' in configuration_panel
     assert '}, "GitHub Projects"),' in configuration_panel
     assert 'data-testid": "daidala-repository-registration"' in source
+    assert 'data-testid": "daidala-repository-profile"' in source
+    assert "Selected Hermes profile" not in source
     assert "checkout_path" not in source
     assert "repository_path" not in source
     assert "token:" not in source.lower()

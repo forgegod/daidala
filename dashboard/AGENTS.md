@@ -54,9 +54,9 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   and registration/checkout previews are non-mutating; browser
   payloads never carry credential values, an environment-variable name, a
   repository checkout path, credential alias, credential-source detail, or a
-  GitHub Project node ID. Repository-registration profile inventory returns only
-  Hermes-validated profile names and the dashboard default. Registration-list
-  requests carry one such selected name; preview accepts exactly
+  GitHub Project node ID. Repository-registration inventory returns every
+  Hermes-validated profile name with that profile's path-free registrations
+  and a finite `ready`/`unavailable` status. Preview accepts exactly
   `{github_url, controller_profile}` and returns a path-free classification:
   `registerable` (registration preview fields), `needs-bootstrap`,
   `already-registered`, or `blocked` with stable `reason`/`next_action`. Apply

@@ -744,6 +744,25 @@
   background: var(--surface-raised, rgba(255, 255, 255, 0.04));
 }
 
+.daidala-repository-profiles {
+  display: grid;
+  gap: var(--daidala-gap);
+}
+
+.daidala-repository-profile {
+  display: grid;
+  gap: var(--daidala-gap);
+  padding: var(--daidala-padding);
+  border: var(--daidala-border);
+  border-radius: var(--daidala-radius);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
+}
+
+.daidala-repository-profile h3,
+.daidala-repository-profile p {
+  margin: 0;
+}
+
 .daidala-github-project-link-header {
   display: flex;
   flex-wrap: wrap;

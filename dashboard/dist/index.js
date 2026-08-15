@@ -163,16 +163,9 @@
     });
   }
 
-  function buildRepositoryRegistrationProfiles() {
-    return fetchJson(API_BASE + "/repository-registration/profiles");
-  }
-
-  function buildRepositoryRegistrations(controllerProfile) {
-    return fetchJson(
-      API_BASE + "/repository-registration/registrations?controller_profile=" +
-      encodeURIComponent(controllerProfile)
-    ).then(function (payload) {
-      return payload && Array.isArray(payload.registrations) ? payload.registrations : [];
+  function buildRepositoryRegistrationInventory() {
+    return fetchJson(API_BASE + "/repository-registration/inventory").then(function (payload) {
+      return payload && Array.isArray(payload.profiles) ? payload.profiles : [];
     });
   }
 
@@ -2516,18 +2509,15 @@
   }
 
   function RepositoryRegistrationPanel() {
-    var profilesState = useState(undefined);
-    var profiles = profilesState[0];
-    var setProfiles = profilesState[1];
-    var controllerProfileState = useState("");
-    var controllerProfile = controllerProfileState[0];
-    var setControllerProfile = controllerProfileState[1];
-    var registrationsState = useState(undefined);
-    var registrations = registrationsState[0];
-    var setRegistrations = registrationsState[1];
-    var urlState = useState("");
-    var githubUrl = urlState[0];
-    var setGithubUrl = urlState[1];
+    var inventoryState = useState(undefined);
+    var inventory = inventoryState[0];
+    var setInventory = inventoryState[1];
+    var draftsState = useState({});
+    var drafts = draftsState[0];
+    var setDrafts = draftsState[1];
+    var activeState = useState(null);
+    var active = activeState[0];
+    var setActive = activeState[1];
     var previewState = useState(null);
     var preview = previewState[0];
     var setPreview = previewState[1];
@@ -2544,55 +2534,50 @@
     var message = messageState[0];
     var setMessage = messageState[1];
 
-    function refreshRegistrations(profile) {
-      if (!profile) return Promise.resolve();
-      setRegistrations(undefined);
-      return buildRepositoryRegistrations(profile).then(setRegistrations).catch(function (caught) {
-        setRegistrations([]);
-        setMessage("Repository list unavailable: " + errorText(caught));
-      });
+    function draftKey(profileName, field) {
+      return profileName + "\0" + field;
     }
 
-    function refreshProfiles(preferredProfile) {
+    function defaultUrl(registration) {
+      return registration && registration.repository_canonical
+        ? "github.com/" + registration.repository_canonical
+        : "";
+    }
+
+    function fieldUrl(profileName, field, registration) {
+      var key = draftKey(profileName, field);
+      return Object.prototype.hasOwnProperty.call(drafts, key) ? drafts[key] : defaultUrl(registration);
+    }
+
+    function setFieldUrl(profileName, field, value) {
+      var next = {};
+      Object.keys(drafts).forEach(function (existing) { next[existing] = drafts[existing]; });
+      next[draftKey(profileName, field)] = value;
+      setDrafts(next);
+      setPreview(null);
+      setBootstrapPreview(null);
+      setConfirmed(false);
+    }
+
+    function refreshInventory() {
       setMessage("");
-      return buildRepositoryRegistrationProfiles().then(function (result) {
-        var available = result && Array.isArray(result.profiles) ? result.profiles : [];
-        var defaultProfile = result && typeof result.selected_profile === "string"
-          ? result.selected_profile
-          : "";
-        var selected = typeof preferredProfile === "string" && available.indexOf(preferredProfile) !== -1
-          ? preferredProfile
-          : defaultProfile;
-        setProfiles(available);
-        setControllerProfile(selected);
-        return refreshRegistrations(selected);
-      }).catch(function (caught) {
-        setProfiles([]);
-        setControllerProfile("");
-        setRegistrations([]);
+      return buildRepositoryRegistrationInventory().then(setInventory).catch(function (caught) {
+        setInventory([]);
         setMessage("Hermes profile inventory unavailable: " + errorText(caught));
       });
     }
 
-    useEffect(function () { refreshProfiles().catch(function () {}); }, []);
+    useEffect(function () { refreshInventory().catch(function () {}); }, []);
 
-    function selectControllerProfile(event) {
-      var selected = event.target.value;
-      setControllerProfile(selected);
-      setPreview(null);
-      setBootstrapPreview(null);
-      setConfirmed(false);
-      setMessage("Selected profile changed; it requires a fresh inspection.");
-      refreshRegistrations(selected).catch(function () {});
-    }
-
-    function inspect() {
-      if (!githubUrl.trim() || !controllerProfile) return;
+    function inspect(profileName, field, registration) {
+      var githubUrl = fieldUrl(profileName, field, registration).trim();
+      if (!githubUrl || !profileName) return;
+      setActive({ profile: profileName, field: field });
       setBusy(true); setMessage(""); setPreview(null); setBootstrapPreview(null); setConfirmed(false);
-      previewRepositoryRegistration(githubUrl.trim(), controllerProfile).then(function (result) {
+      previewRepositoryRegistration(githubUrl, profileName).then(function (result) {
         if (result && result.classification === "needs-bootstrap") {
           setMessage(repositoryInspectionMessage(result));
-          return previewRepositoryBootstrap(githubUrl.trim(), controllerProfile).then(function (bootstrap) {
+          return previewRepositoryBootstrap(githubUrl, profileName).then(function (bootstrap) {
             setBootstrapPreview(bootstrap);
           });
         }
@@ -2608,21 +2593,23 @@
     }
 
     function apply() {
-      if (!preview || !confirmed) return;
+      if (!preview || !confirmed || !active) return;
+      var githubUrl = fieldUrl(active.profile, active.field).trim();
       setBusy(true); setMessage("");
-      applyRepositoryRegistration(githubUrl.trim(), preview.controller_profile, preview.preview_digest).then(function (result) {
+      applyRepositoryRegistration(githubUrl, preview.controller_profile, preview.preview_digest).then(function (result) {
         setPreview(result); setConfirmed(false);
         setMessage("Repository registered. Refresh Configuration verification before starting a workflow.");
-        refreshRegistrations(preview.controller_profile).catch(function () {});
+        refreshInventory().catch(function () {});
       }).catch(function (caught) {
         setMessage("Repository was not registered: " + errorText(caught));
       }).finally(function () { setBusy(false); });
     }
 
     function applyBootstrap() {
-      if (!bootstrapPreview || !confirmed) return;
+      if (!bootstrapPreview || !confirmed || !active) return;
+      var githubUrl = fieldUrl(active.profile, active.field).trim();
       setBusy(true); setMessage("");
-      applyRepositoryBootstrap(githubUrl.trim(), bootstrapPreview.controller_profile, bootstrapPreview.preview_digest).then(function (result) {
+      applyRepositoryBootstrap(githubUrl, bootstrapPreview.controller_profile, bootstrapPreview.preview_digest).then(function (result) {
         setBootstrapPreview(result); setConfirmed(false);
         setMessage(
           "Bootstrap branch published: " + (result.branch || bootstrapPreview.target_branch) +
@@ -2633,94 +2620,144 @@
       }).finally(function () { setBusy(false); });
     }
 
-    var readiness = preview && preview.readiness ? preview.readiness : {};
-    var writes = preview && preview.writes ? preview.writes : {};
+    function isActive(profileName, field) {
+      return active && active.profile === profileName && active.field === field;
+    }
+
+    function renderInspectResult(profileName, field) {
+      if (!isActive(profileName, field)) return null;
+      var readiness = preview && preview.readiness ? preview.readiness : {};
+      var writes = preview && preview.writes ? preview.writes : {};
+      var nodes = [];
+      if (message) {
+        nodes.push(createElement("p", { key: "message", role: "status", className: "daidala-banner" }, message));
+      }
+      if (bootstrapPreview) {
+        nodes.push(createElement("section", { key: "bootstrap", className: "daidala-github-link-preview" },
+          createElement("h3", null, "Bootstrap preview"),
+          createElement("p", null, "Repository: " + bootstrapPreview.repository + " · Project: " + bootstrapPreview.project_id),
+          createElement("p", null, "Profile: " + bootstrapPreview.controller_profile),
+          createElement("p", null, "Target branch: " + bootstrapPreview.target_branch + " from " + bootstrapPreview.default_branch),
+          createElement("p", null, "Files: " + ((bootstrapPreview.files || []).map(function (file) { return file.path; }).join(", ") || "none")),
+          createElement("p", null, "Manifest digest: " + bootstrapPreview.manifest_digest),
+          createElement("p", { className: "daidala-workflow-meta" }, bootstrapPreview.next_step || "Open the compare/pull-request link, merge on GitHub, then register."),
+          createElement("p", { className: "daidala-workflow-meta" }, "Bootstrap does not register the repository, touch the default branch, create a pull request via API, or store a token."),
+          bootstrapPreview.links ? createElement("ul", { className: "daidala-list" },
+            bootstrapPreview.links.branch ? createElement("li", { key: "branch" },
+              createElement("a", { href: bootstrapPreview.links.branch, target: "_blank", rel: "noreferrer" }, "Open bootstrap branch")
+            ) : null,
+            bootstrapPreview.links.daidala_tree ? createElement("li", { key: "tree" },
+              createElement("a", { href: bootstrapPreview.links.daidala_tree, target: "_blank", rel: "noreferrer" }, "Open .daidala on bootstrap branch")
+            ) : null,
+            bootstrapPreview.applied && bootstrapPreview.links.compare_pull_request ? createElement("li", { key: "pr" },
+              createElement("button", {
+                type: "button",
+                onClick: function () {
+                  window.open(bootstrapPreview.links.compare_pull_request, "_blank", "noopener,noreferrer");
+                }
+              }, "Open a pull request")
+            ) : null
+          ) : null,
+          createElement("code", null, bootstrapPreview.preview_digest),
+          createElement("label", { className: "daidala-pack-confirm" },
+            createElement("input", { type: "checkbox", checked: confirmed, onChange: function (event) { setConfirmed(event.target.checked); } }),
+            " I confirm publishing bootstrap policy on branch " + bootstrapPreview.target_branch
+          ),
+          createElement("button", { type: "button", disabled: busy || !confirmed, onClick: applyBootstrap }, "Bootstrap repository policy")
+        ));
+      }
+      if (preview) {
+        nodes.push(createElement("section", { key: "preview", className: "daidala-github-link-preview" },
+          createElement("h3", null, "Registration preview"),
+          createElement("p", null, "Repository: " + preview.repository + " · Project: " + preview.project_id),
+          createElement("p", null, "Profile: " + preview.controller_profile),
+          createElement("p", null, "Manifest digest: " + preview.manifest_digest),
+          createElement("p", null, "Release policy: commit " + (preview.release.allow_commit ? "allowed" : "denied") + ", push " + (preview.release.allow_push ? "allowed" : "denied") + ", publish " + (preview.release.allow_publish ? "allowed" : "denied")),
+          createElement("p", null, "Readiness: board " + (readiness.board_selected ? "selected" : "missing") + ", attended target " + (readiness.attended_target_configured ? "configured" : "missing") + ", credential " + (readiness.credential_available ? "available" : "not available")),
+          createElement("p", null, "This preview creates " + (writes.record_count || 0) + " non-secret profile-local records."),
+          createElement("p", { className: "daidala-workflow-meta" }, "This action does not commit, push, create a GitHub Project, or store a token."),
+          createElement("code", null, preview.preview_digest),
+          createElement("label", { className: "daidala-pack-confirm" },
+            createElement("input", { type: "checkbox", checked: confirmed, onChange: function (event) { setConfirmed(event.target.checked); } }),
+            " I confirm registering this exact repository"
+          ),
+          createElement("button", { type: "button", disabled: busy || !confirmed, onClick: apply }, "Register repository")
+        ));
+      }
+      return nodes.length ? nodes : null;
+    }
+
+    function renderLinkField(profileName, field, registration, label) {
+      var value = fieldUrl(profileName, field, registration);
+      return createElement("div", { key: profileName + ":" + field, className: "daidala-github-registration-context" },
+        registration ? createElement("dl", null,
+          createElement("div", null,
+            createElement("dt", null, "Repository"),
+            createElement("dd", null, registration.repository_canonical)
+          ),
+          createElement("div", null,
+            createElement("dt", null, "Slug"),
+            createElement("dd", null, registration.project_id)
+          )
+        ) : label === "Register another repository" ? null
+          : createElement("p", { className: "daidala-workflow-meta" }, "No repository registered"),
+        createElement("label", { className: "daidala-wizard-field" },
+          createElement("span", null, label),
+          createElement("input", {
+            value: value,
+            placeholder: "github.com/owner/repository",
+            "aria-label": label + " for " + profileName,
+            onChange: function (event) { setFieldUrl(profileName, field, event.target.value); }
+          })
+        ),
+        createElement("button", {
+          type: "button",
+          disabled: busy || !value.trim(),
+          onClick: function () { inspect(profileName, field, registration); }
+        }, busy && isActive(profileName, field) ? "Inspecting…" : "Inspect repository"),
+        renderInspectResult(profileName, field)
+      );
+    }
+
+    function renderProfile(profile) {
+      var name = profile.controller_profile;
+      var registrations = Array.isArray(profile.registrations) ? profile.registrations : [];
+      var rows = registrations.map(function (registration) {
+        return renderLinkField(name, registration.project_id, registration, "GitHub repository link");
+      });
+      if (registrations.length) {
+        rows.push(renderLinkField(name, "", null, "Register another repository"));
+      } else {
+        rows.push(renderLinkField(name, "", null, "GitHub repository link"));
+      }
+      return createElement("article", {
+        key: name,
+        className: "daidala-repository-profile",
+        "data-testid": "daidala-repository-profile"
+      },
+        createElement("h3", null, name),
+        profile.status === "unavailable"
+          ? createElement("p", { className: "daidala-banner daidala-banner-error" }, "Registered projects are unavailable for this profile.")
+          : null,
+        rows
+      );
+    }
+
     return createElement("section", { className: "daidala-config", "data-testid": "daidala-repository-registration" },
       createElement("header", { className: "daidala-config-header" },
         createElement("div", null,
           createElement("h2", null, "GitHub Repositories"),
           createElement("p", { className: "daidala-workflow-meta" },
-            "Register a GitHub repository into one existing Hermes profile. Daidala does not accept credentials."
+            "Every existing Hermes profile and its registered repositories. Daidala does not accept credentials."
           )
         ),
-        createElement("button", { type: "button", disabled: busy, onClick: function () { refreshProfiles(controllerProfile).catch(function () {}); } }, "Refresh profiles")
+        createElement("button", { type: "button", disabled: busy, onClick: function () { refreshInventory().catch(function () {}); } }, "Refresh profiles")
       ),
-      createElement("label", { className: "daidala-wizard-field" },
-        createElement("span", null, "Selected Hermes profile"),
-        createElement("select", {
-          value: controllerProfile,
-          disabled: busy || profiles === undefined || !profiles.length,
-          onChange: selectControllerProfile
-        },
-          createElement("option", { value: "" }, profiles === undefined ? "Loading profiles…" : "Select profile"),
-          (profiles || []).map(function (profile) {
-            return createElement("option", { key: profile, value: profile }, profile);
-          })
-        )
-      ),
-      registrations === undefined ? createElement("p", { className: "daidala-workflow-meta" }, "Loading registered repositories…")
-        : registrations.length === 0 ? createElement("p", { className: "daidala-workflow-meta" }, "No repositories are registered for this profile.")
-          : createElement("ul", { className: "daidala-list" }, registrations.map(function (registration) {
-              return createElement("li", { key: registration.project_id }, registration.repository_canonical + " · " + registration.project_id);
-            })),
-      createElement("label", { className: "daidala-wizard-field" },
-        createElement("span", null, "GitHub repository link"),
-        createElement("input", {
-          value: githubUrl,
-          placeholder: "github.com/owner/repository",
-          onChange: function (event) { setGithubUrl(event.target.value); setPreview(null); setBootstrapPreview(null); setConfirmed(false); }
-        })
-      ),
-      createElement("button", { type: "button", disabled: busy || !githubUrl.trim() || !controllerProfile, onClick: inspect }, busy ? "Inspecting…" : "Inspect repository"),
-      bootstrapPreview ? createElement("section", { className: "daidala-github-link-preview" },
-        createElement("h3", null, "Bootstrap preview"),
-        createElement("p", null, "Repository: " + bootstrapPreview.repository + " · Project: " + bootstrapPreview.project_id),
-        createElement("p", null, "Profile: " + bootstrapPreview.controller_profile),
-        createElement("p", null, "Target branch: " + bootstrapPreview.target_branch + " from " + bootstrapPreview.default_branch),
-        createElement("p", null, "Files: " + ((bootstrapPreview.files || []).map(function (file) { return file.path; }).join(", ") || "none")),
-        createElement("p", null, "Manifest digest: " + bootstrapPreview.manifest_digest),
-        createElement("p", { className: "daidala-workflow-meta" }, bootstrapPreview.next_step || "Open the compare/pull-request link, merge on GitHub, then register."),
-        createElement("p", { className: "daidala-workflow-meta" }, "Bootstrap does not register the repository, touch the default branch, create a pull request via API, or store a token."),
-        bootstrapPreview.links ? createElement("ul", { className: "daidala-list" },
-          bootstrapPreview.links.branch ? createElement("li", { key: "branch" },
-            createElement("a", { href: bootstrapPreview.links.branch, target: "_blank", rel: "noreferrer" }, "Open bootstrap branch")
-          ) : null,
-          bootstrapPreview.links.daidala_tree ? createElement("li", { key: "tree" },
-            createElement("a", { href: bootstrapPreview.links.daidala_tree, target: "_blank", rel: "noreferrer" }, "Open .daidala on bootstrap branch")
-          ) : null,
-          bootstrapPreview.applied && bootstrapPreview.links.compare_pull_request ? createElement("li", { key: "pr" },
-            createElement("button", {
-              type: "button",
-              onClick: function () {
-                window.open(bootstrapPreview.links.compare_pull_request, "_blank", "noopener,noreferrer");
-              }
-            }, "Open a pull request")
-          ) : null
-        ) : null,
-        createElement("code", null, bootstrapPreview.preview_digest),
-        createElement("label", { className: "daidala-pack-confirm" },
-          createElement("input", { type: "checkbox", checked: confirmed, onChange: function (event) { setConfirmed(event.target.checked); } }),
-          " I confirm publishing bootstrap policy on branch " + bootstrapPreview.target_branch
-        ),
-        createElement("button", { type: "button", disabled: busy || !confirmed, onClick: applyBootstrap }, "Bootstrap repository policy")
-      ) : null,
-      preview ? createElement("section", { className: "daidala-github-link-preview" },
-        createElement("h3", null, "Registration preview"),
-        createElement("p", null, "Repository: " + preview.repository + " · Project: " + preview.project_id),
-        createElement("p", null, "Profile: " + preview.controller_profile),
-        createElement("p", null, "Manifest digest: " + preview.manifest_digest),
-        createElement("p", null, "Release policy: commit " + (preview.release.allow_commit ? "allowed" : "denied") + ", push " + (preview.release.allow_push ? "allowed" : "denied") + ", publish " + (preview.release.allow_publish ? "allowed" : "denied")),
-        createElement("p", null, "Readiness: board " + (readiness.board_selected ? "selected" : "missing") + ", attended target " + (readiness.attended_target_configured ? "configured" : "missing") + ", credential " + (readiness.credential_available ? "available" : "not available")),
-        createElement("p", null, "This preview creates " + (writes.record_count || 0) + " non-secret profile-local records."),
-        createElement("p", { className: "daidala-workflow-meta" }, "This action does not commit, push, create a GitHub Project, or store a token."),
-        createElement("code", null, preview.preview_digest),
-        createElement("label", { className: "daidala-pack-confirm" },
-          createElement("input", { type: "checkbox", checked: confirmed, onChange: function (event) { setConfirmed(event.target.checked); } }),
-          " I confirm registering this exact repository"
-        ),
-        createElement("button", { type: "button", disabled: busy || !confirmed, onClick: apply }, "Register repository")
-      ) : null,
-      message ? createElement("p", { role: "status", className: "daidala-banner" }, message) : null
+      inventory === undefined
+        ? createElement("p", { className: "daidala-workflow-meta" }, "Loading registered repositories…")
+        : inventory.length === 0
+          ? createElement("p", { className: "daidala-workflow-meta" }, "No Hermes profiles are available.")
+          : createElement("div", { className: "daidala-repository-profiles" }, inventory.map(renderProfile))
     );
   }
 

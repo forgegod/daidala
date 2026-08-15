@@ -24,14 +24,17 @@ credential alias, environment-variable name, or token to Daidala.
 - Apply re-inspects the repository and accepts only the exact preview digest
   plus the literal `register-repository` confirmation. It writes only the
   controller registration and credential-bindings records.
-- Config → GitHub Repositories lists the selected existing Hermes profile's repository
-  identities and refreshes that list when the operator changes profile. It shows
-  no profile root, checkout, credential alias, environment-variable name, or
-  secret metadata.
+- Config → GitHub Repositories lists every Hermes-validated profile and that
+  profile's repository identities in one inventory. A registered row shows
+  the canonical repository and project-id slug, and fills the GitHub repository
+  link field with `github.com/<repository_canonical>`. It shows no profile
+  root, checkout, credential alias, environment-variable name, or secret
+  metadata.
 - The dashboard accepts a GitHub URL and an existing Hermes profile name for
-  preview. Apply additionally accepts the digest and `confirm: true`; the
-  server resolves the named profile through Hermes on every request and binds
-  the preview digest to that profile.
+  preview from the inventory row that owned the inspect action. Apply
+  additionally accepts the digest and `confirm: true`; the server resolves
+  the named profile through Hermes on every request and binds the preview
+  digest to that profile.
 - GitHub Contents API Base64 line wrapping is normalized before strict decoding;
   malformed non-Base64 content remains rejected.
 - Public preview readiness exposes only `credential_available`; credential
@@ -66,5 +69,6 @@ credential alias, environment-variable name, or token to Daidala.
 
 - [CHG-0009](../../changes/archive/CHG-0009-github-repository-registration-and-delivery.md)
 - [CHG-0010](../../changes/archive/CHG-0010-non-daidala-repository-bootstrap.md)
+- [CHG-0015](../../changes/active/CHG-0015-all-profile-repository-inventory.md)
 - [HTML wireframe](../wireframes/html/CAP-0004-github-repository-registration.html)
 - [PNG wireframe](../wireframes/exports/CAP-0004-github-repository-registration.png)

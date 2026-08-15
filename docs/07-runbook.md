@@ -50,8 +50,9 @@ then reports safe readiness, release flags, and the two proposed non-secret
 profile-local records. Apply repeats that inspection and rejects stale digests.
 It does not accept or store a token, create a checkout or GitHub Project, commit,
 push, publish, or grant delivery authority. In the dashboard use **Config →
-Repositories**: paste only the GitHub.com repository link, inspect the preview,
-then tick the explicit confirmation before registering.
+GitHub Repositories**: every Hermes profile is listed with its registered
+repository and slug. A registered row's link field is prefilled; inspect the
+preview, then tick the explicit confirmation before registering.
 
 ### Bootstrap policy for a non-Daidala repository
 

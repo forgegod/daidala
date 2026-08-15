@@ -126,6 +126,7 @@ def test_router_exports_all_phase_two_routes() -> None:
         "registrations",
         "repository_registration_profiles",
         "repository_registrations",
+        "repository_registration_inventory",
         "repository_registration_preview",
         "repository_registration_apply",
         "github_project_links",
@@ -1881,6 +1882,121 @@ def test_repository_registration_profiles_and_rows_resolve_only_selected_profile
         ],
     }
     assert calls == ["daidala-self-improvement"]
+
+
+def test_repository_registration_inventory_projects_every_validated_profile(
+    tmp_path: Path,
+) -> None:
+    api = load_api()
+    dashboard_root = (tmp_path / "dashboard").resolve()
+    controller_root = (tmp_path / "controller").resolve()
+    dashboard_root.mkdir()
+    controller_root.mkdir()
+    registration = types.SimpleNamespace(
+        project_id="forgegod-daidala",
+        controller_profile="daidala-self-improvement",
+        repository_canonical="forgegod/daidala",
+    )
+    calls: list[str] = []
+
+    api.__dict__["active_profile"] = lambda _run, **_kwargs: "daidala-dashboard"
+    api.__dict__["list_profiles"] = lambda _run: [
+        "daidala-dashboard",
+        "daidala-self-improvement",
+    ]
+
+    def resolve(profile: str, _run: object) -> Path:
+        calls.append(profile)
+        return {
+            "daidala-dashboard": dashboard_root,
+            "daidala-self-improvement": controller_root,
+        }[profile]
+
+    api.__dict__["resolve_profile_root"] = resolve
+    api.__dict__["list_controller_registrations"] = lambda root: (
+        (registration,) if root == controller_root else ()
+    )
+
+    assert api.repository_registration_inventory() == {
+        "selected_profile": "daidala-dashboard",
+        "profiles": [
+            {
+                "controller_profile": "daidala-dashboard",
+                "status": "ready",
+                "registrations": [],
+            },
+            {
+                "controller_profile": "daidala-self-improvement",
+                "status": "ready",
+                "registrations": [
+                    {
+                        "project_id": "forgegod-daidala",
+                        "repository_canonical": "forgegod/daidala",
+                    }
+                ],
+            },
+        ],
+    }
+    assert calls == ["daidala-dashboard", "daidala-self-improvement"]
+
+
+def test_repository_registration_inventory_isolates_one_invalid_store(
+    tmp_path: Path,
+) -> None:
+    api = load_api()
+    dashboard_root = (tmp_path / "dashboard").resolve()
+    controller_root = (tmp_path / "controller").resolve()
+    dashboard_root.mkdir()
+    controller_root.mkdir()
+    registration = types.SimpleNamespace(
+        project_id="forgegod-daidala",
+        controller_profile="daidala-self-improvement",
+        repository_canonical="forgegod/daidala",
+    )
+
+    api.__dict__["active_profile"] = lambda _run, **_kwargs: "daidala-dashboard"
+    api.__dict__["list_profiles"] = lambda _run: [
+        "daidala-dashboard",
+        "daidala-self-improvement",
+    ]
+    api.__dict__["resolve_profile_root"] = lambda profile, _run: {
+        "daidala-dashboard": dashboard_root,
+        "daidala-self-improvement": controller_root,
+    }[profile]
+
+    def list_rows(root: Path) -> tuple[object, ...]:
+        if root == dashboard_root:
+            raise ValueError("registered projects are invalid")
+        return (registration,)
+
+    api.__dict__["list_controller_registrations"] = list_rows
+
+    payload = api.repository_registration_inventory()
+    serialized = json.dumps(payload)
+
+    assert payload == {
+        "selected_profile": "daidala-dashboard",
+        "profiles": [
+            {
+                "controller_profile": "daidala-dashboard",
+                "status": "unavailable",
+                "registrations": [],
+            },
+            {
+                "controller_profile": "daidala-self-improvement",
+                "status": "ready",
+                "registrations": [
+                    {
+                        "project_id": "forgegod-daidala",
+                        "repository_canonical": "forgegod/daidala",
+                    }
+                ],
+            },
+        ],
+    }
+    assert "checkout" not in serialized
+    assert "credential" not in serialized
+    assert str(dashboard_root) not in serialized
 
 
 def test_repository_registration_rows_reject_unknown_profile_before_resolution() -> None:

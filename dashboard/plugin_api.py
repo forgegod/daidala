@@ -621,25 +621,65 @@ def repository_registration_profiles() -> dict[str, object]:
         ) from error
 
 
-@router.get("/repository-registration/registrations")
-def repository_registrations(controller_profile: str) -> dict[str, object]:
-    """Project only selected-profile repository identity facts for Config."""
+def _repository_registration_rows(controller_profile: str) -> list[dict[str, str]]:
+    """Project path-free registration identities for one Hermes-validated profile."""
 
     root = _repository_registration_profile_root(controller_profile)
     try:
         rows = list_controller_registrations(root)
     except ValueError as error:
         raise HTTPException(status_code=409, detail="registered projects are invalid") from error
+    return [
+        {
+            "project_id": row.project_id,
+            "repository_canonical": row.repository_canonical,
+        }
+        for row in rows
+    ]
+
+
+@router.get("/repository-registration/registrations")
+def repository_registrations(controller_profile: str) -> dict[str, object]:
+    """Project only selected-profile repository identity facts for Config."""
+
     return {
         "controller_profile": controller_profile,
-        "registrations": [
-            {
-                "project_id": row.project_id,
-                "repository_canonical": row.repository_canonical,
-            }
-            for row in rows
-        ],
+        "registrations": _repository_registration_rows(controller_profile),
     }
+
+
+@router.get("/repository-registration/inventory")
+def repository_registration_inventory() -> dict[str, object]:
+    """Project every Hermes-validated profile and its path-free registrations."""
+
+    try:
+        selected_profile = active_profile(
+            _run_command, fallback_name=resolve_data_root().name
+        )
+        names = list_profiles(_run_command)
+    except SetupWizardError as error:
+        raise HTTPException(
+            status_code=502, detail="Hermes profile inventory is unavailable"
+        ) from error
+
+    profiles: list[dict[str, object]] = []
+    for controller_profile in names:
+        try:
+            registrations = _repository_registration_rows(controller_profile)
+            status = "ready"
+        except HTTPException as error:
+            if error.status_code != 409:
+                raise
+            registrations = []
+            status = "unavailable"
+        profiles.append(
+            {
+                "controller_profile": controller_profile,
+                "status": status,
+                "registrations": registrations,
+            }
+        )
+    return {"selected_profile": selected_profile, "profiles": profiles}
 
 
 def _repository_registration_request(
