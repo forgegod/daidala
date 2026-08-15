@@ -16,7 +16,7 @@ from typing import Any, Protocol
 import yaml
 
 from .locations import resolve_data_root
-from .packs import SkillRef, WorkflowPack, external_skill_install_target, load_pack
+from .packs import CatalogSkill, WorkflowPack, external_skill_install_target, load_pack
 from .profile_files import ProfileFileError, atomic_write_private_text, read_private_text
 from .skills import (
     InstallAction,
@@ -147,7 +147,7 @@ class ProfileSkillAvailabilityState:
 @dataclass(frozen=True)
 class PackSkillProjection:
     name: str
-    activation: str
+    activation: str | None
     bundled: bool
     external: bool
     install_target: str | None
@@ -191,6 +191,7 @@ class PackValidation:
     hermes_version_constraint: str | None
     lifecycle: tuple[str, ...]
     human_gate_after: str
+    skills: tuple[PackSkillProjection, ...]
     stages: tuple[PackStageProjection, ...]
 
     def to_dict(self) -> dict[str, object]:
@@ -201,6 +202,7 @@ class PackValidation:
             "hermes_version_constraint": self.hermes_version_constraint,
             "lifecycle": list(self.lifecycle),
             "human_gate_after": self.human_gate_after,
+            "skills": [skill.to_dict() for skill in self.skills],
             "stages": [stage.to_dict() for stage in self.stages],
         }
 
@@ -213,7 +215,7 @@ class PackCheck:
     actions: tuple[InstallAction, ...]
     revision_mismatches: tuple[str, ...]
     blockers: tuple[str, ...]
-    activation_blockers: tuple[str, ...]
+    readiness_blockers: tuple[str, ...]
     installable: bool
     ready: bool
     preview_digest: str
@@ -226,7 +228,7 @@ class PackCheck:
             "actions": [action.to_dict() for action in self.actions],
             "revision_mismatches": list(self.revision_mismatches),
             "blockers": list(self.blockers),
-            "activation_blockers": list(self.activation_blockers),
+            "readiness_blockers": list(self.readiness_blockers),
             "installable": self.installable,
             "ready": self.ready,
         }
@@ -407,19 +409,25 @@ class PackService:
         validation = _validation(pack)
         installed = self._inventory.installed_names()
         disabled = self._skill_state.disabled_names()
+        observed_skills = tuple(
+            _observed_skill(skill, expected, installed, disabled, self._registry)
+            for skill, expected in zip(pack.skills, validation.skills, strict=True)
+        )
+        observed_by_name = {skill.name: skill for skill in observed_skills}
         stages = tuple(
             PackStageProjection(
                 id=stage.id,
                 skills=tuple(
-                    _observed_skill(skill, expected, installed, disabled, self._registry)
-                    for skill, expected in zip(
-                        stage.skills, validation.stages[index].skills, strict=True
+                    replace(
+                        observed_by_name[skill.name],
+                        activation=skill.activation.value,
                     )
+                    for skill in stage.skills
                 ),
             )
-            for index, stage in enumerate(pack.stages)
+            for stage in pack.stages
         )
-        validation = replace(validation, stages=stages)
+        validation = replace(validation, skills=observed_skills, stages=stages)
         resolved_revision = self._revision_resolver(pack)
         hermes_version = self._hermes_version_resolver()
         plan = plan_pack_install(
@@ -430,17 +438,17 @@ class PackService:
             hermes_version=hermes_version,
             recursive=recursive,
         )
-        activation_blockers = _activation_blockers(pack, installed, disabled)
+        readiness_blockers = _readiness_blockers(pack, installed, disabled)
         check = PackCheck(
             validation=validation,
             resolved_revision=resolved_revision,
             hermes_version=hermes_version,
             actions=plan.actions,
             revision_mismatches=plan.revision_mismatches,
-            blockers=(*plan.blockers, *activation_blockers),
-            activation_blockers=activation_blockers,
+            blockers=(*plan.blockers, *readiness_blockers),
+            readiness_blockers=readiness_blockers,
             installable=plan.ready_to_apply,
-            ready=plan.ready_to_apply and not plan.actions and not activation_blockers,
+            ready=plan.ready_to_apply and not plan.actions and not readiness_blockers,
             preview_digest="",
         )
         return replace(check, preview_digest=_digest(check.identity_dict()))
@@ -453,19 +461,20 @@ class PackService:
             for skill in stage.skills
             if skill.name == skill_name
         )
-        if not declarations:
+        try:
+            provider = pack.catalog_skill(skill_name)
+        except ValueError as error:
             raise UnknownPackSkillError(
                 f"skill {skill_name!r} is not declared by pack {pack_name!r}"
-            )
-        first = declarations[0][1]
+            ) from error
         expected_digest = dict(pack_skill_digests(pack))[skill_name]
         installed_names = self._inventory.installed_names()
-        installed = first.bundled is not None or skill_name in installed_names
-        availability_name = _availability_name(first)
+        installed = provider.bundled is not None or skill_name in installed_names
+        availability_name = _availability_name(provider)
         enabled = installed and availability_name not in self._skill_state.disabled_names()
         observed_digest = (
             expected_digest
-            if first.bundled is not None
+            if provider.bundled is not None
             else self._registry.content_digest(skill_name)
             if installed
             else None
@@ -473,8 +482,10 @@ class PackService:
         content: str | None
         content_origin: str | None = None
         unavailable_reason: str | None = None
-        if first.bundled is not None:
-            resource = resources.files(__package__).joinpath("skills", first.bundled, "SKILL.md")
+        if provider.bundled is not None:
+            resource = resources.files(__package__).joinpath(
+                "skills", provider.bundled, "SKILL.md"
+            )
             content = resource.read_text(encoding="utf-8")
             content_origin = "bundled"
         elif installed:
@@ -483,7 +494,7 @@ class PackService:
                 content_origin = "installed"
         else:
             content = None
-        if content is None and first.is_external:
+        if content is None and provider.is_external:
             unavailable_reason = (
                 "skill document is unavailable" if installed else "skill is not installed"
             )
@@ -497,17 +508,17 @@ class PackService:
             source_revision=pack.source_revision,
             stages=tuple(stage for stage, _skill in declarations),
             activations=tuple(skill.activation.value for _stage, skill in declarations),
-            bundled=first.bundled is not None,
-            external=first.is_external,
+            bundled=provider.bundled is not None,
+            external=provider.is_external,
             install_target=(
-                external_skill_install_target(pack, first) if first.is_external else None
+                external_skill_install_target(pack, provider) if provider.is_external else None
             ),
-            source_url=_skill_source_url(pack, first),
+            source_url=_skill_source_url(pack, provider),
             expected_digest=expected_digest,
             observed_digest=observed_digest,
             installed=installed,
             enabled=enabled if installed else None,
-            ready=installed and enabled and observed_digest == expected_digest,
+            ready=installed and enabled,
             available=content is not None,
             content_origin=content_origin,
             byte_size=byte_size,
@@ -540,7 +551,7 @@ class PackService:
             blockers.extend(
                 blocker
                 for blocker in current.blockers
-                if blocker not in current.activation_blockers
+                if blocker not in current.readiness_blockers
             )
             if skill_name is not None and declared[skill_name].bundled is not None:
                 blockers.append(f"bundled skill {skill_name!r} has no install action")
@@ -661,7 +672,7 @@ class PackService:
                     f"skill installation failed for {action.name!r} with exit {exit_code}"
                 )
         verified = self.check(name)
-        if not verified.ready:
+        if verified.actions:
             raise PackInstallError("pack installation did not pass post-install verification")
         return PackInstallResult(
             applied_preview_digest=expected_preview_digest,
@@ -672,26 +683,32 @@ class PackService:
 
 def _validation(pack: WorkflowPack) -> PackValidation:
     digests = dict(pack_skill_digests(pack))
+    skills = tuple(
+        PackSkillProjection(
+            name=skill.name,
+            activation=None,
+            bundled=skill.bundled is not None,
+            external=skill.is_external,
+            install_target=(
+                external_skill_install_target(pack, skill) if skill.is_external else None
+            ),
+            source_url=_skill_source_url(pack, skill),
+            expected_digest=digests[skill.name],
+            observed_digest=(digests[skill.name] if skill.bundled is not None else None),
+            installed=skill.bundled is not None,
+            enabled=True if skill.bundled is not None else None,
+            ready=skill.bundled is not None,
+        )
+        for skill in pack.skills
+    )
+    skills_by_name = {skill.name: skill for skill in skills}
     stages = tuple(
         PackStageProjection(
             id=stage.id,
             skills=tuple(
-                PackSkillProjection(
-                    name=skill.name,
+                replace(
+                    skills_by_name[skill.name],
                     activation=skill.activation.value,
-                    bundled=skill.bundled is not None,
-                    external=skill.is_external,
-                    install_target=(
-                        external_skill_install_target(pack, skill)
-                        if skill.is_external
-                        else None
-                    ),
-                    source_url=_skill_source_url(pack, skill),
-                    expected_digest=digests[skill.name],
-                    observed_digest=(digests[skill.name] if skill.bundled is not None else None),
-                    installed=skill.bundled is not None,
-                    enabled=True if skill.bundled is not None else None,
-                    ready=skill.bundled is not None,
                 )
                 for skill in stage.skills
             ),
@@ -705,12 +722,13 @@ def _validation(pack: WorkflowPack) -> PackValidation:
         hermes_version_constraint=pack.hermes_version_constraint,
         lifecycle=pack.lifecycle,
         human_gate_after=pack.human_gate_after,
+        skills=skills,
         stages=stages,
     )
 
 
 def _observed_skill(
-    skill: SkillRef,
+    skill: CatalogSkill,
     expected: PackSkillProjection,
     installed_names: frozenset[str],
     disabled_names: frozenset[str],
@@ -728,54 +746,38 @@ def _observed_skill(
         observed_digest=observed,
         installed=installed,
         enabled=enabled if installed else None,
-        ready=installed and enabled and observed == expected.expected_digest,
+        ready=installed and enabled,
     )
 
 
-def _activation_blockers(
+def _readiness_blockers(
     pack: WorkflowPack,
     installed_names: frozenset[str],
     disabled_names: frozenset[str],
 ) -> tuple[str, ...]:
     blockers: list[str] = []
-    seen: set[str] = set()
-    for stage in pack.stages:
-        for skill in stage.skills:
-            installed = skill.bundled is not None or skill.name in installed_names
-            if (
-                skill.name in seen
-                or not installed
-                or _availability_name(skill) not in disabled_names
-            ):
-                continue
-            seen.add(skill.name)
-            blockers.append(f"{skill.activation.value} skill {skill.name!r} is disabled")
+    for skill in pack.skills:
+        installed = skill.bundled is not None or skill.name in installed_names
+        if installed and _availability_name(skill) in disabled_names:
+            blockers.append(f"skill {skill.name!r} is disabled")
     return tuple(blockers)
 
 
-def _declared_skills(pack: WorkflowPack) -> dict[str, SkillRef]:
-    declared: dict[str, SkillRef] = {}
-    for stage in pack.stages:
-        for skill in stage.skills:
-            declared.setdefault(skill.name, skill)
-    return declared
+def _declared_skills(pack: WorkflowPack) -> dict[str, CatalogSkill]:
+    return {skill.name: skill for skill in pack.skills}
 
 
 def _skill_projections(check: PackCheck) -> dict[str, PackSkillProjection]:
-    projections: dict[str, PackSkillProjection] = {}
-    for stage in check.validation.stages:
-        for skill in stage.skills:
-            projections.setdefault(skill.name, skill)
-    return projections
+    return {skill.name: skill for skill in check.validation.skills}
 
 
-def _availability_name(skill: SkillRef) -> str:
+def _availability_name(skill: CatalogSkill) -> str:
     if skill.bundled is not None:
         return f"{BUNDLED_SKILL_NAMESPACE}:{skill.name}"
     return skill.name
 
 
-def _skill_source_url(pack: WorkflowPack, skill: SkillRef) -> str:
+def _skill_source_url(pack: WorkflowPack, skill: CatalogSkill) -> str:
     if skill.bundled is not None:
         return f"{BUNDLED_SKILL_SOURCE_BASE}/{skill.bundled}"
     assert skill.install is not None

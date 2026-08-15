@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Protocol
 
 from .errors import WorkflowError
-from .packs import SkillRef, WorkflowPack, external_skill_install_target
+from .packs import CatalogSkill, WorkflowPack, external_skill_install_target
 
 
 class SkillInventoryError(WorkflowError):
@@ -24,7 +24,7 @@ class SkillInventoryError(WorkflowError):
 class MissingSkillsError(SkillInventoryError):
     """Raised when one or more exact pack skills are unavailable."""
 
-    def __init__(self, pack: WorkflowPack, missing: tuple[SkillRef, ...]) -> None:
+    def __init__(self, pack: WorkflowPack, missing: tuple[CatalogSkill, ...]) -> None:
         self.missing = missing
         details = "; ".join(
             f"{skill.name} (install: hermes skills install "
@@ -163,57 +163,31 @@ class PackInstallPlan:
         }
 
 
-def required_skills(pack: WorkflowPack) -> tuple[SkillRef, ...]:
-    """Return exact external requirements once, preserving lifecycle order."""
-    ordered: list[SkillRef] = []
-    targets_by_name: dict[str, tuple[str, str]] = {}
-    for stage in pack.stages:
-        for skill in stage.skills:
-            if not skill.is_external:
-                continue
-            assert skill.install is not None
-            assert skill.content_digest is not None
-            previous = targets_by_name.get(skill.name)
-            current = (skill.install, skill.content_digest)
-            if previous is None:
-                targets_by_name[skill.name] = current
-                ordered.append(skill)
-            elif previous != current:
-                raise SkillInventoryError(
-                    f"skill {skill.name!r} has conflicting install targets or digests"
-                )
-    return tuple(ordered)
+def required_skills(pack: WorkflowPack) -> tuple[CatalogSkill, ...]:
+    """Return every external catalog requirement in declared order."""
+    return tuple(skill for skill in pack.skills if skill.is_external)
 
 
 def pack_skill_digests(pack: WorkflowPack) -> tuple[tuple[str, str], ...]:
-    """Return exact external and bundled skill digests in lifecycle order."""
+    """Return exact external and bundled skill digests in catalog order."""
     ordered: list[tuple[str, str]] = []
-    observed: dict[str, str] = {}
     bundled_root = files(__package__).joinpath("skills")
-    for stage in pack.stages:
-        for skill in stage.skills:
-            digest = skill.content_digest
-            if skill.bundled is not None:
-                digest = hash_resource_directory(bundled_root.joinpath(skill.bundled))
-            if digest is None:
-                raise SkillRevisionError(
-                    f"skill {skill.name!r} has no deterministic content digest"
-                )
-            previous = observed.get(skill.name)
-            if previous is None:
-                observed[skill.name] = digest
-                ordered.append((skill.name, digest))
-            elif previous != digest:
-                raise SkillRevisionError(
-                    f"skill {skill.name!r} has conflicting content digests"
-                )
+    for skill in pack.skills:
+        digest = skill.content_digest
+        if skill.bundled is not None:
+            digest = hash_resource_directory(bundled_root.joinpath(skill.bundled))
+        if digest is None:
+            raise SkillRevisionError(
+                f"skill {skill.name!r} has no deterministic content digest"
+            )
+        ordered.append((skill.name, digest))
     return tuple(ordered)
 
 
 def require_pack_skills(
     pack: WorkflowPack,
     inventory: SkillInventory,
-) -> tuple[SkillRef, ...]:
+) -> tuple[CatalogSkill, ...]:
     """Require every exact pack skill without installing or updating anything."""
     requirements = required_skills(pack)
     installed = inventory.installed_names()

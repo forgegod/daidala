@@ -265,15 +265,21 @@ class DashboardBackend:
                 "hermes_version_constraint": pack.hermes_version_constraint,
                 "lifecycle": list(pack.lifecycle),
                 "human_gate_after": pack.human_gate_after,
-                "skills": {
+                "skills": [
+                    {
+                        "name": skill.name,
+                        "bundled": skill.bundled,
+                        "external": skill.is_external,
+                        "install": skill.install,
+                        "content_digest": digests[skill.name],
+                    }
+                    for skill in pack.skills
+                ],
+                "stages": {
                     stage.id: [
                         {
                             "name": skill.name,
                             "activation": skill.activation.value,
-                            "bundled": skill.bundled,
-                            "external": skill.is_external,
-                            "install": skill.install,
-                            "content_digest": digests[skill.name],
                         }
                         for skill in stage.skills
                     ]

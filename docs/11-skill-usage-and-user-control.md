@@ -577,6 +577,6 @@ approval or the evidence required for completion.
 - Hermes task-skill loading:
   [Kanban — Pinning extra skills to a specific task](https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban#pinning-extra-skills-to-a-specific-task)
 - Addyosmani activation criteria:
-  [Agent Skills catalog at the pinned pack revision](https://github.com/forgegod/addyosmani-agent-skills/blob/8a63e3bfb6da979e5073939e1c4458ad99b93c83/README.md#all-24-skills)
+  [Agent Skills catalog at the pinned pack revision](https://github.com/forgegod/addyosmani-agent-skills/blob/bf223959faae96825f78ddf7bc33e114f3303c1e/README.md#all-24-skills)
 - Hermes runtime context hooks:
   [Hooks](https://hermes-agent.nousresearch.com/docs/user-guide/features/hooks)

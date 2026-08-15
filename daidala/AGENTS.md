@@ -18,8 +18,8 @@ workflow-pack adapters, and bundled orchestration skills.
 | `locations.py` | Profile-aware data-root resolution; never hard-codes `~/.hermes`. |
 | `store.py` | SQLite-backed policy-ledger persistence with optimistic concurrency and explicit read-only opening for mutation-free previews. |
 | `service.py` | Repository preflight, approval-gated graph, artifact and changed-path evidence reads, structured-review, attended-disposition, retryable plan-revision, worktree, and ledger coordination. |
-| `skills.py` | Exact installed-skill inventory, advisory content-digest comparison, and mutation-free install planning. |
-| `pack_service.py` | Typed pack validation, readiness and digest-warning projection, bounded declared-skill content and immutable install/source links, enabled-state projection, and preview-confirmed install/enable/disable service shared by CLI and dashboard adapters. |
+| `skills.py` | Exact catalog-wide installed-skill inventory, advisory content-digest comparison, and mutation-free install planning. |
+| `pack_service.py` | Typed pack validation, catalog-wide readiness and digest-warning projection, bounded declared-skill content and immutable install/source links, enabled-state projection, and preview-confirmed install/enable/disable service shared by CLI and dashboard adapters. |
 | `constraints.py` | Strict workflow-constraint YAML parsing, canonicalization, bounds, digest identity, and the runtime starter template. |
 | `projects.py` | Strict committed project-manifest parsing, canonical identity, verification declarations, and mutation policy. |
 | `registrations.py` | Trusted profile-local project registration v2, exact attended-delivery destination, limits, manifest binding, and storage path. |
@@ -84,6 +84,11 @@ workflow-pack adapters, and bundled orchestration skills.
   and a bounded Hermes version, and compare digests of the complete bundle Hermes
   installs. Missing and disabled skills remain blockers; digest mismatches remain
   visible warnings but do not block install actions or workflow start.
+- Pack schema version 2 is the only accepted shape. Top-level `skills` owns each
+  unique provider and expected digest; stage `skills` rows own only catalog name
+  and activation mode. Installation, content, and readiness operate over the
+  complete catalog; Kanban card assignment and activation manifests operate only
+  over stage bindings. Do not add a version-1 compatibility reader.
 - Standalone profile-backed pack inventory comes from the resolved profile skill directory; bundled `packs list` and `packs validate` read packaged definitions without resolving a profile root. The CLI never imports Hermes runtime internals.
 - Native and standalone operator commands share one parser and dispatch layer;
   setup, external installation, evaluator probes, and project-cycle admission
@@ -132,7 +137,7 @@ workflow-pack adapters, and bundled orchestration skills.
   across artifact-write, card-archive, worktree-release, and Plan-card failures.
 - Pack skill actions recompute the complete action preview identity before
   mutation, require literal confirmation plus the matching digest, and expose
-  only declared pack/skill identities, exact source links, and bounded `SKILL.md`
+  only catalog-declared pack/skill identities, exact source links, and bounded `SKILL.md`
   content. Bundled and installed skills may expose content; uninstalled external
   skills expose only their installation metadata and never source-preview text.
   Enable/disable persists Hermes `skills.disabled` through bounded atomic
@@ -140,7 +145,10 @@ workflow-pack adapters, and bundled orchestration skills.
   stay bare; bundled names use the `daidala:<name>` host identifier. Disable
   never deletes shared skill content. Install post-verification requires the
   declared name to become installed; an observed digest mismatch is reported but
-  does not turn a successful Hermes installation into a failed action.
+  does not turn a successful Hermes installation into a failed action. Pack-wide
+  installation never enables or disables skills implicitly and succeeds when all
+  catalog names are installed even if pre-existing disabled state leaves the pack
+  unready.
 - `project-cycle admit --apply` requires the exact cycle ID and canonical intake
   digest returned by a fresh dry-run. The apply path reruns live prerequisites
   and rejects changed issue, manifest, pack, constraints, baseline, registration,

@@ -77,7 +77,7 @@ def test_install_plan_treats_digest_mismatch_as_warning() -> None:
 
     assert plan.ready_to_apply is True
     assert plan.revision_mismatches == (installed_skill.name,)
-    assert len(plan.actions) == 19
+    assert len(plan.actions) == 23
     assert plan.blockers == ()
 
 
@@ -115,14 +115,14 @@ def test_cli_install_defaults_to_complete_dry_run_without_mutation(
     assert payload["dry_run"] is True
     assert payload["source"] == "https://github.com/forgegod/addyosmani-agent-skills"
     assert payload["pinned_revision"] == pack.source_revision
-    assert len(payload["actions"]) == 20
+    assert len(payload["actions"]) == 24
     assert payload["actions"][0]["command"] == [
         "hermes",
         "skills",
         "install",
         (
             "https://raw.githubusercontent.com/forgegod/addyosmani-agent-skills/"
-            f"{pack.source_revision}/skills/interview-me/SKILL.md"
+            f"{pack.source_revision}/skills/api-and-interface-design/SKILL.md"
         ),
         "--yes",
     ]
@@ -179,8 +179,8 @@ def test_cli_apply_uses_fake_hermes_boundary_and_post_verifies(
     assert payload["success"] is True
     assert payload["dry_run"] is False
     assert payload["actions"] == []
-    assert len(payload["executed"]) == 20
-    assert len(commands) == 20
+    assert len(payload["executed"]) == 24
+    assert len(commands) == 24
 
 
 def test_cli_recursive_request_fails_without_mutation(

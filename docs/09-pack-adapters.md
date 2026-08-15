@@ -10,7 +10,7 @@ pinned stage skills, activation policy, and methodology judgment differ.
 
 | Pack | Pack source | Pinned revision | Human gates |
 |---|---|---|---|
-| `addyosmani` | `https://github.com/forgegod/addyosmani-agent-skills` | `8a63e3bfb6da979e5073939e1c4458ad99b93c83` | Exact plan approval; exact attended review disposition |
+| `addyosmani` | `https://github.com/forgegod/addyosmani-agent-skills` | `bf223959faae96825f78ddf7bc33e114f3303c1e` | Exact plan approval; exact attended review disposition |
 | `aidlc` | `https://github.com/awslabs/aidlc-workflows` | `e49341dbeb8af82758dd85e96ed7fe9bcf38a447` (`v1.0.1`) | Exact plan approval; exact attended review disposition |
 
 ## Addyosmani mapping
@@ -25,23 +25,26 @@ pinned stage skills, activation policy, and methodology judgment differ.
 | Deliver | — | `git-workflow-and-versioning`, `ci-cd-and-automation`, `documentation-and-adrs`, `observability-and-instrumentation`, `shipping-and-launch`, `deprecation-and-migration` |
 
 `test-driven-development` is intentionally referenced by both implement and
-verify. The prerequisite check deduplicates exact names while preserving their
-first lifecycle position.
+verify. The stage mapping activates 20 catalog members. The four catalog-only
+members—`api-and-interface-design`, `context-engineering`,
+`frontend-ui-engineering`, and `using-agent-skills`—remain installed, inspectable,
+and readiness-controlled without being pinned to a worker card.
 
 All listed skills remain pinned to the card and loaded as candidates. The worker
 cannot demote a required entry. It classifies each conditional entry from the
 pinned skill criteria and current card evidence, then persists the exact decision
 before Daidala accepts stage evidence.
 
-Every manifest install declaration is fully qualified as
+Every catalog install declaration is fully qualified as
 `forgegod/addyosmani-agent-skills/skills/<exact-name>`. Daidala resolves it to an
 immutable raw GitHub `SKILL.md` URL at the declared source revision before
 emitting `hermes skills install`; no second installer participates. A similar
-name does not satisfy the requirement. Missing requirements block workflow
-creation and list their immutable install targets. Pack installation dry-runs
-missing-skill mutations by default and compares exact digests of the complete
+name does not satisfy the requirement. Missing catalog members block workflow
+creation and list their immutable install targets. Pack installation dry-runs all
+missing catalog mutations by default and compares exact digests of the complete
 bundle Hermes installs. A mismatch is a warning and does not block installation
-or workflow start; missing and disabled exact names remain blockers.
+or workflow start; missing and disabled exact names remain blockers. Installation
+preserves pre-existing disabled state.
 
 Config → Packs exposes an Addyosmani `SKILL.md` only after that exact external
 skill is installed. Before installation, the dashboard shows the exact install
@@ -75,7 +78,8 @@ pack-neutral validation.
 Stable AI-DLC v1.0.1 is MIT-0 licensed and distributes a core workflow plus
 rule-detail directories for coding harnesses. It does not distribute Agent
 Skills. Daidala therefore packages one attributed `aidlc-adapter` skill and
-references it through the generic `bundled` provider field in every stage.
+declares it once through the generic top-level `bundled` provider field; every
+stage binds that catalog name as `required`.
 Worker cards load it by its Hermes plugin-qualified name,
 `daidala:aidlc-adapter`. The adapter is `required` in every executable stage,
 so each activation manifest records it as applicable or blocked.
@@ -105,7 +109,7 @@ The same temporary-repository fixture executes both packs through
   bundle layout or whose security scan blocks installation. Daidala does not
   bypass that decision; post-install verification leaves the skill missing.
 - The supported pack-installation contract refuses `--recursive` and installs
-  only the required pinned subset.
+  the complete pinned catalog.
 - Installed content differences are advisory and never trigger silent
   replacement during an active workflow.
 - Stable AI-DLC rules are adapted, not copied wholesale; upstream methodology

@@ -54,13 +54,14 @@ completeness without touching a real Hermes profile.
   graph rejection, immutable source-artifact replay, direct-parent checkpoint
   binding, two-phase fresh-approval chains, and dirty/path/symlink/binary/
   tampered-evidence fail-closed behavior without mutating the operator checkout.
-- Fake-inventory tests for exact external-skill prerequisites and host errors.
+- Fake-inventory tests for exact catalog-wide external-skill prerequisites and host errors.
 - Fake command/registry tests for Hermes-only dry-run installation, immutable
-  revision targets, Hermes-installed-bundle digest warnings, name-based
-  post-apply convergence, and refused recursive installation.
-- Pack-service and dashboard-route tests prove declared-skill-only bounded
+  revision targets, all 24 Addyosmani catalog actions, Hermes-installed-bundle
+  digest warnings, name-based post-apply convergence, preserved disabled state,
+  and refused recursive installation.
+- Pack-service and dashboard-route tests prove catalog-declared bounded
   installed/bundled content, exact source links, explicit unavailable state for
-  uninstalled external skills, host-qualified enabled state, atomic profile-config
+  uninstalled external and catalog-only skills, host-qualified enabled state, atomic profile-config
   persistence, validation/check parity, individual and pack-wide canonical action
   previews, stale-preview rejection, literal confirmation, and post-action
   verification. Dashboard asset coverage also pins focus-and-scroll navigation

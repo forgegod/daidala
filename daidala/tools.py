@@ -52,18 +52,24 @@ def pack_info(args: dict[str, Any], **kwargs: Any) -> str:
             "hermes_version_constraint": pack.hermes_version_constraint,
             "lifecycle": list(pack.lifecycle),
             "human_gate_after": pack.human_gate_after,
-            "skills": {
+            "skills": [
+                {
+                    "name": skill.name,
+                    "provider": {
+                        "kind": "external" if skill.is_external else "bundled",
+                        "reference": skill.install or skill.bundled,
+                    },
+                    "content_digest": {
+                        "sha256": digests[skill.name],
+                        "source": "pack" if skill.is_external else "bundled-resource",
+                    },
+                }
+                for skill in pack.skills
+            ],
+            "stages": {
                 stage.id: [
                     {
                         "name": skill.name,
-                        "provider": {
-                            "kind": "external" if skill.is_external else "bundled",
-                            "reference": skill.install or skill.bundled,
-                        },
-                        "content_digest": {
-                            "sha256": digests[skill.name],
-                            "source": "pack" if skill.is_external else "bundled-resource",
-                        },
                         "activation": skill.activation.value,
                     }
                     for skill in stage.skills

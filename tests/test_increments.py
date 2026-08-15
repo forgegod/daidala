@@ -19,7 +19,7 @@ from daidala.increments import (
     increment_manifest_path,
     reconcile_increment_manifest,
 )
-from daidala.packs import SkillActivationMode
+from daidala.packs import SkillActivationMode, load_pack
 from daidala.projects import parse_project_manifest
 from daidala.state import (
     ActivationCategory,
@@ -152,7 +152,7 @@ def activation_manifest() -> ActivationManifest:
         policy_revision=1,
         constraints_digest="e" * 64,
         pack="addyosmani",
-        pack_source_revision="8a63e3bfb6da979e5073939e1c4458ad99b93c83",
+        pack_source_revision=load_pack("addyosmani").source_revision,
         sequence=1,
         supersedes_digest=None,
         decisions=(

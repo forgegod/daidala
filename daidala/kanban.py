@@ -378,8 +378,10 @@ class KanbanGraphAdapter:
         return [
             "daidala:orchestrate",
             *(
-                f"daidala:{skill.name}" if skill.bundled else skill.name
-                for skill in selected.skills
+                f"daidala:{binding.name}"
+                if pack.catalog_skill(binding.name).bundled
+                else binding.name
+                for binding in selected.skills
             ),
         ]
 

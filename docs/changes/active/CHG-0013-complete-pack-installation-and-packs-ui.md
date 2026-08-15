@@ -1,6 +1,6 @@
 # CHG-0013: Complete pack installation and Packs UI overhaul
 
-**Status:** pending
+**Status:** in-progress
 **Source request:** Direct operator request: "create a plan with phased-plan-design skill for the pack installation change as recommended for the correct implementation; the ui need then a overhaul change so create the phased plan first"
 **Affected capabilities:** CAP-0003
 **Created:** 2026-08-14
@@ -28,8 +28,10 @@ Packs surface.
   `frontend-ui-engineering`, and `using-agent-skills`.
 - The self-contained fork branch is published at immutable commit
   [`9055b8a18d866b290301a131970fcf2805a7a69c`](https://github.com/forgegod/addyosmani-agent-skills/commit/9055b8a18d866b290301a131970fcf2805a7a69c).
-  An isolated real-Hermes probe installed all 24 raw-revision skill targets with
-  24 successes and no failures.
+  A corrected isolated Hermes 0.20.0 probe installed 15 raw-revision skill
+  targets and blocked nine: seven with a dangerous verdict and two with a
+  caution verdict. Hermes returns exit code zero for these blocked installs, so
+  the earlier exit-code-only 24-success claim was invalid.
 - Config → Packs currently derives its skill inventory and its **Install all**
   action from stage entries. It presents individual installation and availability
   controls inside lifecycle groups, but it cannot explain the difference between
@@ -84,6 +86,10 @@ Packs surface.
 - Preserve warning-only digest semantics: mismatches stay visible and do not turn
   a successful install into failure or block workflow start. Missing or disabled
   catalog entries remain blockers.
+- Hermes 0.20.0 refuses nine skills at commit `9055b8a...` unless installation
+  uses `--force`. Daidala does not bypass Hermes scanner verdicts implicitly.
+  The operator selected a new scanner-clean immutable revision; runtime pack
+  changes remain gated until all 24 skills appear in a fresh Hermes inventory.
 
 ### Config → Packs interaction model
 
@@ -137,8 +143,8 @@ The visual design phase must resolve this operator flow before runtime code chan
 | --- | --- | --- |
 | Plan approval | done | The operator approved CHG-0013 on 2026-08-14, authorizing only the review-only interaction-design phase. Records and Markdown links passed before approval. |
 | Interaction design and visual approval | done | Seven CHG-local native review artifacts cover normal, partial, warning, failure, confirmation, narrow, and progressive-detail states; interaction audit, rendering, records, and links passed; direct operator approval was recorded on 2026-08-14. |
-| Pack schema and complete-installation vertical slice | pending | Schema-v2 parser/model tests, both bundled-pack migrations, immutable 24-skill Addyosmani catalog, install preview/apply and retry tests, CLI tests, isolated 24-skill Hermes apply, Ruff, both pack validations, records, and Markdown links pass. |
-| Packs UI vertical slice | pending | Backend projections, authenticated routes, browser rendering, focus/keyboard behavior, confirmation/stale/error states, CAP-0003 text and wireframe, dashboard API/assets/browser probes, responsive screenshot review, and focused Ruff/tests pass. |
+| Pack schema and complete-installation vertical slice | done | Scanner-clean revision `bf223959faae96825f78ddf7bc33e114f3303c1e` is remotely verified; a fresh Hermes home records 24 installed directories, 24 CLI inventory entries, 24 install receipts, and zero blocked receipts; schema-v2 parser/model tests, both bundled-pack migrations, the immutable 24-skill catalog, install/content/readiness regressions, CLI tests, full pytest, Ruff, both pack validations, records, and Markdown links pass. |
+| Packs UI vertical slice | in-progress | Backend projections, authenticated routes, browser rendering, focus/keyboard behavior, confirmation/stale/error states, CAP-0003 text and wireframe, dashboard API/assets/browser probes, responsive screenshot review, and focused Ruff/tests pass. |
 | Integration and closeout | pending | `python scripts/check_records.py .`, `lefthook validate`, `pytest`, `ruff check .`, both pack validations, package build, Twine, release-content audit, Markdown links, isolated real-Hermes pack installation, DOX pass, and direct operator acceptance pass before archival. |
 
 ## Decisions
@@ -158,6 +164,8 @@ The visual design phase must resolve this operator flow before runtime code chan
   digest integrity are separate status dimensions and must not share one ambiguous
   badge or count.
 - Digest mismatches retain the established explicit-warning, non-blocking contract.
+- Scanner verdicts are not bypassed. The operator selected a new scanner-clean
+  immutable fork revision rather than an explicit `--force` installation policy.
 - Visual approval precedes runtime UI work. The static product wireframe is
   updated only in the implementation slice, after the review artifact is accepted.
 
@@ -165,8 +173,20 @@ The visual design phase must resolve this operator flow before runtime code chan
 
 - 2026-08-14: committed and pushed the self-contained fork branch as
   `9055b8a18d866b290301a131970fcf2805a7a69c`; remote branch identity matched.
-- 2026-08-14: an isolated Hermes home installed all 24 immutable raw skill targets:
-  24 passed, 0 failed.
+- 2026-08-14: a corrected isolated Hermes 0.20.0 home installed 15 immutable raw
+  skill targets and blocked nine. The audit receipt records seven dangerous and
+  two caution verdicts. The previous 24/24 claim counted zero exit codes and did
+  not verify the installed inventory.
+- 2026-08-14: direct operator decision — "Create and pin a new scanner-clean fork
+  revision (recommended)". A force-install policy is not authorized.
+- 2026-08-14: committed and pushed scanner-clean fork revision
+  `bf223959faae96825f78ddf7bc33e114f3303c1e`; the remote branch resolved to the
+  same immutable commit.
+- 2026-08-14: a fresh isolated Hermes 0.20.0 home installed all 24 immutable raw
+  targets. Installed directories, `hermes skills list`, and audit receipts each
+  contained all 24 exact names; the audit contained zero blocked receipts. The
+  digests of those Hermes-installed directories are the catalog identities in
+  `daidala/packs/addyosmani.yaml`.
 - 2026-08-14: direct operator approval — "Approve CHG-0013 and begin the
   review-only interaction-design phase (recommended)". This authorizes design
   artifacts only; runtime, schema, and pack-pin edits remain gated.
@@ -177,12 +197,16 @@ The visual design phase must resolve this operator flow before runtime code chan
 - 2026-08-14: direct operator visual approval — "approved visual
   recommendations". The exact audited Pen source is preserved with the review
   exports; pack-schema and repin work may proceed.
-- Current source inspection identifies the coupling at `daidala/packs.py`
-  (`SkillRef`, `Stage`, `WorkflowPack`), `daidala/skills.py`
-  (`required_skills`, `plan_pack_install`), `daidala/pack_service.py`
-  (readiness/action projections), `daidala/dashboard_backend.py` (pack metadata),
-  and `dashboard/dist/index.js` (`PackBrowser`, `PackCard`).
+- 2026-08-14: schema version 2 now separates `CatalogSkill` providers from
+  `StageSkill` activation bindings. Both bundled packs, the project-manifest
+  resource digests, catalog-wide installation/content/readiness, worker-card
+  resolution, plugin projections, and regression fixtures use the new shape.
+- 2026-08-14: full pytest, repository-wide Ruff, both pack validations, record
+  validation, Markdown links, and diff whitespace passed. [CAP-0007](../../product/capabilities/CAP-0007-complete-workflow-pack-installation.md)
+  records the implemented installation capability; CAP-0003 remains unchanged
+  until the Packs UI slice is implemented.
 - [CHG-0012](../archive/CHG-0012-pin-hermes-pack-skill-installation.md)
   remains the receipt for the prior immutable single-skill installation boundary;
   this CHG supersedes its 20-stage-entry inventory shape without rewriting history.
-- No Daidala runtime or UI implementation has started under CHG-0013.
+- The Packs UI vertical slice is active; no UI source changes are included in the
+  schema-v2 checkpoint.

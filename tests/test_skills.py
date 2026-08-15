@@ -31,12 +31,12 @@ STAGE_PROFILES = {
 }
 
 
-def test_required_skills_are_exact_deduplicated_and_lifecycle_ordered() -> None:
+def test_required_skills_are_exact_and_catalog_ordered() -> None:
     requirements = required_skills(load_pack("addyosmani"))
 
-    assert len(requirements) == 20
-    assert requirements[0].name == "interview-me"
-    assert requirements[-1].name == "deprecation-and-migration"
+    assert len(requirements) == 24
+    assert requirements[0].name == "api-and-interface-design"
+    assert requirements[-1].name == "using-agent-skills"
     assert [skill.name for skill in requirements].count("test-driven-development") == 1
 
 
@@ -44,7 +44,7 @@ def test_pack_skill_digests_include_bundled_and_external_skills() -> None:
     external = pack_skill_digests(load_pack("addyosmani"))
     bundled = pack_skill_digests(load_pack("aidlc"))
 
-    assert len(external) == 20
+    assert len(external) == 24
     assert [name for name, _ in bundled] == ["aidlc-adapter"]
     assert len(bundled[0][1]) == 64
 
@@ -81,7 +81,7 @@ def test_complete_inventory_passes_without_mutation() -> None:
     inventory = FakeInventory()
     result = require_pack_skills(pack, inventory)
 
-    assert len(result) == 20
+    assert len(result) == 24
     assert inventory.calls == 1
     assert names == frozenset(skill.name for skill in required_skills(pack))
 

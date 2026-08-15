@@ -8,11 +8,11 @@ repository:
 workflow:
   allowed_packs:
     - name: addyosmani
-      source_revision: 8a63e3bfb6da979e5073939e1c4458ad99b93c83
-      content_digest: 945bf7fe8b0563bf233506d4c5587394a63189cfc86b92d6ad4601250936daa5
+      source_revision: bf223959faae96825f78ddf7bc33e114f3303c1e
+      content_digest: 55047d5f565a11fd033a7575991127cdbac47234b92a9afef2198eadbdfac0ec
     - name: aidlc
       source_revision: e49341dbeb8af82758dd85e96ed7fe9bcf38a447
-      content_digest: 70b678f522c3d19fe3a5455ceb5435fa7aff3613e0aff4ad90347dcf3ab626a8
+      content_digest: d2cb34137387162055d94981b91a4c5cd3cbf0c8b8fe8901c30ffc7877b96475
   default_pack: addyosmani
   default_constraints:
     source: .daidala/constraints.yaml

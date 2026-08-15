@@ -31,8 +31,10 @@ def test_every_executable_card_pins_worker_contract_and_exact_pack_skills(
     assert KanbanGraphAdapter._stage_skills(pack, stage) == [
         "daidala:orchestrate",
         *(
-            f"daidala:{skill.name}" if skill.bundled else skill.name
-            for skill in selected.skills
+            f"daidala:{binding.name}"
+            if pack.catalog_skill(binding.name).bundled
+            else binding.name
+            for binding in selected.skills
         ),
     ]
 

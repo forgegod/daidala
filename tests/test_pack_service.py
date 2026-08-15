@@ -197,6 +197,26 @@ def test_installed_external_document_is_available() -> None:
     assert document["content"] == "# installed\n"
 
 
+def test_catalog_only_skill_is_installable_and_content_addressable() -> None:
+    pack = load_pack("addyosmani")
+    bound_names = {skill.name for stage in pack.stages for skill in stage.skills}
+    assert "api-and-interface-design" not in bound_names
+
+    service = build_service(MutableRegistry())
+    validation = service.validate("addyosmani").to_dict()
+    document = service.skill_content(
+        "addyosmani", "api-and-interface-design"
+    ).to_dict()
+
+    assert len(validation["skills"]) == 24
+    assert document["stages"] == []
+    assert document["activation"] == []
+    assert document["installed"] is False
+    assert document["install_target"].endswith(
+        "/skills/api-and-interface-design/SKILL.md"
+    )
+
+
 def test_disabled_skill_is_installed_but_not_ready() -> None:
     state = MutableSkillState(disabled={"daidala:aidlc-adapter"})
     service = build_service(MutableRegistry(), skill_state=state)
@@ -206,7 +226,7 @@ def test_disabled_skill_is_installed_but_not_ready() -> None:
 
     assert check["ready"] is False
     assert check["actions"] == []
-    assert check["activation_blockers"] == ["required skill 'aidlc-adapter' is disabled"]
+    assert check["readiness_blockers"] == ["skill 'aidlc-adapter' is disabled"]
     assert all(
         skill["installed"] is True and skill["enabled"] is False and skill["ready"] is False
         for stage in check["stages"]
@@ -312,7 +332,7 @@ def test_individual_install_only_applies_and_verifies_selected_skill() -> None:
 
     assert result["affected"] == ["interview-me"]
     assert result["pack"]["ready"] is False
-    assert len(result["pack"]["actions"]) == 19
+    assert len(result["pack"]["actions"]) == 23
     assert commands == [
         (
             "hermes",
@@ -440,7 +460,42 @@ def test_confirmed_install_executes_exact_actions_and_post_verifies() -> None:
 
     assert result["success"] is True
     assert result["applied_preview_digest"] == preview.preview_digest
-    assert len(result["executed"]) == len(required) == 20
-    assert len(commands) == 20
+    assert len(result["executed"]) == len(required) == 24
+    assert len(commands) == 24
     assert result["pack"]["ready"] is True
     assert result["pack"]["actions"] == []
+
+
+def test_install_preserves_preexisting_disabled_catalog_state() -> None:
+    pack = load_pack("addyosmani")
+    required = {skill.name: skill for skill in required_skills(pack)}
+    missing = "api-and-interface-design"
+    registry = MutableRegistry(
+        digests={
+            name: skill.content_digest
+            for name, skill in required.items()
+            if name != missing and skill.content_digest is not None
+        }
+    )
+    state = MutableSkillState(disabled={missing})
+
+    def run(command: tuple[str, ...]) -> tuple[int, str]:
+        name = command[3].removesuffix("/SKILL.md").rsplit("/", 1)[-1]
+        skill = required[name]
+        assert skill.content_digest is not None
+        registry.digests[name] = skill.content_digest
+        return 0, "installed"
+
+    service = build_service(registry, runner=run, skill_state=state)
+    preview = service.check("addyosmani")
+    result = service.install(
+        "addyosmani",
+        expected_preview_digest=preview.preview_digest,
+        confirm=True,
+    ).to_dict()
+
+    assert [row["name"] for row in result["executed"]] == [missing]
+    assert result["pack"]["actions"] == []
+    assert result["pack"]["ready"] is False
+    assert result["pack"]["readiness_blockers"] == [f"skill {missing!r} is disabled"]
+    assert state.updates == []

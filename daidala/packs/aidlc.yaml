@@ -1,8 +1,11 @@
-schema_version: 1
+schema_version: 2
 name: aidlc
 source: https://github.com/awslabs/aidlc-workflows
 source_revision: e49341dbeb8af82758dd85e96ed7fe9bcf38a447
 hermes_version_constraint: ">=0.18.2,<0.21.0"
+skills:
+  - name: aidlc-adapter
+    bundled: aidlc-adapter
 lifecycle:
   human_gate_after: plan
   stages:
@@ -10,29 +13,23 @@ lifecycle:
       skills:
         - name: aidlc-adapter
           activation: required
-          bundled: aidlc-adapter
     - id: plan
       skills:
         - name: aidlc-adapter
           activation: required
-          bundled: aidlc-adapter
     - id: implement
       skills:
         - name: aidlc-adapter
           activation: required
-          bundled: aidlc-adapter
     - id: verify
       skills:
         - name: aidlc-adapter
           activation: required
-          bundled: aidlc-adapter
     - id: review
       skills:
         - name: aidlc-adapter
           activation: required
-          bundled: aidlc-adapter
     - id: deliver
       skills:
         - name: aidlc-adapter
           activation: required
-          bundled: aidlc-adapter

@@ -56,10 +56,17 @@ PLAN_SUMMARY = ApprovalSummary(
 def activation_pack():
     return validate_pack(
         {
-            "schema_version": 1,
+            "schema_version": 2,
             "name": "activation-pack",
             "source": "https://github.com/owner/repository",
             "source_revision": "a" * 40,
+            "skills": [
+                {
+                    "name": "activation-skill",
+                    "install": "owner/repository/activation-skill",
+                    "content_digest": ACTIVATION_DIGEST,
+                }
+            ],
             "lifecycle": {
                 "human_gate_after": "plan",
                 "stages": [
@@ -69,8 +76,6 @@ def activation_pack():
                             {
                                 "name": "activation-skill",
                                 "activation": "required",
-                                "install": "owner/repository/activation-skill",
-                                "content_digest": ACTIVATION_DIGEST,
                             }
                         ],
                     }
