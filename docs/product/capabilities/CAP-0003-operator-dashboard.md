@@ -15,8 +15,9 @@ An authenticated operator can inspect workflow state and evidence, perform bound
   or configuration readiness. Workflows can explicitly request one advisory
   readiness analysis from the configured host model. The request sends only
   aggregate path-free readiness counts, including a registered GitHub Project,
-  workflow-pack presence, per-phase installed and ready skill coverage, and
-  blocked-pack counts. It never runs while polling, returns only validated links
+  workflow-pack presence, per-phase installed and ready skill coverage,
+  blocked-pack counts, selected worker-gateway liveness, and live card
+  assignee versus bound stage-profile alignment. It never runs while polling, returns only validated links
   to closed exact dashboard destinations, including Config → Packs for blocked
   packs and missing phase skill coverage, and never replaces deterministic
   workflow recommendations or performs an action.
@@ -34,13 +35,19 @@ An authenticated operator can inspect workflow state and evidence, perform bound
   `Registered repository (<repo> · <board> · <profile>)`. Worker profile
   default assigns who runs every stage and does not have to match the
   repository `<profile>`. Start states that implication and that later stages
-  fail if those workers cannot use the working directory. Manage packs,
+  fail if those workers cannot use the working directory. Start and Workflows
+  readiness require each selected worker profile's Hermes gateway to be
+  running. They also refuse or name a live card whose assignee does not match
+  the workflow-bound stage profile. Manage packs,
   Register GitHub Repository,
   and Manage sources preserve the browser draft while moving visual and keyboard
   focus to their exact Config destination. A nonempty optional workflow identity
   accepts only 1–128 letters, digits, dots, underscores, or hyphens. Start shows
   that rule as an inline accessible error and blocks readiness and preview until
   it is valid; a bypassed invalid value receives the normal bounded 409 response.
+  Check readiness sits before Preview workflow and must be run before Preview is
+  available. The readiness result is informative and does not block Preview.
+  Start remains fail-closed on the shared start gate.
 - Approval, review disposition, card remediation, cancellation, setup, and curator mutations use preview/confirm or exact-identity requests; the server derives authoritative workflow, board, repository, and worktree facts.
 - Artifact views expose ledger-bound metadata, bounded literal text, digest-verified downloads, and closed curator actions without accepting filesystem paths.
 - Config → Packs is a pack-first workspace that separates complete immutable
@@ -78,12 +85,15 @@ An authenticated operator can inspect workflow state and evidence, perform bound
 - [`dashboard/dist/style.css`](../../../dashboard/dist/style.css) — host-theme and narrow-layout behavior.
 - [`daidala/dashboard_backend.py`](../../../daidala/dashboard_backend.py) — profile-safe workflow, recommendation, artifact, and configuration projections.
 - [`daidala/dashboard_advice.py`](../../../daidala/dashboard_advice.py) — path-free readiness aggregation and bounded host-model advice normalization.
+- [`daidala/gateway.py`](../../../daidala/gateway.py) — worker-gateway status classification and bounded probe.
 
 ### Tests
 
 - [`tests/test_dashboard_api.py`](../../../tests/test_dashboard_api.py) — exact identities, path-free responses, preview/apply gates, and bounded routes including installation-progress terminal events.
 - [`tests/test_dashboard_assets.py`](../../../tests/test_dashboard_assets.py) — primary views, states, authenticated SDK and stream use, accessible installation progress, and host-theme behavior.
-- [`tests/test_dashboard_advice.py`](../../../tests/test_dashboard_advice.py) — aggregate snapshot minimization, GitHub and pack-phase readiness requirements, host-model invocation, response bounds, and unavailable behavior.
+- [`tests/test_dashboard_advice.py`](../../../tests/test_dashboard_advice.py) — aggregate snapshot minimization, GitHub and pack-phase readiness requirements, worker-gateway and assignee-alignment counts, host-model invocation, response bounds, and unavailable behavior.
+- [`tests/test_gateway.py`](../../../tests/test_gateway.py) — worker-gateway status classification and probe.
+- [`tests/test_assignee_alignment.py`](../../../tests/test_assignee_alignment.py) — start and activation refuse a live card assignee that does not match the bound stage profile.
 - [`tests/test_dashboard.py`](../../../tests/test_dashboard.py) — read-model, timeline, recommendation, and artifact projections.
 
 ## Contracts

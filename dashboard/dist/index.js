@@ -450,6 +450,10 @@
     });
   }
 
+  function buildDispatcherReadiness() {
+    return fetchJson(API_BASE + "/dispatcher-readiness");
+  }
+
   function wizardReadiness(payload) {
     return postJson(API_BASE + "/wizard/readiness", payload);
   }
@@ -4143,14 +4147,21 @@
       }
       setBusy(true); setError("");
       if (form.workspace_mode === "local") {
-        setError("Local project readiness is validated after its confirmed initialization. Preview first.");
-        setBusy(false);
+        setReadiness({
+          ready: false,
+          checks: [{
+            id: "local-project-pending",
+            passed: false,
+            detail: "Local project readiness is validated after its confirmed initialization."
+          }]
+        });
+        setPreview(null); setConfirmed(false); setBusy(false);
         return;
       }
       wizardReadiness(envelope()).then(function (result) {
-        setReadiness(result.readiness); setPreview(null); setConfirmed(false);
+        setReadiness(result.readiness || result); setPreview(null); setConfirmed(false);
       }).catch(function (reason) {
-        setReadiness(null); setError("Readiness did not pass: " + errorText(reason));
+        setReadiness(null); setError("Readiness could not be checked: " + errorText(reason));
       }).finally(function () { setBusy(false); });
     }
 
@@ -4327,6 +4338,13 @@
           ),
           select("Worker profile default", form.worker_default, changeWorker, profiles.map(function (name) { return { value: name, label: name }; })),
           createElement("p", { className: "daidala-workflow-meta" }, "The repository <profile> owns the registration and supplies its board and checkout. Worker profile default assigns who runs every stage. They do not have to match, and Start will not rewrite either. Later stages fail if those workers cannot use the working directory."),
+          (function () {
+            var gateways = inventory && Array.isArray(inventory.worker_gateways) ? inventory.worker_gateways : [];
+            var selected = gateways.filter(function (row) { return row.profile === form.worker_default; })[0];
+            return selected && selected.status !== "running"
+              ? createElement("p", { className: "daidala-banner daidala-banner-error" }, "Worker gateway is not running for " + form.worker_default + ". Start it with hermes -p " + form.worker_default + " gateway start before Ready cards will dispatch.")
+              : null;
+          })(),
           form.workspace_mode === "registered" && selectedRepository && form.worker_default && selectedRepository.controller_profile !== form.worker_default
             ? createElement("p", { className: "daidala-workflow-meta" }, "This repository is owned by " + selectedRepository.controller_profile + ". Workers are " + form.worker_default + ".")
             : null,
@@ -4366,10 +4384,17 @@
         ),
         createElement("aside", { className: "daidala-readiness", "data-testid": "daidala-start-readiness" },
           createElement("h3", null, "Start readiness"),
-          readiness ? createElement("ul", null, readiness.checks.map(function (check) {
-            return createElement("li", { key: check.id, className: check.passed ? "is-ready" : "is-blocked" }, (check.passed ? "✓ " : "× ") + check.id);
-          })) : createElement("p", null, "Run a non-mutating check after completing the form."),
-          createElement("button", { type: "button", disabled: !hasRequest || busy, onClick: runReadiness }, "Check readiness")
+          readiness ? createElement("ul", null, (readiness.checks || []).map(function (check) {
+            return createElement("li", { key: check.id, className: check.passed ? "is-ready" : "is-blocked" },
+              (check.passed ? "✓ " : "× ") + check.id + (check.detail ? " — " + check.detail : ""));
+          })) : createElement("p", null, "Check readiness before preview. The result is informative and does not block preview."),
+          readiness && readiness.ready === false
+            ? createElement("p", { className: "daidala-workflow-meta" }, "Readiness is informative. Preview stays available after this check. Start still requires a passing start gate.")
+            : null,
+          createElement("div", { className: "daidala-wizard-actions" },
+            createElement("button", { type: "button", disabled: !hasRequest || busy, onClick: runReadiness }, "Check readiness"),
+            createElement("button", { type: "button", disabled: !hasRequest || busy || !readiness, onClick: runPreview }, "Preview workflow")
+          )
         )
       ) : null,
       preview ? createElement("section", { className: "daidala-wizard-preview" },
@@ -4378,7 +4403,6 @@
         createElement("label", null, createElement("input", { type: "checkbox", checked: confirmed, onChange: function (event) { setConfirmed(event.target.checked); } }), " I confirm applying this exact preview"),
         createElement("button", { type: "button", disabled: busy || !confirmed, onClick: runStart }, "Start now")
       ) : null,
-      inventory ? createElement("div", { className: "daidala-wizard-actions" }, createElement("button", { type: "button", disabled: !hasRequest || busy, onClick: runPreview }, "Preview workflow")) : null,
       createElement("p", { className: "daidala-workflow-meta" }, "Hermes Cron schedules future admissions only. Pausing Cron does not pause active workflow cards."),
       message ? createElement("p", { role: "status" }, message) : null,
       error ? createElement("p", { role: "status", className: "daidala-banner daidala-banner-error" }, error) : null
@@ -4578,12 +4602,25 @@
   function Page() {
     var health = useVisiblePolling(POLL_MS, buildHealth);
     var workflowsState = useVisiblePolling(POLL_MS, buildWorkflows);
+    var dispatcherState = useState(null);
+    var dispatcher = dispatcherState[0];
+    var setDispatcher = dispatcherState[1];
     var initialRoute = dashboardRoute();
     var _a = useState(false), starting = _a[0], setStarting = _a[1];
     var _b = useState(initialRoute.workflowId), openWorkflowId = _b[0], setOpenWorkflowId = _b[1];
     var _c = useState(""), startNotice = _c[0], setStartNotice = _c[1];
     var _d = useState(initialRoute), route = _d[0], setRoute = _d[1];
     var returnedSourceState = useState(null), returnedSource = returnedSourceState[0], setReturnedSource = returnedSourceState[1];
+
+    useEffect(function () {
+      var cancelled = false;
+      buildDispatcherReadiness().then(function (value) {
+        if (!cancelled) setDispatcher(value);
+      }).catch(function () {
+        if (!cancelled) setDispatcher(null);
+      });
+      return function () { cancelled = true; };
+    }, []);
 
     useEffect(function () {
       function syncRoute() {
@@ -4608,6 +4645,9 @@
     function refreshAll() {
       health.refresh();
       workflowsState.refresh();
+      buildDispatcherReadiness().then(setDispatcher).catch(function () {
+        setDispatcher(null);
+      });
     }
 
     function returnSourceToStart(source) {
@@ -4641,6 +4681,23 @@
     var firstLoad = workflowsState.loading && workflows.length === 0;
     var hostDown = workflowsState.snapshot === null;
     var healthDown = health.snapshot && health.snapshot.success === false;
+    var blockedGateways = dispatcher && Array.isArray(dispatcher.blocked_profiles)
+      ? dispatcher.blocked_profiles
+      : [];
+    var assigneeMismatches = dispatcher && Array.isArray(dispatcher.assignee_mismatches)
+      ? dispatcher.assignee_mismatches
+      : [];
+    var firstMismatch = assigneeMismatches[0];
+    var mismatchNext = firstMismatch
+      ? "Cannot record required skill activation: the active card is assigned to "
+        + firstMismatch.assignee + " but the workflow binds " + firstMismatch.stage
+        + " to " + firstMismatch.bound_profile
+        + ". Align the card assignee/stage profile and retry."
+      : "";
+    var gatewayNext = blockedGateways.length
+      ? "Worker gateway is not running for " + blockedGateways.join(", ")
+        + ". Start it with hermes -p <profile> gateway start before Ready cards will dispatch."
+      : "";
     var guidance = route.view === "artifacts"
       ? {
         screen: "artifacts",
@@ -4663,9 +4720,13 @@
             ? "Workflow state is loading."
             : hostDown
               ? "Live Kanban state is unavailable. Keep the gateway running, then refresh before acting."
-              : workflows.length === 0
-                ? "No workflow is recorded for this profile. Configure prerequisites, then start a workflow when its request is ready."
-                : "Open a workflow to inspect its current evidence and deterministic next action before approving, revising, or reviewing it."
+              : mismatchNext
+                ? mismatchNext
+                : gatewayNext
+                  ? gatewayNext
+                  : workflows.length === 0
+                    ? "No workflow is recorded for this profile. Configure prerequisites, then start a workflow when its request is ready."
+                    : "Open a workflow to inspect its current evidence and deterministic next action before approving, revising, or reviewing it."
         };
 
     return createElement(

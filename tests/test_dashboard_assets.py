@@ -477,6 +477,14 @@ def test_bundle_exposes_the_closed_inventory_backed_start_workflow_wizard() -> N
         "Workflow identity (optional)",
         "Save as default",
         "Start readiness",
+        "Check readiness",
+        "Preview workflow",
+        "Check readiness before preview",
+        "does not block preview",
+        "disabled: !hasRequest || busy || !readiness",
+        'API_BASE + "/dispatcher-readiness"',
+        "Worker gateway is not running for",
+        "Align the card assignee/stage profile and retry.",
         "I confirm applying this exact preview",
         "Start now",
         "Open Hermes Cron",
@@ -484,6 +492,7 @@ def test_bundle_exposes_the_closed_inventory_backed_start_workflow_wizard() -> N
     )
     for text in required_strings:
         assert text in source, f"missing Start workflow contract text: {text}"
+    assert source.index("Check readiness") < source.index("Preview workflow")
 
     assert 'data-testid": "daidala-start-workflow"' in source
     assert 'data-testid": "daidala-start-readiness"' in source
@@ -790,6 +799,8 @@ def test_bundle_explains_primary_screens_and_keeps_model_advice_on_demand() -> N
         "Artifact evidence",
         "Configuration readiness",
         "No workflow is recorded for this profile.",
+        "Worker gateway is not running for",
+        "Align the card assignee/stage profile and retry.",
         "If the catalog is empty, no workflow has captured evidence yet.",
         "Readiness advice",
         "Analyze Daidala readiness",

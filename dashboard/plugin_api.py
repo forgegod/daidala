@@ -19,6 +19,7 @@ Supervision endpoints include:
 - ``POST /api/plugins/daidala/diagnostics/prerequisites``
 - ``GET  /api/plugins/daidala/prerequisites``
 - ``GET /api/plugins/daidala/workflows``
+- ``GET /api/plugins/daidala/dispatcher-readiness``
 - ``GET /api/plugins/daidala/workflows/{workflow_id}``
 - ``GET /api/plugins/daidala/artifacts`` and exact artifact text/download
 - ``GET/POST /api/plugins/daidala/artifact-curator[...]``
@@ -101,6 +102,11 @@ from daidala.dashboard_backend import (
 )
 from daidala.delivery import BranchDeliveryService, DeliveryError
 from daidala.errors import PolicyViolationError, WorkflowError
+from daidala.gateway import (
+    probe_profile_gateways,
+    stopped_worker_gateways,
+    validate_profile_name,
+)
 from daidala.github_project_links import (
     GitHubProjectLink,
     GitHubProjectLinkError,
@@ -112,6 +118,7 @@ from daidala.initialization import (
     apply_initialization,
     preview_initialization,
 )
+from daidala.kanban import KanbanError
 from daidala.locations import resolve_data_root
 from daidala.pack_service import (
     MAX_SKILL_DOCUMENT_BYTES,
@@ -142,7 +149,7 @@ from daidala.repository_registration import (
     resolve_profile_root,
 )
 from daidala.revision import MAX_REVIEW_FEEDBACK_BYTES
-from daidala.service import ServiceError
+from daidala.service import ServiceError, assignee_stage_mismatches
 from daidala.setup_wizard import (
     LocalProjectInitializer,
     SetupRequest,
@@ -471,7 +478,10 @@ def setup_analysis(payload: dict[str, object]) -> dict[str, object]:
             ]
         }
         snapshot = build_setup_analysis_snapshot(
-            backend.configuration(), backend.list_workflows(), backend.artifacts(), packs
+            {**backend.configuration(), "dispatcher": _dispatcher_readiness()},
+            backend.list_workflows(),
+            backend.artifacts(),
+            packs,
         )
     except (
         DashboardBackendError,
@@ -1871,10 +1881,12 @@ def wizard_inventory() -> dict[str, Any]:
         )
         boards = list_boards(_run_command)
         selectable, ineligible = _wizard_repository_rows(_wizard_registrations(), boards)
+        profiles = list_profiles(_run_command)
         return {
             "controller_profile": controller_profile,
             "boards": boards,
-            "profiles": list_profiles(_run_command),
+            "profiles": profiles,
+            "worker_gateways": _worker_gateway_rows(profiles),
             "packs": ["addyosmani", "aidlc"],
             "policy_sources": _profile_policy_sources(),
             "projects": selectable,
@@ -1922,15 +1934,29 @@ def wizard_create_board(payload: dict[str, Any]) -> dict[str, Any]:
     return {"created": True, "slug": slug}
 
 
+@router.get("/dispatcher-readiness")
+def dispatcher_readiness() -> dict[str, Any]:
+    """Report path-free worker-gateway liveness for current workflows."""
+
+    return _dispatcher_readiness()
+
+
 @router.post("/wizard/readiness")
 def wizard_readiness(payload: dict[str, Any]) -> dict[str, Any]:
-    """Run the same mutation-free preflight used by confirmed start."""
+    """Return informative start checks. Failures do not block preview."""
     request, service = _resolved_setup_request(payload, apply=False)
-    try:
-        preflight = service.validate_start_preflight(**_preflight_kwargs(request))
-    except (ServiceError, MissingSkillsError) as error:
-        raise HTTPException(status_code=409, detail=str(error)) from error
-    return _setup_preview(request, preflight)
+    readiness = service.evaluate_start_readiness(**_preflight_kwargs(request))
+    projection = {
+        key: value
+        for key, value in request.start_kwargs().items()
+        if key != "target_repository"
+    }
+    return {
+        "confirmed": False,
+        "request": projection,
+        "readiness": readiness,
+        "ready": bool(readiness.get("ready")),
+    }
 
 
 @router.post("/wizard/preview")
@@ -1938,7 +1964,10 @@ def wizard_preview(payload: dict[str, Any]) -> dict[str, Any]:
     """Return the safe request projection and exact fresh start digest."""
     request, service = _resolved_setup_request(payload, apply=False)
     try:
-        preflight = service.validate_start_preflight(**_preflight_kwargs(request))
+        preflight = service.validate_start_preflight(
+            **_preflight_kwargs(request),
+            enforce_start_blockers=False,
+        )
     except (ServiceError, MissingSkillsError) as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
     return _setup_preview(request, preflight)
@@ -2304,6 +2333,57 @@ def _resolved_setup_request(payload: dict[str, Any], *, apply: bool) -> tuple[Se
     return resolved, service_factory()
 
 
+def _worker_gateway_rows(profiles: list[str]) -> list[dict[str, str]]:
+    """Probe named worker profiles without exposing host command output."""
+
+    valid = _valid_worker_profiles(profiles)
+    return [row.to_dict() for row in probe_profile_gateways(valid, _run_command)]
+
+
+def _valid_worker_profiles(profiles: list[str]) -> list[str]:
+    valid: list[str] = []
+    for name in profiles:
+        try:
+            valid.append(validate_profile_name(name))
+        except ValueError:
+            continue
+    return valid
+
+
+def _dispatcher_readiness() -> dict[str, Any]:
+    """Derive worker-gateway and assignee-alignment readiness."""
+
+    profiles: list[str] = []
+    mismatches: list[dict[str, str]] = []
+    try:
+        service = service_factory()
+        ledgers = service.store.list_all()
+        for ledger in ledgers:
+            profiles.extend(row.profile for row in ledger.stage_profiles)
+            try:
+                live = service.combined_status(ledger.workflow_id)
+            except (KanbanError, ServiceError, StoreError):
+                continue
+            mismatches.extend(assignee_stage_mismatches(ledger, live))
+    except StoreError:
+        profiles = []
+    if not profiles:
+        try:
+            profiles = [
+                active_profile(_run_command, fallback_name=resolve_data_root().name)
+            ]
+        except SetupWizardError:
+            profiles = []
+    statuses = probe_profile_gateways(_valid_worker_profiles(profiles), _run_command)
+    blocked = stopped_worker_gateways(statuses)
+    return {
+        "gateways": [row.to_dict() for row in statuses],
+        "ready": not blocked and not mismatches,
+        "blocked_profiles": list(blocked),
+        "assignee_mismatches": mismatches,
+    }
+
+
 def _setup_preview(request: SetupRequest, preflight: Any) -> dict[str, Any]:
     """Return path-free UI facts while binding the full trusted request."""
     private_request = request.start_kwargs()
@@ -2316,6 +2396,8 @@ def _setup_preview(request: SetupRequest, preflight: Any) -> dict[str, Any]:
             {"id": "repository-clean", "passed": True},
             {"id": "board-available", "passed": True},
             {"id": "stage-profiles-available", "passed": True},
+            {"id": "worker-gateway-running", "passed": True},
+            {"id": "assignee-stage-aligned", "passed": True},
         ],
         "baseline_commit": preflight.baseline_commit,
     }

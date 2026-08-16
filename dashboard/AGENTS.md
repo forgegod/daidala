@@ -122,11 +122,18 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   narrow inventory renders four rows before explicit progressive disclosure.
   Disable is never presented as uninstall or deletion.
 - Preview and declined setup must not mutate; start requires a literal checked confirmation.
+- Check readiness sits before Preview workflow and must be pressed before
+  Preview is available. The readiness result is informative and does not block
+  Preview. Start remains fail-closed on the shared start gate.
 - Start validates a nonempty optional workflow identity against the safe
   1–128-character letters/digits/dots/underscores/hyphens grammar before
   readiness or preview requests, renders the exact inline accessible error, and
   clears stale readiness/preview/confirmation state. The service revalidates and
   exposes a bypassed invalid identity through the ordinary bounded 409 response.
+- Start and Workflows readiness require each selected worker profile's Hermes
+  gateway to be running and refuse a live card whose assignee does not match
+  the bound stage profile. Overview fetches `/dispatcher-readiness` once, not
+  on the five-second poll. There is no dashboard control that starts a gateway.
 - Start-workflow management links preserve the browser-local draft while opening
   their exact Config tab above it. After a routed tab renders, the Config section
   receives keyboard focus and scrolls to the viewport start so the navigation

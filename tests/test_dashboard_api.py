@@ -175,6 +175,7 @@ def test_router_exports_all_phase_two_routes() -> None:
         "wizard_inventory",
         "wizard_board_preview",
         "wizard_create_board",
+        "dispatcher_readiness",
         "wizard_readiness",
         "wizard_preview",
         "wizard_start",
@@ -335,6 +336,11 @@ def test_setup_analysis_route_uses_server_derived_path_free_snapshot() -> None:
     api.__dict__["DashboardBackend"] = Backend
     api.__dict__["pack_service_factory"] = PackService
     api.__dict__["request_setup_analysis"] = analyze
+    api.__dict__["_dispatcher_readiness"] = lambda: {
+        "gateways": [{"profile": "demo-worker", "status": "stopped"}],
+        "ready": False,
+        "blocked_profiles": ["demo-worker"],
+    }
 
     assert api.setup_analysis({}) == {
         "analysis": {"summary": "Ready", "priorities": []},
@@ -349,6 +355,17 @@ def test_setup_analysis_route_uses_server_derived_path_free_snapshot() -> None:
                     "github_project:not_configured": 1,
                 },
                 "requirements": {"registered_github_project": {"minimum": 1, "observed": 0}},
+                "dispatcher": {
+                    "worker_gateway_count": 1,
+                    "running_count": 0,
+                    "stopped_count": 1,
+                    "unavailable_count": 0,
+                    "assignee_mismatch_count": 0,
+                    "requirements": {
+                        "running_worker_gateways": {"minimum": 1, "observed": 0},
+                        "aligned_assignees": {"maximum": 0, "observed": 0},
+                    },
+                },
             },
             "workflows": {
                 "count": 1,
@@ -1468,6 +1485,38 @@ def test_wizard_preview_maps_workflow_identity_validation_to_conflict() -> None:
 
     assert raised.value.status_code == 409
     assert "workflow_id must use" in raised.value.detail
+
+
+def test_wizard_readiness_returns_informative_failed_checks() -> None:
+    api = load_api()
+
+    class Request:
+        def start_kwargs(self) -> dict[str, str]:
+            return {"goal": "private", "target_repository": "/private/repo"}
+
+    class Service:
+        def evaluate_start_readiness(self, **_kwargs: object) -> dict[str, object]:
+            return {
+                "checks": [
+                    {
+                        "id": "worker-gateway-running",
+                        "passed": False,
+                        "detail": "worker gateway is not running for profile(s): demo-worker",
+                    }
+                ],
+                "baseline_commit": None,
+                "ready": False,
+            }
+
+    api.__dict__["_resolved_setup_request"] = lambda _payload, apply: (Request(), Service())
+    api.__dict__["_preflight_kwargs"] = lambda _request: {}
+
+    payload = api.wizard_readiness({})
+
+    assert payload["ready"] is False
+    assert payload["readiness"]["ready"] is False
+    assert payload["readiness"]["checks"][0]["id"] == "worker-gateway-running"
+    assert "target_repository" not in payload["request"]
 
 
 def test_existing_explicit_workflow_returns_safe_open_reference_without_start() -> None:
