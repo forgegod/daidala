@@ -26,32 +26,32 @@ repository or touching the default branch.
   `chore/daidala-bootstrap-project-policy` (Conventional Commits–style
   `type/description` branch naming), and file digests. Apply requires the exact
   preview digest and literal confirmation `bootstrap-repository`.
-- Apply creates blobs/tree/commit through host `gh` Git Data API calls and
-  creates only that branch ref. It never updates the default branch, creates a
-  pull request via API, merges, stores a token, or writes registration or
-  credential-binding records. Successful apply writes a profile-local receipt
-  with public compare/PR links. Config inventory keeps showing that link after
-  a Hermes restart until the repository is registered.
+- Apply creates blobs/tree/commit through host `gh` Git Data API calls,
+  creates only that branch ref, and opens one pull request on the inspected
+  repository (`gh pr create`). It never updates the default branch, merges,
+  stores a token, or writes registration or credential-binding records.
+  Successful apply writes a profile-local receipt with the public PR URL.
+  Config inventory keeps showing that link after a Hermes restart until the
+  repository is registered.
 - Preview and apply responses include public GitHub convenience links for the
-  bootstrap branch, the `.daidala` tree on that branch, and GitHub’s
-  compare/open-pull-request page (`expand=1`). Merge remains an operator action
-  on GitHub outside Daidala.
-- After the operator merges the bootstrap branch (typically via the linked
-  compare/PR page), they use CAP-0004 registration against the default-branch
-  manifest.
+  bootstrap branch, the `.daidala` tree on that branch, the opened pull
+  request, and GitHub’s compare page. Merge remains an operator action on the
+  inspected repository.
+- After the operator merges that pull request, they use CAP-0004 registration
+  against the default-branch manifest.
 
 ## Evidence
 
 ### Runtime
 
-- [`daidala/repository_bootstrap.py`](../../../daidala/repository_bootstrap.py) — template generation, digest binding, host-`gh` branch publish, pending receipt.
+- [`daidala/repository_bootstrap.py`](../../../daidala/repository_bootstrap.py) — template generation, digest binding, host-`gh` branch publish, inspected-repo pull request, pending receipt.
 - [`daidala/cli.py`](../../../daidala/cli.py) — `project bootstrap` preview/apply adapter.
 - [`dashboard/plugin_api.py`](../../../dashboard/plugin_api.py) — path-free bootstrap preview/apply routes.
 - [`dashboard/dist/index.js`](../../../dashboard/dist/index.js) — inspect control flips to Apply default policy after `needs-bootstrap`.
 
 ### Tests
 
-- [`tests/test_repository_bootstrap.py`](../../../tests/test_repository_bootstrap.py) — conservative template, branch-only apply, stale digest and existing-branch rejection.
+- [`tests/test_repository_bootstrap.py`](../../../tests/test_repository_bootstrap.py) — conservative template, branch publish, inspected-repo pull request, stale digest and existing-branch rejection.
 - [`tests/test_repository_registration.py`](../../../tests/test_repository_registration.py) — `needs-bootstrap` classification.
 - [`tests/test_dashboard_assets.py`](../../../tests/test_dashboard_assets.py) — bootstrap UI contract strings.
 

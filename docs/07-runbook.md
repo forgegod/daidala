@@ -69,13 +69,11 @@ daidala project bootstrap --github-url https://github.com/acme/site \
   --confirm bootstrap-repository
 ```
 
-Bootstrap uses host `gh` authentication, never updates the default branch, never
-creates a pull request via API, and never writes registration records. The
-preview/apply JSON includes GitHub links for the branch, the `.daidala` tree on
-that branch, and a compare/open-pull-request page. The dashboard keeps that
-compare/PR link on the inspected row after a Hermes restart until the
-repository is registered. Open that compare link on GitHub, merge, then run
-`project register` again.
+Bootstrap uses host `gh` authentication, never updates the default branch, and
+never writes registration records. Confirmed apply opens one pull request on
+the inspected repository. The dashboard keeps that PR link on the inspected
+row after a Hermes restart until the repository is registered. Merge the PR,
+then run `project register` again.
 
 ## Diagnose prerequisites
 

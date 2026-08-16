@@ -221,7 +221,7 @@ function buildRepositoryPolicyBootstrapHtml(screen) {
       <section class="card"><h3>Bootstrap preview</h3><p class="hint">Profile: demo-controller · Repository: acme/site · classification needs-bootstrap</p><div class="field"><input value="github.com/acme/site" aria-label="GitHub repository link for demo-controller"><button>Apply default policy</button></div>
         <div class="preview"><section><p class="label">Target branch</p><p class="value">chore/daidala-bootstrap-project-policy</p><p class="label">From default branch</p><p class="value">main</p><p class="label">Files</p><code>.daidala/project.yaml<br>.daidala/constraints.yaml</code></section><section><p class="label">Policy posture</p><p class="ok">✓ Release commit off</p><p class="ok">✓ Release push off</p><p class="warn">! No registration write</p><p class="hint">Host gh publishes the branch only. The compare/PR link remains until registration.</p></section></div>
         <div class="confirm"><label><input type="checkbox"> I confirm publishing bootstrap policy on branch chore/daidala-bootstrap-project-policy</label><p class="hint">Default policy branch is waiting for merge. Open a pull request</p></div>
-      </section><p class="note">Bootstrap does not register the repository, update the default branch, create a pull request via API, or store a token.</p>
+      </section><p class="note">Bootstrap does not register the repository, update the default branch, or store a token. It opens one pull request on the inspected repository.</p>
     </section></main></div><div class="annotation">Static capability wireframe · synthetic data · no runtime authority</div>
 </body></html>`;
 }

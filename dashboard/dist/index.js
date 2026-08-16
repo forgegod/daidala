@@ -2691,8 +2691,7 @@
       applyRepositoryBootstrap(githubUrl, bootstrapPreview.controller_profile, bootstrapPreview.preview_digest).then(function (result) {
         setBootstrapPreview(result); setConfirmed(false);
         setMessage(
-          "Bootstrap branch published: " + (result.branch || bootstrapPreview.target_branch) +
-          ". Open a pull request, merge it on GitHub, then inspect and register."
+          "Default policy pull request opened on the inspected repository. Merge it, then inspect and register."
         );
         refreshInventory().catch(function () {});
       }).catch(function (caught) {
@@ -2735,7 +2734,7 @@
           createElement("p", null, "Files: " + ((bootstrapPreview.files || []).map(function (file) { return file.path; }).join(", ") || "none")),
           createElement("p", null, "Manifest digest: " + bootstrapPreview.manifest_digest),
           createElement("p", { className: "daidala-workflow-meta" }, bootstrapPreview.next_step || "Open the compare/pull-request link, merge on GitHub, then register."),
-          createElement("p", { className: "daidala-workflow-meta" }, "Bootstrap does not register the repository, touch the default branch, create a pull request via API, or store a token."),
+          createElement("p", { className: "daidala-workflow-meta" }, "Bootstrap does not register the repository, touch the default branch, or store a token. It opens a pull request on the inspected repository."),
           bootstrapPreview.links ? createElement("ul", { className: "daidala-list" },
             bootstrapPreview.links.branch ? createElement("li", { key: "branch" },
               createElement("a", { href: bootstrapPreview.links.branch, target: "_blank", rel: "noreferrer" }, "Open bootstrap branch")
@@ -2743,13 +2742,17 @@
             bootstrapPreview.links.daidala_tree ? createElement("li", { key: "tree" },
               createElement("a", { href: bootstrapPreview.links.daidala_tree, target: "_blank", rel: "noreferrer" }, "Open .daidala on bootstrap branch")
             ) : null,
-            bootstrapPreview.applied && bootstrapPreview.links.compare_pull_request ? createElement("li", { key: "pr" },
+            bootstrapPreview.applied && (bootstrapPreview.links.pull_request || bootstrapPreview.links.compare_pull_request) ? createElement("li", { key: "pr" },
               createElement("button", {
                 type: "button",
                 onClick: function () {
-                  window.open(bootstrapPreview.links.compare_pull_request, "_blank", "noopener,noreferrer");
+                  window.open(
+                    bootstrapPreview.links.pull_request || bootstrapPreview.links.compare_pull_request,
+                    "_blank",
+                    "noopener,noreferrer"
+                  );
                 }
-              }, "Open a pull request")
+              }, bootstrapPreview.links.pull_request ? "Open pull request" : "Open a pull request")
             ) : null
           ) : null,
           createElement("code", null, bootstrapPreview.preview_digest),

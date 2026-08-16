@@ -366,10 +366,8 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
     assert "repository_path" not in source
     assert "token:" not in source.lower()
     assert "delivery_credential_alias" not in source
-    assert (
-        'window.open(bootstrapPreview.links.compare_pull_request, "_blank", '
-        '"noopener,noreferrer")' in source
-    )
+    assert "bootstrapPreview.links.pull_request || " in source
+    assert "bootstrapPreview.links.compare_pull_request" in source
     assert "Open compare / create pull request on GitHub" not in source
     assert '(pr ? " " + pr : "")' not in source
     assert "Bootstrap repository policy" not in source
@@ -378,6 +376,8 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
     assert "pending_bootstraps" in source
     assert "Default policy branch is waiting for merge." in source
     assert "Open pull request" in source
+    assert "opens a pull request on the inspected repository" in source
+    assert "Default policy pull request opened on the inspected repository" in source
 
 
 def test_bundle_exposes_confirmed_path_free_checkout_lifecycle_actions() -> None:

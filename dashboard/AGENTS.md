@@ -63,7 +63,9 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   `needs-bootstrap`, that row’s inspect control becomes Apply default policy
   and stays disabled until confirmation. Inventory also projects unfinished
   public bootstrap compare/PR links from a profile-local receipt so they
-  survive a Hermes restart until the repository is registered. Apply
+  survive a Hermes restart until the repository is registered. Confirmed
+  bootstrap apply opens one pull request on the inspected repository and
+  keeps that public PR URL in the inventory receipt. Apply
   additionally requires a SHA-256 `preview_digest` and `confirm: true`. Every
   selected name is revalidated and re-resolved through Hermes before the
   deterministic registration service reads profile-local state; preview readiness
