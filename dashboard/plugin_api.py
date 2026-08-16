@@ -119,7 +119,7 @@ from daidala.initialization import (
     preview_initialization,
 )
 from daidala.kanban import KanbanError
-from daidala.locations import resolve_data_root
+from daidala.locations import DataRootError, resolve_data_root
 from daidala.pack_service import (
     MAX_SKILL_DOCUMENT_BYTES,
     PackActionError,
@@ -396,6 +396,15 @@ def _repository_bootstrap_service(
     )
 
 
+def _profile_fallback_name() -> str:
+    """Return a path-free profile name without requiring a live Hermes home."""
+
+    try:
+        return resolve_data_root().name
+    except DataRootError:
+        return "default"
+
+
 def _delivery_service() -> BranchDeliveryService:
     """Resolve branch-delivery authority only for the mounted controller profile."""
 
@@ -622,7 +631,7 @@ def repository_registration_profiles() -> dict[str, object]:
 
     try:
         selected_profile = active_profile(
-            _run_command, fallback_name=resolve_data_root().name
+            _run_command, fallback_name=_profile_fallback_name()
         )
         return {
             "selected_profile": selected_profile,
@@ -761,7 +770,7 @@ def repository_registration_inventory() -> dict[str, object]:
 
     try:
         selected_profile = active_profile(
-            _run_command, fallback_name=resolve_data_root().name
+            _run_command, fallback_name=_profile_fallback_name()
         )
         names = list_profiles(_run_command)
     except SetupWizardError as error:
@@ -1909,7 +1918,7 @@ def wizard_inventory() -> dict[str, Any]:
     try:
         controller_profile = active_profile(
             _run_command,
-            fallback_name=resolve_data_root().name,
+            fallback_name=_profile_fallback_name(),
         )
         boards = list_boards(_run_command)
         selectable, ineligible = _wizard_repository_rows(_wizard_registrations(), boards)
@@ -2419,7 +2428,7 @@ def _dispatcher_readiness() -> dict[str, Any]:
     if not profiles:
         try:
             profiles = [
-                active_profile(_run_command, fallback_name=resolve_data_root().name)
+                active_profile(_run_command, fallback_name=_profile_fallback_name())
             ]
         except SetupWizardError:
             profiles = []
