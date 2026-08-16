@@ -18,7 +18,8 @@ credential alias, environment-variable name, or token to Daidala.
   proposed non-secret writes, and a digest bound to the profile and proposal.
 - Inspect classifies a repository before registration: missing committed
   `.daidala/project.yaml` returns a path-free `needs-bootstrap` result with
-  `next_action: bootstrap`; an already-registered project ID returns
+  `next_action: bootstrap` and flips that row’s Inspect repository control to
+  Apply default policy (CAP-0006); an already-registered project ID returns
   `already-registered`; other blocked causes return `blocked` with a stable
   reason. Only `registerable` yields a registration preview.
 - Apply re-inspects the repository and accepts only the exact preview digest
@@ -74,5 +75,6 @@ credential alias, environment-variable name, or token to Daidala.
 - [CHG-0010](../../changes/archive/CHG-0010-non-daidala-repository-bootstrap.md)
 - [CHG-0015](../../changes/archive/CHG-0015-all-profile-repository-inventory.md)
 - [CHG-0017](../../changes/archive/CHG-0017-start-repository-wording-and-inventory.md)
+- [CHG-0022](../../changes/active/CHG-0022-apply-default-policy-inspect-control.md)
 - [HTML wireframe](../wireframes/html/CAP-0004-github-repository-registration.html)
 - [PNG wireframe](../wireframes/exports/CAP-0004-github-repository-registration.png)

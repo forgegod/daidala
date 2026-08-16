@@ -15,9 +15,13 @@ repository or touching the default branch.
 - `daidala project bootstrap --github-url URL --profile NAME` and Config →
   GitHub Repositories bootstrap use one deterministic bootstrap service.
 - Bootstrap is offered only after inspect classification is `needs-bootstrap`.
+  On Config → GitHub Repositories the inspect control then becomes Apply
+  default policy; it stays disabled until the operator confirms the preview.
 - Preview generates strict `.daidala/project.yaml` and
   `.daidala/constraints.yaml` content with release flags false, pinned pack
-  digests from the running Daidala install, and a derived project ID.
+  digests from the running Daidala install, and a derived project ID. Those
+  files match the conservative default used by Start → Initialize local
+  project, except they bind the GitHub repository identity.
 - Preview binds profile, canonical repository, base commit, target branch
   `chore/daidala-bootstrap-project-policy` (Conventional Commits–style
   `type/description` branch naming), and file digests. Apply requires the exact
@@ -25,7 +29,9 @@ repository or touching the default branch.
 - Apply creates blobs/tree/commit through host `gh` Git Data API calls and
   creates only that branch ref. It never updates the default branch, creates a
   pull request via API, merges, stores a token, or writes registration or
-  credential-binding records.
+  credential-binding records. Successful apply writes a profile-local receipt
+  with public compare/PR links. Config inventory keeps showing that link after
+  a Hermes restart until the repository is registered.
 - Preview and apply responses include public GitHub convenience links for the
   bootstrap branch, the `.daidala` tree on that branch, and GitHub’s
   compare/open-pull-request page (`expand=1`). Merge remains an operator action
@@ -38,10 +44,10 @@ repository or touching the default branch.
 
 ### Runtime
 
-- [`daidala/repository_bootstrap.py`](../../../daidala/repository_bootstrap.py) — template generation, digest binding, host-`gh` branch publish.
+- [`daidala/repository_bootstrap.py`](../../../daidala/repository_bootstrap.py) — template generation, digest binding, host-`gh` branch publish, pending receipt.
 - [`daidala/cli.py`](../../../daidala/cli.py) — `project bootstrap` preview/apply adapter.
 - [`dashboard/plugin_api.py`](../../../dashboard/plugin_api.py) — path-free bootstrap preview/apply routes.
-- [`dashboard/dist/index.js`](../../../dashboard/dist/index.js) — bootstrap confirmation UI on Config → GitHub Repositories.
+- [`dashboard/dist/index.js`](../../../dashboard/dist/index.js) — inspect control flips to Apply default policy after `needs-bootstrap`.
 
 ### Tests
 
@@ -61,5 +67,6 @@ repository or touching the default branch.
 - [CHG-0011](../../changes/archive/CHG-0011-bootstrap-branch-links.md)
 - [CHG-0015](../../changes/archive/CHG-0015-all-profile-repository-inventory.md)
 - [CHG-0017](../../changes/archive/CHG-0017-start-repository-wording-and-inventory.md)
+- [CHG-0022](../../changes/active/CHG-0022-apply-default-policy-inspect-control.md)
 - [HTML wireframe](../wireframes/html/CAP-0006-repository-policy-bootstrap.html)
 - [PNG wireframe](../wireframes/exports/CAP-0006-repository-policy-bootstrap.png)

@@ -2301,6 +2301,7 @@ def test_repository_registration_inventory_projects_every_validated_profile(
                 "controller_profile": "daidala-dashboard",
                 "status": "ready",
                 "registrations": [],
+                "pending_bootstraps": [],
             },
             {
                 "controller_profile": "daidala-self-improvement",
@@ -2314,6 +2315,7 @@ def test_repository_registration_inventory_projects_every_validated_profile(
                         "github_project_status": "not-linked",
                     }
                 ],
+                "pending_bootstraps": [],
             },
         ],
     }
@@ -2370,6 +2372,7 @@ def test_repository_registration_inventory_isolates_one_invalid_store(
                 "controller_profile": "daidala-dashboard",
                 "status": "unavailable",
                 "registrations": [],
+                "pending_bootstraps": [],
             },
             {
                 "controller_profile": "daidala-self-improvement",
@@ -2383,6 +2386,7 @@ def test_repository_registration_inventory_isolates_one_invalid_store(
                         "github_project_status": "not-linked",
                     }
                 ],
+                "pending_bootstraps": [],
             },
         ],
     }

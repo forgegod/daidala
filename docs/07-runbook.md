@@ -57,8 +57,9 @@ preview, confirm the named board bind/create action, then register.
 ### Bootstrap policy for a non-Daidala repository
 
 If inspect classifies the repository as `needs-bootstrap` (no committed
-`.daidala/project.yaml`), publish conservative policy on branch
-`chore/daidala-bootstrap-project-policy` first:
+`.daidala/project.yaml`), the dashboard inspect control becomes **Apply
+default policy**. Confirm the preview, then publish conservative policy on
+branch `chore/daidala-bootstrap-project-policy` first:
 
 ```bash
 daidala project bootstrap --github-url https://github.com/acme/site \
@@ -71,8 +72,10 @@ daidala project bootstrap --github-url https://github.com/acme/site \
 Bootstrap uses host `gh` authentication, never updates the default branch, never
 creates a pull request via API, and never writes registration records. The
 preview/apply JSON includes GitHub links for the branch, the `.daidala` tree on
-that branch, and a compare/open-pull-request page. Open that compare link on
-GitHub, merge, then run `project register` again.
+that branch, and a compare/open-pull-request page. The dashboard keeps that
+compare/PR link on the inspected row after a Hermes restart until the
+repository is registered. Open that compare link on GitHub, merge, then run
+`project register` again.
 
 ## Diagnose prerequisites
 
