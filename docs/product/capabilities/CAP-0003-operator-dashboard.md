@@ -37,7 +37,10 @@ An authenticated operator can inspect workflow state and evidence, perform bound
   fail if those workers cannot use the working directory. Manage packs,
   Register GitHub Repository,
   and Manage sources preserve the browser draft while moving visual and keyboard
-  focus to their exact Config destination.
+  focus to their exact Config destination. A nonempty optional workflow identity
+  accepts only 1–128 letters, digits, dots, underscores, or hyphens. Start shows
+  that rule as an inline accessible error and blocks readiness and preview until
+  it is valid; a bypassed invalid value receives the normal bounded 409 response.
 - Approval, review disposition, card remediation, cancellation, setup, and curator mutations use preview/confirm or exact-identity requests; the server derives authoritative workflow, board, repository, and worktree facts.
 - Artifact views expose ledger-bound metadata, bounded literal text, digest-verified downloads, and closed curator actions without accepting filesystem paths.
 - Config → Packs is a pack-first workspace that separates complete immutable

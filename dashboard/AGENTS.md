@@ -122,6 +122,11 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   narrow inventory renders four rows before explicit progressive disclosure.
   Disable is never presented as uninstall or deletion.
 - Preview and declined setup must not mutate; start requires a literal checked confirmation.
+- Start validates a nonempty optional workflow identity against the safe
+  1–128-character letters/digits/dots/underscores/hyphens grammar before
+  readiness or preview requests, renders the exact inline accessible error, and
+  clears stale readiness/preview/confirmation state. The service revalidates and
+  exposes a bypassed invalid identity through the ordinary bounded 409 response.
 - Start-workflow management links preserve the browser-local draft while opening
   their exact Config tab above it. After a routed tab renders, the Config section
   receives keyboard focus and scrolls to the viewport start so the navigation

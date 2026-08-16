@@ -300,7 +300,10 @@ class WorkflowService:
             skill_digest=constraints_skill_digest,
         )
         if workflow_id is not None:
-            self._workspace.validate_workflow_id(workflow_id)
+            try:
+                self._workspace.validate_workflow_id(workflow_id)
+            except ExecutionError as error:
+                raise ServiceError(str(error)) from error
         profiles = _stage_profiles(stage_profiles)
         kanban = self._require_kanban()
         kanban.validate_assignees(board_slug, [row.profile for row in profiles])

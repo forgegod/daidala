@@ -1476,7 +1476,7 @@ def test_capture_requires_real_diff_and_safe_workflow_id(
     service: FixtureWorkflowService,
     target_repository: Path,
 ) -> None:
-    with pytest.raises(ExecutionError, match="workflow_id"):
+    with pytest.raises(ServiceError, match="workflow_id"):
         service.start(
             board_slug="daidala-test",
             target_repository=str(target_repository),

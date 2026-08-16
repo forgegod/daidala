@@ -1451,6 +1451,25 @@ def test_unconfirmed_wizard_start_does_not_construct_service() -> None:
     assert calls == 0
 
 
+def test_wizard_preview_maps_workflow_identity_validation_to_conflict() -> None:
+    api = load_api()
+
+    class Service:
+        def validate_start_preflight(self, **_kwargs: object) -> object:
+            raise api.ServiceError(
+                "workflow_id must use 1-128 letters, digits, dots, underscores, or hyphens"
+            )
+
+    api.__dict__["_resolved_setup_request"] = lambda _payload, apply: (object(), Service())
+    api.__dict__["_preflight_kwargs"] = lambda _request: {}
+
+    with pytest.raises(FakeHTTPException) as raised:
+        api.wizard_preview({})
+
+    assert raised.value.status_code == 409
+    assert "workflow_id must use" in raised.value.detail
+
+
 def test_existing_explicit_workflow_returns_safe_open_reference_without_start() -> None:
     api = load_api()
     starts = 0

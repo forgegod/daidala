@@ -17,7 +17,7 @@ workflow-pack adapters, and bundled orchestration skills.
 | `revision.py` | Bounded review packets, normalized attended feedback, and canonical mutation-free review-decision/revision previews. |
 | `locations.py` | Profile-aware data-root resolution; never hard-codes `~/.hermes`. |
 | `store.py` | SQLite-backed policy-ledger persistence with optimistic concurrency and explicit read-only opening for mutation-free previews. |
-| `service.py` | Repository preflight, approval-gated graph, artifact and changed-path evidence reads, structured-review, attended-disposition, retryable plan-revision, worktree, and ledger coordination. |
+| `service.py` | Repository preflight, including safe workflow-identity validation normalized to the public `ServiceError` boundary, approval-gated graph, artifact and changed-path evidence reads, structured-review, attended-disposition, retryable plan-revision, worktree, and ledger coordination. |
 | `skills.py` | Exact catalog-wide installed-skill inventory, advisory content-digest comparison, and mutation-free install planning. |
 | `pack_service.py` | Typed pack validation, catalog-wide readiness and digest-warning projection, bounded declared-skill content and immutable install/source links, enabled-state projection, and preview-confirmed install with ordered progress plus enable/disable service shared by CLI and dashboard adapters. |
 | `constraints.py` | Strict workflow-constraint YAML parsing, canonicalization, bounds, digest identity, and the runtime starter template. |

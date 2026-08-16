@@ -3969,6 +3969,14 @@
   }
 
   var WIZARD_STAGES = ["define", "plan", "implement", "verify", "review", "deliver"];
+  var WORKFLOW_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+
+  function workflowIdentityError(value) {
+    var workflowId = value.trim();
+    return workflowId && !WORKFLOW_ID_PATTERN.test(workflowId)
+      ? "Workflow identity must use 1-128 letters, digits, dots, underscores, or hyphens."
+      : "";
+  }
 
   function StartWorkflow(props) {
     var _a = useState(null), inventory = _a[0], setInventory = _a[1];
@@ -4128,6 +4136,11 @@
     }
 
     function runReadiness() {
+      var identityError = workflowIdentityError(form.workflow_id);
+      if (identityError) {
+        setError(identityError); setReadiness(null); setPreview(null); setConfirmed(false);
+        return;
+      }
       setBusy(true); setError("");
       if (form.workspace_mode === "local") {
         setError("Local project readiness is validated after its confirmed initialization. Preview first.");
@@ -4142,6 +4155,11 @@
     }
 
     function runPreview() {
+      var identityError = workflowIdentityError(form.workflow_id);
+      if (identityError) {
+        setError(identityError); setReadiness(null); setPreview(null); setConfirmed(false);
+        return;
+      }
       setBusy(true); setError("");
       (form.workspace_mode === "local" ? wizardLocalPreview : wizardPreview)(envelope()).then(function (result) {
         setReadiness(result.readiness || null); setPreview(result); setConfirmed(false);
@@ -4228,12 +4246,14 @@
     var localWorkdir = inventory && inventory.checkouts_root && form.local_project_id
       ? inventory.checkouts_root + "/" + form.local_project_id : "";
     var selectedPack = packs.find(function (option) { return option.name === form.pack; }) || null;
+    var workflowIdError = workflowIdentityError(form.workflow_id);
     var hasRequest = selectedPack && selectedPack.status === "ready" &&
       form.pack && form.goal.trim() &&
       (form.workspace_mode === "local"
         ? form.local_project_id && form.local_board_name.trim()
         : form.workspace_mode === "unregistered" ? form.unregistered_board_slug : form.project_id) &&
-      WIZARD_STAGES.every(function (stage) { return form.stage_profiles[stage]; });
+      WIZARD_STAGES.every(function (stage) { return form.stage_profiles[stage]; }) &&
+      !workflowIdError;
 
     return createElement("section", { className: "daidala-wizard", "data-testid": "daidala-start-workflow" },
       createElement("header", { className: "daidala-wizard-header" },
@@ -4316,7 +4336,17 @@
               return select(stage.charAt(0).toUpperCase() + stage.slice(1), form.stage_profiles[stage] || "", function (value) { changeStage(stage, value); }, profiles.map(function (name) { return { value: name, label: name }; }));
             }),
             createElement("label", { className: "daidala-wizard-field" }, createElement("span", null, "Workflow identity (optional)"),
-              createElement("input", { value: form.workflow_id, onChange: function (event) { change("workflow_id", event.target.value); } })
+              createElement("input", {
+                value: form.workflow_id,
+                "aria-describedby": workflowIdError ? "daidala-workflow-identity-error" : undefined,
+                "aria-invalid": !!workflowIdError,
+                onChange: function (event) { change("workflow_id", event.target.value); }
+              }),
+              workflowIdError ? createElement("p", {
+                id: "daidala-workflow-identity-error",
+                role: "alert",
+                className: "daidala-banner daidala-banner-error"
+              }, workflowIdError) : null
             )
           ),
           createElement("section", { className: "daidala-wizard-section" },

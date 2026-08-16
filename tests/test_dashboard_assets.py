@@ -522,6 +522,12 @@ def test_bundle_exposes_the_closed_inventory_backed_start_workflow_wizard() -> N
     assert "Hermes Cron schedules future admissions only" in source
     assert "existingWorkflowId" in source
     assert "Opened it without creating a second workflow" in source
+    assert "WORKFLOW_ID_PATTERN" in source
+    assert (
+        "Workflow identity must use 1-128 letters, digits, dots, underscores, or hyphens."
+        in source
+    )
+    assert '"aria-invalid": !!workflowIdError' in source
 
 
 def test_start_workflow_disables_primary_navigation_that_cannot_preserve_the_draft() -> None:
