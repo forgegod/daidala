@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import subprocess
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
@@ -42,7 +42,7 @@ from .curator_cron import (
 )
 from .errors import WorkflowError
 from .execution import ExecutionError, ExecutionWorkspace
-from .kanban import KanbanCardStatus, KanbanGraphAdapter
+from .kanban import KanbanCardStatus, KanbanError, KanbanGraphAdapter
 from .packs import WorkflowPack, load_pack
 from .plan_admission import (
     admit_plan_source,
@@ -57,6 +57,7 @@ from .revision import (
 )
 from .skills import (
     HermesSkillInventory,
+    MissingSkillsError,
     ProfileSkillContentRegistry,
     SkillContentRegistry,
     SkillInventory,
@@ -112,6 +113,46 @@ from .workflow import (
 
 class ServiceError(WorkflowError):
     """Raised when an operation cannot satisfy the policy boundary."""
+
+
+ASSIGNEE_STAGE_MISMATCH = (
+    "Cannot record required skill activation: the active card is assigned to "
+    "{assignee} but the workflow binds {stage} to {bound_profile}. "
+    "Align the card assignee/stage profile and retry."
+)
+
+
+def assignee_stage_mismatches(
+    ledger: WorkflowLedger,
+    statuses: Sequence[KanbanCardStatus],
+) -> tuple[dict[str, str], ...]:
+    """Return live cards whose assignee is not the bound stage profile."""
+
+    mismatches: list[dict[str, str]] = []
+    for row in statuses:
+        bound = ledger.profile_for(row.stage)
+        if row.assignee != bound:
+            mismatches.append(
+                {
+                    "workflow_id": ledger.workflow_id,
+                    "stage": row.stage.value,
+                    "assignee": row.assignee,
+                    "bound_profile": bound,
+                }
+            )
+    return tuple(mismatches)
+
+
+def require_assignee_stage_alignment(
+    ledger: WorkflowLedger,
+    statuses: Sequence[KanbanCardStatus],
+) -> None:
+    """Refuse work when a live card assignee is not the bound stage profile."""
+
+    mismatches = assignee_stage_mismatches(ledger, statuses)
+    if not mismatches:
+        return
+    raise ServiceError(ASSIGNEE_STAGE_MISMATCH.format(**mismatches[0]))
 
 
 @dataclass(frozen=True)
@@ -290,10 +331,12 @@ class WorkflowService:
         constraints_skill: str | None = None,
         constraints_skill_digest: str | None = None,
         expected_baseline_commit: str | None = None,
+        enforce_start_blockers: bool = True,
     ) -> StartPreflight:
         """Validate every non-mutating start prerequisite exactly once."""
         pack = load_pack(pack_name)
-        require_pack_skills(pack, self._skill_inventory)
+        if enforce_start_blockers:
+            require_pack_skills(pack, self._skill_inventory)
         constraint_input = self._resolve_constraint_input(
             content=constraints_content,
             skill_name=constraints_skill,
@@ -306,10 +349,29 @@ class WorkflowService:
                 raise ServiceError(str(error)) from error
         profiles = _stage_profiles(stage_profiles)
         kanban = self._require_kanban()
-        kanban.validate_assignees(board_slug, [row.profile for row in profiles])
+        assignees = [row.profile for row in profiles]
+        if enforce_start_blockers:
+            kanban.validate_assignees(board_slug, assignees)
+            try:
+                kanban.validate_assignee_gateways(assignees)
+            except KanbanError as error:
+                raise ServiceError(str(error)) from error
+            if workflow_id is not None:
+                try:
+                    existing = self.store.get(workflow_id)
+                except StoreError as error:
+                    if not str(error).startswith("unknown workflow:"):
+                        raise ServiceError(str(error)) from error
+                else:
+                    try:
+                        require_assignee_stage_alignment(
+                            existing, kanban.combined_status(existing)
+                        )
+                    except KanbanError as error:
+                        raise ServiceError(str(error)) from error
         target = _canonical_local_path(target_repository)
         baseline, is_clean = _inspect_repository(target)
-        if not is_clean:
+        if enforce_start_blockers and not is_clean:
             raise ServiceError("target repository is dirty")
         if expected_baseline_commit is not None and baseline != expected_baseline_commit:
             raise ServiceError("repository baseline does not match expected baseline")
@@ -322,6 +384,62 @@ class WorkflowService:
             baseline_commit=baseline,
             stage_profiles=profiles,
         )
+
+    def evaluate_start_readiness(self, **kwargs: object) -> dict[str, object]:
+        """Return informative start checks without blocking preview."""
+
+        def check(check_id: str, passed: bool, detail: str = "") -> dict[str, object]:
+            row: dict[str, object] = {"id": check_id, "passed": passed}
+            if detail:
+                row["detail"] = detail
+            return row
+
+        checks: list[dict[str, object]] = []
+        try:
+            preflight = self.validate_start_preflight(
+                **kwargs,  # type: ignore[arg-type]
+                enforce_start_blockers=True,
+            )
+            checks.extend(
+                [
+                    check("pack-ready", True),
+                    check("repository-clean", True),
+                    check("board-available", True),
+                    check("stage-profiles-available", True),
+                    check("worker-gateway-running", True),
+                    check("assignee-stage-aligned", True),
+                ]
+            )
+            return {
+                "checks": checks,
+                "baseline_commit": preflight.baseline_commit,
+                "ready": True,
+            }
+        except (ServiceError, MissingSkillsError, KanbanError) as error:
+            detail = str(error)
+            failed = "pack-ready"
+            if "gateway" in detail:
+                failed = "worker-gateway-running"
+            elif "Align the card assignee" in detail or "workflow binds" in detail:
+                failed = "assignee-stage-aligned"
+            elif "dirty" in detail:
+                failed = "repository-clean"
+            elif "unknown Kanban assignee" in detail:
+                failed = "stage-profiles-available"
+            elif "board" in detail:
+                failed = "board-available"
+            for check_id in (
+                "pack-ready",
+                "repository-clean",
+                "board-available",
+                "stage-profiles-available",
+                "worker-gateway-running",
+                "assignee-stage-aligned",
+            ):
+                checks.append(
+                    check(check_id, check_id != failed, detail if check_id == failed else "")
+                )
+            return {"checks": checks, "baseline_commit": None, "ready": False}
 
     def preview_start_from_plan(
         self,
@@ -1489,8 +1607,7 @@ class WorkflowService:
         if card is None or task_id != card.task_id:
             raise ServiceError("Kanban task does not match the current stage card")
         live = self._require_kanban().show_card(ledger, stage)
-        if live.assignee != ledger.profile_for(stage):
-            raise ServiceError("Kanban task assignee does not match the current stage profile")
+        require_assignee_stage_alignment(ledger, (live,))
         pack = load_pack(ledger.pack_name)
         manifest = _activation_manifest(
             ledger,
@@ -1768,8 +1885,7 @@ class WorkflowService:
         if card is None or task_id != card.task_id:
             raise ServiceError("Kanban task does not match the current stage card")
         live = self._require_kanban().show_card(ledger, stage)
-        if live.assignee != ledger.profile_for(stage):
-            raise ServiceError("Kanban task assignee does not match the current stage profile")
+        require_assignee_stage_alignment(ledger, (live,))
 
 
 def _activation_manifest(

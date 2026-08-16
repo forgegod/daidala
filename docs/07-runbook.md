@@ -159,7 +159,10 @@ hermes kanban --board project-board watch
 hermes daidala status stable-workflow-id
 ```
 
-The gateway's Kanban dispatcher executes ready cards. The start command creates
+The gateway's Kanban dispatcher executes ready cards. Start and Workflows
+readiness require the selected worker profile gateway to be running
+(`hermes -p <worker> gateway start`) and refuse a live card whose assignee
+does not match the workflow-bound stage profile. The start command creates
 the graph; it does not start a second scheduler, daemon, or nested agent.
 
 ## Start a Git-pinned plan phase

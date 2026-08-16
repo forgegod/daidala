@@ -83,6 +83,17 @@ def test_setup_analysis_uses_only_aggregate_path_free_snapshot() -> None:
                 "notification:not_configured": 1,
             },
             "requirements": {"registered_github_project": {"minimum": 1, "observed": 0}},
+            "dispatcher": {
+                "worker_gateway_count": 0,
+                "running_count": 0,
+                "stopped_count": 0,
+                "unavailable_count": 0,
+                "assignee_mismatch_count": 0,
+                "requirements": {
+                    "running_worker_gateways": {"minimum": 0, "observed": 0},
+                    "aligned_assignees": {"maximum": 0, "observed": 0},
+                },
+            },
         },
         "workflows": {
             "count": 1,
@@ -105,6 +116,34 @@ def test_setup_analysis_uses_only_aggregate_path_free_snapshot() -> None:
     }
     assert "/private" not in json.dumps(snapshot)
     assert "private goal" not in json.dumps(snapshot)
+
+
+def test_setup_analysis_counts_stopped_worker_gateways() -> None:
+    snapshot = build_setup_analysis_snapshot(
+        {
+            "registrations": [],
+            "dispatcher": {
+                "gateways": [
+                    {"profile": "demo-worker", "status": "stopped"},
+                    {"profile": "demo-reviewer", "status": "running"},
+                ]
+            },
+        },
+        {"workflows": []},
+        {"artifacts": []},
+    )
+
+    assert snapshot["configuration"]["dispatcher"] == {
+        "worker_gateway_count": 2,
+        "running_count": 1,
+        "stopped_count": 1,
+        "unavailable_count": 0,
+        "assignee_mismatch_count": 0,
+        "requirements": {
+            "running_worker_gateways": {"minimum": 2, "observed": 1},
+            "aligned_assignees": {"maximum": 0, "observed": 0},
+        },
+    }
 
 
 def test_setup_analysis_tracks_github_and_phase_ready_pack_requirements() -> None:
@@ -149,6 +188,17 @@ def test_setup_analysis_tracks_github_and_phase_ready_pack_requirements() -> Non
         "registration_count": 1,
         "readiness_counts": {"checkout:healthy": 1, "github_project:healthy": 1},
         "requirements": {"registered_github_project": {"minimum": 1, "observed": 1}},
+        "dispatcher": {
+            "worker_gateway_count": 0,
+            "running_count": 0,
+            "stopped_count": 0,
+            "unavailable_count": 0,
+            "assignee_mismatch_count": 0,
+            "requirements": {
+                "running_worker_gateways": {"minimum": 0, "observed": 0},
+                "aligned_assignees": {"maximum": 0, "observed": 0},
+            },
+        },
     }
     assert snapshot["packs"] == {
         "pack_count": 1,

@@ -26,6 +26,7 @@ class FakeKanbanHost:
         self.archived: list[str] = []
         self.comments: dict[str, list[str]] = {}
         self.profiles = {"architect", "engineer", "reviewer"}
+        self.stopped_gateways: set[str] = set()
 
     def dispatch(self, name: str, args: dict[str, object]) -> str:
         self.calls.append((name, args))
@@ -37,6 +38,18 @@ class FakeKanbanHost:
                     for profile in sorted(self.profiles)
                 ]
                 return json.dumps({"exit_code": 0, "output": json.dumps(rows)})
+            if " gateway status" in command:
+                profile = _profile_from_gateway_command(command)
+                if profile in self.stopped_gateways:
+                    return json.dumps(
+                        {"exit_code": 3, "output": "User gateway service is stopped"}
+                    )
+                return json.dumps(
+                    {
+                        "exit_code": 0,
+                        "output": "Active: active (running)\nUser gateway service is running",
+                    }
+                )
             if " archive " in command:
                 self.archived.extend(command.split(" archive ", 1)[1].split())
                 return json.dumps({"exit_code": 0, "output": ""})
@@ -91,6 +104,13 @@ class FakeKanbanHost:
             self.cards[task_id]["status"] = "ready"
             return json.dumps({"ok": True, "task_id": task_id, "status": "ready"})
         raise AssertionError(f"unexpected host call: {name}")
+
+
+def _profile_from_gateway_command(command: str) -> str:
+    tokens = command.split()
+    if "-p" in tokens:
+        return tokens[tokens.index("-p") + 1]
+    return ""
 
 
 @pytest.fixture

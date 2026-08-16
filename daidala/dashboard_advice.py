@@ -73,7 +73,9 @@ cannot make changes and never replaces the dashboard's deterministic workflow
 recommendations. Treat numeric setup requirements as objective facts: a minimum
 is unmet when observed is lower, and a maximum is unmet when observed is higher.
 Do not call a pack operational when it has blocked packs, missing phase skill
-coverage, or no ready pack."""
+coverage, or no ready pack. A worker gateway that is stopped or unavailable
+blocks dispatch; treat that as an unmet setup requirement. A live card
+assignee that does not match the bound stage profile is also unmet."""
 
 _provider_lock = Lock()
 _provider: Any | None = None
@@ -108,6 +110,26 @@ def build_setup_analysis_snapshot(
                 status = value.get("status") or value.get("state")
             if isinstance(status, str):
                 readiness[f"{name}:{status}"] += 1
+
+    dispatcher = configuration.get("dispatcher")
+    dispatcher_rows = []
+    if isinstance(dispatcher, Mapping):
+        raw_gateways = dispatcher.get("gateways")
+        dispatcher_rows = raw_gateways if isinstance(raw_gateways, list) else []
+    dispatcher_states: Counter[str] = Counter()
+    for row in dispatcher_rows[:20]:
+        if not isinstance(row, Mapping):
+            continue
+        status = row.get("status")
+        if isinstance(status, str):
+            dispatcher_states[status] += 1
+    worker_gateway_count = sum(dispatcher_states.values())
+    running_count = dispatcher_states["running"]
+    mismatch_rows = []
+    if isinstance(dispatcher, Mapping):
+        raw_mismatches = dispatcher.get("assignee_mismatches")
+        mismatch_rows = raw_mismatches if isinstance(raw_mismatches, list) else []
+    assignee_mismatch_count = len(mismatch_rows[:20])
 
     workflow_rows = workflows.get("workflows")
     workflow_items = workflow_rows if isinstance(workflow_rows, list) else []
@@ -187,6 +209,23 @@ def build_setup_analysis_snapshot(
                     "minimum": 1,
                     "observed": readiness["github_project:healthy"],
                 }
+            },
+            "dispatcher": {
+                "worker_gateway_count": worker_gateway_count,
+                "running_count": running_count,
+                "stopped_count": dispatcher_states["stopped"],
+                "unavailable_count": dispatcher_states["unavailable"],
+                "assignee_mismatch_count": assignee_mismatch_count,
+                "requirements": {
+                    "running_worker_gateways": {
+                        "minimum": worker_gateway_count,
+                        "observed": running_count,
+                    },
+                    "aligned_assignees": {
+                        "maximum": 0,
+                        "observed": assignee_mismatch_count,
+                    },
+                },
             },
         },
         "workflows": {

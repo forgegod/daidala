@@ -46,6 +46,7 @@ class FakeHost:
         self.by_key: dict[str, str] = {}
         self.archived: list[str] = []
         self.profiles = {"architect", "engineer", "reviewer"}
+        self.stopped_gateways: set[str] = set()
 
     def dispatch(self, name: str, args: dict[str, object]) -> str:
         self.calls.append((name, args))
@@ -57,6 +58,19 @@ class FakeHost:
                     for profile in sorted(self.profiles)
                 ]
                 return json.dumps({"exit_code": 0, "output": json.dumps(rows)})
+            if " gateway status" in command:
+                tokens = command.split()
+                profile = tokens[tokens.index("-p") + 1] if "-p" in tokens else ""
+                if profile in self.stopped_gateways:
+                    return json.dumps(
+                        {"exit_code": 3, "output": "User gateway service is stopped"}
+                    )
+                return json.dumps(
+                    {
+                        "exit_code": 0,
+                        "output": "Active: active (running)\nUser gateway service is running",
+                    }
+                )
             if " archive " in command:
                 self.archived.extend(command.split(" archive ", 1)[1].split())
                 return json.dumps({"exit_code": 0, "output": ""})
@@ -404,6 +418,22 @@ def test_unknown_assignee_stops_before_card_creation() -> None:
         adapter.validate_assignees("daidala-test", ["architect", "missing"])
 
     assert not host.cards
+
+
+def test_stopped_worker_gateway_blocks_assignee_validation() -> None:
+    host = FakeHost()
+    host.stopped_gateways.add("architect")
+    adapter = KanbanGraphAdapter(host.dispatch)
+
+    with pytest.raises(KanbanError, match="worker gateway is not running.*architect"):
+        adapter.validate_assignee_gateways(["architect", "engineer"])
+
+
+def test_running_worker_gateways_pass_assignee_validation() -> None:
+    host = FakeHost()
+    adapter = KanbanGraphAdapter(host.dispatch)
+
+    adapter.validate_assignee_gateways(["architect", "architect", "engineer"])
 
 
 def test_deleted_assignee_remains_visible_in_live_card_status() -> None:

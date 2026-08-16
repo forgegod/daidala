@@ -178,6 +178,9 @@ def test_digest_mismatch_does_not_block_start_preflight(
             assert board_slug == "daidala-test"
             assert profiles
 
+        def validate_assignee_gateways(self, profiles: list[str]) -> None:
+            assert profiles
+
     monkeypatch.setattr(
         "daidala.service._inspect_repository",
         lambda _target: ("a" * 40, True),

@@ -68,6 +68,44 @@ class KanbanGraphAdapter:
         if missing:
             raise KanbanError(f"unknown Kanban assignee profile(s): {', '.join(missing)}")
 
+    def validate_assignee_gateways(self, profiles: Sequence[str]) -> None:
+        """Refuse start when a selected worker profile gateway is not running."""
+
+        from .gateway import (
+            GatewayStatus,
+            classify_gateway_status,
+            stopped_worker_gateways,
+            validate_profile_name,
+        )
+
+        unique: list[str] = []
+        seen: set[str] = set()
+        for profile in profiles:
+            try:
+                name = validate_profile_name(profile)
+            except ValueError as error:
+                raise KanbanError(str(error)) from error
+            if name in seen:
+                continue
+            seen.add(name)
+            unique.append(name)
+        statuses: list[GatewayStatus] = []
+        for name in unique:
+            exit_code, output = self._terminal_status(
+                f"hermes -p {shlex.quote(name)} gateway status"
+            )
+            statuses.append(
+                GatewayStatus(
+                    profile=name,
+                    status=classify_gateway_status(exit_code, output),
+                )
+            )
+        stopped = stopped_worker_gateways(statuses)
+        if stopped:
+            raise KanbanError(
+                "worker gateway is not running for profile(s): " + ", ".join(stopped)
+            )
+
     def ensure_card(
         self,
         ledger: WorkflowLedger,
@@ -407,6 +445,12 @@ class KanbanGraphAdapter:
             raise KanbanError("Kanban CLI returned invalid JSON") from error
 
     def _terminal(self, command: str) -> str:
+        exit_code, output = self._terminal_status(command)
+        if exit_code != 0:
+            raise KanbanError(f"Kanban CLI failed with exit code {exit_code}")
+        return output
+
+    def _terminal_status(self, command: str) -> tuple[int, str]:
         try:
             payload = json.loads(self.dispatch_tool("terminal", {"command": command}))
         except (TypeError, json.JSONDecodeError) as error:
@@ -419,6 +463,4 @@ class KanbanGraphAdapter:
             raise KanbanError("terminal omitted exit_code")
         if not isinstance(output, str):
             raise KanbanError("terminal omitted output")
-        if exit_code != 0:
-            raise KanbanError(f"Kanban CLI failed with exit code {exit_code}")
-        return output
+        return exit_code, output

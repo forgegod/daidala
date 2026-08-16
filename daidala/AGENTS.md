@@ -49,7 +49,8 @@ workflow-pack adapters, and bundled orchestration skills.
 | `archive_io.py` | Policy-neutral deterministic tar/gzip creation, private-mode manifest verification, inventory, bounded verified member reads, and safe restore for caller-authorized roots. |
 | `artifact_curator.py` | Strict profile-local lifecycle policy and compare-and-swap state, live-ledger/Kanban terminal classification, pinned age transitions, verified archive publication, crash-convergent cleanup, exact-ID archive lookup, and safe recovery-root restore. |
 | `curator_cron.py` | Dry-run-first profile-local Hermes Cron setup/removal, exact job/script/policy identity, private compare-and-swap schedule state, and the public `hermes cron` subprocess boundary. |
-| `kanban.py` | Public host-boundary adapter for the idempotent, approval-gated and revision-addressed Hermes card graph. |
+| `kanban.py` | Public host-boundary adapter for the idempotent, approval-gated and revision-addressed Hermes card graph, including worker-gateway probes. |
+| `gateway.py` | Bounded Hermes gateway-status classifier and worker-profile probe used by start preflight and dashboard readiness. |
 | `schemas.py` | Tool schemas exposed to the model, including strict Git-pinned plan admission inputs. |
 | `tools.py` | Strict JSON-returning plugin handlers; exceptions never cross into Hermes; plan admission returns metadata only. |
 | `packs.py` | Pack loading and deterministic validation. |
@@ -281,7 +282,7 @@ workflow-pack adapters, and bundled orchestration skills.
   controller identity only after that exact name appears in Hermes' documented
   profile inventory. Profile-table parsing must not depend on fixed column
   padding because long profile names legitimately overflow the display width.
-- Start validates one explicit named board and a complete executable-stage profile map before creating cards.
+- Start validates one explicit named board, a complete executable-stage profile map, running worker gateways, and live card assignee/stage-profile alignment before creating or resuming cards.
 
 ### Public start surface (single source of truth)
 
