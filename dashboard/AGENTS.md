@@ -59,7 +59,13 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   and a finite `ready`/`unavailable` status. Preview accepts exactly
   `{github_url, controller_profile, board}` and returns a path-free classification:
   `registerable` (registration preview fields), `needs-bootstrap`,
-  `already-registered`, or `blocked` with stable `reason`/`next_action`. Apply
+  `already-registered`, or `blocked` with stable `reason`/`next_action`. After
+  `needs-bootstrap`, that row’s inspect control becomes Apply default policy
+  and stays disabled until confirmation. Inventory also projects unfinished
+  public bootstrap compare/PR links from a profile-local receipt so they
+  survive a Hermes restart until the repository is registered. Confirmed
+  bootstrap apply opens one pull request on the inspected repository and
+  keeps that public PR URL in the inventory receipt. Apply
   additionally requires a SHA-256 `preview_digest` and `confirm: true`. Every
   selected name is revalidated and re-resolved through Hermes before the
   deterministic registration service reads profile-local state; preview readiness

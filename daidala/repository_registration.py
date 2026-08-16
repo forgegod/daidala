@@ -563,6 +563,12 @@ class RepositoryRegistrationService:
                     "registration failed and new credential bindings could not be removed"
                 ) from error
             raise
+        from .repository_bootstrap import BootstrapReceiptStore, RepositoryBootstrapError
+
+        try:
+            BootstrapReceiptStore(self.data_root).remove(preview.repository_canonical)
+        except RepositoryBootstrapError:
+            pass
         return preview
 
     def _board_action(self, board: str, checkout: Path) -> str:

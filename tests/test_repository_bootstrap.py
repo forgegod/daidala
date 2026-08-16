@@ -9,6 +9,7 @@ import pytest
 from daidala.projects import parse_project_manifest
 from daidala.repository_bootstrap import (
     BOOTSTRAP_BRANCH,
+    BootstrapReceiptStore,
     RepositoryBootstrapError,
     RepositoryBootstrapService,
     build_bootstrap_files,
@@ -75,6 +76,11 @@ class BootstrapRunner:
         if command[:5] == ("gh", "api", "--method", "POST", "repos/forgegod/orphan/git/refs"):
             self.published = True
             return 0, json.dumps({"ref": f"refs/heads/{BOOTSTRAP_BRANCH}"})
+        if command[:4] == ("gh", "pr", "create", "--repo"):
+            assert command[4] == "forgegod/orphan"
+            assert "--base" in command and command[command.index("--base") + 1] == "main"
+            assert "--head" in command and command[command.index("--head") + 1] == BOOTSTRAP_BRANCH
+            return 0, "https://github.com/forgegod/orphan/pull/12"
         return 1, "unexpected command"
 
 
@@ -121,7 +127,7 @@ def test_bootstrap_preview_and_apply_publish_non_default_branch(tmp_path: Path) 
     assert payload["classification"] == CLASSIFICATION_NEEDS_BOOTSTRAP
     assert payload["writes"]["registration"] is False
     assert payload["writes"]["default_branch"] is False
-    assert payload["writes"]["pull_request"] is False
+    assert payload["writes"]["pull_request"] is True
     assert payload["links"] == {
         "branch": "https://github.com/forgegod/orphan/tree/chore/daidala-bootstrap-project-policy",
         "daidala_tree": (
@@ -147,9 +153,15 @@ def test_bootstrap_preview_and_apply_publish_non_default_branch(tmp_path: Path) 
 
     assert applied.commit_sha == "d" * 40
     assert applied.branch == BOOTSTRAP_BRANCH
+    assert applied.pull_request == "https://github.com/forgegod/orphan/pull/12"
     assert runner.published is True
     assert runner.blobs == 2
     assert not (root / "projects").exists()
+    receipts = BootstrapReceiptStore(root).read()
+    assert len(receipts) == 1
+    assert receipts[0].repository_canonical == "forgegod/orphan"
+    assert receipts[0].pull_request == "https://github.com/forgegod/orphan/pull/12"
+    assert receipts[0].open_url() == "https://github.com/forgegod/orphan/pull/12"
 
 
 def test_bootstrap_rejects_stale_digest_and_existing_branch(tmp_path: Path) -> None:
@@ -186,3 +198,26 @@ def test_bootstrap_rejects_stale_digest_and_existing_branch(tmp_path: Path) -> N
     service.runner = ExistingBranchRunner()
     with pytest.raises(RepositoryBootstrapError, match="already exists"):
         service.preview(url)
+
+
+def test_bootstrap_receipt_hides_registered_repositories(tmp_path: Path) -> None:
+    root = (tmp_path / "controller").resolve()
+    write_defaults(root)
+    runner = BootstrapRunner()
+    service = RepositoryBootstrapService(
+        root, "daidala-dashboard", runner=runner, environ={"PATH": "/usr/bin"}
+    )
+    service.apply(
+        "https://github.com/forgegod/orphan",
+        expected_preview_digest=service.preview("https://github.com/forgegod/orphan").digest,
+        confirmation="bootstrap-repository",
+    )
+    store = BootstrapReceiptStore(root)
+
+    visible = store.pending_for(exclude_repositories=set())
+    hidden = store.pending_for(exclude_repositories={"forgegod/orphan"})
+
+    assert [row.repository_canonical for row in visible] == ["forgegod/orphan"]
+    assert hidden == ()
+    store.remove("forgegod/orphan")
+    assert store.read() == ()

@@ -83,6 +83,9 @@ verification in the Daidala-owned detached worktree.
   remote ref equals the recorded reviewed commit. Retry resumes only that exact
   preview-bound transaction; it never force-pushes, merges, opens a pull request,
   updates a default branch, releases, or publishes.
+- Repository bootstrap may open one pull request on the inspected repository
+  after confirmed apply. It never merges that pull request or updates the
+  default branch.
 - Registration uses documented Hermes plugin APIs rather than Hermes internals.
 - `daidala.archive_io` accepts only caller-authorized roots and explicit relative
   regular-file members. It bounds archive size, rejects traversal and links,

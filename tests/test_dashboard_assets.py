@@ -333,6 +333,8 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
         "Register another repository",
         "GitHub repository link",
         "Inspect repository",
+        "Apply default policy",
+        "Applying default policy…",
         "Registration preview",
         "Manifest digest:",
         "Release policy:",
@@ -343,7 +345,6 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
         "needs-bootstrap",
         "Bootstrap Daidala policy on a non-default branch",
         "Bootstrap preview",
-        "Bootstrap repository policy",
         'API_BASE + "/repository-registration/bootstrap/preview"',
         'API_BASE + "/repository-registration/bootstrap"',
         "Open bootstrap branch",
@@ -365,12 +366,18 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
     assert "repository_path" not in source
     assert "token:" not in source.lower()
     assert "delivery_credential_alias" not in source
-    assert (
-        'window.open(bootstrapPreview.links.compare_pull_request, "_blank", '
-        '"noopener,noreferrer")' in source
-    )
+    assert "bootstrapPreview.links.pull_request || " in source
+    assert "bootstrapPreview.links.compare_pull_request" in source
     assert "Open compare / create pull request on GitHub" not in source
     assert '(pr ? " " + pr : "")' not in source
+    assert "Bootstrap repository policy" not in source
+    assert "applyingPolicy && !confirmed" in source
+    assert "applyingPolicy ? \"Apply default policy\" : \"Inspect repository\"" in source
+    assert "pending_bootstraps" in source
+    assert "Default policy branch is waiting for merge." in source
+    assert "Open pull request" in source
+    assert "opens a pull request on the inspected repository" in source
+    assert "Default policy pull request opened on the inspected repository" in source
 
 
 def test_bundle_exposes_confirmed_path_free_checkout_lifecycle_actions() -> None:

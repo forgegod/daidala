@@ -2593,15 +2593,21 @@
       return profileName + "\0" + field;
     }
 
-    function defaultUrl(registration) {
-      return registration && registration.repository_canonical
-        ? "github.com/" + registration.repository_canonical
-        : "";
+    function defaultUrl(registration, pending) {
+      if (registration && registration.repository_canonical) {
+        return "github.com/" + registration.repository_canonical;
+      }
+      if (pending && pending.repository_canonical) {
+        return "github.com/" + pending.repository_canonical;
+      }
+      return "";
     }
 
-    function fieldUrl(profileName, field, registration) {
+    function fieldUrl(profileName, field, registration, pending) {
       var key = draftKey(profileName, field);
-      return Object.prototype.hasOwnProperty.call(drafts, key) ? drafts[key] : defaultUrl(registration);
+      return Object.prototype.hasOwnProperty.call(drafts, key)
+        ? drafts[key]
+        : defaultUrl(registration, pending);
     }
 
     function setFieldUrl(profileName, field, value) {
@@ -2624,6 +2630,21 @@
 
     useEffect(function () { refreshInventory().catch(function () {}); }, []);
 
+    function pendingBootstraps(profileName) {
+      var profiles = Array.isArray(inventory) ? inventory : [];
+      var profile = profiles.filter(function (row) {
+        return row && row.controller_profile === profileName;
+      })[0];
+      return profile && Array.isArray(profile.pending_bootstraps) ? profile.pending_bootstraps : [];
+    }
+
+    function pendingForUrl(profileName, githubUrl) {
+      var normalized = String(githubUrl || "").replace(/^https?:\/\//, "").replace(/^github\.com\//, "");
+      return pendingBootstraps(profileName).filter(function (row) {
+        return row && row.repository_canonical === normalized;
+      })[0] || null;
+    }
+
     function inspect(profileName, field, registration) {
       var githubUrl = fieldUrl(profileName, field, registration).trim();
       if (!githubUrl || !profileName) return;
@@ -2632,6 +2653,9 @@
       previewRepositoryRegistration(githubUrl, profileName).then(function (result) {
         if (result && result.classification === "needs-bootstrap") {
           setMessage(repositoryInspectionMessage(result));
+          if (pendingForUrl(profileName, githubUrl)) {
+            return;
+          }
           return previewRepositoryBootstrap(githubUrl, profileName).then(function (bootstrap) {
             setBootstrapPreview(bootstrap);
           });
@@ -2667,9 +2691,9 @@
       applyRepositoryBootstrap(githubUrl, bootstrapPreview.controller_profile, bootstrapPreview.preview_digest).then(function (result) {
         setBootstrapPreview(result); setConfirmed(false);
         setMessage(
-          "Bootstrap branch published: " + (result.branch || bootstrapPreview.target_branch) +
-          ". Open a pull request, merge it on GitHub, then inspect and register."
+          "Default policy pull request opened on the inspected repository. Merge it, then inspect and register."
         );
+        refreshInventory().catch(function () {});
       }).catch(function (caught) {
         setMessage("Repository bootstrap was not applied: " + errorText(caught));
       }).finally(function () { setBusy(false); });
@@ -2677,6 +2701,20 @@
 
     function isActive(profileName, field) {
       return active && active.profile === profileName && active.field === field;
+    }
+
+    function renderPendingLink(profileName, githubUrl) {
+      var pending = pendingForUrl(profileName, githubUrl);
+      if (!pending || !pending.open_url) return null;
+      return createElement("p", { className: "daidala-workflow-meta" },
+        "Default policy branch is waiting for merge. ",
+        createElement("button", {
+          type: "button",
+          onClick: function () {
+            window.open(pending.open_url, "_blank", "noopener,noreferrer");
+          }
+        }, pending.pull_request ? "Open pull request" : "Open a pull request")
+      );
     }
 
     function renderInspectResult(profileName, field) {
@@ -2696,7 +2734,7 @@
           createElement("p", null, "Files: " + ((bootstrapPreview.files || []).map(function (file) { return file.path; }).join(", ") || "none")),
           createElement("p", null, "Manifest digest: " + bootstrapPreview.manifest_digest),
           createElement("p", { className: "daidala-workflow-meta" }, bootstrapPreview.next_step || "Open the compare/pull-request link, merge on GitHub, then register."),
-          createElement("p", { className: "daidala-workflow-meta" }, "Bootstrap does not register the repository, touch the default branch, create a pull request via API, or store a token."),
+          createElement("p", { className: "daidala-workflow-meta" }, "Bootstrap does not register the repository, touch the default branch, or store a token. It opens a pull request on the inspected repository."),
           bootstrapPreview.links ? createElement("ul", { className: "daidala-list" },
             bootstrapPreview.links.branch ? createElement("li", { key: "branch" },
               createElement("a", { href: bootstrapPreview.links.branch, target: "_blank", rel: "noreferrer" }, "Open bootstrap branch")
@@ -2704,21 +2742,24 @@
             bootstrapPreview.links.daidala_tree ? createElement("li", { key: "tree" },
               createElement("a", { href: bootstrapPreview.links.daidala_tree, target: "_blank", rel: "noreferrer" }, "Open .daidala on bootstrap branch")
             ) : null,
-            bootstrapPreview.applied && bootstrapPreview.links.compare_pull_request ? createElement("li", { key: "pr" },
+            bootstrapPreview.applied && (bootstrapPreview.links.pull_request || bootstrapPreview.links.compare_pull_request) ? createElement("li", { key: "pr" },
               createElement("button", {
                 type: "button",
                 onClick: function () {
-                  window.open(bootstrapPreview.links.compare_pull_request, "_blank", "noopener,noreferrer");
+                  window.open(
+                    bootstrapPreview.links.pull_request || bootstrapPreview.links.compare_pull_request,
+                    "_blank",
+                    "noopener,noreferrer"
+                  );
                 }
-              }, "Open a pull request")
+              }, bootstrapPreview.links.pull_request ? "Open pull request" : "Open a pull request")
             ) : null
           ) : null,
           createElement("code", null, bootstrapPreview.preview_digest),
           createElement("label", { className: "daidala-pack-confirm" },
             createElement("input", { type: "checkbox", checked: confirmed, onChange: function (event) { setConfirmed(event.target.checked); } }),
             " I confirm publishing bootstrap policy on branch " + bootstrapPreview.target_branch
-          ),
-          createElement("button", { type: "button", disabled: busy || !confirmed, onClick: applyBootstrap }, "Bootstrap repository policy")
+          )
         ));
       }
       if (preview) {
@@ -2743,8 +2784,8 @@
       return nodes.length ? nodes : null;
     }
 
-    function renderLinkField(profileName, field, registration, label) {
-      var value = fieldUrl(profileName, field, registration);
+    function renderLinkField(profileName, field, registration, label, pending) {
+      var value = fieldUrl(profileName, field, registration, pending);
       return createElement("div", { key: profileName + ":" + field, className: "daidala-github-registration-context" },
         registration ? createElement("dl", null,
           createElement("div", null,
@@ -2774,11 +2815,24 @@
             onChange: function (event) { setFieldUrl(profileName, field, event.target.value); }
           })
         ),
-        createElement("button", {
-          type: "button",
-          disabled: busy || !value.trim(),
-          onClick: function () { inspect(profileName, field, registration); }
-        }, busy && isActive(profileName, field) ? "Inspecting…" : "Inspect repository"),
+        (function () {
+          var applyingPolicy = isActive(profileName, field) && bootstrapPreview && !bootstrapPreview.applied;
+          var label = busy && isActive(profileName, field)
+            ? (applyingPolicy ? "Applying default policy…" : "Inspecting…")
+            : applyingPolicy ? "Apply default policy" : "Inspect repository";
+          return createElement("button", {
+            type: "button",
+            disabled: busy || !value.trim() || (applyingPolicy && !confirmed),
+            onClick: function () {
+              if (applyingPolicy) {
+                applyBootstrap();
+              } else {
+                inspect(profileName, field, registration);
+              }
+            }
+          }, label);
+        }()),
+        renderPendingLink(profileName, value),
         renderInspectResult(profileName, field)
       );
     }
@@ -2786,14 +2840,23 @@
     function renderProfile(profile) {
       var name = profile.controller_profile;
       var registrations = Array.isArray(profile.registrations) ? profile.registrations : [];
+      var pending = pendingBootstraps(name);
+      var unmatched = pending.filter(function (row) {
+        return !registrations.some(function (registration) {
+          return registration.repository_canonical === row.repository_canonical;
+        });
+      });
       var rows = registrations.map(function (registration) {
         return renderLinkField(name, registration.project_id, registration, "GitHub repository link");
       });
       if (registrations.length) {
-        rows.push(renderLinkField(name, "", null, "Register another repository"));
+        rows.push(renderLinkField(name, "", null, "Register another repository", unmatched[0] || null));
       } else {
-        rows.push(renderLinkField(name, "", null, "GitHub repository link"));
+        rows.push(renderLinkField(name, "", null, "GitHub repository link", unmatched[0] || null));
       }
+      unmatched.slice(1).forEach(function (row) {
+        rows.push(renderLinkField(name, "pending:" + row.repository_canonical, null, "GitHub repository link", row));
+      });
       return createElement("article", {
         key: name,
         className: "daidala-repository-profile",

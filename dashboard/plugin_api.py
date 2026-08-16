@@ -119,7 +119,7 @@ from daidala.initialization import (
     preview_initialization,
 )
 from daidala.kanban import KanbanError
-from daidala.locations import resolve_data_root
+from daidala.locations import DataRootError, resolve_data_root
 from daidala.pack_service import (
     MAX_SKILL_DOCUMENT_BYTES,
     PackActionError,
@@ -140,12 +140,14 @@ from daidala.registrations import (
     registration_path,
 )
 from daidala.repository_bootstrap import (
+    BootstrapReceiptStore,
     RepositoryBootstrapError,
     RepositoryBootstrapService,
 )
 from daidala.repository_registration import (
     RepositoryRegistrationError,
     RepositoryRegistrationService,
+    parse_github_repository_url,
     resolve_profile_root,
 )
 from daidala.revision import MAX_REVIEW_FEEDBACK_BYTES
@@ -394,6 +396,15 @@ def _repository_bootstrap_service(
     )
 
 
+def _profile_fallback_name() -> str:
+    """Return a path-free profile name without requiring a live Hermes home."""
+
+    try:
+        return resolve_data_root().name
+    except DataRootError:
+        return "default"
+
+
 def _delivery_service() -> BranchDeliveryService:
     """Resolve branch-delivery authority only for the mounted controller profile."""
 
@@ -620,7 +631,7 @@ def repository_registration_profiles() -> dict[str, object]:
 
     try:
         selected_profile = active_profile(
-            _run_command, fallback_name=resolve_data_root().name
+            _run_command, fallback_name=_profile_fallback_name()
         )
         return {
             "selected_profile": selected_profile,
@@ -719,6 +730,30 @@ def _registered_project_rows(
     return result
 
 
+def _pending_bootstrap_rows(
+    root: Path, registrations: tuple[ControllerRegistration, ...]
+) -> list[dict[str, object]]:
+    """Project unfinished bootstrap compare/PR links without local paths."""
+
+    registered = {row.repository_canonical for row in registrations}
+    try:
+        receipts = BootstrapReceiptStore(root).pending_for(exclude_repositories=registered)
+    except RepositoryBootstrapError:
+        return []
+    return [receipt.to_public_dict() for receipt in receipts]
+
+
+def _finish_bootstrap_receipt(controller_profile: str, github_url: str) -> None:
+    """Drop a pending bootstrap receipt after the repository is registered."""
+
+    try:
+        root = _repository_registration_profile_root(controller_profile)
+        canonical = parse_github_repository_url(github_url)
+        BootstrapReceiptStore(root).remove(canonical)
+    except (HTTPException, RepositoryBootstrapError, RepositoryRegistrationError):
+        return
+
+
 @router.get("/repository-registration/registrations")
 def repository_registrations(controller_profile: str) -> dict[str, object]:
     """Project only selected-profile repository identity facts for Config."""
@@ -735,7 +770,7 @@ def repository_registration_inventory() -> dict[str, object]:
 
     try:
         selected_profile = active_profile(
-            _run_command, fallback_name=resolve_data_root().name
+            _run_command, fallback_name=_profile_fallback_name()
         )
         names = list_profiles(_run_command)
     except SetupWizardError as error:
@@ -762,6 +797,7 @@ def repository_registration_inventory() -> dict[str, object]:
                     "controller_profile": controller_profile,
                     "status": "unavailable",
                     "registrations": [],
+                    "pending_bootstraps": [],
                 }
             )
     board_counts: dict[str, int] = {}
@@ -777,12 +813,14 @@ def repository_registration_inventory() -> dict[str, object]:
                 board_counts=board_counts,
                 linked_project_ids={link.project_id for link in links},
             )
-        except GitHubProjectLinkError:
+            pending = _pending_bootstrap_rows(root, registrations)
+        except (GitHubProjectLinkError, RepositoryBootstrapError):
             profiles.append(
                 {
                     "controller_profile": controller_profile,
                     "status": "unavailable",
                     "registrations": [],
+                    "pending_bootstraps": [],
                 }
             )
             continue
@@ -791,6 +829,7 @@ def repository_registration_inventory() -> dict[str, object]:
                 "controller_profile": controller_profile,
                 "status": "ready",
                 "registrations": rows,
+                "pending_bootstraps": pending,
             }
         )
     return {"selected_profile": selected_profile, "profiles": profiles}
@@ -881,7 +920,7 @@ def repository_registration_apply(payload: dict[str, object]) -> dict[str, objec
     )
     assert digest is not None
     try:
-        return _repository_registration_service(controller_profile).apply(
+        result = _repository_registration_service(controller_profile).apply(
             github_url,
             board=board,
             expected_preview_digest=digest,
@@ -891,6 +930,8 @@ def repository_registration_apply(payload: dict[str, object]) -> dict[str, objec
         raise HTTPException(
             status_code=409, detail="repository registration could not be applied"
         ) from error
+    _finish_bootstrap_receipt(controller_profile, github_url)
+    return result
 
 
 @router.get("/github-project-links")
@@ -1877,7 +1918,7 @@ def wizard_inventory() -> dict[str, Any]:
     try:
         controller_profile = active_profile(
             _run_command,
-            fallback_name=resolve_data_root().name,
+            fallback_name=_profile_fallback_name(),
         )
         boards = list_boards(_run_command)
         selectable, ineligible = _wizard_repository_rows(_wizard_registrations(), boards)
@@ -2387,7 +2428,7 @@ def _dispatcher_readiness() -> dict[str, Any]:
     if not profiles:
         try:
             profiles = [
-                active_profile(_run_command, fallback_name=resolve_data_root().name)
+                active_profile(_run_command, fallback_name=_profile_fallback_name())
             ]
         except SetupWizardError:
             profiles = []
