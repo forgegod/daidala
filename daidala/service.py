@@ -121,6 +121,16 @@ ASSIGNEE_STAGE_MISMATCH = (
     "Align the card assignee/stage profile and retry."
 )
 
+TERMINAL_CARD_STATUSES = frozenset({"done", "archived"})
+
+
+def live_card_statuses(
+    statuses: Sequence[KanbanCardStatus],
+) -> tuple[KanbanCardStatus, ...]:
+    """Return cards that still require dispatch or worker alignment."""
+
+    return tuple(row for row in statuses if row.status not in TERMINAL_CARD_STATUSES)
+
 
 def assignee_stage_mismatches(
     ledger: WorkflowLedger,
@@ -129,7 +139,7 @@ def assignee_stage_mismatches(
     """Return live cards whose assignee is not the bound stage profile."""
 
     mismatches: list[dict[str, str]] = []
-    for row in statuses:
+    for row in live_card_statuses(statuses):
         bound = ledger.profile_for(row.stage)
         if row.assignee != bound:
             mismatches.append(

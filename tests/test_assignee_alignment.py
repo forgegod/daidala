@@ -11,6 +11,7 @@ from daidala.service import (
     ServiceError,
     WorkflowService,
     assignee_stage_mismatches,
+    live_card_statuses,
     require_assignee_stage_alignment,
 )
 from daidala.skills import content_registry_from_digests, inventory_from_names, required_skills
@@ -91,6 +92,28 @@ def test_matching_assignee_is_aligned() -> None:
     )
 
     require_assignee_stage_alignment(ledger, statuses)
+    assert assignee_stage_mismatches(ledger, statuses) == ()
+
+
+def test_archived_and_done_cards_are_not_live_mismatches() -> None:
+    ledger = _ledger()
+    statuses = (
+        KanbanCardStatus(
+            stage=WorkflowStage.DEFINE,
+            task_id="t_22e3ef72",
+            status="archived",
+            assignee="default",
+        ),
+        KanbanCardStatus(
+            stage=WorkflowStage.PLAN,
+            task_id="t_5daa46d5",
+            status="done",
+            assignee="default",
+        ),
+    )
+
+    require_assignee_stage_alignment(ledger, statuses)
+    assert live_card_statuses(statuses) == ()
     assert assignee_stage_mismatches(ledger, statuses) == ()
 
 

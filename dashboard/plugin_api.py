@@ -149,7 +149,7 @@ from daidala.repository_registration import (
     resolve_profile_root,
 )
 from daidala.revision import MAX_REVIEW_FEEDBACK_BYTES
-from daidala.service import ServiceError, assignee_stage_mismatches
+from daidala.service import ServiceError, assignee_stage_mismatches, live_card_statuses
 from daidala.setup_wizard import (
     LocalProjectInitializer,
     SetupRequest,
@@ -2359,11 +2359,14 @@ def _dispatcher_readiness() -> dict[str, Any]:
         service = service_factory()
         ledgers = service.store.list_all()
         for ledger in ledgers:
-            profiles.extend(row.profile for row in ledger.stage_profiles)
             try:
-                live = service.combined_status(ledger.workflow_id)
+                cards = service.combined_status(ledger.workflow_id)
             except (KanbanError, ServiceError, StoreError):
                 continue
+            live = live_card_statuses(cards)
+            if not live:
+                continue
+            profiles.extend(row.profile for row in ledger.stage_profiles)
             mismatches.extend(assignee_stage_mismatches(ledger, live))
     except StoreError:
         profiles = []

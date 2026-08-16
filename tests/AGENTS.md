@@ -117,8 +117,8 @@ completeness without touching a real Hermes profile.
   request validation, narrowly scoped Hermes inventory commands, and profile
   parsing when valid names overflow Hermes' display columns.
 - Start-readiness tests prove worker-gateway classification, start preflight
-  refusal of a stopped worker gateway, and fail-closed live card assignee versus
-  bound stage-profile alignment.
+  refusal of a stopped worker gateway, fail-closed live card assignee versus
+  bound stage-profile alignment, and that archived or done cards are not live.
 - Shared-parser and fake-command tests proving native Hermes and standalone CLI
   service calls, public Kanban command translation, JSON, and exit codes remain
   equivalent.

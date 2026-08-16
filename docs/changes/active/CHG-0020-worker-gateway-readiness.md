@@ -28,6 +28,7 @@ mismatch blocks start and appears as the next missing condition on Workflows.
 |---|---|---|
 | Vertical slice | done | `python -m pytest tests/test_gateway.py tests/test_assignee_alignment.py tests/test_kanban.py tests/test_skills.py tests/test_dashboard_advice.py tests/test_dashboard_api.py tests/test_dashboard_assets.py -q` |
 | Informative start readiness | done | `python -m pytest tests/test_dashboard_assets.py tests/test_dashboard_api.py tests/test_skills.py tests/test_assignee_alignment.py tests/test_gateway.py -q` |
+| Ignore terminal cards | done | `python -m pytest tests/test_assignee_alignment.py tests/test_dashboard_api.py -q` |
 | Closeout | pending | `python scripts/check_records.py . && python scripts/check_md_links.py . && python -m pytest tests/test_dashboard_assets.py tests/test_dashboard_api.py tests/test_skills.py tests/test_assignee_alignment.py tests/test_gateway.py -q && ruff check dashboard/plugin_api.py dashboard/dist/index.js daidala/service.py` |
 
 ## Decisions
@@ -41,11 +42,14 @@ mismatch blocks start and appears as the next missing condition on Workflows.
 - Card assignee versus bound stage profile is the same fail-closed rule
   already used by skill activation. Reassigning a Ready card without updating
   the ledger is a readiness blocker, not a workaround.
+- Archived and done cards are not live. Overview readiness ignores them for
+  assignee alignment and does not keep probing their bound worker gateways.
 - Check readiness must run before Preview is available. The readiness result
   is informative and does not block Preview. Start remains fail-closed.
 
 ## Evidence
 
-- `python -m pytest -q` passed.
-- `python scripts/check_records.py .` and `python scripts/check_md_links.py .` passed.
-- `ruff check` passed on the changed modules.
+- `python -m pytest tests/test_assignee_alignment.py tests/test_dashboard_api.py -q` passed.
+- `ruff check daidala/service.py dashboard/plugin_api.py tests/test_assignee_alignment.py tests/test_dashboard_api.py` passed.
+- `python -m pytest -q` passed for the earlier vertical slice.
+- `python scripts/check_records.py .` and `python scripts/check_md_links.py .` passed for the earlier vertical slice.

@@ -1487,6 +1487,48 @@ def test_wizard_preview_maps_workflow_identity_validation_to_conflict() -> None:
     assert "workflow_id must use" in raised.value.detail
 
 
+def test_dispatcher_readiness_skips_archived_only_workflow() -> None:
+    from daidala.kanban import KanbanCardStatus
+    from daidala.state import WorkflowStage
+
+    api = load_api()
+    ledger = types.SimpleNamespace(
+        workflow_id="7af035cc-4a16-42c3-8f89-56d32be050e5",
+        stage_profiles=(types.SimpleNamespace(profile="daidala-self-improvement"),),
+    )
+
+    class Service:
+        store = types.SimpleNamespace(list_all=lambda: (ledger,))
+
+        def combined_status(self, workflow_id: str) -> tuple[KanbanCardStatus, ...]:
+            assert workflow_id == ledger.workflow_id
+            return (
+                KanbanCardStatus(
+                    stage=WorkflowStage.DEFINE,
+                    task_id="t_22e3ef72",
+                    status="archived",
+                    assignee="default",
+                ),
+            )
+
+    probed: list[list[str]] = []
+
+    api.__dict__["service_factory"] = Service
+    api.__dict__["active_profile"] = lambda *_args, **_kwargs: "controller"
+    api.__dict__["_valid_worker_profiles"] = lambda profiles: list(profiles)
+    api.__dict__["probe_profile_gateways"] = lambda profiles, _runner: probed.append(
+        list(profiles)
+    ) or []
+    api.__dict__["stopped_worker_gateways"] = lambda _rows: ()
+
+    result = api._dispatcher_readiness()
+
+    assert result["assignee_mismatches"] == []
+    assert result["blocked_profiles"] == []
+    assert probed == [["controller"]]
+    assert "daidala-self-improvement" not in probed[0]
+
+
 def test_wizard_readiness_returns_informative_failed_checks() -> None:
     api = load_api()
 
