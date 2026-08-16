@@ -162,7 +162,10 @@ hermes daidala status stable-workflow-id
 The gateway's Kanban dispatcher executes ready cards. Start and Workflows
 readiness require the selected worker profile gateway to be running
 (`hermes -p <worker> gateway start`) and refuse a live card whose assignee
-does not match the workflow-bound stage profile. The start command creates
+does not match the workflow-bound stage profile. When a Ready card's assigned
+gateway is stopped or unavailable, its Workflows card names the stage/card,
+profile, gateway state, and status/start commands. That warning is read-only:
+it does not change workflow state or start a gateway. The start command creates
 the graph; it does not start a second scheduler, daemon, or nested agent.
 
 ## Start a Git-pinned plan phase

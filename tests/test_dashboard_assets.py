@@ -606,6 +606,22 @@ def test_bundle_renders_every_phase_three_state() -> None:
     assert "resolve_blocked_card" not in source
 
 
+def test_bundle_renders_gateway_errors_on_the_affected_workflow_card() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    required = (
+        "gateway_blocked_cards",
+        '"data-testid": "daidala-workflow-gateway-error"',
+        "Ready " + '" + blocker.stage + "' + " card ",
+        "This workflow cannot dispatch the card.",
+        "props.dispatcher",
+        "dispatcher: dispatcher",
+    )
+    for text in required:
+        assert text in source, f"missing card-local gateway warning: {text}"
+    assert "row.workflow_id === summary.workflow_id" in source
+
+
 def test_exact_plan_body_is_rendered_as_literal_text() -> None:
     source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
 

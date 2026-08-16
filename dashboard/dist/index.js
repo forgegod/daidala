@@ -1403,7 +1403,7 @@
             }
 
   function renderWorkflowCard(
-    workflow, detail, decisions, approvalReview, reviewDecision, onApproved, onReviewDecided
+    workflow, detail, decisions, approvalReview, reviewDecision, dispatcher, onApproved, onReviewDecided
   ) {
     var summary = detail && detail.workflow ? detail.workflow : workflow;
     var policyRevision = summary.policy_revision;
@@ -1417,6 +1417,11 @@
       : [];
     var recommendations = detail && Array.isArray(detail.recommendations)
       ? detail.recommendations
+      : [];
+    var gatewayBlockedCards = dispatcher && Array.isArray(dispatcher.gateway_blocked_cards)
+      ? dispatcher.gateway_blocked_cards.filter(function (row) {
+        return row.workflow_id === summary.workflow_id;
+      })
       : [];
 
 
@@ -1438,6 +1443,22 @@
           summary.board_slug + " · " + summary.pack_name + " · policy " + policyRevision
         )
       ),
+      gatewayBlockedCards.map(function (blocker) {
+        return createElement(
+          "p",
+          {
+            key: blocker.task_id,
+            role: "alert",
+            className: "daidala-banner daidala-banner-error",
+            "data-testid": "daidala-workflow-gateway-error"
+          },
+          "Ready " + blocker.stage + " card " + blocker.task_id + " is assigned to "
+            + blocker.profile + ", but its worker gateway is " + blocker.gateway_status
+            + ". This workflow cannot dispatch the card. Check it with hermes -p "
+            + blocker.profile + " gateway status, then start it with hermes -p "
+            + blocker.profile + " gateway start."
+        );
+      }),
       createElement(
         "p",
         { className: "daidala-workflow-goal" },
@@ -4831,7 +4852,8 @@
               key: openWorkflowId,
               workflow: { workflow_id: openWorkflowId },
               decision: route.workflowId === openWorkflowId ? route.decision : null,
-              planRevision: route.workflowId === openWorkflowId ? route.planRevision : null
+              planRevision: route.workflowId === openWorkflowId ? route.planRevision : null,
+              dispatcher: dispatcher
             })
           )
         : null,
@@ -4865,7 +4887,8 @@
                 listedWorkflows.map(function (row) {
                   return createElement(WorkflowDetail, {
                     key: row.workflow_id,
-                    workflow: row
+                    workflow: row,
+                    dispatcher: dispatcher
                   });
                 })
               )
@@ -4911,6 +4934,7 @@
       decisionsState.snapshot,
       approvalState.snapshot,
       reviewState.snapshot,
+      props.dispatcher,
       function () {
         detailState.refresh();
         decisionsState.refresh();

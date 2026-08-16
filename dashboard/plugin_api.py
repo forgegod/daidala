@@ -2351,10 +2351,11 @@ def _valid_worker_profiles(profiles: list[str]) -> list[str]:
 
 
 def _dispatcher_readiness() -> dict[str, Any]:
-    """Derive worker-gateway and assignee-alignment readiness."""
+    """Derive worker-gateway, Ready-card dispatch, and assignee readiness."""
 
     profiles: list[str] = []
     mismatches: list[dict[str, str]] = []
+    ready_cards: list[dict[str, str]] = []
     try:
         service = service_factory()
         ledgers = service.store.list_all()
@@ -2367,9 +2368,22 @@ def _dispatcher_readiness() -> dict[str, Any]:
             if not live:
                 continue
             profiles.extend(row.profile for row in ledger.stage_profiles)
+            profiles.extend(row.assignee for row in live)
             mismatches.extend(assignee_stage_mismatches(ledger, live))
+            ready_cards.extend(
+                {
+                    "workflow_id": ledger.workflow_id,
+                    "task_id": row.task_id,
+                    "stage": row.stage.value,
+                    "profile": row.assignee,
+                }
+                for row in live
+                if row.status == "ready"
+            )
     except StoreError:
         profiles = []
+        mismatches = []
+        ready_cards = []
     if not profiles:
         try:
             profiles = [
@@ -2379,11 +2393,18 @@ def _dispatcher_readiness() -> dict[str, Any]:
             profiles = []
     statuses = probe_profile_gateways(_valid_worker_profiles(profiles), _run_command)
     blocked = stopped_worker_gateways(statuses)
+    gateway_statuses = {row.profile: row.status for row in statuses}
+    gateway_blocked_cards = [
+        {**card, "gateway_status": gateway_statuses[card["profile"]]}
+        for card in ready_cards
+        if gateway_statuses.get(card["profile"]) in {"stopped", "unavailable"}
+    ]
     return {
         "gateways": [row.to_dict() for row in statuses],
         "ready": not blocked and not mismatches,
         "blocked_profiles": list(blocked),
         "assignee_mismatches": mismatches,
+        "gateway_blocked_cards": gateway_blocked_cards,
     }
 
 

@@ -94,6 +94,34 @@ function buildOperatorDashboardValidationHtml(screen) {
 <body><div class="shell"><aside><div class="brand">HERMES<br>AGENT</div><nav><div>Chat</div><div>Sessions</div><div>Files</div><div>Models</div><div>Logs</div><div>Skills</div><div>Plugins</div><div class="active">Daidala</div></nav></aside><main><header><h1>Daidala</h1><div class="views"><div class="view active">Workflows</div><div class="view">Artifacts</div><div class="view">Config</div></div></header><section class="workspace"><p class="eyebrow">Start workflow</p><h2>Define an approval-gated workflow</h2><p class="intro">Choose a ready workflow pack, a registered GitHub repository, and the workers who will carry each stage. The workflow identity is optional, but when supplied it must remain safe for durable artifacts.</p><section class="wizard"><h3>Workflow request</h3><div class="steps"><span class="step active">1 · Define</span><span class="step">2 · Preview</span><span class="step">3 · Confirm</span></div><div class="grid"><label class="field">Workflow pack<select><option>addyosmani · ready</option></select></label><label class="field">Registered repository<select><option>acme/payments · daidala-payments · demo-controller</option></select></label><label class="field">Requested outcome<input value="Improve payment retry observability"></label><label class="field">Workflow identity (optional)<input class="invalid" value="First Workflow" aria-invalid="true" aria-describedby="workflow-identity-error"><p id="workflow-identity-error" class="error" role="alert">Workflow identity must use 1-128 letters, digits, dots, underscores, or hyphens.</p></label></div><div class="actions"><button disabled>Check readiness</button><button disabled>Preview workflow start</button></div><p class="note">Correct the workflow identity before readiness or preview can run. After Check readiness, Preview stays available even when checks fail. Leaving it empty lets Daidala derive the identity.</p><aside><h3>Start readiness</h3><p>× worker-gateway-running</p><p>× assignee-stage-aligned</p><p class="error">Worker gateway is not running for demo-worker. Align the card assignee/stage profile and retry.</p></aside></section></section></main></div><div class="annotation">Static capability wireframe · synthetic data · no runtime authority</div></body></html>`;
 }
 
+function buildOperatorDashboardCardReadinessHtml(screen) {
+  const content = `<section class="workspace">
+  <p class="eyebrow">Workflow supervision / blocked dispatch</p>
+  <h2>worker-recovery-demo</h2>
+  <p class="intro">The workflow is waiting for its assigned Hermes worker gateway. Its ledger and card remain unchanged until the Ready card can dispatch.</p>
+  <section class="wizard">
+    <h3>Ready define card</h3>
+    <div role="alert" style="margin:14px 0;padding:13px 15px;border:1px solid var(--red);border-radius:6px;background:#351f1e;color:#ffd8d3">
+      <strong>Worker gateway stopped</strong><br>
+      Ready define card t_ready_01 is assigned to daidala-self-improvement, but its worker gateway is stopped. This workflow cannot dispatch the card.
+    </div>
+    <div class="grid">
+      <div class="field"><span style="display:block">Workflow</span><strong style="display:block;margin-top:4px">worker-recovery-demo</strong></div>
+      <div class="field"><span style="display:block">Card</span><strong style="display:block;margin-top:4px">define · t_ready_01</strong></div>
+      <div class="field"><span style="display:block">Assigned profile</span><strong style="display:block;margin-top:4px">daidala-self-improvement</strong></div>
+      <div class="field"><span style="display:block">Gateway state</span><strong style="display:block;margin-top:4px">stopped</strong></div>
+    </div>
+    <div class="actions"><button>Refresh</button><button>Open card audit</button></div>
+    <p class="note">Check it with <code>hermes -p daidala-self-improvement gateway status</code>, then start it with <code>hermes -p daidala-self-improvement gateway start</code>.</p>
+  </section>
+  <p class="note">The dashboard reports this condition but never starts a gateway or changes workflow state.</p>
+</section></main>`;
+  return buildOperatorDashboardValidationHtml(screen).replace(
+    /<section class="workspace">[\s\S]*<\/section><\/main>/,
+    content,
+  );
+}
+
 function buildCompletePackInstallationProgressHtml(screen) {
   const progressStyles = `
     .install-progress { display:flex; align-items:baseline; gap:10px; margin:0 0 16px; padding:12px; border:1px solid var(--green); border-radius:6px; background:#06372f; }
@@ -197,7 +225,7 @@ function buildRepositoryPolicyBootstrapHtml(screen) {
 }
 
 function buildHtml(screen) {
-  if (screen.capability === "CAP-0003") return buildOperatorDashboardValidationHtml(screen);
+  if (screen.capability === "CAP-0003") return buildOperatorDashboardCardReadinessHtml(screen);
   if (screen.capability === "CAP-0004") return buildRepositoryRegistrationHtml(screen);
   if (screen.capability === "CAP-0005") return buildReviewedBranchDeliveryHtml(screen);
   if (screen.capability === "CAP-0006") return buildRepositoryPolicyBootstrapHtml(screen);

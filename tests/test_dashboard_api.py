@@ -1525,8 +1525,74 @@ def test_dispatcher_readiness_skips_archived_only_workflow() -> None:
 
     assert result["assignee_mismatches"] == []
     assert result["blocked_profiles"] == []
+    assert result["gateway_blocked_cards"] == []
     assert probed == [["controller"]]
     assert "daidala-self-improvement" not in probed[0]
+
+
+def test_dispatcher_readiness_binds_non_running_gateway_to_ready_card() -> None:
+    from daidala.gateway import GatewayStatus
+    from daidala.kanban import KanbanCardStatus
+    from daidala.state import WorkflowStage
+
+    api = load_api()
+    ledger = types.SimpleNamespace(
+        workflow_id="gateway-stalled-workflow",
+        stage_profiles=(
+            types.SimpleNamespace(profile="demo-worker"),
+            types.SimpleNamespace(profile="review-worker"),
+        ),
+        profile_for=lambda stage: {
+            "define": "demo-worker",
+            "review": "review-worker",
+        }[stage.value],
+    )
+
+    class Service:
+        store = types.SimpleNamespace(list_all=lambda: (ledger,))
+
+        def combined_status(self, workflow_id: str) -> tuple[KanbanCardStatus, ...]:
+            assert workflow_id == ledger.workflow_id
+            return (
+                KanbanCardStatus(
+                    stage=WorkflowStage.DEFINE,
+                    task_id="t_ready",
+                    status="ready",
+                    assignee="demo-worker",
+                ),
+                KanbanCardStatus(
+                    stage=WorkflowStage.REVIEW,
+                    task_id="t_in_progress",
+                    status="in_progress",
+                    assignee="review-worker",
+                ),
+            )
+
+    probed: list[str] = []
+
+    def probe(profiles: list[str], _runner: object) -> tuple[GatewayStatus, ...]:
+        probed.extend(profiles)
+        return (
+            GatewayStatus(profile="demo-worker", status="stopped"),
+            GatewayStatus(profile="review-worker", status="unavailable"),
+        )
+
+    api.__dict__["service_factory"] = Service
+    api.__dict__["_valid_worker_profiles"] = lambda profiles: list(profiles)
+    api.__dict__["probe_profile_gateways"] = probe
+
+    result = api._dispatcher_readiness()
+
+    assert set(probed) == {"demo-worker", "review-worker"}
+    assert result["gateway_blocked_cards"] == [
+        {
+            "workflow_id": "gateway-stalled-workflow",
+            "task_id": "t_ready",
+            "stage": "define",
+            "profile": "demo-worker",
+            "gateway_status": "stopped",
+        }
+    ]
 
 
 def test_wizard_readiness_returns_informative_failed_checks() -> None:

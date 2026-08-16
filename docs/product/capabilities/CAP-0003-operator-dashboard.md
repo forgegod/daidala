@@ -37,8 +37,12 @@ An authenticated operator can inspect workflow state and evidence, perform bound
   repository `<profile>`. Start states that implication and that later stages
   fail if those workers cannot use the working directory. Start and Workflows
   readiness require each selected worker profile's Hermes gateway to be
-  running. They also refuse or name a live card whose assignee does not match
-  the workflow-bound stage profile. Manage packs,
+  running. Workflows keeps that one-shot global readiness fact and renders an
+  accessible error on the affected workflow card when a Ready card's assigned
+  gateway is stopped or unavailable. The error names the stage/card, profile,
+  gateway state, and status/start commands; it never starts a gateway or
+  changes workflow state. Start and Workflows also refuse or name a live card
+  whose assignee does not match the workflow-bound stage profile. Manage packs,
   Register GitHub Repository,
   and Manage sources preserve the browser draft while moving visual and keyboard
   focus to their exact Config destination. A nonempty optional workflow identity
