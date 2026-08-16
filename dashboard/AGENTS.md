@@ -134,6 +134,10 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   gateway to be running and refuse a live card whose assignee does not match
   the bound stage profile. Overview fetches `/dispatcher-readiness` once, not
   on the five-second poll. There is no dashboard control that starts a gateway.
+- Workflows hides a workflow from the default active-supervision list only when
+  every persisted card reference is present and `archived` in the live Kanban
+  snapshot. An explicit local filter reveals that terminal history; its detail
+  has an Archived label and never fabricates later pending stages or gates.
 - Start-workflow management links preserve the browser-local draft while opening
   their exact Config tab above it. After a routed tab renders, the Config section
   receives keyboard focus and scrolls to the viewport start so the navigation

@@ -314,9 +314,28 @@ class DashboardBackend:
 
         service = self.service
         ledgers = service.store.list_all()
+        workflows = []
+        for ledger in ledgers:
+            try:
+                snapshots = tuple(
+                    KanbanSnapshot(
+                        stage=row.stage,
+                        task_id=row.task_id,
+                        status=row.status,
+                        assignee=row.assignee,
+                    )
+                    for row in service.combined_status(ledger.workflow_id)
+                )
+            except Exception:  # noqa: BLE001 - host boundary
+                lifecycle_status = "unavailable"
+            else:
+                lifecycle_status = _workflow_lifecycle_status(ledger, snapshots)
+            workflows.append(
+                _workflow_summary(ledger, lifecycle_status=lifecycle_status)
+            )
         return {
             "snapshot": True,
-            "workflows": [_workflow_summary(row) for row in ledgers],
+            "workflows": workflows,
         }
 
     def workflow_view(self, workflow_id: str) -> dict[str, Any]:
@@ -340,6 +359,7 @@ class DashboardBackend:
             )
             for row in kanban_cards
         )
+        lifecycle_status = _workflow_lifecycle_status(ledger, snapshots)
         recommendations = derive_recommendations(ledger, snapshots)
         card_details: dict[str, dict[str, Any]] = {}
         if self._card_detail_provider is not None:
@@ -358,7 +378,9 @@ class DashboardBackend:
                     }
         return {
             "workflow_id": workflow_id,
-            "workflow": _workflow_summary(ledger),
+            "workflow": _workflow_summary(
+                ledger, lifecycle_status=lifecycle_status
+            ),
             "constraints": (
                 _constraint_view_to_dict(view)
                 if (view := self._read_current_constraint_view(ledger)) is not None
@@ -841,7 +863,9 @@ class DashboardBackend:
         return ConstraintView.from_artifact(reference, artifact)
 
 
-def _workflow_summary(ledger: WorkflowLedger) -> dict[str, Any]:
+def _workflow_summary(
+    ledger: WorkflowLedger, *, lifecycle_status: str = "active"
+) -> dict[str, Any]:
     authorization = ledger.delivery_authorization
     delivery = (
         {
@@ -869,6 +893,7 @@ def _workflow_summary(ledger: WorkflowLedger) -> dict[str, Any]:
         "delivery_authorization": delivery,
         "updated_at": ledger.updated_at.isoformat(),
         "created_at": ledger.created_at.isoformat(),
+        "lifecycle_status": lifecycle_status,
     }
 
 
@@ -896,10 +921,13 @@ def _workflow_timeline(
     ledger: WorkflowLedger, snapshots: tuple[KanbanSnapshot, ...]
 ) -> list[dict[str, Any]]:
     cards = {snapshot.stage: snapshot for snapshot in snapshots}
+    archived = _workflow_lifecycle_status(ledger, snapshots) == "archived"
     rows: list[dict[str, Any]] = []
     for stage in WorkflowStage:
         if stage is WorkflowStage.APPROVAL:
             approval = ledger.approval
+            if archived and approval is None:
+                continue
             rows.append(
                 {
                     "kind": "approval_gate",
@@ -917,6 +945,8 @@ def _workflow_timeline(
             continue
         snapshot = cards.get(stage)
         artifact = ledger.artifact_for(stage)
+        if archived and snapshot is None and artifact is None:
+            continue
         rows.append(
             {
                 "kind": "stage",
@@ -939,6 +969,8 @@ def _workflow_timeline(
         if stage is WorkflowStage.REVIEW:
             disposition = ledger.review_disposition
             review = ledger.review
+            if archived and disposition is None and review is None:
+                continue
             rows.append(
                 {
                     "kind": "review_gate",
@@ -962,7 +994,34 @@ def _workflow_timeline(
                     "disposition": disposition.to_dict() if disposition else None,
                 }
             )
+    if archived:
+        rows.append(
+            {
+                "kind": "workflow_terminal",
+                "stage": "archived",
+                "label": "Workflow archived",
+                "status": "archived",
+                "card_id": None,
+                "assignee": None,
+                "occurred_at": None,
+            }
+        )
     return rows
+
+
+def _workflow_lifecycle_status(
+    ledger: WorkflowLedger, snapshots: tuple[KanbanSnapshot, ...]
+) -> str:
+    """Classify the current read-model lifecycle without mutating the ledger."""
+
+    references = tuple(getattr(ledger, "card_references", ()))
+    if (
+        references
+        and len(snapshots) == len(references)
+        and all(snapshot.status == "archived" for snapshot in snapshots)
+    ):
+        return "archived"
+    return "active"
 
 
 def _approval_review_packet(

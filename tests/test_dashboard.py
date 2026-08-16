@@ -29,6 +29,7 @@ def _ledger(**overrides: object) -> WorkflowLedger:
         "plan_revision": 3,
         "current_constraints_revision": 4,
         "current_constraints_digest": "d" * 64,
+        "current_constraints": None,
         "pack_name": "addyosmani",
         "pack_source_revision": "pack-v1",
         "approval": None,
@@ -43,6 +44,8 @@ def _ledger(**overrides: object) -> WorkflowLedger:
         "plan_source_packet": None,
         "updated_at": datetime(2026, 8, 10, tzinfo=UTC),
         "created_at": datetime(2026, 8, 9, tzinfo=UTC),
+        "card_references": (),
+        "card_for": lambda _stage: None,
         "artifact_for": lambda _stage: None,
         "activation_for": lambda _stage: None,
     }
@@ -204,6 +207,52 @@ def test_timeline_inserts_distinct_non_kanban_approval_gate() -> None:
     }
     assert rows[plan_index + 2]["stage"] == "implement"
     assert rows[plan_index]["card_id"] == "t_plan"
+
+
+def test_fully_archived_workflow_projects_terminal_history_without_pending_stages() -> None:
+    ledger = _ledger(card_references=(object(), object()))
+    snapshots = (
+        KanbanSnapshot(
+            stage=WorkflowStage.DEFINE,
+            task_id="t_define",
+            status="archived",
+            assignee="author",
+        ),
+        KanbanSnapshot(
+            stage=WorkflowStage.PLAN,
+            task_id="t_plan",
+            status="archived",
+            assignee="planner",
+        ),
+    )
+
+    class Store:
+        def list_all(self) -> tuple[WorkflowLedger, ...]:
+            return (ledger,)
+
+    class Service:
+        store = Store()
+
+        def status(self, _workflow_id: str) -> WorkflowLedger:
+            return ledger
+
+        def combined_status(self, _workflow_id: str) -> tuple[KanbanSnapshot, ...]:
+            return snapshots
+
+    backend = DashboardBackend(service_factory=cast(Any, Service))
+
+    assert backend.list_workflows()["workflows"][0]["lifecycle_status"] == "archived"
+    detail = backend.workflow_view("workflow-1")
+    assert detail["workflow"]["lifecycle_status"] == "archived"
+    assert [
+        (row["kind"], row["stage"], row["status"])
+        for row in detail["timeline"]
+    ] == [
+        ("stage", "define", "archived"),
+        ("stage", "plan", "archived"),
+        ("workflow_terminal", "archived", "archived"),
+    ]
+    assert all(row["status"] != "pending" for row in detail["timeline"])
 
 
 def test_prerequisites_project_the_exact_runtime_constraint_template() -> None:

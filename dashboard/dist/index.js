@@ -1409,6 +1409,7 @@
     var policyRevision = summary.policy_revision;
     var planRevision = summary.plan_revision;
     var approval = summary.approval;
+    var archived = summary.lifecycle_status === "archived";
     var cards = detail && detail.kanban && Array.isArray(detail.kanban.cards)
       ? detail.kanban.cards
       : [];
@@ -1441,7 +1442,14 @@
           "p",
           { className: "daidala-workflow-meta" },
           summary.board_slug + " · " + summary.pack_name + " · policy " + policyRevision
-        )
+        ),
+        archived
+          ? createElement(
+              "p",
+              { className: "daidala-workflow-meta", "data-testid": "daidala-workflow-archived" },
+              "Archived workflow"
+            )
+          : null
       ),
       gatewayBlockedCards.map(function (blocker) {
         return createElement(
@@ -1479,16 +1487,18 @@
           createElement("dt", null, "plan revision"),
           createElement("dd", null, String(planRevision))
         ),
-        createElement(
-          "div",
-          null,
-          createElement("dt", null, "approval"),
-          createElement(
-            "dd",
-            null,
-            approval ? "recorded" : "pending"
-          )
-        ),
+        archived
+          ? null
+          : createElement(
+              "div",
+              null,
+              createElement("dt", null, "approval"),
+              createElement(
+                "dd",
+                null,
+                approval ? "recorded" : "pending"
+              )
+            ),
         summary.current_constraints_digest
           ? createElement(
               "div",
@@ -1502,7 +1512,13 @@
             )
           : null
       ),
-      decisions === undefined
+      archived
+        ? createElement(
+            "p",
+            { className: "daidala-workflow-empty" },
+            "Archived workflows have no pending human decision."
+          )
+        : decisions === undefined
         ? createElement(
             "p",
             { className: "daidala-workflow-loading" },
@@ -1533,18 +1549,22 @@
                   ? createElement("p", { className: "daidala-workflow-loading" }, "Loading approval evidence")
                   : createElement(WorkflowApproval, { packet: approvalReview, onApproved: onApproved })
               ),
-      reviewDecision === undefined
+      archived
+        ? null
+        : reviewDecision === undefined
         ? createElement("p", { className: "daidala-workflow-loading" }, "Loading review evidence")
         : createElement(WorkflowReviewDisposition, {
             packet: reviewDecision,
             onDecided: onReviewDecided
           }),
-      createElement(WorkflowDelivery, {
-        workflowId: summary.workflow_id,
-        packet: reviewDecision,
-        completed: summary.committed && summary.pushed ? summary.delivery_authorization : null,
-        onDelivered: onApproved
-      }),
+      archived
+        ? null
+        : createElement(WorkflowDelivery, {
+            workflowId: summary.workflow_id,
+            packet: reviewDecision,
+            completed: summary.committed && summary.pushed ? summary.delivery_authorization : null,
+            onDelivered: onApproved
+          }),
       createElement(
         "h4",
         { className: "daidala-workflow-section-title" },
@@ -4631,6 +4651,7 @@
     var _b = useState(initialRoute.workflowId), openWorkflowId = _b[0], setOpenWorkflowId = _b[1];
     var _c = useState(""), startNotice = _c[0], setStartNotice = _c[1];
     var _d = useState(initialRoute), route = _d[0], setRoute = _d[1];
+    var _e = useState(false), showArchived = _e[0], setShowArchived = _e[1];
     var returnedSourceState = useState(null), returnedSource = returnedSourceState[0], setReturnedSource = returnedSourceState[1];
 
     useEffect(function () {
@@ -4696,10 +4717,16 @@
     var workflows = Array.isArray(workflowsState.snapshot)
       ? workflowsState.snapshot
       : [];
+    var archivedWorkflows = workflows.filter(function (row) {
+      return row.lifecycle_status === "archived";
+    });
+    var visibleWorkflows = showArchived
+      ? workflows
+      : workflows.filter(function (row) { return row.lifecycle_status !== "archived"; });
     var listedWorkflows = openWorkflowId
-      ? workflows.filter(function (row) { return row.workflow_id !== openWorkflowId; })
-      : workflows;
-    var firstLoad = workflowsState.loading && workflows.length === 0;
+      ? visibleWorkflows.filter(function (row) { return row.workflow_id !== openWorkflowId; })
+      : visibleWorkflows;
+    var firstLoad = workflowsState.loading && visibleWorkflows.length === 0;
     var hostDown = workflowsState.snapshot === null;
     var healthDown = health.snapshot && health.snapshot.success === false;
     var blockedGateways = dispatcher && Array.isArray(dispatcher.blocked_profiles)
@@ -4745,8 +4772,10 @@
                 ? mismatchNext
                 : gatewayNext
                   ? gatewayNext
-                  : workflows.length === 0
-                    ? "No workflow is recorded for this profile. Configure prerequisites, then start a workflow when its request is ready."
+                  : visibleWorkflows.length === 0
+                    ? archivedWorkflows.length
+                      ? "No active workflow is recorded. Select Show archived workflows to inspect terminal history."
+                      : "No workflow is recorded for this profile. Configure prerequisites, then start a workflow when its request is ready."
                     : "Open a workflow to inspect its current evidence and deterministic next action before approving, revising, or reviewing it."
         };
 
@@ -4799,6 +4828,17 @@
           className: "daidala-refresh",
           onClick: function () { setStarting(true); }
         }, "Start workflow") : null,
+        route.view === "workflows" && archivedWorkflows.length
+          ? createElement("button", {
+              type: "button",
+              className: "daidala-refresh",
+              "aria-pressed": showArchived,
+              "data-testid": "daidala-archived-workflow-filter",
+              onClick: function () { setShowArchived(!showArchived); }
+            }, showArchived
+              ? "Hide archived workflows (" + archivedWorkflows.length + ")"
+              : "Show archived workflows (" + archivedWorkflows.length + ")")
+          : null,
         healthDown
           ? createElement(
               "p",
@@ -4872,14 +4912,16 @@
               },
               "Live Kanban state unavailable"
             )
-          : workflows.length === 0
+          : visibleWorkflows.length === 0
             ? createElement(
                 "p",
                 {
                   className: "daidala-state daidala-state-empty",
                   "data-testid": "daidala-no-workflows"
                 },
-                "No Daidala workflows"
+                archivedWorkflows.length
+                  ? "No active Daidala workflows. Show archived workflows to inspect terminal history."
+                  : "No Daidala workflows"
               )
             : createElement(
                 "section",

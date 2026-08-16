@@ -152,6 +152,22 @@ def test_bundle_exposes_manual_refresh() -> None:
     assert "expected_current_digest" in source
 
 
+def test_bundle_filters_archived_workflows_and_marks_terminal_history() -> None:
+    source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
+
+    required = (
+        'row.lifecycle_status === "archived"',
+        '"data-testid": "daidala-archived-workflow-filter"',
+        "Show archived workflows (",
+        "Hide archived workflows (",
+        "Archived workflow",
+        "Archived workflows have no pending human decision.",
+        "No active Daidala workflows. Show archived workflows to inspect terminal history.",
+    )
+    for text in required:
+        assert text in source, f"missing archived-workflow UI contract text: {text}"
+
+
 def test_bundle_exposes_schema_aware_constraint_authoring_and_source_selection() -> None:
     source = (DASHBOARD / "dist" / "index.js").read_text(encoding="utf-8")
 

@@ -99,6 +99,8 @@ function buildOperatorDashboardCardReadinessHtml(screen) {
   <p class="eyebrow">Workflow supervision / blocked dispatch</p>
   <h2>worker-recovery-demo</h2>
   <p class="intro">The workflow is waiting for its assigned Hermes worker gateway. Its ledger and card remain unchanged until the Ready card can dispatch.</p>
+  <div class="actions"><button>Show archived workflows (1)</button></div>
+  <p class="note">Archived workflows are excluded from active supervision. Select the filter to inspect terminal history without reopening a human gate.</p>
   <section class="wizard">
     <h3>Ready define card</h3>
     <div role="alert" style="margin:14px 0;padding:13px 15px;border:1px solid var(--red);border-radius:6px;background:#351f1e;color:#ffd8d3">

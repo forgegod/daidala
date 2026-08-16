@@ -9,7 +9,7 @@ An authenticated operator can inspect workflow state and evidence, perform bound
 
 ## Behavior
 
-- Workflows is the default view and presents awaiting-attention work, recent terminal outcomes, exact workflow detail, live Kanban snapshots, and finite source-bound recommendations.
+- Workflows is the default view and presents awaiting-attention work, recent terminal outcomes, exact workflow detail, live Kanban snapshots, and finite source-bound recommendations. It hides a workflow whose every persisted card reference is live and `archived` until the operator selects **Show archived workflows**; an archived detail preserves its recorded card history and one terminal marker without inventing pending gates or later stages.
 - Each primary view explains its operational purpose and the next missing or
   unavailable condition: workflow supervision, ledger-bound artifact evidence,
   or configuration readiness. Workflows can explicitly request one advisory
