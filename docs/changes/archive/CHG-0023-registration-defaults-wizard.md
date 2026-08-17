@@ -1,6 +1,6 @@
 # CHG-0023: Registration defaults wizard and checker
 
-**Status:** in-progress
+**Status:** done
 **Source request:** Direct operator request: "(1) Do we have a documentation where this details together with an example as explained here? If not do it, but do not reference to a specific repository like durchsieben.de in the expleneation. Keep it general purpose. (2) Because it's hard to remember and the users are not experts, I would like to have a wizzard with this example that helps the user to create, save and edit the file. There should also be a validator checker for this file. This can be prepared with the phased-plan-design skill if you want"
 **Affected capabilities:** CAP-0004
 **Created:** 2026-08-17
@@ -30,7 +30,7 @@ Mark a phase `in-progress` while running it, `done` once its gate passes
 | 0. Operator example | done | `python scripts/check_md_links.py .` and `python scripts/check_records.py .` pass after the runbook example exists |
 | 1. CLI validate / preview / apply | done | `.venv/bin/python -m pytest tests/test_repository_registration.py tests/test_cli.py -q` exited 0 (93 tests); `ruff check` on the changed Python files passed |
 | 2. Config wizard | done | `.venv/bin/python -m pytest tests/test_dashboard_api.py tests/test_dashboard_assets.py -q` exited 0; CAP-0004 and dashboard AGENTS describe the wizard |
-| 3. Closeout | pending | `python scripts/check_records.py . && python scripts/check_md_links.py . && lefthook validate && .venv/bin/python -m pytest && ruff check .` |
+| 3. Closeout | done | `python scripts/check_records.py . && python scripts/check_md_links.py . && lefthook validate && .venv/bin/python -m pytest && ruff check .` exited 0 |
 
 ## Phase 0 — Operator example
 
@@ -101,3 +101,4 @@ the shipped wizard.
 - Phase 0: operator example added to `docs/07-runbook.md`.
 - Phase 1: `daidala project defaults` preview/apply plus seed-from-one-registration; 93 focused tests passed.
 - Phase 2: Config wizard reuses the same service; dashboard API/asset tests passed.
+- Phase 3: full closeout gate passed (records, markdown links, lefthook, pytest, ruff).

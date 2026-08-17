@@ -152,8 +152,8 @@ Dry-run prints a path-free validity report and digest. Apply writes mode `0600`
 `$HERMES_HOME/repository-registration-defaults.yaml`. `--seed` copies aliases,
 destination, evaluator, and limits from the profile's single existing
 registration; it does not invent missing values. A missing or invalid file still
-blocks `project register`. The dashboard wizard is tracked in
-[CHG-0023](changes/active/CHG-0023-registration-defaults-wizard.md).
+blocks `project register`. The dashboard wizard shipped in
+[CHG-0023](changes/archive/CHG-0023-registration-defaults-wizard.md).
 
 ## Diagnose prerequisites
 

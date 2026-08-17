@@ -83,6 +83,6 @@ and saved through the CLI or Config wizard.
 - [CHG-0015](../../changes/archive/CHG-0015-all-profile-repository-inventory.md)
 - [CHG-0017](../../changes/archive/CHG-0017-start-repository-wording-and-inventory.md)
 - [CHG-0022](../../changes/active/CHG-0022-apply-default-policy-inspect-control.md)
-- [CHG-0023](../../changes/active/CHG-0023-registration-defaults-wizard.md)
+- [CHG-0023](../../changes/archive/CHG-0023-registration-defaults-wizard.md)
 - [HTML wireframe](../wireframes/html/CAP-0004-github-repository-registration.html)
 - [PNG wireframe](../wireframes/exports/CAP-0004-github-repository-registration.png)
