@@ -17,6 +17,9 @@ from daidala.profile_files import ProfileFileError
 from daidala.registrations import parse_controller_registration
 from daidala.repository_registration import (
     DELIVERY_CREDENTIAL_ALIAS,
+    REGISTRATION_DEFAULTS_FILENAME,
+    WRITE_DEFAULTS_CONFIRMATION,
+    RegistrationDefaultsService,
     RepositoryRegistrationError,
     RepositoryRegistrationService,
     parse_github_repository_url,
@@ -425,3 +428,133 @@ def test_profile_root_resolves_only_from_hermes_profile_show(tmp_path: Path) -> 
 
     assert resolve_profile_root("controller", run) == root
     assert commands == [("hermes", "profile", "show", "controller")]
+
+
+def _write_registration_pair(root: Path, project_id: str = "example-site") -> None:
+    project_root = root / "projects" / project_id
+    project_root.mkdir(parents=True)
+    registration = {
+        "schema": "daidala.controller-registration/v2",
+        "project_id": project_id,
+        "checkout": "/tmp/example-checkout",
+        "controller_profile": "controller",
+        "board": "daidala-example-site",
+        "repository_identity": {
+            "canonical": "example-org/example-site",
+            "verified_remote": "git@github.com:example-org/example-site.git",
+        },
+        "credentials": {
+            "intake": "github-read-issues",
+            "findings": "github-write-issues",
+        },
+        "approval": {"maintainers": ["example-operator"]},
+        "notifications": {
+            "adapter": "hermes-gateway",
+            "target": "attended-example",
+            "destination": "telegram:-1000000000000:1",
+        },
+        "evaluator": {
+            "backend": "restricted-container",
+            "network": "denied-by-default",
+        },
+        "limits": {
+            "active_cycles": 1,
+            "goal_turns": 12,
+            "delegated_workers": 3,
+            "research_query_batches": 3,
+            "extracted_sources": 3,
+            "wall_clock_seconds": 3600,
+        },
+    }
+    bindings = {
+        "schema": "daidala.credential-bindings/v1",
+        "project_id": project_id,
+        "bindings": [
+            {
+                "alias": "github-read-issues",
+                "resolver": "environment",
+                "environment_variable": "EXAMPLE_GITHUB_INTAKE_TOKEN",
+            },
+            {
+                "alias": "github-write-issues",
+                "resolver": "environment",
+                "environment_variable": "EXAMPLE_GITHUB_FINDINGS_TOKEN",
+            },
+        ],
+    }
+    for name, payload in (
+        ("registration.yaml", registration),
+        ("credential-bindings.yaml", bindings),
+    ):
+        path = project_root / name
+        path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+        path.chmod(0o600)
+
+
+def test_defaults_preview_reports_missing_file(tmp_path: Path) -> None:
+    root = (tmp_path / "controller").resolve()
+    root.mkdir()
+    preview = RegistrationDefaultsService(root, "controller").preview()
+
+    assert preview.valid is False
+    assert preview.source == "missing"
+    assert "not configured" in preview.reason
+    assert preview.seed_available is False
+    assert "checkout" not in json.dumps(preview.to_dict())
+
+
+def test_defaults_preview_and_apply_from_source_text(tmp_path: Path) -> None:
+    root = (tmp_path / "controller").resolve()
+    root.mkdir()
+    content = yaml.safe_dump(defaults_payload(), sort_keys=False)
+    service = RegistrationDefaultsService(root, "controller")
+    preview = service.preview(source_text=content)
+
+    assert preview.valid is True
+    assert preview.source == "input"
+    assert preview.defaults is not None
+    path = root / REGISTRATION_DEFAULTS_FILENAME
+    assert not path.exists()
+
+    applied = service.apply(
+        expected_preview_digest=preview.digest,
+        confirmation=WRITE_DEFAULTS_CONFIRMATION,
+        source_text=content,
+    )
+    assert applied.digest == preview.digest
+    assert path.is_file()
+    assert stat.S_IMODE(path.stat().st_mode) == 0o600
+    loaded = parse_registration_defaults(path.read_text(encoding="utf-8"))
+    assert loaded.intake_binding.alias == "github-daidala-read-issues"
+
+
+def test_defaults_seed_from_one_registration(tmp_path: Path) -> None:
+    root = (tmp_path / "controller").resolve()
+    root.mkdir()
+    _write_registration_pair(root)
+    service = RegistrationDefaultsService(root, "controller")
+    preview = service.preview(seed=True)
+
+    assert preview.valid is True
+    assert preview.source == "seed"
+    assert preview.seed_project_id == "example-site"
+    assert preview.defaults is not None
+    assert preview.defaults.intake_binding.environment_variable == (
+        "EXAMPLE_GITHUB_INTAKE_TOKEN"
+    )
+    service.apply(
+        expected_preview_digest=preview.digest,
+        confirmation=WRITE_DEFAULTS_CONFIRMATION,
+        seed=True,
+    )
+    existing = service.preview()
+    assert existing.valid is True
+    assert existing.source == "existing"
+
+
+def test_defaults_seed_requires_exactly_one_registration(tmp_path: Path) -> None:
+    root = (tmp_path / "controller").resolve()
+    root.mkdir()
+    preview = RegistrationDefaultsService(root, "controller").preview(seed=True)
+    assert preview.valid is False
+    assert "exactly one" in preview.reason

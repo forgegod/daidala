@@ -16,7 +16,12 @@ from urllib.parse import urlsplit
 import yaml
 
 from .checkout_root import CheckoutRootStore, checkout_path
-from .credentials import CredentialBinding, CredentialBindings, credential_bindings_path
+from .credentials import (
+    CredentialBinding,
+    CredentialBindings,
+    credential_bindings_path,
+    parse_credential_bindings,
+)
 from .errors import PolicyViolationError
 from .live_adapters import RuntimeRunner, run_runtime_command, safe_runtime_environment
 from .profile_files import (
@@ -51,6 +56,8 @@ DELIVERY_ENVIRONMENT_VARIABLE = "DAIDALA_GITHUB_DELIVERY_TOKEN"
 MAX_REGISTRATION_DEFAULTS_BYTES = 32_768
 MAX_GITHUB_OUTPUT_BYTES = 1_048_576
 _CONFIRMATION = "register-repository"
+WRITE_DEFAULTS_CONFIRMATION = "write-registration-defaults"
+DEFAULTS_PREVIEW_SCHEMA = "daidala.registration-defaults-preview/v1"
 CLASSIFICATION_NEEDS_BOOTSTRAP = "needs-bootstrap"
 CLASSIFICATION_REGISTERABLE = "registerable"
 CLASSIFICATION_ALREADY_REGISTERED = "already-registered"
@@ -758,6 +765,248 @@ def load_registration_defaults(data_root: Path) -> RegistrationDefaults:
     except ProfileFileError as error:
         raise RepositoryRegistrationError(str(error)) from error
     return parse_registration_defaults(content)
+
+
+@dataclass(frozen=True)
+class DefaultsPreview:
+    """Path-free preview of profile-local registration defaults."""
+
+    controller_profile: str
+    source: str
+    valid: bool
+    reason: str
+    defaults: RegistrationDefaults | None
+    seed_available: bool
+    seed_project_id: str | None
+    schema: str = DEFAULTS_PREVIEW_SCHEMA
+
+    def to_dict(self) -> dict[str, object]:
+        payload: dict[str, object] = {
+            "schema": self.schema,
+            "controller_profile": self.controller_profile,
+            "source": self.source,
+            "valid": self.valid,
+            "reason": self.reason,
+            "seed_available": self.seed_available,
+            "seed_project_id": self.seed_project_id,
+            "file": REGISTRATION_DEFAULTS_FILENAME,
+            "writes": {"defaults": self.valid, "mode": "0600"},
+        }
+        if self.defaults is not None:
+            payload["defaults"] = self.defaults.to_dict()
+        payload["digest"] = self.digest
+        return payload
+
+    @property
+    def digest(self) -> str:
+        canonical = {
+            "schema": self.schema,
+            "controller_profile": self.controller_profile,
+            "source": self.source,
+            "valid": self.valid,
+            "reason": self.reason,
+            "defaults": None if self.defaults is None else self.defaults.to_dict(),
+            "seed_available": self.seed_available,
+            "seed_project_id": self.seed_project_id,
+        }
+        encoded = json.dumps(
+            canonical, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        )
+        return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+class RegistrationDefaultsService:
+    """Preview-confirm create, validate, and replace of registration defaults."""
+
+    def __init__(self, data_root: Path, controller_profile: str) -> None:
+        if not isinstance(data_root, Path) or not data_root.is_absolute():
+            raise RepositoryRegistrationError("defaults data root must be an absolute path")
+        _require_slug(controller_profile, "controller profile")
+        self.data_root = data_root
+        self.controller_profile = controller_profile
+
+    def preview(
+        self,
+        *,
+        seed: bool = False,
+        source_text: str | None = None,
+    ) -> DefaultsPreview:
+        if seed and source_text is not None:
+            raise RepositoryRegistrationError(
+                "defaults seed and source text are mutually exclusive"
+            )
+        registrations = list_controller_registrations(self.data_root)
+        seedable = len(registrations) == 1
+        seed_project_id = registrations[0].project_id if seedable else None
+        if source_text is not None:
+            return self._from_text(
+                source_text,
+                source="input",
+                seed_available=seedable,
+                seed_project_id=seed_project_id,
+            )
+        if seed:
+            if not seedable:
+                return DefaultsPreview(
+                    controller_profile=self.controller_profile,
+                    source="seed",
+                    valid=False,
+                    reason=(
+                        "seed requires exactly one existing registration on this profile"
+                    ),
+                    defaults=None,
+                    seed_available=False,
+                    seed_project_id=None,
+                )
+            try:
+                defaults = self._defaults_from_registration(registrations[0])
+            except (RepositoryRegistrationError, PolicyViolationError, ProfileFileError) as error:
+                return DefaultsPreview(
+                    controller_profile=self.controller_profile,
+                    source="seed",
+                    valid=False,
+                    reason=str(error),
+                    defaults=None,
+                    seed_available=True,
+                    seed_project_id=seed_project_id,
+                )
+            return DefaultsPreview(
+                controller_profile=self.controller_profile,
+                source="seed",
+                valid=True,
+                reason="seeded from the existing registration",
+                defaults=defaults,
+                seed_available=True,
+                seed_project_id=seed_project_id,
+            )
+        path = self.data_root / REGISTRATION_DEFAULTS_FILENAME
+        try:
+            content = read_private_text(
+                path,
+                maximum_bytes=MAX_REGISTRATION_DEFAULTS_BYTES,
+                label="repository registration defaults",
+            )
+        except FileNotFoundError:
+            return DefaultsPreview(
+                controller_profile=self.controller_profile,
+                source="missing",
+                valid=False,
+                reason="repository registration defaults are not configured for this profile",
+                defaults=None,
+                seed_available=seedable,
+                seed_project_id=seed_project_id,
+            )
+        except ProfileFileError as error:
+            return DefaultsPreview(
+                controller_profile=self.controller_profile,
+                source="existing",
+                valid=False,
+                reason=str(error),
+                defaults=None,
+                seed_available=seedable,
+                seed_project_id=seed_project_id,
+            )
+        return self._from_text(
+            content,
+            source="existing",
+            seed_available=seedable,
+            seed_project_id=seed_project_id,
+        )
+
+    def apply(
+        self,
+        *,
+        expected_preview_digest: str,
+        confirmation: str,
+        seed: bool = False,
+        source_text: str | None = None,
+    ) -> DefaultsPreview:
+        if confirmation != WRITE_DEFAULTS_CONFIRMATION:
+            raise RepositoryRegistrationError(
+                f"defaults apply requires literal confirmation {WRITE_DEFAULTS_CONFIRMATION!r}"
+            )
+        preview = self.preview(seed=seed, source_text=source_text)
+        if expected_preview_digest != preview.digest:
+            raise RepositoryRegistrationError("registration defaults preview is stale")
+        if not preview.valid or preview.defaults is None:
+            raise RepositoryRegistrationError(preview.reason)
+        content = yaml.safe_dump(
+            preview.defaults.to_dict(),
+            allow_unicode=True,
+            default_flow_style=False,
+            sort_keys=False,
+        )
+        try:
+            atomic_write_private_text(
+                self.data_root / REGISTRATION_DEFAULTS_FILENAME,
+                content,
+                label="repository registration defaults",
+            )
+        except ProfileFileError as error:
+            raise RepositoryRegistrationError(str(error)) from error
+        return preview
+
+    def _from_text(
+        self,
+        content: str,
+        *,
+        source: str,
+        seed_available: bool,
+        seed_project_id: str | None,
+    ) -> DefaultsPreview:
+        try:
+            defaults = parse_registration_defaults(content)
+        except (RepositoryRegistrationError, PolicyViolationError) as error:
+            return DefaultsPreview(
+                controller_profile=self.controller_profile,
+                source=source,
+                valid=False,
+                reason=str(error),
+                defaults=None,
+                seed_available=seed_available,
+                seed_project_id=seed_project_id,
+            )
+        return DefaultsPreview(
+            controller_profile=self.controller_profile,
+            source=source,
+            valid=True,
+            reason="registration defaults are valid",
+            defaults=defaults,
+            seed_available=seed_available,
+            seed_project_id=seed_project_id,
+        )
+
+    def _defaults_from_registration(
+        self, registration: ControllerRegistration
+    ) -> RegistrationDefaults:
+        bindings_file = credential_bindings_path(
+            registration_path(self.data_root, registration.project_id)
+        )
+        try:
+            bindings = parse_credential_bindings(
+                read_private_text(
+                    bindings_file,
+                    maximum_bytes=16_384,
+                    label="credential bindings",
+                )
+            )
+        except FileNotFoundError as error:
+            raise RepositoryRegistrationError(
+                "existing registration has no credential bindings"
+            ) from error
+        intake = bindings.binding_for(registration.intake_credential)
+        findings = bindings.binding_for(registration.findings_credential)
+        return RegistrationDefaults(
+            intake_binding=intake,
+            findings_binding=findings,
+            maintainers=registration.maintainers,
+            notification_adapter=registration.notification_adapter,
+            notification_target=registration.notification_target,
+            notification_destination=registration.notification_destination,
+            evaluator_backend=registration.evaluator_backend,
+            evaluator_network=registration.evaluator_network,
+            limits=registration.limits,
+        )
 
 
 def parse_github_repository_url(value: str) -> str:

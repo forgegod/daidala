@@ -45,8 +45,9 @@ credential alias, environment-variable name, or token to Daidala.
   aliases and secret-source details remain internal to the profile-local
   registration and binding records.
 - Registration requires profile-local
-  `repository-registration-defaults.yaml`. Operators write that file by hand
-  today; the example and field rules live in
+  `repository-registration-defaults.yaml`. Operators preview, seed, validate,
+  and write that file with `daidala project defaults`; the example and field
+  rules live in
   [Configure registration defaults](../../07-runbook.md#configure-registration-defaults).
   Registration never accepts or stores a token, creates a GitHub Project,
   creates a checkout, commits, pushes, publishes, or grants delivery authority.
@@ -62,8 +63,8 @@ credential alias, environment-variable name, or token to Daidala.
 
 ### Tests
 
-- [`tests/test_repository_registration.py`](../../../tests/test_repository_registration.py) — deterministic registration core and fail-closed policy tests.
-- [`tests/test_cli.py`](../../../tests/test_cli.py) — native/standalone registration preview/apply parity.
+- [`tests/test_repository_registration.py`](../../../tests/test_repository_registration.py) — deterministic registration core, defaults preview/apply, and fail-closed policy tests.
+- [`tests/test_cli.py`](../../../tests/test_cli.py) — native/standalone registration and defaults preview/apply parity.
 - [`tests/test_dashboard_api.py`](../../../tests/test_dashboard_api.py) — exact dashboard payload and confirmation boundary.
 - [`tests/test_dashboard_assets.py`](../../../tests/test_dashboard_assets.py) — path-free browser surface contract.
 

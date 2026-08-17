@@ -17,7 +17,8 @@ completeness without touching a real Hermes profile.
   stable issue ordering, no-candidate convergence, bounded claim recovery,
   immutable tick replay, and fail-closed inventory or notification errors.
 - Shared CLI tests prove standalone/native artifact, Git-pinned plan admission,
-  reconciliation, and attended-review parity, dry-run default behavior, exact
+  reconciliation, attended-review parity, repository-registration-defaults
+  preview/apply, dry-run default behavior, exact
   preview-digest apply gates, bounded direct rationale input and output, and
   nonzero stale or missing-identity exits without live profile mutation.
 - Artifact/archive tests prove exact-ID archive lookup, active/archive byte

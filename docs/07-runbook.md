@@ -137,9 +137,21 @@ After the file exists, inspect again. A repository that already has committed
 lacks that file is classified `needs-bootstrap` and does not require this
 defaults file until you register.
 
-There is no dashboard editor or dedicated CLI validator yet. A missing or
-invalid file blocks registration with a stable reason. The planned editor and
-checker are tracked in
+There is no dashboard editor yet. Validate or write the file from the CLI:
+
+```bash
+daidala project defaults --profile controller
+daidala project defaults --profile controller --seed
+daidala project defaults --profile controller --from-file ./repository-registration-defaults.yaml
+daidala project defaults --profile controller --from-file ./repository-registration-defaults.yaml \
+  --apply --expected-preview-digest <preview-digest> --confirm write-registration-defaults
+```
+
+Dry-run prints a path-free validity report and digest. Apply writes mode `0600`
+`$HERMES_HOME/repository-registration-defaults.yaml`. `--seed` copies aliases,
+destination, evaluator, and limits from the profile's single existing
+registration; it does not invent missing values. A missing or invalid file still
+blocks `project register`. The dashboard wizard is tracked in
 [CHG-0023](changes/active/CHG-0023-registration-defaults-wizard.md).
 
 ## Diagnose prerequisites

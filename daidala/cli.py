@@ -26,6 +26,10 @@ from .project_cycles import ProjectCycleOperator
 from .reconciliation import ReconciliationPreview, ReconciliationResult
 from .repository_bootstrap import RepositoryBootstrapService
 from .repository_registration import (
+    MAX_REGISTRATION_DEFAULTS_BYTES,
+    WRITE_DEFAULTS_CONFIRMATION,
+    RegistrationDefaultsService,
+    RepositoryRegistrationError,
     RepositoryRegistrationService,
     resolve_profile_root,
 )
@@ -217,6 +221,29 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     project_bootstrap.add_argument(
         "--confirm",
         help="Literal confirmation token required by --apply: bootstrap-repository",
+    )
+    project_defaults = project_sub.add_parser(
+        "defaults",
+        help="Preview, validate, or write profile-local registration defaults",
+    )
+    project_defaults.add_argument(
+        "--profile", required=True, help="Existing Hermes controller profile"
+    )
+    project_defaults.add_argument(
+        "--seed",
+        action="store_true",
+        help="Seed from the profile's single existing registration",
+    )
+    project_defaults.add_argument(
+        "--from-file",
+        type=Path,
+        help="Validate or apply one operator-authored defaults file",
+    )
+    project_defaults.add_argument("--apply", action="store_true")
+    project_defaults.add_argument("--expected-preview-digest")
+    project_defaults.add_argument(
+        "--confirm",
+        help="Literal confirmation token required by --apply: write-registration-defaults",
     )
 
     start = sub.add_parser("start", help="Validate inputs and create the initial Kanban graph")
@@ -859,6 +886,8 @@ def _run_project_command(
         return _run_project_registration(args, registration_factory, command_runner)
     if args.project_command == "bootstrap":
         return _run_project_bootstrap(args, bootstrap_factory, command_runner)
+    if args.project_command == "defaults":
+        return _run_project_defaults(args, command_runner)
     raise ValueError(f"unsupported project command: {args.project_command}")
 
 
@@ -954,6 +983,75 @@ def _run_project_bootstrap(
         }
     )
     return 0
+
+
+def _run_project_defaults(args: argparse.Namespace, command_runner: CommandRunner) -> int:
+    """Expose registration-defaults check and write through preview-confirm."""
+
+    if args.seed and args.from_file is not None:
+        raise ValueError("--seed and --from-file are mutually exclusive")
+    if args.apply and args.expected_preview_digest is None:
+        raise ValueError("--apply requires --expected-preview-digest")
+    if not args.apply and (
+        args.expected_preview_digest is not None or args.confirm is not None
+    ):
+        raise ValueError("--expected-preview-digest and --confirm require --apply")
+    if args.apply and args.confirm is None:
+        raise ValueError(
+            f"--apply requires --confirm {WRITE_DEFAULTS_CONFIRMATION}"
+        )
+    source_text: str | None = None
+    if args.from_file is not None:
+        source_text = _read_defaults_source(args.from_file)
+    root = resolve_profile_root(args.profile, command_runner)
+    service = RegistrationDefaultsService(root, args.profile)
+    if args.apply:
+        assert isinstance(args.expected_preview_digest, str)
+        assert isinstance(args.confirm, str)
+        preview = service.apply(
+            expected_preview_digest=args.expected_preview_digest,
+            confirmation=args.confirm,
+            seed=args.seed,
+            source_text=source_text,
+        )
+        _print(
+            {
+                "success": True,
+                "operation": "project-defaults",
+                "dry_run": False,
+                "preview": preview.to_dict(),
+            }
+        )
+        return 0
+    preview = service.preview(seed=args.seed, source_text=source_text)
+    payload = {
+        "success": preview.valid,
+        "operation": "project-defaults",
+        "dry_run": True,
+        "preview": preview.to_dict(),
+    }
+    if not preview.valid:
+        payload["error"] = "RepositoryRegistrationError"
+        payload["message"] = preview.reason
+    _print(payload)
+    return 0 if preview.valid else 1
+
+
+def _read_defaults_source(path: Path) -> str:
+    """Read one operator-authored defaults file without echoing its path."""
+
+    try:
+        data = path.read_bytes()
+    except OSError as error:
+        raise RepositoryRegistrationError(
+            "defaults source file is unavailable"
+        ) from error
+    if len(data) > MAX_REGISTRATION_DEFAULTS_BYTES:
+        raise RepositoryRegistrationError("defaults source file exceeds the size bound")
+    try:
+        return data.decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise RepositoryRegistrationError("defaults source file is not UTF-8") from error
 
 
 def _reconciliation_output(

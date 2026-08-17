@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import pytest
+import yaml
 
 from daidala import cli
 from daidala.adapters import NotificationReceipt
@@ -23,6 +24,7 @@ from daidala.restricted_container import (
     RestrictedContainerEvidence,
     RestrictedContainerRequest,
 )
+from tests.test_repository_registration import defaults_payload
 
 PROFILE_ARGS = [
     "--default-profile",
@@ -832,6 +834,58 @@ def test_project_register_preview_and_apply_have_native_cli_parity(
         "dry_run": False,
         "preview": standalone.preview_result.to_dict(),
     }
+
+
+def test_project_defaults_preview_and_apply_have_native_cli_parity(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    root = (tmp_path / "controller").resolve()
+    root.mkdir()
+    source = tmp_path / "defaults.yaml"
+    source.write_text(yaml.safe_dump(defaults_payload(), sort_keys=False), encoding="utf-8")
+    argv = [
+        "project",
+        "defaults",
+        "--profile",
+        "controller",
+        "--from-file",
+        str(source),
+    ]
+
+    def runner(_command: tuple[str, ...]) -> tuple[int, str]:
+        return 0, f"Path: {root}"
+
+    standalone_code = cli.main(argv, command_runner=runner)
+    standalone_payload = json.loads(capsys.readouterr().out)
+    native_code = cli.run_command(_host_args(argv), command_runner=runner)
+    native_payload = json.loads(capsys.readouterr().out)
+
+    assert standalone_code == native_code == 0
+    assert standalone_payload == native_payload
+    assert standalone_payload["operation"] == "project-defaults"
+    assert standalone_payload["dry_run"] is True
+    assert standalone_payload["preview"]["valid"] is True
+    assert standalone_payload["preview"]["source"] == "input"
+    assert str(source) not in json.dumps(standalone_payload)
+    digest = standalone_payload["preview"]["digest"]
+
+    applied_code = cli.main(
+        [
+            *argv,
+            "--apply",
+            "--expected-preview-digest",
+            digest,
+            "--confirm",
+            "write-registration-defaults",
+        ],
+        command_runner=runner,
+    )
+    applied_payload = json.loads(capsys.readouterr().out)
+    written = root / "repository-registration-defaults.yaml"
+    assert applied_code == 0
+    assert applied_payload["dry_run"] is False
+    assert written.is_file()
+    assert written.stat().st_mode & 0o777 == 0o600
 
 
 def test_artifact_list_human_output_contains_metadata_only(capsys) -> None:
