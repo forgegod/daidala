@@ -56,6 +56,28 @@ GitHub Repositories**: every Hermes profile is listed with its registered
 repository, slug, board state, and GitHub Project link state. Inspect the
 preview, confirm the named board bind/create action, then register.
 
+### Project ID and GitHub Project
+
+`project_id` is Daidala's stable identifier for the repository. It is a
+lowercase slug declared in the repository's committed `.daidala/project.yaml`,
+not a GitHub Project. Daidala uses it to identify the registration and name its
+profile-local records under `$HERMES_HOME/projects/<project-id>/`.
+
+For a repository that already has `.daidala/project.yaml`, the maintainer who
+authored that committed policy chose the ID. For a repository classified as
+`needs-bootstrap`, Daidala derives the ID from the canonical GitHub
+`owner/repository` name during the bootstrap preview: it lowercases the name,
+changes periods and underscores to hyphens, and collapses repeated hyphens. A
+confirmed bootstrap writes the derived ID only on the bootstrap branch; it
+becomes active only after a maintainer reviews and merges the pull request. A
+maintainer who writes the manifest manually must choose a valid slug instead.
+
+Treat the committed ID as a stable primary identifier, not a routine setting.
+After registration, do not change it: Daidala provides no supported ID-migration
+command or dashboard control. A GitHub Project is separate and optional.
+Registration neither requires nor creates one; a separately configured GitHub
+Project link is presentation/intake metadata, not the repository identity.
+
 ### Bootstrap policy for a non-Daidala repository
 
 If inspect classifies the repository as `needs-bootstrap` (no committed

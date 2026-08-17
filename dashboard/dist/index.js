@@ -3104,7 +3104,19 @@
         },
           createElement("h3", null, "Registration defaults"),
           createElement("p", { className: "daidala-workflow-meta" },
-            "These values become the profile defaults copied onto every new repository registration. Enter aliases and environment-variable names only. Token values stay in the process environment."
+            "These values are profile defaults saved in $HERMES_HOME/repository-registration-defaults.yaml (normally ~/.hermes/profiles/<profile>/repository-registration-defaults.yaml). Reopen this profile's Edit registration defaults form to change them later."
+          ),
+          createElement("p", { className: "daidala-workflow-meta" },
+            "Every new repository registration receives a one-time copy in $HERMES_HOME/projects/<project-id>/registration.yaml and $HERMES_HOME/projects/<project-id>/credential-bindings.yaml; changing the defaults does not update an existing registration. Here, <project-id> is Daidala's stable repository identifier declared in the repository's committed .daidala/project.yaml; it is not a GitHub Project."
+          ),
+          createElement("p", { className: "daidala-workflow-meta" },
+            "For a repository without that policy, Daidala derives the project ID from its GitHub owner and repository name during the Apply default policy preview, then writes it only to the confirmed bootstrap branch. It becomes effective after a maintainer reviews and merges that pull request. When a maintainer authors .daidala/project.yaml manually, they choose a valid project ID instead. Treat the committed ID as stable: it is not a routine setting to maintain, and changing it after registration has no supported migration path."
+          ),
+          createElement("p", { className: "daidala-workflow-meta" },
+            "A GitHub Project is optional: registration neither requires nor creates one, and a separately configured link is only presentation/intake metadata. Registration-specific values are immutable, so there is no per-repository edit control."
+          ),
+          createElement("p", { className: "daidala-workflow-meta" },
+            "Enter aliases and environment-variable names only. Token values are read from the selected Hermes profile's process environment; define them in the file reported by hermes -p <profile> config env-path (normally ~/.hermes/profiles/<profile>/.env) and restart the relevant Hermes process after changing that file."
           ),
           renderDefaultsGroup("GitHub credentials", [
             "credentials.intake.alias",
