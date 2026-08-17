@@ -347,6 +347,12 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
         "Bootstrap preview",
         'API_BASE + "/repository-registration/bootstrap/preview"',
         'API_BASE + "/repository-registration/bootstrap"',
+        'API_BASE + "/repository-registration/defaults/preview"',
+        'API_BASE + "/repository-registration/defaults"',
+        "Configure registration defaults",
+        "Check defaults",
+        "Save registration defaults",
+        "I confirm writing these registration defaults",
         "Open bootstrap branch",
         "Open .daidala on bootstrap branch",
         "Open a pull request",
@@ -361,6 +367,7 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
     assert '}, "GitHub Projects"),' in configuration_panel
     assert 'data-testid": "daidala-repository-registration"' in source
     assert 'data-testid": "daidala-repository-profile"' in source
+    assert 'data-testid": "daidala-registration-defaults"' in source
     assert "Selected Hermes profile" not in source
     assert "checkout_path" not in source
     assert "repository_path" not in source

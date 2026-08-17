@@ -11,7 +11,7 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   narrowly scoped setup routes, bounded Kanban detail reads, exact-plan approval,
   exact attended review preview/apply routes, workflow-owned card comment/unblock,
   cancellation preview/apply routes, preview-confirmed repository registration,
-  registration projections, checkout-root and
+  registration-defaults preview/apply, registration projections, checkout-root and
   checkout lifecycle preview/apply, and GitHub Projects v2 link read/verify/
   preview/apply routes, read-only reusable constraint-source list/detail routes,
   persisted-configuration verification, non-mutating initialization preview/confirmed apply,
@@ -19,7 +19,7 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   catalog/text/download reads, and digest-confirmed curator controls.
 - `dist/index.js` renders Workflows, Artifacts, and Config primary views;
   workflow progress; the inventory-backed Start workflow
-  wizard, Config → GitHub Repositories registration, the catalog-first Config →
+  wizard, Config → GitHub Repositories registration and defaults wizard, the catalog-first Config →
   Packs readiness, lifecycle, inventory, and detail workspace,
   GitHub Projects v2 links,
   constraint source selection and schema-aware authoring, read-only configuration
@@ -52,16 +52,19 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   replacement, confirmed GitHub Projects v2 link upsert/removal, and confirmed
   repository registration after a fresh digest. GitHub link preview/verification
   and registration/checkout previews are non-mutating; browser
-  payloads never carry credential values, an environment-variable name, a
-  repository checkout path, credential alias, credential-source detail, or a
-  GitHub Project node ID. Repository-registration inventory returns every
+  payloads never carry credential values or a
+  repository checkout path. Config → GitHub Repositories defaults wizard may
+  collect aliases, environment-variable names, maintainers, attended
+  destination, and limits; it never collects token values. Repository-registration inventory returns every
   Hermes-validated profile name with that profile's path-free registrations
   and a finite `ready`/`unavailable` status. Preview accepts exactly
   `{github_url, controller_profile, board}` and returns a path-free classification:
   `registerable` (registration preview fields), `needs-bootstrap`,
   `already-registered`, or `blocked` with stable `reason`/`next_action`. After
   `needs-bootstrap`, that row’s inspect control becomes Apply default policy
-  and stays disabled until confirmation. Inventory also projects unfinished
+  and stays disabled until confirmation. Missing or invalid registration
+  defaults open the profile's defaults wizard instead of only a blocked
+  reason. Inventory also projects unfinished
   public bootstrap compare/PR links from a profile-local receipt so they
   survive a Hermes restart until the repository is registered. Confirmed
   bootstrap apply opens one pull request on the inspected repository and

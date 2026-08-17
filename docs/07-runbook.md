@@ -137,7 +137,8 @@ After the file exists, inspect again. A repository that already has committed
 lacks that file is classified `needs-bootstrap` and does not require this
 defaults file until you register.
 
-There is no dashboard editor yet. Validate or write the file from the CLI:
+There is no remaining hand-edit requirement. Validate or write the file from
+the CLI or Config → GitHub Repositories:
 
 ```bash
 daidala project defaults --profile controller

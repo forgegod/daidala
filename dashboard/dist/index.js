@@ -198,9 +198,27 @@
       github_url: githubUrl,
       controller_profile: controllerProfile,
       preview_digest: previewDigest,
-      board: board || null,
-      confirm: true
+      confirm: true,
+      board: board || null
     });
+  }
+
+  function previewRegistrationDefaults(controllerProfile, options) {
+    var payload = { controller_profile: controllerProfile };
+    if (options && options.seed) payload.seed = true;
+    if (options && options.defaults) payload.defaults = options.defaults;
+    return postJson(API_BASE + "/repository-registration/defaults/preview", payload);
+  }
+
+  function applyRegistrationDefaults(controllerProfile, previewDigest, options) {
+    var payload = {
+      controller_profile: controllerProfile,
+      preview_digest: previewDigest,
+      confirm: true
+    };
+    if (options && options.seed) payload.seed = true;
+    if (options && options.defaults) payload.defaults = options.defaults;
+    return postJson(API_BASE + "/repository-registration/defaults", payload);
   }
 
   function buildConfiguration() {
@@ -2539,6 +2557,107 @@
     );
   }
 
+  function emptyDefaultsDraft() {
+    return {
+      schema: "daidala.repository-registration-defaults/v1",
+      credentials: {
+        intake: { alias: "", resolver: "environment", environment_variable: "" },
+        findings: { alias: "", resolver: "environment", environment_variable: "" }
+      },
+      approval: { maintainers: "" },
+      notifications: { adapter: "hermes-gateway", target: "", destination: "" },
+      evaluator: { backend: "restricted-container", network: "denied-by-default" },
+      limits: {
+        active_cycles: "1",
+        goal_turns: "12",
+        delegated_workers: "3",
+        research_query_batches: "3",
+        extracted_sources: "3",
+        wall_clock_seconds: "3600"
+      }
+    };
+  }
+
+  function defaultsDraftFromPreview(preview) {
+    var source = preview && preview.defaults ? preview.defaults : emptyDefaultsDraft();
+    var credentials = source.credentials || {};
+    var intake = credentials.intake || {};
+    var findings = credentials.findings || {};
+    var approval = source.approval || {};
+    var notifications = source.notifications || {};
+    var limits = source.limits || {};
+    return {
+      schema: "daidala.repository-registration-defaults/v1",
+      credentials: {
+        intake: {
+          alias: intake.alias || "",
+          resolver: "environment",
+          environment_variable: intake.environment_variable || ""
+        },
+        findings: {
+          alias: findings.alias || "",
+          resolver: "environment",
+          environment_variable: findings.environment_variable || ""
+        }
+      },
+      approval: {
+        maintainers: Array.isArray(approval.maintainers)
+          ? approval.maintainers.join(", ")
+          : (approval.maintainers || "")
+      },
+      notifications: {
+        adapter: "hermes-gateway",
+        target: notifications.target || "",
+        destination: notifications.destination || ""
+      },
+      evaluator: { backend: "restricted-container", network: "denied-by-default" },
+      limits: {
+        active_cycles: String(limits.active_cycles == null ? 1 : limits.active_cycles),
+        goal_turns: String(limits.goal_turns == null ? 12 : limits.goal_turns),
+        delegated_workers: String(limits.delegated_workers == null ? 3 : limits.delegated_workers),
+        research_query_batches: String(limits.research_query_batches == null ? 3 : limits.research_query_batches),
+        extracted_sources: String(limits.extracted_sources == null ? 3 : limits.extracted_sources),
+        wall_clock_seconds: String(limits.wall_clock_seconds == null ? 3600 : limits.wall_clock_seconds)
+      }
+    };
+  }
+
+  function defaultsPayloadFromDraft(draft) {
+    var maintainers = String(draft.approval.maintainers || "").split(",").map(function (row) {
+      return row.trim();
+    }).filter(Boolean);
+    return {
+      schema: "daidala.repository-registration-defaults/v1",
+      credentials: {
+        intake: {
+          alias: draft.credentials.intake.alias.trim(),
+          resolver: "environment",
+          environment_variable: draft.credentials.intake.environment_variable.trim()
+        },
+        findings: {
+          alias: draft.credentials.findings.alias.trim(),
+          resolver: "environment",
+          environment_variable: draft.credentials.findings.environment_variable.trim()
+        }
+      },
+      approval: { maintainers: maintainers },
+      notifications: {
+        adapter: "hermes-gateway",
+        target: draft.notifications.target.trim(),
+        destination: draft.notifications.destination.trim()
+      },
+      evaluator: { backend: "restricted-container", network: "denied-by-default" },
+      limits: {
+        active_cycles: Number(draft.limits.active_cycles),
+        goal_turns: Number(draft.limits.goal_turns),
+        delegated_workers: Number(draft.limits.delegated_workers),
+        research_query_batches: Number(draft.limits.research_query_batches),
+        extracted_sources: Number(draft.limits.extracted_sources),
+        wall_clock_seconds: Number(draft.limits.wall_clock_seconds)
+      }
+    };
+  }
+
   function repositoryInspectionMessage(result) {
     if (!result || typeof result !== "object") {
       return "Repository inspection unavailable.";
@@ -2588,6 +2707,18 @@
     var messageState = useState("");
     var message = messageState[0];
     var setMessage = messageState[1];
+    var defaultsWizardState = useState(null);
+    var defaultsWizard = defaultsWizardState[0];
+    var setDefaultsWizard = defaultsWizardState[1];
+    var defaultsDraftState = useState(emptyDefaultsDraft());
+    var defaultsDraft = defaultsDraftState[0];
+    var setDefaultsDraft = defaultsDraftState[1];
+    var defaultsPreviewState = useState(null);
+    var defaultsPreview = defaultsPreviewState[0];
+    var setDefaultsPreview = defaultsPreviewState[1];
+    var defaultsConfirmedState = useState(false);
+    var defaultsConfirmed = defaultsConfirmedState[0];
+    var setDefaultsConfirmed = defaultsConfirmedState[1];
 
     function draftKey(profileName, field) {
       return profileName + "\0" + field;
@@ -2645,6 +2776,66 @@
       })[0] || null;
     }
 
+    function openDefaultsWizard(profileName, seed) {
+      setDefaultsWizard(profileName);
+      setDefaultsPreview(null);
+      setDefaultsConfirmed(false);
+      setBusy(true);
+      setMessage("");
+      var request = seed ? previewRegistrationDefaults(profileName, { seed: true }) : previewRegistrationDefaults(profileName);
+      return request.then(function (preview) {
+        setDefaultsPreview(preview);
+        setDefaultsDraft(defaultsDraftFromPreview(preview));
+        if (!preview.valid && preview.reason) setMessage(preview.reason);
+      }).catch(function (caught) {
+        setMessage("Registration defaults preview unavailable: " + errorText(caught));
+      }).finally(function () { setBusy(false); });
+    }
+
+    function validateDefaultsDraft(profileName) {
+      setBusy(true);
+      setMessage("");
+      setDefaultsConfirmed(false);
+      return previewRegistrationDefaults(profileName, { defaults: defaultsPayloadFromDraft(defaultsDraft) }).then(function (preview) {
+        setDefaultsPreview(preview);
+        if (preview.valid) {
+          setMessage("Registration defaults are valid. Confirm to save.");
+        } else {
+          setMessage(preview.reason || "Registration defaults are invalid.");
+        }
+      }).catch(function (caught) {
+        setMessage("Registration defaults preview unavailable: " + errorText(caught));
+      }).finally(function () { setBusy(false); });
+    }
+
+    function applyDefaultsWizard(profileName) {
+      if (!defaultsPreview || !defaultsPreview.valid || !defaultsConfirmed) return;
+      setBusy(true);
+      setMessage("");
+      var options = defaultsPreview.source === "seed"
+        ? { seed: true }
+        : { defaults: defaultsPayloadFromDraft(defaultsDraft) };
+      return applyRegistrationDefaults(profileName, defaultsPreview.digest, options).then(function () {
+        setDefaultsConfirmed(false);
+        setDefaultsWizard(null);
+        setMessage("Registration defaults saved. Inspect the repository again.");
+        refreshInventory().catch(function () {});
+      }).catch(function (caught) {
+        setMessage("Registration defaults were not saved: " + errorText(caught));
+      }).finally(function () { setBusy(false); });
+    }
+
+    function updateDefaultsDraft(path, value) {
+      var next = JSON.parse(JSON.stringify(defaultsDraft));
+      var cursor = next;
+      var parts = path.split(".");
+      parts.slice(0, -1).forEach(function (part) { cursor = cursor[part]; });
+      cursor[parts[parts.length - 1]] = value;
+      setDefaultsDraft(next);
+      setDefaultsPreview(null);
+      setDefaultsConfirmed(false);
+    }
+
     function inspect(profileName, field, registration) {
       var githubUrl = fieldUrl(profileName, field, registration).trim();
       if (!githubUrl || !profileName) return;
@@ -2663,6 +2854,9 @@
         if (!result || result.valid === false || result.classification === "already-registered" || result.classification === "blocked") {
           setPreview(null);
           setMessage(repositoryInspectionMessage(result));
+          if (result && String(result.reason || "").indexOf("registration defaults") >= 0) {
+            openDefaultsWizard(profileName).catch(function () {});
+          }
           return;
         }
         setPreview(result);
@@ -2784,6 +2978,97 @@
       return nodes.length ? nodes : null;
     }
 
+    function renderDefaultsField(label, path) {
+      var cursor = defaultsDraft;
+      path.split(".").forEach(function (part) { cursor = cursor ? cursor[part] : ""; });
+      return createElement("label", { className: "daidala-wizard-field", key: path },
+        createElement("span", null, label),
+        createElement("input", {
+          value: cursor == null ? "" : String(cursor),
+          "aria-label": label,
+          onChange: function (event) { updateDefaultsDraft(path, event.target.value); }
+        })
+      );
+    }
+
+    function renderDefaultsWizard(profileName, defaultsStatus) {
+      var status = defaultsStatus && defaultsStatus.status ? defaultsStatus.status : "missing";
+      var open = defaultsWizard === profileName;
+      return createElement("section", {
+        key: profileName + ":defaults",
+        className: "daidala-github-registration-context",
+        "data-testid": "daidala-registration-defaults"
+      },
+        createElement("p", { className: "daidala-workflow-meta" },
+          status === "valid" ? "Registration defaults are configured."
+            : status === "invalid" ? "Registration defaults are invalid."
+              : "Registration defaults are not configured for this profile."
+        ),
+        createElement("div", { className: "daidala-config-actions" },
+          createElement("button", {
+            type: "button",
+            disabled: busy,
+            onClick: function () { openDefaultsWizard(profileName, false).catch(function () {}); }
+          }, status === "valid" ? "Edit registration defaults" : "Configure registration defaults"),
+          defaultsStatus && defaultsStatus.seed_available
+            ? createElement("button", {
+                type: "button",
+                disabled: busy,
+                onClick: function () { openDefaultsWizard(profileName, true).catch(function () {}); }
+              }, "Seed from existing registration")
+            : null
+        ),
+        open ? createElement("form", {
+          className: "daidala-github-link-preview",
+          onSubmit: function (event) { event.preventDefault(); }
+        },
+          createElement("h3", null, "Registration defaults"),
+          createElement("p", { className: "daidala-workflow-meta" },
+            "Aliases and environment-variable names only. Token values stay in the process environment."
+          ),
+          renderDefaultsField("Intake alias", "credentials.intake.alias"),
+          renderDefaultsField("Intake environment variable", "credentials.intake.environment_variable"),
+          renderDefaultsField("Findings alias", "credentials.findings.alias"),
+          renderDefaultsField("Findings environment variable", "credentials.findings.environment_variable"),
+          renderDefaultsField("Maintainers", "approval.maintainers"),
+          renderDefaultsField("Notification target", "notifications.target"),
+          renderDefaultsField("Notification destination", "notifications.destination"),
+          renderDefaultsField("Active cycles", "limits.active_cycles"),
+          renderDefaultsField("Goal turns", "limits.goal_turns"),
+          renderDefaultsField("Delegated workers", "limits.delegated_workers"),
+          renderDefaultsField("Research query batches", "limits.research_query_batches"),
+          renderDefaultsField("Extracted sources", "limits.extracted_sources"),
+          renderDefaultsField("Wall-clock seconds", "limits.wall_clock_seconds"),
+          defaultsPreview ? createElement("p", { className: "daidala-workflow-meta" },
+            defaultsPreview.valid
+              ? "Valid · " + defaultsPreview.source + " · " + defaultsPreview.digest
+              : defaultsPreview.reason
+          ) : null,
+          createElement("div", { className: "daidala-config-actions" },
+            createElement("button", {
+              type: "button",
+              disabled: busy,
+              onClick: function () { validateDefaultsDraft(profileName).catch(function () {}); }
+            }, "Check defaults"),
+            createElement("label", { className: "daidala-pack-confirm" },
+              createElement("input", {
+                type: "checkbox",
+                checked: defaultsConfirmed,
+                disabled: !defaultsPreview || !defaultsPreview.valid,
+                onChange: function (event) { setDefaultsConfirmed(event.target.checked); }
+              }),
+              " I confirm writing these registration defaults"
+            ),
+            createElement("button", {
+              type: "button",
+              disabled: busy || !defaultsConfirmed || !defaultsPreview || !defaultsPreview.valid,
+              onClick: function () { applyDefaultsWizard(profileName); }
+            }, "Save registration defaults")
+          )
+        ) : null
+      );
+    }
+
     function renderLinkField(profileName, field, registration, label, pending) {
       var value = fieldUrl(profileName, field, registration, pending);
       return createElement("div", { key: profileName + ":" + field, className: "daidala-github-registration-context" },
@@ -2866,6 +3151,7 @@
         profile.status === "unavailable"
           ? createElement("p", { className: "daidala-banner daidala-banner-error" }, "GitHub Repositories are unavailable for this profile.")
           : null,
+        renderDefaultsWizard(name, profile.defaults),
         rows
       );
     }

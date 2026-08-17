@@ -6,8 +6,9 @@
 ## Outcome
 
 An operator can preview and explicitly register one GitHub repository for one
-existing Hermes controller profile without providing a filesystem path,
-credential alias, environment-variable name, or token to Daidala.
+existing Hermes controller profile without providing a filesystem path or
+token to Daidala. Profile-local registration defaults are created, validated,
+and saved through the CLI or Config wizard.
 
 ## Behavior
 
@@ -49,7 +50,8 @@ credential alias, environment-variable name, or token to Daidala.
   and write that file with `daidala project defaults`; the example and field
   rules live in
   [Configure registration defaults](../../07-runbook.md#configure-registration-defaults).
-  Registration never accepts or stores a token, creates a GitHub Project,
+  Config → GitHub Repositories shows a per-profile defaults wizard that
+  previews, seeds, validates, and saves the same file. Registration never accepts or stores a token, creates a GitHub Project,
   creates a checkout, commits, pushes, publishes, or grants delivery authority.
 
 ## Evidence

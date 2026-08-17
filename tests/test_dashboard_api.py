@@ -2302,6 +2302,13 @@ def test_repository_registration_inventory_projects_every_validated_profile(
                 "status": "ready",
                 "registrations": [],
                 "pending_bootstraps": [],
+                "defaults": {
+                    "status": "missing",
+                    "seed_available": False,
+                    "reason": (
+                        "repository registration defaults are not configured for this profile"
+                    ),
+                },
             },
             {
                 "controller_profile": "daidala-self-improvement",
@@ -2316,6 +2323,13 @@ def test_repository_registration_inventory_projects_every_validated_profile(
                     }
                 ],
                 "pending_bootstraps": [],
+                "defaults": {
+                    "status": "missing",
+                    "seed_available": False,
+                    "reason": (
+                        "repository registration defaults are not configured for this profile"
+                    ),
+                },
             },
         ],
     }
@@ -2373,6 +2387,11 @@ def test_repository_registration_inventory_isolates_one_invalid_store(
                 "status": "unavailable",
                 "registrations": [],
                 "pending_bootstraps": [],
+                "defaults": {
+                    "status": "unavailable",
+                    "seed_available": False,
+                    "reason": "profile root is unavailable",
+                },
             },
             {
                 "controller_profile": "daidala-self-improvement",
@@ -2387,12 +2406,47 @@ def test_repository_registration_inventory_isolates_one_invalid_store(
                     }
                 ],
                 "pending_bootstraps": [],
+                "defaults": {
+                    "status": "missing",
+                    "seed_available": False,
+                    "reason": (
+                        "repository registration defaults are not configured for this profile"
+                    ),
+                },
             },
         ],
     }
     assert "checkout" not in serialized
     assert "credential" not in serialized
     assert str(dashboard_root) not in serialized
+
+
+def test_repository_defaults_preview_and_apply_write_mode_0600(tmp_path: Path) -> None:
+    from tests.test_repository_registration import defaults_payload
+
+    api = load_api()
+    root = (tmp_path / "controller").resolve()
+    root.mkdir()
+    api.__dict__["list_profiles"] = lambda _run: ["controller"]
+    api.__dict__["resolve_profile_root"] = lambda _profile, _run: root
+    preview = api.repository_defaults_preview(
+        {"controller_profile": "controller", "defaults": defaults_payload()}
+    )
+    assert preview["valid"] is True
+    assert preview["source"] == "input"
+    assert "environment_variable" in json.dumps(preview)
+    applied = api.repository_defaults_apply(
+        {
+            "controller_profile": "controller",
+            "defaults": defaults_payload(),
+            "preview_digest": preview["digest"],
+            "confirm": True,
+        }
+    )
+    written = root / "repository-registration-defaults.yaml"
+    assert applied["valid"] is True
+    assert written.is_file()
+    assert written.stat().st_mode & 0o777 == 0o600
 
 
 def test_repository_registration_rows_reject_unknown_profile_before_resolution() -> None:

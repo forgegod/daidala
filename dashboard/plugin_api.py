@@ -75,6 +75,7 @@ from pathlib import Path
 from threading import Lock
 from typing import Any, NoReturn
 
+import yaml
 from fastapi import APIRouter, HTTPException, Response
 from fastapi.responses import StreamingResponse
 
@@ -145,6 +146,8 @@ from daidala.repository_bootstrap import (
     RepositoryBootstrapService,
 )
 from daidala.repository_registration import (
+    WRITE_DEFAULTS_CONFIRMATION,
+    RegistrationDefaultsService,
     RepositoryRegistrationError,
     RepositoryRegistrationService,
     parse_github_repository_url,
@@ -798,6 +801,11 @@ def repository_registration_inventory() -> dict[str, object]:
                     "status": "unavailable",
                     "registrations": [],
                     "pending_bootstraps": [],
+                    "defaults": {
+                        "status": "unavailable",
+                        "seed_available": False,
+                        "reason": "profile root is unavailable",
+                    },
                 }
             )
     board_counts: dict[str, int] = {}
@@ -821,6 +829,11 @@ def repository_registration_inventory() -> dict[str, object]:
                     "status": "unavailable",
                     "registrations": [],
                     "pending_bootstraps": [],
+                    "defaults": {
+                        "status": "unavailable",
+                        "seed_available": False,
+                        "reason": "profile root is unavailable",
+                    },
                 }
             )
             continue
@@ -830,6 +843,7 @@ def repository_registration_inventory() -> dict[str, object]:
                 "status": "ready",
                 "registrations": rows,
                 "pending_bootstraps": pending,
+                "defaults": _defaults_inventory_row(root, controller_profile),
             }
         )
     return {"selected_profile": selected_profile, "profiles": profiles}
@@ -932,6 +946,98 @@ def repository_registration_apply(payload: dict[str, object]) -> dict[str, objec
         ) from error
     _finish_bootstrap_receipt(controller_profile, github_url)
     return result
+
+
+def _defaults_inventory_row(root: Path, controller_profile: str) -> dict[str, object]:
+    preview = RegistrationDefaultsService(root, controller_profile).preview()
+    status = "valid" if preview.valid else (
+        "missing" if preview.source == "missing" else "invalid"
+    )
+    return {
+        "status": status,
+        "seed_available": preview.seed_available,
+        "reason": preview.reason,
+    }
+
+
+def _defaults_request(
+    payload: dict[str, object], *, apply: bool
+) -> tuple[str, bool, str | None, str | None]:
+    required = {"controller_profile"}
+    if apply:
+        required |= {"preview_digest", "confirm"}
+    allowed = required | {"seed", "defaults"}
+    if set(payload) - allowed or not required.issubset(payload):
+        raise HTTPException(
+            status_code=400, detail="exact registration defaults fields are required"
+        )
+    if apply and payload.get("confirm") is not True:
+        raise HTTPException(
+            status_code=400, detail="exact registration defaults fields are required"
+        )
+    controller_profile = payload.get("controller_profile")
+    if not isinstance(controller_profile, str):
+        raise HTTPException(status_code=400, detail="controller profile is required")
+    seed = payload.get("seed", False)
+    if seed not in (True, False):
+        raise HTTPException(status_code=400, detail="seed must be a boolean")
+    defaults = payload.get("defaults")
+    source_text: str | None = None
+    if defaults is not None:
+        if not isinstance(defaults, dict):
+            raise HTTPException(status_code=400, detail="defaults must be an object")
+        source_text = yaml.safe_dump(
+            defaults,
+            allow_unicode=True,
+            default_flow_style=False,
+            sort_keys=False,
+        )
+    if seed and source_text is not None:
+        raise HTTPException(status_code=400, detail="seed and defaults are mutually exclusive")
+    digest = payload.get("preview_digest")
+    if digest is not None and not _is_sha256(digest):
+        raise HTTPException(status_code=400, detail="preview_digest must be a SHA-256 identity")
+    return (
+        controller_profile,
+        bool(seed),
+        source_text,
+        digest if isinstance(digest, str) else None,
+    )
+
+
+@router.post("/repository-registration/defaults/preview")
+def repository_defaults_preview(payload: dict[str, object]) -> dict[str, object]:
+    """Preview or validate profile-local registration defaults without writing."""
+
+    controller_profile, seed, source_text, _ = _defaults_request(payload, apply=False)
+    try:
+        preview = RegistrationDefaultsService(
+            _repository_registration_profile_root(controller_profile), controller_profile
+        ).preview(seed=seed, source_text=source_text)
+    except RepositoryRegistrationError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return preview.to_dict()
+
+
+@router.post("/repository-registration/defaults")
+def repository_defaults_apply(payload: dict[str, object]) -> dict[str, object]:
+    """Write profile-local registration defaults after digest confirmation."""
+
+    controller_profile, seed, source_text, digest = _defaults_request(payload, apply=True)
+    assert digest is not None
+    try:
+        return RegistrationDefaultsService(
+            _repository_registration_profile_root(controller_profile), controller_profile
+        ).apply(
+            expected_preview_digest=digest,
+            confirmation=WRITE_DEFAULTS_CONFIRMATION,
+            seed=seed,
+            source_text=source_text,
+        ).to_dict()
+    except RepositoryRegistrationError as error:
+        raise HTTPException(
+            status_code=409, detail="registration defaults could not be applied"
+        ) from error
 
 
 @router.get("/github-project-links")
