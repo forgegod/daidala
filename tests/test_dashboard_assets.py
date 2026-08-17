@@ -374,7 +374,9 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
     assert "applyingPolicy && !confirmed" in source
     assert "applyingPolicy ? \"Apply default policy\" : \"Inspect repository\"" in source
     assert "pending_bootstraps" in source
-    assert "Default policy branch is waiting for merge." in source
+    assert "Default policy pull request is waiting." in source
+    assert "Dismiss default policy pull request link" in source
+    assert "/repository-registration/bootstrap/dismiss" in source
     assert "Open pull request" in source
     assert "opens a pull request on the inspected repository" in source
     assert "Default policy pull request opened on the inspected repository" in source

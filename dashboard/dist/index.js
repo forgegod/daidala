@@ -193,6 +193,13 @@
     });
   }
 
+  function dismissRepositoryBootstrap(githubUrl, controllerProfile) {
+    return postJson(API_BASE + "/repository-registration/bootstrap/dismiss", {
+      github_url: githubUrl,
+      controller_profile: controllerProfile
+    });
+  }
+
   function applyRepositoryRegistration(githubUrl, controllerProfile, previewDigest, board) {
     return postJson(API_BASE + "/repository-registration", {
       github_url: githubUrl,
@@ -2706,14 +2713,36 @@
     function renderPendingLink(profileName, githubUrl) {
       var pending = pendingForUrl(profileName, githubUrl);
       if (!pending || !pending.open_url) return null;
+      var status = pending.merge_state === "merged"
+        ? "Default policy pull request is merged. Inspect and register. "
+        : pending.merge_state === "closed"
+          ? "Default policy pull request was closed. "
+          : pending.policy_on_default_branch
+            ? "Default policy is on the default branch. Inspect and register. "
+            : "Default policy pull request is waiting. ";
       return createElement("p", { className: "daidala-workflow-meta" },
-        "Default policy branch is waiting for merge. ",
+        status,
         createElement("button", {
           type: "button",
           onClick: function () {
             window.open(pending.open_url, "_blank", "noopener,noreferrer");
           }
-        }, pending.pull_request ? "Open pull request" : "Open a pull request")
+        }, pending.pull_request ? "Open pull request" : "Open a pull request"),
+        " ",
+        createElement("button", {
+          type: "button",
+          "aria-label": "Dismiss default policy pull request link",
+          onClick: function () {
+            dismissRepositoryBootstrap(
+              "github.com/" + pending.repository_canonical,
+              profileName
+            ).then(function () {
+              return refreshInventory();
+            }).catch(function (caught) {
+              setMessage("Bootstrap receipt was not dismissed: " + errorText(caught));
+            });
+          }
+        }, "×")
       );
     }
 

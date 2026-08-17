@@ -31,8 +31,10 @@ repository or touching the default branch.
   repository (`gh pr create`). It never updates the default branch, merges,
   stores a token, or writes registration or credential-binding records.
   Successful apply writes a profile-local receipt with the public PR URL.
-  Config inventory keeps showing that link after a Hermes restart until the
-  repository is registered.
+  Config inventory keeps showing that link after a Hermes restart, refreshes
+  whether the PR is open, merged, or closed, and lets the operator dismiss
+  the local receipt without closing the GitHub pull request. The receipt is
+  also removed when the repository is registered.
 - Preview and apply responses include public GitHub convenience links for the
   bootstrap branch, the `.daidala` tree on that branch, the opened pull
   request, and GitHub’s compare page. Merge remains an operator action on the

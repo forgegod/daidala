@@ -57,6 +57,13 @@ CLASSIFICATION_ALREADY_REGISTERED = "already-registered"
 CLASSIFICATION_BLOCKED = "blocked"
 MISSING_PROJECT_POLICY = "committed project policy is missing"
 ALREADY_REGISTERED = "project ID is already registered in this profile"
+MISSING_REGISTRATION_DEFAULTS = (
+    "repository registration defaults are not configured for this profile"
+)
+POLICY_PRESENT_DEFAULTS_MISSING = (
+    "committed .daidala policy is present; configure "
+    "repository-registration-defaults.yaml on this profile before registering"
+)
 _REPOSITORY = re.compile(r"^[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}$")
 _SCP_GITHUB = re.compile(
     r"^git@github\.com:(?P<owner>[A-Za-z0-9_.-]{1,100})/"
@@ -470,6 +477,12 @@ class RepositoryRegistrationService:
                     reason="repository is already registered for selected profile",
                     next_action="none",
                 )
+            if str(error) == MISSING_REGISTRATION_DEFAULTS:
+                return self._blocked(
+                    POLICY_PRESENT_DEFAULTS_MISSING,
+                    repository=canonical,
+                    project_id=manifest.project_id,
+                )
             return self._blocked(
                 str(error),
                 repository=canonical,
@@ -752,9 +765,7 @@ def load_registration_defaults(data_root: Path) -> RegistrationDefaults:
             label="repository registration defaults",
         )
     except FileNotFoundError as error:
-        raise RepositoryRegistrationError(
-            "repository registration defaults are not configured for this profile"
-        ) from error
+        raise RepositoryRegistrationError(MISSING_REGISTRATION_DEFAULTS) from error
     except ProfileFileError as error:
         raise RepositoryRegistrationError(str(error)) from error
     return parse_registration_defaults(content)

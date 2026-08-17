@@ -65,7 +65,9 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   public bootstrap compare/PR links from a profile-local receipt so they
   survive a Hermes restart until the repository is registered. Confirmed
   bootstrap apply opens one pull request on the inspected repository and
-  keeps that public PR URL in the inventory receipt. Apply
+  keeps that public PR URL in the inventory receipt. Opening the tab
+  refreshes public PR merge state. The operator can dismiss the local
+  receipt without closing the GitHub pull request. Apply
   additionally requires a SHA-256 `preview_digest` and `confirm: true`. Every
   selected name is revalidated and re-resolved through Hermes before the
   deterministic registration service reads profile-local state; preview readiness

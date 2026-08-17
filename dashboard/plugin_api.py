@@ -731,16 +731,28 @@ def _registered_project_rows(
 
 
 def _pending_bootstrap_rows(
-    root: Path, registrations: tuple[ControllerRegistration, ...]
+    root: Path,
+    registrations: tuple[ControllerRegistration, ...],
+    controller_profile: str,
 ) -> list[dict[str, object]]:
-    """Project unfinished bootstrap compare/PR links without local paths."""
+    """Project unfinished bootstrap PR links plus live merge state."""
 
     registered = {row.repository_canonical for row in registrations}
     try:
         receipts = BootstrapReceiptStore(root).pending_for(exclude_repositories=registered)
+        service = RepositoryBootstrapService(root, controller_profile)
     except RepositoryBootstrapError:
         return []
-    return [receipt.to_public_dict() for receipt in receipts]
+    rows: list[dict[str, object]] = []
+    for receipt in receipts:
+        try:
+            rows.append(service.public_receipt(receipt))
+        except RepositoryBootstrapError:
+            payload = receipt.to_public_dict()
+            payload["merge_state"] = "unknown"
+            payload["policy_on_default_branch"] = False
+            rows.append(payload)
+    return rows
 
 
 def _finish_bootstrap_receipt(controller_profile: str, github_url: str) -> None:
@@ -813,7 +825,7 @@ def repository_registration_inventory() -> dict[str, object]:
                 board_counts=board_counts,
                 linked_project_ids={link.project_id for link in links},
             )
-            pending = _pending_bootstrap_rows(root, registrations)
+            pending = _pending_bootstrap_rows(root, registrations, controller_profile)
         except (GitHubProjectLinkError, RepositoryBootstrapError):
             profiles.append(
                 {
@@ -909,6 +921,24 @@ def repository_bootstrap_apply(payload: dict[str, object]) -> dict[str, object]:
         raise HTTPException(
             status_code=409, detail="repository bootstrap could not be applied"
         ) from error
+
+
+@router.post("/repository-registration/bootstrap/dismiss")
+def repository_bootstrap_dismiss(payload: dict[str, object]) -> dict[str, object]:
+    """Delete one profile-local bootstrap receipt without touching GitHub."""
+
+    github_url, controller_profile, _, _ = _repository_registration_request(
+        payload, apply=False
+    )
+    try:
+        root = _repository_registration_profile_root(controller_profile)
+        canonical = parse_github_repository_url(github_url)
+        BootstrapReceiptStore(root).remove(canonical)
+    except (HTTPException, RepositoryBootstrapError, RepositoryRegistrationError) as error:
+        raise HTTPException(
+            status_code=409, detail="bootstrap receipt could not be dismissed"
+        ) from error
+    return {"dismissed": True, "repository_canonical": canonical}
 
 
 @router.post("/repository-registration")

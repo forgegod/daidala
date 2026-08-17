@@ -204,6 +204,28 @@ def test_classify_missing_manifest_is_needs_bootstrap(tmp_path: Path) -> None:
     assert "private error" not in json.dumps(payload)
 
 
+def test_classify_with_policy_and_missing_defaults_does_not_offer_bootstrap(
+    tmp_path: Path,
+) -> None:
+    root = (tmp_path / "controller").resolve()
+    root.mkdir(parents=True)
+    service = RepositoryRegistrationService(
+        root,
+        "daidala-self-improvement",
+        runner=GitHubRunner(),
+        environ={"PATH": "/usr/bin"},
+    )
+
+    classification = service.classify("https://github.com/forgegod/daidala")
+    payload = classification.to_dict()
+
+    assert classification.status == "blocked"
+    assert classification.next_action == "none"
+    assert "committed .daidala policy is present" in classification.reason
+    assert "needs-bootstrap" not in json.dumps(payload)
+    assert payload["repository"] == "forgegod/daidala"
+
+
 def test_preview_is_path_secret_and_private_destination_free(tmp_path: Path) -> None:
     root = (tmp_path / "controller").resolve()
     write_defaults(root)

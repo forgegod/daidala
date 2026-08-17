@@ -221,3 +221,41 @@ def test_bootstrap_receipt_hides_registered_repositories(tmp_path: Path) -> None
     assert hidden == ()
     store.remove("forgegod/orphan")
     assert store.read() == ()
+
+
+def test_public_receipt_reports_open_pull_request_state(tmp_path: Path) -> None:
+    root = (tmp_path / "controller").resolve()
+    write_defaults(root)
+
+    class StatusRunner(BootstrapRunner):
+        def __call__(
+            self,
+            command: tuple[str, ...],
+            environment: Mapping[str, str],
+            stdin: str | None = None,
+        ) -> tuple[int, str]:
+            if command[:3] == ("gh", "pr", "view"):
+                return 0, json.dumps({"state": "OPEN"})
+            if command[:3] == ("gh", "pr", "list"):
+                return 0, json.dumps(
+                    [{"url": "https://github.com/forgegod/orphan/pull/12", "state": "OPEN"}]
+                )
+            return super().__call__(command, environment, stdin)
+
+    runner = StatusRunner()
+    service = RepositoryBootstrapService(
+        root, "daidala-dashboard", runner=runner, environ={"PATH": "/usr/bin"}
+    )
+    url = "https://github.com/forgegod/orphan"
+    applied = service.apply(
+        url,
+        expected_preview_digest=service.preview(url).digest,
+        confirmation="bootstrap-repository",
+    )
+    receipt = BootstrapReceiptStore(root).read()[0]
+    payload = service.public_receipt(receipt)
+
+    assert applied.pull_request == "https://github.com/forgegod/orphan/pull/12"
+    assert payload["merge_state"] == "open"
+    assert payload["policy_on_default_branch"] is False
+    assert payload["open_url"] == "https://github.com/forgegod/orphan/pull/12"

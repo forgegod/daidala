@@ -489,6 +489,110 @@ class RepositoryBootstrapService:
         store.upsert(BootstrapReceipt.from_result(result))
         return result
 
+    def public_receipt(self, receipt: BootstrapReceipt) -> dict[str, object]:
+        """Project one pending receipt plus live public PR/policy state."""
+
+        payload = receipt.to_public_dict()
+        payload["merge_state"] = self._pull_request_state(receipt)
+        payload["policy_on_default_branch"] = self._default_branch_has_policy(
+            receipt.repository_canonical
+        )
+        if payload["merge_state"] == "open" and payload["pull_request"] is None:
+            discovered = self._discover_pull_request(receipt)
+            if discovered is not None:
+                payload["pull_request"] = discovered
+                payload["open_url"] = discovered
+        return payload
+
+    def _default_branch_has_policy(self, repository_canonical: str) -> bool:
+        environment = safe_runtime_environment(self.environ)
+        environment.update({"GH_PROMPT_DISABLED": "1", "GIT_TERMINAL_PROMPT": "0"})
+        code, output = self.runner(
+            (
+                "gh",
+                "api",
+                f"repos/{repository_canonical}/contents/.daidala/project.yaml",
+            ),
+            environment,
+        )
+        if code != 0:
+            return False
+        try:
+            payload = json.loads(output)
+        except json.JSONDecodeError:
+            return False
+        return isinstance(payload, dict) and payload.get("type") == "file"
+
+    def _pull_request_state(self, receipt: BootstrapReceipt) -> str:
+        pull_request = receipt.pull_request or self._discover_pull_request(receipt)
+        if pull_request is None:
+            return "unknown"
+        number = pull_request.rsplit("/", 1)[-1]
+        if not number.isdigit():
+            return "unknown"
+        try:
+            payload = self._github_json(
+                (
+                    "gh",
+                    "pr",
+                    "view",
+                    number,
+                    "--repo",
+                    receipt.repository_canonical,
+                    "--json",
+                    "state",
+                ),
+                "pull request",
+            )
+        except RepositoryBootstrapError:
+            return "unknown"
+        state = str(payload.get("state") or "").upper()
+        if state == "MERGED":
+            return "merged"
+        if state == "OPEN":
+            return "open"
+        if state == "CLOSED":
+            return "closed"
+        return "unknown"
+
+    def _discover_pull_request(self, receipt: BootstrapReceipt) -> str | None:
+        environment = safe_runtime_environment(self.environ)
+        environment.update({"GH_PROMPT_DISABLED": "1", "GIT_TERMINAL_PROMPT": "0"})
+        code, output = self.runner(
+            (
+                "gh",
+                "pr",
+                "list",
+                "--repo",
+                receipt.repository_canonical,
+                "--head",
+                receipt.target_branch,
+                "--state",
+                "all",
+                "--limit",
+                "1",
+                "--json",
+                "url,state",
+            ),
+            environment,
+        )
+        if code != 0 or not isinstance(output, str):
+            return None
+        try:
+            rows = json.loads(output)
+        except json.JSONDecodeError:
+            return None
+        if not isinstance(rows, list) or not rows:
+            return None
+        url = rows[0].get("url") if isinstance(rows[0], dict) else None
+        if not isinstance(url, str):
+            return None
+        try:
+            _require_public_github_url(url, receipt.repository_canonical, "pull")
+        except RepositoryBootstrapError:
+            return None
+        return url
+
     def _publish_branch(self, preview: BootstrapPreview) -> str:
         canonical = preview.repository_canonical
         base_commit = self._github_json(

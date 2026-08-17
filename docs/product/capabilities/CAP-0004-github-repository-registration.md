@@ -20,8 +20,10 @@ credential alias, environment-variable name, or token to Daidala.
   `.daidala/project.yaml` returns a path-free `needs-bootstrap` result with
   `next_action: bootstrap` and flips that row’s Inspect repository control to
   Apply default policy (CAP-0006); an already-registered project ID returns
-  `already-registered`; other blocked causes return `blocked` with a stable
-  reason. Only `registerable` yields a registration preview.
+  `already-registered`; committed policy with missing profile registration
+  defaults returns `blocked` and does not offer a bootstrap PR; other blocked
+  causes return `blocked` with a stable reason. Only `registerable` yields a
+  registration preview.
 - Apply re-inspects the repository and accepts only the exact preview digest
   plus the literal `register-repository` confirmation. It binds an existing
   unused board with the derived checkout workdir or creates one with that
