@@ -130,6 +130,7 @@ CAP, and the sole active CHG before the detailed contracts below.
 | What must each worker record? | [Lifecycle stages](05-lifecycle-stages.md) |
 | Why is a loaded skill not necessarily active? | [Skill usage and user control](11-skill-usage-and-user-control.md#what-using-a-skill-means) |
 | How do I recover a blocked card? | [Operator runbook](07-runbook.md#recovery) |
+| How do I register a GitHub repository, and what is `repository-registration-defaults.yaml`? | [Operator runbook: Configure registration defaults](07-runbook.md#configure-registration-defaults) |
 | Which Hermes version and commands are verified? | [Hermes integration](08-hermes-integration.md) |
 | How do I install Daidala's dashboard tab into one specific Hermes profile, and how do I verify it mounted? | [Per-profile installation](08-hermes-integration.md#per-profile-installation) |
 | How do packs change stage workers without engine branches? | [Authoring packs](04-authoring-packs.md) |

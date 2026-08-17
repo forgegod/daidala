@@ -44,7 +44,11 @@ credential alias, environment-variable name, or token to Daidala.
 - Public preview readiness exposes only `credential_available`; credential
   aliases and secret-source details remain internal to the profile-local
   registration and binding records.
-- Registration never accepts or stores a token, creates a GitHub Project,
+- Registration requires profile-local
+  `repository-registration-defaults.yaml`. Operators write that file by hand
+  today; the example and field rules live in
+  [Configure registration defaults](../../07-runbook.md#configure-registration-defaults).
+  Registration never accepts or stores a token, creates a GitHub Project,
   creates a checkout, commits, pushes, publishes, or grants delivery authority.
 
 ## Evidence
@@ -76,5 +80,6 @@ credential alias, environment-variable name, or token to Daidala.
 - [CHG-0015](../../changes/archive/CHG-0015-all-profile-repository-inventory.md)
 - [CHG-0017](../../changes/archive/CHG-0017-start-repository-wording-and-inventory.md)
 - [CHG-0022](../../changes/active/CHG-0022-apply-default-policy-inspect-control.md)
+- [CHG-0023](../../changes/active/CHG-0023-registration-defaults-wizard.md)
 - [HTML wireframe](../wireframes/html/CAP-0004-github-repository-registration.html)
 - [PNG wireframe](../wireframes/exports/CAP-0004-github-repository-registration.png)

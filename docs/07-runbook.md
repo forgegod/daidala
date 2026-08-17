@@ -35,7 +35,9 @@ run prints the target path and does not create directories or files.
 ## Register a GitHub repository
 
 Registration is preview-first and writes only after the selected controller
-profile is resolved by Hermes:
+profile is resolved by Hermes. The selected profile must already have
+`repository-registration-defaults.yaml`; see
+[Configure registration defaults](#configure-registration-defaults).
 
 ```bash
 daidala project register --github-url https://github.com/acme/payments-service \
@@ -74,6 +76,71 @@ never writes registration records. Confirmed apply opens one pull request on
 the inspected repository. The dashboard keeps that PR link on the inspected
 row after a Hermes restart until the repository is registered. Merge the PR,
 then run `project register` again.
+
+### Configure registration defaults
+
+Inspect and register read profile-local
+`repository-registration-defaults.yaml` from the selected Hermes profile data
+root (`$HERMES_HOME/repository-registration-defaults.yaml`). That file is
+profile authority, not repository policy. A GitHub URL and committed
+`.daidala/project.yaml` cannot supply it. Daidala does not create or edit this
+file from the dashboard today.
+
+The file holds aliases, environment-variable *names*, maintainers, an attended
+notification destination, evaluator posture, and cycle limits. It never holds
+token values. Tokens stay in the process environment named by those variables.
+
+Write the file by hand, then `chmod 600`. If the profile already has a
+registered project, copy the non-secret aliases, destination, evaluator, and
+limits from that project's `registration.yaml` and
+`credential-bindings.yaml`. Intake and findings aliases must differ, as must
+their environment-variable names. Do not use `GH_TOKEN`. The notification
+adapter must be `hermes-gateway`; destination must be an explicit non-home
+target such as `telegram:<chat-id>` or `telegram:<chat-id>:<thread-id>`.
+Evaluator backend must be `restricted-container` and network
+`denied-by-default`.
+
+Example (synthetic values only):
+
+```yaml
+schema: daidala.repository-registration-defaults/v1
+credentials:
+  intake:
+    alias: github-read-issues
+    resolver: environment
+    environment_variable: EXAMPLE_GITHUB_INTAKE_TOKEN
+  findings:
+    alias: github-write-issues
+    resolver: environment
+    environment_variable: EXAMPLE_GITHUB_FINDINGS_TOKEN
+approval:
+  maintainers:
+    - example-operator
+notifications:
+  adapter: hermes-gateway
+  target: attended-example
+  destination: telegram:-1000000000000:1
+evaluator:
+  backend: restricted-container
+  network: denied-by-default
+limits:
+  active_cycles: 1
+  goal_turns: 12
+  delegated_workers: 3
+  research_query_batches: 3
+  extracted_sources: 3
+  wall_clock_seconds: 3600
+```
+
+After the file exists, inspect again. A repository that already has committed
+`.daidala/project.yaml` becomes a registration preview. A repository that
+lacks that file is classified `needs-bootstrap` and does not require this
+defaults file until you register.
+
+There is no dashboard editor or dedicated CLI validator yet. A missing or
+invalid file blocks registration with a stable reason. The planned editor and
+checker are tracked in
+[CHG-0023](changes/active/CHG-0023-registration-defaults-wizard.md).
 
 ## Diagnose prerequisites
 
