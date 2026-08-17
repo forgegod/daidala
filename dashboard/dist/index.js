@@ -2557,6 +2557,74 @@
     );
   }
 
+  var DEFAULTS_FIELD_SPECS = {
+    "credentials.intake.alias": {
+      label: "Intake alias",
+      placeholder: "github-read-issues",
+      help: "Logical name for the GitHub read credential used to list and claim issues. Lowercase slug such as github-read-issues. Must differ from the findings alias. This is a label, not the token."
+    },
+    "credentials.intake.environment_variable": {
+      label: "Intake environment variable",
+      placeholder: "EXAMPLE_GITHUB_INTAKE_TOKEN",
+      help: "Name of the process environment variable that already holds the read token, such as EXAMPLE_GITHUB_INTAKE_TOKEN. Uppercase letters, digits, and underscores only. Never GH_TOKEN, and never paste the token itself."
+    },
+    "credentials.findings.alias": {
+      label: "Findings alias",
+      placeholder: "github-write-issues",
+      help: "Logical name for the GitHub write credential used to open or update finding issues. Use a different lowercase slug such as github-write-issues so read and write stay separate."
+    },
+    "credentials.findings.environment_variable": {
+      label: "Findings environment variable",
+      placeholder: "EXAMPLE_GITHUB_FINDINGS_TOKEN",
+      help: "Name of the process environment variable that already holds the write token. It must differ from the intake variable. Same uppercase name rules; never GH_TOKEN or the token value."
+    },
+    "approval.maintainers": {
+      label: "Maintainers",
+      placeholder: "example-operator",
+      help: "Who may admit work for repositories registered from this profile. Comma-separated identities, 1 to 32, no duplicates. Use the same identity the gateway will present, such as example-operator."
+    },
+    "notifications.target": {
+      label: "Notification target",
+      placeholder: "attended-example",
+      help: "A local nickname for the attended destination, such as attended-example. Lowercase slug. Notification receipts must match this name."
+    },
+    "notifications.destination": {
+      label: "Notification destination",
+      placeholder: "telegram:-1000000000000:1",
+      help: "Where Hermes sends attended reviews. Must be an explicit non-home target such as telegram:<chat-id> or telegram:<chat-id>:<thread-id>. Do not use home."
+    },
+    "limits.active_cycles": {
+      label: "Active cycles",
+      placeholder: "1",
+      help: "Declared cycle concurrency copied onto every new registration. v1 requires exactly 1."
+    },
+    "limits.goal_turns": {
+      label: "Goal turns",
+      placeholder: "12",
+      help: "Declared maximum planning and implementation turns per cycle, copied onto every new registration. Integer from 1 to 100. 12 is the recommended start."
+    },
+    "limits.delegated_workers": {
+      label: "Delegated workers",
+      placeholder: "3",
+      help: "Declared maximum extra workers one cycle may spawn, copied onto every new registration. Integer from 0 to 9. 3 is the recommended start."
+    },
+    "limits.research_query_batches": {
+      label: "Research query batches",
+      placeholder: "3",
+      help: "Declared maximum research batches one cycle may run, copied onto every new registration. Integer from 0 to 10. 3 is the recommended start."
+    },
+    "limits.extracted_sources": {
+      label: "Extracted sources",
+      placeholder: "3",
+      help: "Declared maximum extracted source documents one cycle may keep, copied onto every new registration. Integer from 0 to 20. 3 is the recommended start."
+    },
+    "limits.wall_clock_seconds": {
+      label: "Wall-clock seconds",
+      placeholder: "3600",
+      help: "Declared maximum elapsed seconds for one cycle, copied onto every new registration. Integer from 60 to 86400. 3600 is one hour."
+    }
+  };
+
   function emptyDefaultsDraft() {
     return {
       schema: "daidala.repository-registration-defaults/v1",
@@ -2978,16 +3046,28 @@
       return nodes.length ? nodes : null;
     }
 
-    function renderDefaultsField(label, path) {
+    function renderDefaultsField(path) {
+      var spec = DEFAULTS_FIELD_SPECS[path];
       var cursor = defaultsDraft;
       path.split(".").forEach(function (part) { cursor = cursor ? cursor[part] : ""; });
+      var helpId = "daidala-defaults-help-" + path.replace(/\./g, "-");
       return createElement("label", { className: "daidala-wizard-field", key: path },
-        createElement("span", null, label),
+        createElement("span", null, spec.label),
+        createElement("small", { id: helpId, className: "daidala-field-help" }, spec.help),
         createElement("input", {
           value: cursor == null ? "" : String(cursor),
-          "aria-label": label,
+          placeholder: spec.placeholder,
+          "aria-label": spec.label,
+          "aria-describedby": helpId,
           onChange: function (event) { updateDefaultsDraft(path, event.target.value); }
         })
+      );
+    }
+
+    function renderDefaultsGroup(title, paths) {
+      return createElement("fieldset", { className: "daidala-defaults-group", key: title },
+        createElement("legend", null, title),
+        paths.map(renderDefaultsField)
       );
     }
 
@@ -3024,21 +3104,27 @@
         },
           createElement("h3", null, "Registration defaults"),
           createElement("p", { className: "daidala-workflow-meta" },
-            "Aliases and environment-variable names only. Token values stay in the process environment."
+            "These values become the profile defaults copied onto every new repository registration. Enter aliases and environment-variable names only. Token values stay in the process environment."
           ),
-          renderDefaultsField("Intake alias", "credentials.intake.alias"),
-          renderDefaultsField("Intake environment variable", "credentials.intake.environment_variable"),
-          renderDefaultsField("Findings alias", "credentials.findings.alias"),
-          renderDefaultsField("Findings environment variable", "credentials.findings.environment_variable"),
-          renderDefaultsField("Maintainers", "approval.maintainers"),
-          renderDefaultsField("Notification target", "notifications.target"),
-          renderDefaultsField("Notification destination", "notifications.destination"),
-          renderDefaultsField("Active cycles", "limits.active_cycles"),
-          renderDefaultsField("Goal turns", "limits.goal_turns"),
-          renderDefaultsField("Delegated workers", "limits.delegated_workers"),
-          renderDefaultsField("Research query batches", "limits.research_query_batches"),
-          renderDefaultsField("Extracted sources", "limits.extracted_sources"),
-          renderDefaultsField("Wall-clock seconds", "limits.wall_clock_seconds"),
+          renderDefaultsGroup("GitHub credentials", [
+            "credentials.intake.alias",
+            "credentials.intake.environment_variable",
+            "credentials.findings.alias",
+            "credentials.findings.environment_variable"
+          ]),
+          renderDefaultsGroup("Approval", ["approval.maintainers"]),
+          renderDefaultsGroup("Attended notifications", [
+            "notifications.target",
+            "notifications.destination"
+          ]),
+          renderDefaultsGroup("Cycle limits", [
+            "limits.active_cycles",
+            "limits.goal_turns",
+            "limits.delegated_workers",
+            "limits.research_query_batches",
+            "limits.extracted_sources",
+            "limits.wall_clock_seconds"
+          ]),
           defaultsPreview ? createElement("p", { className: "daidala-workflow-meta" },
             defaultsPreview.valid
               ? "Valid · " + defaultsPreview.source + " · " + defaultsPreview.digest

@@ -926,6 +926,29 @@
   color: var(--daidala-muted);
 }
 
+.daidala-field-help {
+  display: block;
+  margin: 0;
+  color: var(--daidala-muted);
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.daidala-defaults-group {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.daidala-defaults-group legend {
+  padding: 0;
+  font-weight: 700;
+  color: var(--text-primary, inherit);
+}
+
 .daidala-wizard-field select,
 .daidala-wizard-field input,
 .daidala-wizard-field textarea,

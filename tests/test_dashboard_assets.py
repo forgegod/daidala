@@ -353,6 +353,16 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
         "Check defaults",
         "Save registration defaults",
         "I confirm writing these registration defaults",
+        "DEFAULTS_FIELD_SPECS",
+        "daidala-field-help",
+        "aria-describedby",
+        "list and claim issues",
+        "Never GH_TOKEN",
+        "explicit non-home target",
+        "v1 requires exactly 1",
+        "GitHub credentials",
+        "Attended notifications",
+        "Cycle limits",
         "Open bootstrap branch",
         "Open .daidala on bootstrap branch",
         "Open a pull request",
@@ -368,6 +378,9 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
     assert 'data-testid": "daidala-repository-registration"' in source
     assert 'data-testid": "daidala-repository-profile"' in source
     assert 'data-testid": "daidala-registration-defaults"' in source
+    assert ".daidala-field-help" in (DASHBOARD / "dist" / "style.css").read_text(
+        encoding="utf-8"
+    )
     assert "Selected Hermes profile" not in source
     assert "checkout_path" not in source
     assert "repository_path" not in source

@@ -33,7 +33,8 @@ python scripts/check_records.py .
 python scripts/check_md_links.py .
 ```
 
-For wireframes, regenerate artifacts and render the HTML at 1440 × 960 before running the checks.
+For wireframes, regenerate artifacts and render the HTML at the manifest
+viewport before running the checks. The default remains 1440 × 960.
 
 ## Child DOX Index
 

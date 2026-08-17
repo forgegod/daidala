@@ -83,22 +83,69 @@ Inspect and register read profile-local
 `repository-registration-defaults.yaml` from the selected Hermes profile data
 root (`$HERMES_HOME/repository-registration-defaults.yaml`). That file is
 profile authority, not repository policy. A GitHub URL and committed
-`.daidala/project.yaml` cannot supply it. Daidala does not create or edit this
-file from the dashboard today.
+`.daidala/project.yaml` cannot supply it. Config → GitHub Repositories
+explains each field in the defaults wizard so operators can complete it
+without opening this section first.
 
 The file holds aliases, environment-variable *names*, maintainers, an attended
 notification destination, evaluator posture, and cycle limits. It never holds
 token values. Tokens stay in the process environment named by those variables.
+Config → GitHub Repositories shows the same field help.
 
-Write the file by hand, then `chmod 600`. If the profile already has a
-registered project, copy the non-secret aliases, destination, evaluator, and
-limits from that project's `registration.yaml` and
-`credential-bindings.yaml`. Intake and findings aliases must differ, as must
-their environment-variable names. Do not use `GH_TOKEN`. The notification
-adapter must be `hermes-gateway`; destination must be an explicit non-home
-target such as `telegram:<chat-id>` or `telegram:<chat-id>:<thread-id>`.
-Evaluator backend must be `restricted-container` and network
-`denied-by-default`.
+#### GitHub credentials
+
+- **Intake alias.** Logical name for the GitHub read credential used to list
+  and claim issues. Lowercase slug such as `github-read-issues`. Must differ
+  from the findings alias. This is a label, not the token.
+- **Intake environment variable.** Name of the process environment variable
+  that already holds the read token, such as `EXAMPLE_GITHUB_INTAKE_TOKEN`.
+  Uppercase letters, digits, and underscores only. Never `GH_TOKEN`, and never
+  paste the token itself.
+- **Findings alias.** Logical name for the GitHub write credential used to
+  open or update finding issues. Use a different lowercase slug such as
+  `github-write-issues` so read and write stay separate.
+- **Findings environment variable.** Name of the process environment variable
+  that already holds the write token. It must differ from the intake variable.
+  Same uppercase name rules; never `GH_TOKEN` or the token value.
+
+#### Approval
+
+- **Maintainers.** Who may admit work for repositories registered from this
+  profile. One to 32 unique identities. Use the same identity the gateway will
+  present, such as `example-operator`.
+
+#### Attended notifications
+
+- **Notification target.** A local nickname for the attended destination, such
+  as `attended-example`. Lowercase slug. Notification receipts must match this
+  name.
+- **Notification destination.** Where Hermes sends attended reviews. Must be
+  an explicit non-home target such as `telegram:<chat-id>` or
+  `telegram:<chat-id>:<thread-id>`. Do not use `home`. The adapter is
+  `hermes-gateway`.
+
+#### Evaluator
+
+- Backend must be `restricted-container` and network `denied-by-default`.
+  The wizard does not ask for these values because they are fixed.
+
+#### Cycle limits
+
+These values are copied onto every new registration as this profile's
+declared budget. They are not live runtime gates beyond that write.
+
+- **Active cycles.** v1 requires exactly `1`.
+- **Goal turns.** Integer from 1 to 100. `12` is the recommended start.
+- **Delegated workers.** Integer from 0 to 9. `3` is the recommended start.
+- **Research query batches.** Integer from 0 to 10. `3` is the recommended start.
+- **Extracted sources.** Integer from 0 to 20. `3` is the recommended start.
+- **Wall-clock seconds.** Integer from 60 to 86400. `3600` is one hour.
+
+Write the file by hand and `chmod 600`, or use the CLI or Config wizard
+below. If the profile already has a registered project, `--seed` or **Seed
+from existing registration** copies the non-secret aliases, destination,
+evaluator, and limits from that project's `registration.yaml` and
+`credential-bindings.yaml`.
 
 Example (synthetic values only):
 
@@ -137,8 +184,7 @@ After the file exists, inspect again. A repository that already has committed
 lacks that file is classified `needs-bootstrap` and does not require this
 defaults file until you register.
 
-There is no remaining hand-edit requirement. Validate or write the file from
-the CLI or Config → GitHub Repositories:
+Validate or write the file from the CLI or Config → GitHub Repositories:
 
 ```bash
 daidala project defaults --profile controller
@@ -152,8 +198,7 @@ Dry-run prints a path-free validity report and digest. Apply writes mode `0600`
 `$HERMES_HOME/repository-registration-defaults.yaml`. `--seed` copies aliases,
 destination, evaluator, and limits from the profile's single existing
 registration; it does not invent missing values. A missing or invalid file still
-blocks `project register`. The dashboard wizard shipped in
-[CHG-0023](changes/archive/CHG-0023-registration-defaults-wizard.md).
+blocks `project register`.
 
 ## Diagnose prerequisites
 

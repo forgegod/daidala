@@ -47,11 +47,13 @@ and saved through the CLI or Config wizard.
   registration and binding records.
 - Registration requires profile-local
   `repository-registration-defaults.yaml`. Operators preview, seed, validate,
-  and write that file with `daidala project defaults`; the example and field
-  rules live in
+  and write that file with `daidala project defaults`; the example and the same
+  per-field decision help as the Config wizard live in
   [Configure registration defaults](../../07-runbook.md#configure-registration-defaults).
   Config → GitHub Repositories shows a per-profile defaults wizard that
-  previews, seeds, validates, and saves the same file. Registration never accepts or stores a token, creates a GitHub Project,
+  previews, seeds, validates, and saves the same file. Each wizard field
+  shows decision help for purpose, allowed format, and where the value is
+  used. Registration never accepts or stores a token, creates a GitHub Project,
   creates a checkout, commits, pushes, publishes, or grants delivery authority.
 
 ## Evidence
@@ -84,5 +86,6 @@ and saved through the CLI or Config wizard.
 - [CHG-0017](../../changes/archive/CHG-0017-start-repository-wording-and-inventory.md)
 - [CHG-0022](../../changes/archive/CHG-0022-apply-default-policy-inspect-control.md)
 - [CHG-0023](../../changes/archive/CHG-0023-registration-defaults-wizard.md)
+- [CHG-0024](../../changes/archive/CHG-0024-registration-defaults-field-help.md)
 - [HTML wireframe](../wireframes/html/CAP-0004-github-repository-registration.html)
 - [PNG wireframe](../wireframes/exports/CAP-0004-github-repository-registration.png)

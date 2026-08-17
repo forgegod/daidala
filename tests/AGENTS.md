@@ -69,8 +69,8 @@ completeness without touching a real Hermes profile.
   success/error events, and post-action verification. Dashboard asset coverage pins the
   catalog-first pack action, the absence of individual installation, focused
   accessible current-skill progress, skill-detail drawers, dialog focus
-  containment/restoration, and narrow
-  four-row inventory disclosure.
+  containment/restoration, narrow
+  four-row inventory disclosure, and registration-defaults field help.
 - Dashboard review-route, GitHub Project link, and asset tests prove path-free exact evidence,
   server-derived attended identity, literal diff rendering, preview/apply parity,
   single-ledger plan/review snapshot binding, stale or unchecked rejection, and
