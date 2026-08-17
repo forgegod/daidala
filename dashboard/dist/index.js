@@ -2561,22 +2561,22 @@
     "credentials.intake.alias": {
       label: "Intake alias",
       placeholder: "github-read-issues",
-      help: "Logical name for the GitHub read credential used to list and claim issues. Lowercase slug such as github-read-issues. Must differ from the findings alias. This is a label, not the token."
+      help: "Logical name for the already-configured read-only GitHub access used to list and claim issues. Lowercase slug such as github-read-issues. Must differ from the findings alias. This is a label, not the GitHub token."
     },
     "credentials.intake.environment_variable": {
       label: "Intake environment variable",
       placeholder: "EXAMPLE_GITHUB_INTAKE_TOKEN",
-      help: "Name of the process environment variable that already holds the read token, such as EXAMPLE_GITHUB_INTAKE_TOKEN. Uppercase letters, digits, and underscores only. Never GH_TOKEN, and never paste the token itself."
+      help: "Name of the process environment variable that already holds the intake GitHub token, such as EXAMPLE_GITHUB_INTAKE_TOKEN. Uppercase letters, digits, and underscores only. Never GH_TOKEN, and never paste the GitHub token itself. Use a classic personal access token, not a fine-grained token. Mandatory classic scopes are read:project and read:org. Leave repo, public_repo, project write, workflow, package, administration, and deletion unselected. Fine-grained tokens cannot access user-owned GitHub Projects."
     },
     "credentials.findings.alias": {
       label: "Findings alias",
       placeholder: "github-write-issues",
-      help: "Logical name for the GitHub write credential used to open or update finding issues. Use a different lowercase slug such as github-write-issues so read and write stay separate."
+      help: "Logical name for the already-configured write GitHub access used to open or update finding issues. Use a different lowercase slug such as github-write-issues so read and write stay separate."
     },
     "credentials.findings.environment_variable": {
       label: "Findings environment variable",
       placeholder: "EXAMPLE_GITHUB_FINDINGS_TOKEN",
-      help: "Name of the process environment variable that already holds the write token. It must differ from the intake variable. Same uppercase name rules; never GH_TOKEN or the token value."
+      help: "Name of the process environment variable that already holds the findings GitHub token. It must differ from the intake variable. Same uppercase name rules; never GH_TOKEN or the GitHub token value. Use a fine-grained personal access token, the current GitHub token type, restricted to the target repository. Mandatory repository permissions are Metadata read and Issues read and write. Leave Contents, Administration, Pull requests, Actions, Workflows, Deployments, and other permissions at No access."
     },
     "approval.maintainers": {
       label: "Maintainers",
@@ -3116,9 +3116,9 @@
             "A GitHub Project is optional: registration neither requires nor creates one, and a separately configured link is only presentation/intake metadata. Registration-specific values are immutable, so there is no per-repository edit control."
           ),
           createElement("p", { className: "daidala-workflow-meta" },
-            "Enter aliases and environment-variable names only. Token values are read from the selected Hermes profile's process environment; define them in the file reported by hermes -p <profile> config env-path (normally ~/.hermes/profiles/<profile>/.env) and restart the relevant Hermes process after changing that file."
+            "Enter aliases and environment-variable names only. GitHub token values are read from the selected Hermes profile's process environment; define them in the file reported by hermes -p <profile> config env-path (normally ~/.hermes/profiles/<profile>/.env) and restart the relevant Hermes process after changing that file."
           ),
-          renderDefaultsGroup("GitHub credentials", [
+          renderDefaultsGroup("Configured GitHub access rights", [
             "credentials.intake.alias",
             "credentials.intake.environment_variable",
             "credentials.findings.alias",

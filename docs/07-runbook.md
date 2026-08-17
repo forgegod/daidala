@@ -111,24 +111,42 @@ without opening this section first.
 
 The file holds aliases, environment-variable *names*, maintainers, an attended
 notification destination, evaluator posture, and cycle limits. It never holds
-token values. Tokens stay in the process environment named by those variables.
-Config → GitHub Repositories shows the same field help.
+GitHub token values. GitHub tokens stay in the process environment named by
+those variables. Config → GitHub Repositories shows the same field help.
 
-#### GitHub credentials
+#### Configured GitHub access rights
 
-- **Intake alias.** Logical name for the GitHub read credential used to list
-  and claim issues. Lowercase slug such as `github-read-issues`. Must differ
-  from the findings alias. This is a label, not the token.
+This group names already-configured GitHub access. Daidala does not create a
+GitHub token or grant rights. Create the GitHub token and its access rights
+first, store the value in the profile process environment, then enter only the
+alias and environment-variable name here.
+
+- **Intake alias.** Logical name for the already-configured read-only GitHub
+  access used to list and claim issues. Lowercase slug such as
+  `github-read-issues`. Must differ from the findings alias. This is a label,
+  not the GitHub token.
 - **Intake environment variable.** Name of the process environment variable
-  that already holds the read token, such as `EXAMPLE_GITHUB_INTAKE_TOKEN`.
-  Uppercase letters, digits, and underscores only. Never `GH_TOKEN`, and never
-  paste the token itself.
-- **Findings alias.** Logical name for the GitHub write credential used to
-  open or update finding issues. Use a different lowercase slug such as
-  `github-write-issues` so read and write stay separate.
+  that already holds the intake GitHub token, such as
+  `EXAMPLE_GITHUB_INTAKE_TOKEN`. Uppercase letters, digits, and underscores
+  only. Never `GH_TOKEN`, and never paste the GitHub token itself. Use a
+  classic personal access token, not a fine-grained token. Mandatory classic
+  scopes are `read:project` and `read:org`. Leave `repo`, `public_repo`,
+  project write, workflow, package, administration, and deletion unselected.
+  Fine-grained tokens cannot access user-owned GitHub Projects.
+- **Findings alias.** Logical name for the already-configured write GitHub
+  access used to open or update finding issues. Use a different lowercase slug
+  such as `github-write-issues` so read and write stay separate.
 - **Findings environment variable.** Name of the process environment variable
-  that already holds the write token. It must differ from the intake variable.
-  Same uppercase name rules; never `GH_TOKEN` or the token value.
+  that already holds the findings GitHub token. It must differ from the intake
+  variable. Same uppercase name rules; never `GH_TOKEN` or the GitHub token
+  value. Use a fine-grained personal access token, the current GitHub token
+  type, restricted to the target repository. Mandatory repository permissions
+  are Metadata read and Issues read and write. Leave Contents, Administration,
+  Pull requests, Actions, Workflows, Deployments, and other permissions at No
+  access.
+
+The executable creation steps for the self-improvement controller live in
+[Configure GitHub operator and runtime credentials](16-self-improvement-setup.md#3-configure-github-operator-and-runtime-credentials).
 
 #### Approval
 

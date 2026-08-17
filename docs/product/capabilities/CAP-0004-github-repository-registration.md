@@ -53,7 +53,11 @@ and saved through the CLI or Config wizard.
   Config → GitHub Repositories shows a per-profile defaults wizard that
   previews, seeds, validates, and saves the same file. Each wizard field
   shows decision help for purpose, allowed format, and where the value is
-  used. Registration never accepts or stores a token, creates a GitHub Project,
+  used. The GitHub group is titled Configured GitHub access rights and names
+  the required GitHub token type plus mandatory access rights for intake
+  (classic personal access token, `read:project` and `read:org`) and findings
+  (fine-grained personal access token, Metadata read and Issues read and
+  write). Registration never accepts or stores a token, creates a GitHub Project,
   creates a checkout, commits, pushes, publishes, or grants delivery authority.
 
 ## Evidence
@@ -87,5 +91,6 @@ and saved through the CLI or Config wizard.
 - [CHG-0022](../../changes/archive/CHG-0022-apply-default-policy-inspect-control.md)
 - [CHG-0023](../../changes/archive/CHG-0023-registration-defaults-wizard.md)
 - [CHG-0024](../../changes/archive/CHG-0024-registration-defaults-field-help.md)
+- [CHG-0025](../../changes/archive/CHG-0025-registration-defaults-github-access-rights.md)
 - [HTML wireframe](../wireframes/html/CAP-0004-github-repository-registration.html)
 - [PNG wireframe](../wireframes/exports/CAP-0004-github-repository-registration.png)
