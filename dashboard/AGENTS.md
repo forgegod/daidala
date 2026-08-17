@@ -56,7 +56,11 @@ Provide the optional Daidala extension for the existing Hermes dashboard.
   repository checkout path. Config → GitHub Repositories defaults wizard may
   collect aliases, environment-variable names, maintainers, attended
   destination, and limits; it never collects token values. Each field
-  shows visible decision help for purpose, allowed format, and use. The
+  shows visible decision help for purpose, allowed format, and use.
+  Maintainers are GitHub usernames from the profile URL login, not an email,
+  display name, Hermes profile, or Git author identity. The list is copied
+  onto each new registration and gates cycle admission, claim comments, and
+  notification prerequisite evidence, not plan approval. The
   GitHub group is titled Configured GitHub access rights and names classic
   versus fine-grained GitHub token type plus the mandatory access rights.
   Repository-registration inventory returns every

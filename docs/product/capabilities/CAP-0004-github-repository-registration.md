@@ -57,7 +57,12 @@ and saved through the CLI or Config wizard.
   the required GitHub token type plus mandatory access rights for intake
   (classic personal access token, `read:project` and `read:org`) and findings
   (fine-grained personal access token, Metadata read and Issues read and
-  write). Registration never accepts or stores a token, creates a GitHub Project,
+  write). Maintainers are GitHub usernames (the login in the profile URL), not
+  email addresses, display names, Hermes profile names, or Git author names.
+  The list is copied onto each new registration and gates cycle admission,
+  issue claim comments, and notification prerequisite evidence. It is not
+  dashboard plan approval.
+  Registration never accepts or stores a token, creates a GitHub Project,
   creates a checkout, commits, pushes, publishes, or grants delivery authority.
 
 ## Evidence
@@ -92,5 +97,7 @@ and saved through the CLI or Config wizard.
 - [CHG-0023](../../changes/archive/CHG-0023-registration-defaults-wizard.md)
 - [CHG-0024](../../changes/archive/CHG-0024-registration-defaults-field-help.md)
 - [CHG-0025](../../changes/archive/CHG-0025-registration-defaults-github-access-rights.md)
+- [CHG-0026](../../changes/archive/CHG-0026-registration-defaults-maintainer-identity.md)
+- [CHG-0027](../../changes/archive/CHG-0027-registration-defaults-maintainer-usage.md)
 - [HTML wireframe](../wireframes/html/CAP-0004-github-repository-registration.html)
 - [PNG wireframe](../wireframes/exports/CAP-0004-github-repository-registration.png)

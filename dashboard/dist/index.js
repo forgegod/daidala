@@ -2581,7 +2581,7 @@
     "approval.maintainers": {
       label: "Maintainers",
       placeholder: "example-operator",
-      help: "Who may admit work for repositories registered from this profile. Comma-separated identities, 1 to 32, no duplicates. Use the same identity the gateway will present, such as example-operator."
+      help: "Allowlist copied onto every new registration from this profile. Only these GitHub usernames may mark an issue ready and admit a cycle. The same list authorizes issue claim comments and must match the authorized maintainer in notification prerequisite evidence. This is not dashboard plan approval. Enter the login in the profile URL, such as example-operator for github.com/example-operator. Comma-separated, 1 to 32, no duplicates. Do not use an email address, display name, Hermes profile name, or Git author name."
     },
     "notifications.target": {
       label: "Notification target",

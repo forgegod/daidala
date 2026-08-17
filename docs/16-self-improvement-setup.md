@@ -983,8 +983,10 @@ return real receipts:
     prerequisite-evidence.json
 ```
 
-Use this exact non-secret shape and replace only the maintainer identity if the
-verified gateway authorization identity differs:
+Use this exact non-secret shape. `approval.maintainers` is the GitHub-login
+allowlist for ready-label admission, claim comments, and the
+`authorized_maintainer` in prerequisite notification evidence. Replace the
+login if the operator GitHub username differs:
 
 ```yaml
 schema: daidala.controller-registration/v2

@@ -150,9 +150,14 @@ The executable creation steps for the self-improvement controller live in
 
 #### Approval
 
-- **Maintainers.** Who may admit work for repositories registered from this
-  profile. One to 32 unique identities. Use the same identity the gateway will
-  present, such as `example-operator`.
+- **Maintainers.** Allowlist copied onto every new registration from this
+  profile. Only these GitHub usernames may mark an issue ready and admit a
+  cycle. The same list authorizes issue claim comments and must match the
+  authorized maintainer in notification prerequisite evidence. This is not
+  dashboard plan approval. Enter the login in the profile URL, such as
+  `example-operator` for `github.com/example-operator`. One to 32 unique
+  values. Do not use an email address, display name, Hermes profile name,
+  or Git author name.
 
 #### Attended notifications
 

@@ -600,7 +600,9 @@ retained in the versioned result.
 
 GitHub Project membership is presentation only. Eligibility requires base label
 `daidala-si`, exactly one namespaced category, repository priority, structured
-body, and separate maintainer-applied `daidala-si:ready`. The issue template,
+body, and separate maintainer-applied `daidala-si:ready`. Registration
+`approval.maintainers` is the GitHub-login allowlist for that ready actor,
+claim comments, and notification prerequisite evidence. The issue template,
 labels, Project, credentials, and prerequisite evidence are configured and
 verified. The supported production adapter and project-cycle path is committed,
 installed as an exact detached controller revision, migrated to registration v2,
