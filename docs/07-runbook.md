@@ -161,9 +161,14 @@ The executable creation steps for the self-improvement controller live in
 
 #### Attended notifications
 
-- **Notification target.** A local nickname for the attended destination, such
-  as `attended-example`. Lowercase slug. Notification receipts must match this
-  name.
+- **Notification target.** Identity label for the attended destination,
+  such as `attended-example`. Lowercase slug. It is not part of the message
+  content. Daidala stamps this name on every notification receipt and
+  requires receipts to match this registration at admission, completion, and
+  cancellation; a receipt claiming a different target blocks the transition.
+  It is the integrity binding of the notification evidence, not a
+  salutation. Do not change it casually because recorded receipts are bound
+  to the registered slug.
 - **Notification destination.** Where Hermes sends attended reviews. Must be
   an explicit non-home target such as `telegram:<chat-id>` or
   `telegram:<chat-id>:<thread-id>`. Do not use `home`. The adapter is

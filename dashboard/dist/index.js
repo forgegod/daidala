@@ -2586,7 +2586,7 @@
     "notifications.target": {
       label: "Notification target",
       placeholder: "attended-example",
-      help: "A local nickname for the attended destination, such as attended-example. Lowercase slug. Notification receipts must match this name."
+      help: "Identity label for the attended destination, such as attended-example. Lowercase slug. It is not part of the message content. Daidala stamps this name on every notification receipt and requires receipts to match this registration at admission, completion, and cancellation; a receipt claiming a different target blocks the transition. It is the integrity binding of the notification evidence, not a salutation. Do not change it casually because recorded receipts are bound to the registered slug."
     },
     "notifications.destination": {
       label: "Notification destination",
