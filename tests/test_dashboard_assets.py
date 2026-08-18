@@ -419,6 +419,11 @@ def test_bundle_exposes_confirmed_path_free_repository_registration() -> None:
     assert "Bootstrap repository policy" not in source
     assert "applyingPolicy && !confirmed" in source
     assert "applyingPolicy ? \"Apply default policy\" : \"Inspect repository\"" in source
+    apply_bootstrap = source[
+        source.index("function applyBootstrap()") : source.index("function isActive(")
+    ]
+    assert "setBootstrapPreview(null)" in apply_bootstrap
+    assert "setBootstrapPreview(result)" not in apply_bootstrap
     assert "pending_bootstraps" in source
     assert "Default policy branch is waiting for merge." in source
     assert "Open pull request" in source

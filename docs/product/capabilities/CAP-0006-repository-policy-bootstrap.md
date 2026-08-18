@@ -33,6 +33,11 @@ repository or touching the default branch.
   Successful apply writes a profile-local receipt with the public PR URL.
   Config inventory keeps showing that link after a Hermes restart until the
   repository is registered.
+- In Config → GitHub Repositories a successful confirmed apply clears the
+  Bootstrap preview panel. The success message and the row's pending
+  pull-request link — projected from the profile-local receipt — are the
+  feedback that the apply worked. A failed apply keeps the panel so the
+  still-valid preview digest can be retried.
 - Preview and apply responses include public GitHub convenience links for the
   bootstrap branch, the `.daidala` tree on that branch, the opened pull
   request, and GitHub’s compare page. Merge remains an operator action on the
@@ -68,5 +73,6 @@ repository or touching the default branch.
 - [CHG-0015](../../changes/archive/CHG-0015-all-profile-repository-inventory.md)
 - [CHG-0017](../../changes/archive/CHG-0017-start-repository-wording-and-inventory.md)
 - [CHG-0022](../../changes/archive/CHG-0022-apply-default-policy-inspect-control.md)
+- [CHG-0029](../../changes/archive/CHG-0029-bootstrap-apply-success-feedback.md)
 - [HTML wireframe](../wireframes/html/CAP-0006-repository-policy-bootstrap.html)
 - [PNG wireframe](../wireframes/exports/CAP-0006-repository-policy-bootstrap.png)

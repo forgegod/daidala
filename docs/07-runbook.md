@@ -95,7 +95,9 @@ daidala project bootstrap --github-url https://github.com/acme/site \
 
 Bootstrap uses host `gh` authentication, never updates the default branch, and
 never writes registration records. Confirmed apply opens one pull request on
-the inspected repository. The dashboard keeps that PR link on the inspected
+the inspected repository. In the dashboard, a successful apply clears the
+Bootstrap preview; the success message and the pending pull-request link are
+the confirmation. The dashboard keeps that PR link on the inspected
 row after a Hermes restart until the repository is registered. Merge the PR,
 then run `project register` again.
 

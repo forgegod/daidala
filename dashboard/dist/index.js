@@ -2951,7 +2951,7 @@
       var githubUrl = fieldUrl(active.profile, active.field).trim();
       setBusy(true); setMessage("");
       applyRepositoryBootstrap(githubUrl, bootstrapPreview.controller_profile, bootstrapPreview.preview_digest).then(function (result) {
-        setBootstrapPreview(result); setConfirmed(false);
+        setBootstrapPreview(null); setConfirmed(false);
         setMessage(
           "Default policy pull request opened on the inspected repository. Merge it, then inspect and register."
         );
