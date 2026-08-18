@@ -5,6 +5,7 @@ __pycache__/
 .ruff_cache/
 build/
 dist/
+!dashboard/dist/
 *.egg-info/
 .coverage
 htmlcov/
